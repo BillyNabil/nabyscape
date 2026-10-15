@@ -124,6 +124,20 @@ internal static class InteractionDiagnostics
             Check("arrow after date activation crosses month and focuses new selected day",FindButton(calendarWindow,nextDayName).IsKeyboardFocused && FindButton(calendarWindow,nextDayName).IsTabStop);
             FindButton(calendarWindow,nextDayName).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
             Check("repeated selected-date activation retains current keyboard focus",FindButton(calendarWindow,nextDayName).IsKeyboardFocused);
+            var calendarView=typeof(DetachedPreviewWindow).GetField("view",privateInstance)!.GetValue(calendarWindow)!;
+            var monthField=typeof(DetachedPreviewView).GetField("shownMonth",privateInstance)!;
+            var selectionModel=(System.Windows.Controls.Calendar)typeof(DetachedPreviewView).GetField("calendar",privateInstance)!.GetValue(calendarView)!;
+            foreach(var existingSelection in new[]{new DateTime(2026,10,31),new DateTime(2024,2,29)})
+            {
+                monthField.SetValue(calendarView,new DateTime(existingSelection.Year,existingSelection.Month,1));selectionModel.SelectedDate=existingSelection;
+                FindButton(calendarWindow,"Next month").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                string firstNextName="Select date "+existingSelection.AddDays(1).ToString("yyyy-MM-dd");var firstNext=FindButton(calendarWindow,firstNextName);firstNext.Focus();
+                firstNext.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,System.Windows.PresentationSource.FromVisual(calendarWindow),0,System.Windows.Input.Key.Left){RoutedEvent=System.Windows.Input.Keyboard.KeyDownEvent});await Task.Delay(40);
+                string existingName="Select date "+existingSelection.ToString("yyyy-MM-dd");var returned=Tree(calendarWindow).OfType<Button>().SingleOrDefault(b=>AutomationProperties.GetName(b)==existingName);
+                Check("arrow to existing selection redraws prior month and focuses target "+existingSelection.ToString("yyyy-MM-dd"),returned?.IsKeyboardFocused==true && returned.IsTabStop && selectionModel.SelectedDate==existingSelection && !Tree(calendarWindow).OfType<Button>().Any(b=>AutomationProperties.GetName(b)==firstNextName));
+                FindButton(calendarWindow,"Next month").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check("month navigation stays aligned after same-selection arrow "+existingSelection.ToString("yyyy-MM-dd"),Tree(calendarWindow).OfType<Button>().Any(b=>AutomationProperties.GetName(b)==firstNextName));
+            }
             Check("all seven visible previews have one Updated subscription each",Subscribers()==7);
             overlay.ToggleVisibility();await Settle();Check("manual hide before explicit Reveal releases preview subscriptions",overlay.UserHidden && Subscribers()==0 && kinds.All(k=>!app.Previews.AnyVisible(k)));
             overlay.Reveal(false);await Settle();Check("explicit Reveal restores all seven open previews and subscriptions",!overlay.UserHidden && kinds.All(app.Previews.AnyVisible) && Subscribers()==7);overlay.Collapse();

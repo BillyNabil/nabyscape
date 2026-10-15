@@ -151,7 +151,7 @@ internal sealed class DetachedPreviewView : IDisposable
         for(int d=1;d<=DateTime.DaysInMonth(shownMonth.Year,shownMonth.Month);d++)
         {
             var date=shownMonth.AddDays(d-1);var button=Action("Select date "+date.ToString("yyyy-MM-dd"),()=>calendar.SelectedDate=date);button.Content=d.ToString();button.Padding=new(0);button.Margin=new(2);button.MinHeight=23;button.FontSize=11;button.Background=calendar.SelectedDate?.Date==date?UI.Brush("#373B45"):Brushes.Transparent;button.BorderThickness=new(date==DateTime.Today?1:0);button.BorderBrush=UI.Muted;button.IsTabStop=calendar.SelectedDate?.Date==date || d==1 && (calendar.SelectedDate?.Year!=shownMonth.Year || calendar.SelectedDate?.Month!=shownMonth.Month);
-            button.KeyDown+=(_,e)=>{int delta=e.Key switch{Key.Left=>-1,Key.Right=>1,Key.Up=>-7,Key.Down=>7,_=>0};if(delta==0)return;try{var selected=date.AddDays(delta);shownMonth=new(selected.Year,selected.Month,1);calendar.SelectedDate=selected;}catch(ArgumentOutOfRangeException){}e.Handled=true;};
+            button.KeyDown+=(_,e)=>{int delta=e.Key switch{Key.Left=>-1,Key.Right=>1,Key.Up=>-7,Key.Down=>7,_=>0};if(delta==0)return;try{var selected=date.AddDays(delta);shownMonth=new(selected.Year,selected.Month,1);if(calendar.SelectedDate?.Date==selected){RenderMiniMonth(true);calendarKey="";RenderEvents();}else calendar.SelectedDate=selected;}catch(ArgumentOutOfRangeException){}e.Handled=true;};
             int cell=offset+d-1;Grid.SetColumn(button,cell%7);Grid.SetRow(button,cell/7+1);days.Children.Add(button);
         }
         miniMonth.Children.Add(days);
