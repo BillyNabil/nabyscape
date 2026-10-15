@@ -153,6 +153,12 @@ The 2.3 captures use local sample content. Windows window chrome can vary.
 
 Choose a **notch** or a **pill**, then adjust color, opacity, material, size, placement, typography, content scale, and widget order. Settings includes descriptions and a live preview. Category and Launch controls can use icons, labels, or both.
 
+Settings uses a custom title bar with window controls, seven categories and a **Jump to a section** menu. Setting illustrations sit beside the controls; pointing to a setting or focusing it updates the adjacent preview. On smaller windows the preview moves above the form.
+
+<img src="Assets/readme/settings-238.png" alt="NabyScape Settings with a custom title bar, section picker, illustrated settings and a live auto-tuck preview" width="900">
+
+Status keeps CPU, RAM, GPU usage and uptime in Overview. Hardware lists the main components first; sensor availability and adapter IDs sit in an expandable detail area. Scroll with the wheel, touchpad or Page Down; the monitor scrollbar stays hidden.
+
 Pick a monitor, choose which hover pages appear, or enable **Reduce Motion**. Fullscreen/maximized tucking leaves a small edge that you can hover to reveal. The tray menu can always recover a manually hidden island.
 
 ## Get NabyScape
@@ -192,6 +198,8 @@ Choose **Appearance → Closed media icon** for album artwork or a waveform icon
 Waveforms show amplitude history, not a frequency spectrum. They do not record audio or use the microphone. Optional gentle motion during quiet or unavailable readings is decorative. Unsupported app identities may use this fallback. Muted sessions return to a quiet baseline.
 
 Each waveform bar follows a differently delayed level envelope with quick attack and smooth release, giving the original centered waveform more varied motion. Reduce Motion keeps it still.
+
+The visual range adapts to small peak changes in mastered music, so a narrow audio range does not flatten the bars. **Settings → Audio → Live signal** shows whether the selected app has an audible meter, is muted, or is using the optional quiet fallback. No audio or volume is changed by this display.
 
 Mixer rows control individual Windows audio sessions; multiple sessions for one app can appear separately. Output selection changes the Windows default output. Apps with explicit routing preferences may keep their selected device.
 

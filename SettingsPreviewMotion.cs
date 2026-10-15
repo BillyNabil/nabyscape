@@ -26,7 +26,7 @@ public sealed partial class SettingsWindow
             finally{previewReplaying=false;if(!previewClosed){previewMode=previous;RefreshPreview();}}
         });replay.Margin=new(0,12,0,0);replay.FontSize=11;column.Children.Add(replay);
         preview.SizeChanged+=(_,_)=>RefreshPreviewClip();
-        previewTick.Tick+=(_,_)=>{if(!IsVisible || WindowState==WindowState.Minimized)return;previewTick.Interval=TimeSpan.FromMilliseconds(app.Settings.ReduceMotion?1000:33);double seconds=previewClock.Elapsed.TotalSeconds;foreach(var frame in previewFrames.ToArray())frame(seconds);};
+        previewTick.Tick+=(_,_)=>{if(!IsVisible || WindowState==WindowState.Minimized)return;previewTick.Interval=TimeSpan.FromMilliseconds(app.Settings.ReduceMotion?1000:33);double seconds=previewClock.Elapsed.TotalSeconds;foreach(var frame in previewFrames.ToArray())frame(seconds);UpdateAudioSignal(seconds);};
         IsVisibleChanged+=(_,_)=>{if(IsVisible)previewTick.Start();else previewTick.Stop();};
         StateChanged+=(_,_)=>{if(IsVisible && WindowState!=WindowState.Minimized)previewTick.Start();else previewTick.Stop();};
         Loaded+=(_,_)=>previewTick.Start();Closed+=(_,_)=>{previewClosed=true;previewTick.Stop();previewFrames.Clear();};
@@ -58,7 +58,9 @@ public sealed partial class SettingsWindow
     }
     private void ConfigurePreviewForSetting(string name)
     {
-        if(name=="Swipe between open panels"){previewMode="Panel";previewContent="Panel navigation";}
+        previewFocus.Text=name;
+        if(name.Contains("Tuck",StringComparison.OrdinalIgnoreCase) || current=="Application"){previewMode="Panel";previewContent="Visibility";}
+        else if(name=="Swipe between open panels"){previewMode="Panel";previewContent="Panel navigation";}
         else if(name=="Reveal shelf when dragging files"){previewMode="Hover";previewContent="Drop zone";}
         else if(name=="Allow detachable previews"){previewMode="Hover";previewContent="Detached preview";}
         else if(name=="Control playback from album cover"){previewMode="Hover";previewContent="Cover gestures";}
@@ -69,6 +71,27 @@ public sealed partial class SettingsWindow
         else if(name.Contains("motion",StringComparison.OrdinalIgnoreCase) || name.Contains("activity",StringComparison.OrdinalIgnoreCase) || name=="Animation duration"){previewMode="Hover";previewContent="Music";}
         else if(name.Contains("hover",StringComparison.OrdinalIgnoreCase) || name=="Two-stage reveal" || name=="Swipe distance"){previewMode="Hover";}
         else if(name.Contains("Focus duration",StringComparison.OrdinalIgnoreCase) || name.Contains("Break duration",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Focus";}
+        else if(name.Contains("Closed media",StringComparison.OrdinalIgnoreCase) || name.Contains("Closed island",StringComparison.OrdinalIgnoreCase)){previewMode="Closed";previewContent="Music";}
+        else if(name.Contains("color",StringComparison.OrdinalIgnoreCase) || name.Contains("outline",StringComparison.OrdinalIgnoreCase) || name=="Control surfaces"){previewMode="Panel";previewContent="Control colors";}
+        else if(name.Contains("clipboard",StringComparison.OrdinalIgnoreCase) || name.Contains("history",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Smart clipboard";}
+        else if(name.Contains("shortcut",StringComparison.OrdinalIgnoreCase) || name=="Shortcuts"){previewMode="Panel";previewContent="Launch";}
+        else if(name.Contains("Category",StringComparison.OrdinalIgnoreCase) || name=="Text and navigation"){previewMode="Panel";previewContent="Navigation";}
+        else if(name.Contains("Launch",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Launch";}
+        else if(name.Contains("Panel",StringComparison.OrdinalIgnoreCase) || name.Contains("Content",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";}
+        else if(name.Contains("Preview",StringComparison.OrdinalIgnoreCase)){previewMode="Hover";}
+        else if(name.Contains("width",StringComparison.OrdinalIgnoreCase) || name.Contains("height",StringComparison.OrdinalIgnoreCase) || name.Contains("position",StringComparison.OrdinalIgnoreCase) || name.Contains("offset",StringComparison.OrdinalIgnoreCase) || name is "Shape" or "Corner radius" or "Display" or "Island display"){previewMode="Closed";}
         else if(current=="System"){previewMode="Panel";previewContent="System";}
+        else if(current=="Audio"){previewMode="Panel";previewContent="Music";}
+    }
+    private readonly TextBlock previewFocus=UI.Text("Point to a setting to explore it",11,UI.Muted);
+    private ActivityVisual? audioSignalWave;
+    private TextBlock? audioSignalState;
+    private void UpdateAudioSignal(double seconds)
+    {
+        if(current!="Audio" || audioSignalWave==null || audioSignalState==null)return;
+        float peak=app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;
+        bool animate=app.Media.Playing && !app.Audio.MediaMeterMuted && app.Settings.LiveActivity && !app.Settings.ReduceMotion;
+        audioSignalWave.Sample(peak,.033,0,false,false,animate,seconds,true,app.Settings.WaveformIdleMotion);
+        audioSignalState.Text=!app.Settings.LiveActivity?"Live activity is off · enable it in Appearance":app.Settings.ReduceMotion?"Reduce Motion is on · the waveform stays still":!app.Media.Playing?"Playback paused · quiet baseline":app.Audio.MediaMeterMuted?"Selected app or output is muted":app.Audio.MediaMeterSessions==0?"No matching audio meter · optional gentle fallback":$"Live meter · {app.Audio.MediaAudibleSessions} audible session · {peak*100:0}% peak";
     }
 }

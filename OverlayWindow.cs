@@ -64,7 +64,8 @@ public sealed partial class OverlayWindow : Window
         root.RenderTransform=tuckSlide;root.MouseLeftButtonDown+=(_,e)=>{if(environmentHidden && !expanded && e.OriginalSource==surface){Reveal();e.Handled=true;}};root.Children.Add(surface);root.Children.Add(visuals);visuals.Children.Add(compact);visuals.Children.Add(scroll);Content=root;
         surface.ContourChanged+=()=>visuals.Clip=surface.Contour;
         foreach(var number in new[]{clock,compactClock,timerTime,focusTime,cpu,ram})Typography.SetNumeralAlignment(number,FontNumeralAlignment.Tabular);
-        title.FontWeight=FontWeights.SemiBold;timerTime.FontWeight=focusTime.FontWeight=clock.FontWeight=FontWeights.Medium;
+        title.FontWeight=FontWeights.SemiBold;timerTime.FontWeight=focusTime.FontWeight=FontWeights.SemiBold;clock.FontWeight=compactClock.FontWeight=FontWeights.Bold;
+        Typography.SetNumeralAlignment(compactClock,FontNumeralAlignment.Tabular);
         SourceInitialized+=(_,_)=> {hwnd=new WindowInteropHelper(this).Handle;Native.SetWindowLong(hwnd,-20,Native.GetWindowLong(hwnd,-20)|0x80);HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);ApplySettings();};
         SizeChanged+=(_,_)=>Position();
         IsVisibleChanged+=(_,_)=>{if(!IsVisible)InvalidateSystemMonitor();};

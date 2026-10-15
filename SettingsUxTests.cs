@@ -8,6 +8,14 @@ internal static class SettingsUxTests
     internal static void Run(Action<string,Action> test)
     {
         void Assert(bool value){if(!value)throw new Exception("Settings UX invariant failed");}
+        test("Leaving a scrolling media title restores its bounded ellipsis layout",()=>
+        {
+            var text=new System.Windows.Controls.TextBlock{Text=new string('W',180)};var label=new MarqueeLabel(text);
+            label.Measure(new System.Windows.Size(90,24));label.Arrange(new System.Windows.Rect(0,0,90,24));
+            text.Width=2000;text.TextTrimming=System.Windows.TextTrimming.None;
+            label.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseLeaveEvent});
+            Assert(double.IsNaN(text.Width) && text.TextTrimming==System.Windows.TextTrimming.CharacterEllipsis && label.ClipToBounds);
+        });
         test("Selected media meters match Spotify desktop and packaged identities without including Discord",()=>
         {
             Assert(AudioService.MediaProcessMatches("Spotify.exe","Spotify") && AudioService.MediaProcessMatches("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify","Spotify") && !AudioService.MediaProcessMatches("Spotify.exe","Discord") && !AudioService.MediaProcessMatches("Discord.exe","Spotify"));

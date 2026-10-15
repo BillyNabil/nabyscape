@@ -18,11 +18,11 @@ internal sealed class MarqueeLabel : Border
     public MarqueeLabel(TextBlock text)
     {
         this.text=text;Child=text;ClipToBounds=true;text.RenderTransform=move;HorizontalAlignment=HorizontalAlignment.Stretch;
-        MouseEnter+=(_,_)=>Start();MouseLeave+=(_,_)=>Motion.To(move,TranslateTransform.XProperty,0,220);SizeChanged+=(_,_)=>{if(IsMouseOver)Start();};
+        MouseEnter+=(_,_)=>Start();MouseLeave+=(_,_)=>Reset();SizeChanged+=(_,_)=>{Reset();if(IsMouseOver)Start();};Unloaded+=(_,_)=>Reset();
     }
     private void Start()
     {
-        if(!Motion.Enabled)return;
+        if(!Motion.Enabled){Reset();return;}
         var formatted=new FormattedText(text.Text,System.Globalization.CultureInfo.CurrentUICulture,FlowDirection.LeftToRight,new Typeface(text.FontFamily,text.FontStyle,text.FontWeight,text.FontStretch),text.FontSize,text.Foreground,VisualTreeHelper.GetDpi(this).PixelsPerDip);
         double overflow=formatted.WidthIncludingTrailingWhitespace-ActualWidth;if(overflow<2)return;
         text.TextTrimming=TextTrimming.None;text.Width=formatted.WidthIncludingTrailingWhitespace+2;

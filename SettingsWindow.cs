@@ -35,10 +35,10 @@ public sealed partial class SettingsWindow : Window
         var workspace=new Grid();workspace.RowDefinitions.Add(new(){Height=GridLength.Auto});workspace.RowDefinitions.Add(new());workspace.ColumnDefinitions.Add(new());workspace.ColumnDefinitions.Add(new(){Width=new GridLength(300)});main.Children.Add(workspace);
         var scroll=UI.Scroll(page);scroll.Padding=new(0,0,8,0);workspace.Children.Add(scroll);Grid.SetRowSpan(scroll,2);settingsScroll=scroll;
         preview=new Border{HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top};
-        var previewColumn=new StackPanel{Margin=new(20,28,20,20)};var previewTitle=UI.Text("Preview",14);previewTitle.FontWeight=FontWeights.SemiBold;previewColumn.Children.Add(previewTitle);
+        var previewColumn=new StackPanel{Margin=new(20,28,20,20)};var previewTitle=UI.Text("Live preview",14);previewTitle.FontWeight=FontWeights.SemiBold;previewColumn.Children.Add(previewTitle);previewFocus.Margin=new(0,7,0,0);previewColumn.Children.Add(previewFocus);
         var modes=new Grid{Margin=new(0,14,0,12)};for(int i=0;i<3;i++)modes.ColumnDefinitions.Add(new());int column=0;foreach(string mode in new[]{"Closed","Hover","Panel"}){var button=UI.Button(mode,()=>{previewMode=mode;RefreshPreview();});button.FontSize=10;button.Padding=new(3,7,3,7);button.Margin=new(0,0,4,0);button.Tag=new CornerRadius(7);UI.Named(button,"Preview "+mode);Grid.SetColumn(button,column++);modes.Children.Add(button);previewModeButtons[mode]=button;}previewColumn.Children.Add(modes);
         previewStage=new Border{Height=238,Background=UI.Brush("#202226"),CornerRadius=new(10),ClipToBounds=true,Child=new System.Windows.Controls.Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=preview,VerticalAlignment=VerticalAlignment.Top}};previewColumn.Children.Add(previewStage);
-        previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Text("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard","Control colors","Typography","Panel navigation"})examples.Items.Add(item);examples.SelectedIndex=0;UI.Named(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=UI.Text("Changes apply automatically. The preview uses your current shape, size and colors.",11,UI.Muted);hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
+        previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Text("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard","Control colors","Typography","Panel navigation","Visibility"})examples.Items.Add(item);examples.SelectedIndex=0;UI.Named(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=UI.Text("Changes apply automatically. The preview uses your current shape, size and colors.",11,UI.Muted);hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
         var rail=new Border{BorderBrush=UI.Brush("#24262B"),BorderThickness=new(1,0,0,0),Child=UI.Scroll(previewColumn)};Grid.SetColumn(rail,1);Grid.SetRowSpan(rail,2);workspace.Children.Add(rail);
         void Responsive()
         {
@@ -62,7 +62,7 @@ public sealed partial class SettingsWindow : Window
         UI.Named(scroll,"Settings form viewport");UI.Named(rail,"Settings preview rail");UI.Named(navBorder,"Settings navigation");
         SizeChanged+=(_,_)=>Responsive();workspace.SizeChanged+=(_,_)=>Responsive();Loaded+=(_,_)=>Responsive();
         page.MaxWidth=660;page.HorizontalAlignment=HorizontalAlignment.Stretch;
-        var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};Grid.SetRow(footer,1);main.Children.Add(footer);Content=root;InitializePreviewMotion(previewColumn);
+        var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);
         saveTimer.Tick+=(_,_)=>{saveTimer.Stop();try{app.ChangeSettings();status.Text="Saved on this device";}catch(Exception ex){status.Text="Could not save changes. Try again.";app.Store.Log(ex);}};
         app.SettingsChanged+=RefreshPreview;app.Updated+=UpdateFrameStatus;
         Closed+=(_,_)=>{if(saveTimer.IsEnabled){saveTimer.Stop();app.ChangeSettings();}app.SettingsChanged-=RefreshPreview;app.Updated-=UpdateFrameStatus;};Navigate("Appearance");RefreshPreview();
@@ -71,14 +71,14 @@ public sealed partial class SettingsWindow : Window
     private void RefreshPreview()=>RenderSettingsPreview();
     private void Navigate(string name)
     {
-        current=name;if(name=="Widgets")previewMode="Panel";if(name=="Controls")previewMode="Hover";if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}settingsScroll.ScrollToTop();page.Children.Clear();var heading=UI.Text(name,24);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,26);page.Children.Add(heading);
+        current=name;previewFocus.Text=name+" overview";if(name=="Widgets"){previewContent="Navigation";previewMode="Panel";}if(name=="Controls"){previewContent="Music";previewMode="Hover";}if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}if(name=="Application"){previewContent="Visibility";previewMode="Panel";}settingsScroll.ScrollToTop();page.Children.Clear();var heading=UI.Text(name,24);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,26);page.Children.Add(heading);
         foreach(var entry in navigationButtons){entry.Value.Background=entry.Key==name?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==name?Brushes.White:UI.Muted;}
-        switch(name){case "Appearance":Appearance();break;case "Layout":LayoutSettings();break;case "Widgets":Widgets();break;case "Controls":Interactions();break;case "Audio":AudioSettings();break;case "System":SystemSettings();break;default:General();break;}Motion.Enter(page,4);RefreshPreview();
+        switch(name){case "Appearance":Appearance();break;case "Layout":LayoutSettings();break;case "Widgets":Widgets();break;case "Controls":Interactions();break;case "Audio":AudioSettings();break;case "System":SystemSettings();break;default:General();break;}OrganizeSettings();Motion.Enter(page,4);RefreshPreview();
     }
-    private static Border Section(string title,params UIElement[] children)
+    private Border Section(string title,params UIElement[] children)
     {
         var content=new StackPanel();var label=UI.Text(title,13);label.FontWeight=FontWeights.SemiBold;label.Margin=new(0,0,0,12);content.Children.Add(label);foreach(var child in children){if(child is Button action){action.HorizontalAlignment=HorizontalAlignment.Left;action.Margin=new(0,8,0,0);}if(child is FrameworkElement element && element.Parent is Panel old)old.Children.Remove(child);else if(child is FrameworkElement owned && owned.Parent is Expander expander)expander.Content=null;content.Children.Add(child);}
-        return new Border{BorderBrush=UI.Brush("#292B30"),BorderThickness=new(0,0,0,1),Padding=new(0,0,0,22),Margin=new(0,0,0,22),Child=content};
+        return new Border{Tag=title,BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,0,0,1),Padding=new(0,0,0,22),Margin=new(0,0,0,24),Child=content};
     }
     private static Expander Advanced(string title,UIElement content)
     {
@@ -87,8 +87,10 @@ public sealed partial class SettingsWindow : Window
     }
     private void AddSlider(StackPanel target,string label,double value,double min,double max,Action<double> change,string unit="",double step=1)
     {
-        var row=new Grid{Margin=new(0,2,0,0)};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(72)});row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});var text=UI.Text(label,12);row.Children.Add(text);var number=UI.Input(label+" value",value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture));number.Padding=new(6,4,6,4);number.Margin=new(0);number.HorizontalContentAlignment=HorizontalAlignment.Right;number.ToolTip=$"{min:0.##} to {max:0.##} {unit}";Grid.SetColumn(number,1);row.Children.Add(number);var suffix=UI.Text(unit.Trim(),10,UI.Muted);suffix.Margin=new(7,0,0,0);Grid.SetColumn(suffix,2);row.Children.Add(suffix);target.Children.Add(row);
+        var row=new Grid{Margin=new(0,2,0,0)};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(72)});row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});var example=new SettingIllustration(label){Value=(value-min)/(max-min),Margin=new(0,0,12,0)};row.Children.Add(SettingCaption(label,example));var number=UI.Input(label+" value",value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture));number.Padding=new(6,4,6,4);number.Margin=new(0);number.HorizontalContentAlignment=HorizontalAlignment.Right;number.ToolTip=$"{min:0.##} to {max:0.##} {unit}";Grid.SetColumn(number,1);row.Children.Add(number);var suffix=UI.Text(unit.Trim(),10,UI.Muted);suffix.Margin=new(7,0,0,0);Grid.SetColumn(suffix,2);row.Children.Add(suffix);target.Children.Add(row);
         var slider=new Slider{Minimum=min,Maximum=max,Value=value,TickFrequency=step,IsSnapToTickEnabled=true,Margin=new(0,6,0,14)};UI.Named(slider,label);slider.ValueChanged+=(_,_)=>{if(!number.IsKeyboardFocusWithin)number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);change(slider.Value);ConfigurePreviewForSetting(label);if(label is "Panel width" or "Maximum panel height" or "Content inset" or "Content size" or "Section spacing")previewMode="Panel";else if(label.StartsWith("Preview"))previewMode="Hover";else if(label.StartsWith("Closed") || label=="Corner radius")previewMode="Closed";Save();};
+        slider.ValueChanged+=(_,_)=>{example.Value=(slider.Value-min)/(max-min);example.InvalidateVisual();};
+        WireSettingPreview(slider,label);WireSettingPreview(number,label);
         void Commit(){if(double.TryParse(number.Text,System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.InvariantCulture,out double n) && double.IsFinite(n)){slider.Value=Math.Clamp(Math.Round(n/step)*step,min,max);number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);}else{number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);status.Text=$"Enter a number from {min:0.##} to {max:0.##} {unit}.";}}
         number.LostKeyboardFocus+=(_,_)=>Commit();number.KeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Enter){Commit();e.Handled=true;}};target.Children.Add(slider);string help=SettingDescription(label);if(help.Length>0){var hint=UI.Text(help,11,UI.Muted);hint.Margin=new(0,-6,0,16);target.Children.Add(hint);}
     }
@@ -96,8 +98,9 @@ public sealed partial class SettingsWindow : Window
     {
         var label=new StackPanel{Margin=new(0,7,0,7)};label.Children.Add(UI.Text(name,12));
         string help=SettingDescription(name);if(help.Length>0){var description=UI.Text(help,11,UI.Muted);description.Margin=new(0,4,0,0);label.Children.Add(description);}
-        var check=new CheckBox{Content=label,IsChecked=value};UI.Named(check,name);check.ToolTip=help.Length>0?help:null;
-        check.Click+=(_,_)=> {change(check.IsChecked==true);ConfigurePreviewForSetting(name);Save();};return check;
+        var example=new SettingIllustration(name){Value=value?1:0,Margin=new(0,0,12,0)};
+        var check=new CheckBox{Content=SettingCaption(label,example),IsChecked=value};UI.Named(check,name);check.ToolTip=help.Length>0?help:null;
+        WireSettingPreview(check,name);check.Click+=(_,_)=> {change(check.IsChecked==true);example.Value=check.IsChecked==true?1:0;example.InvalidateVisual();ConfigurePreviewForSetting(name);Save();};return check;
     }
     private void Appearance()
     {
@@ -191,6 +194,8 @@ public sealed partial class SettingsWindow : Window
     {
         var s=app.Settings;
         var startup=new CheckBox{Content="Start automatically when signing in to Windows",IsChecked=s.AutoStart};
+        UI.Named(startup,"Start automatically when signing in to Windows");var startupImage=new SettingIllustration("Startup visibility"){Value=s.AutoStart?1:0,Margin=new(0,0,12,0)};startup.Content=SettingCaption("Start automatically when signing in to Windows",startupImage);
+        startup.Click+=(_,_)=>{startupImage.Value=startup.IsChecked==true?1:0;startupImage.InvalidateVisual();};
         startup.Click+=(_,_)=>
         {
             try {StartupService.Set(startup.IsChecked==true);s.AutoStart=startup.IsChecked==true;Save();}

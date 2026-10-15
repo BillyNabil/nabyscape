@@ -47,8 +47,29 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--awake-only"))
+            {
+                overlay.Reveal(false);overlay.ShowTools("awake",false);await Task.Delay(200);var awakeWatch=Stopwatch.StartNew();
+                try
+                {
+                    app.Awake.Start(TimeSpan.FromSeconds(2),false,DateTimeOffset.UtcNow);
+                    Check("Keep awake starts with a stop action",app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Stop keep awake"));
+                    Check("Keep awake expires and restores Start",await WaitUntil(()=>!app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Start keep awake"),6000));
+                    report.Add($"INFO  Keep awake checked after {awakeWatch.Elapsed.TotalSeconds:0.00}s; active: {app.Awake.Active}; until: {app.Awake.Until:O}; commands: {overlay.CommandsOpen}");
+                }
+                finally{app.Awake.Stop();}return;
+            }
+            if(Environment.GetCommandLineArgs().Contains("--premium-only")){await Task.Delay(500);await PremiumDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--audio-only"))
+            {
+                await Task.Delay(1500);var samples=new List<float>();var outputs=new List<float>();
+                for(int i=0;i<120;i++){samples.Add(app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId));outputs.Add(app.Audio.Peak());await Task.Delay(33);}
+                report.Add($"INFO  Media source: {app.Media.Selected?.SourceAppUserModelId}; playing: {app.Media.Playing}; sessions: {app.Audio.MediaMeterSessions}; audible: {app.Audio.MediaAudibleSessions}; muted: {app.Audio.MediaMeterMuted}");
+                report.Add($"INFO  Selected app peaks: {samples.Min():0.00000}..{samples.Max():0.00000}; distinct: {samples.Distinct().Count()}; all outputs: {outputs.Min():0.00000}..{outputs.Max():0.00000}");
+                Check("Read-only meter samples are finite and bounded",samples.All(v=>float.IsFinite(v) && v>=0 && v<=1));return;
+            }
             if(Environment.GetCommandLineArgs().Contains("--interactions-only"))
-            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);return;}
+            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);await PremiumDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--review-regressions"))
             {await Task.Delay(500);await InteractionDiagnostics.RunReviewRegressions(app,overlay,directory,Check);return;}
             await Task.Delay(2500);
@@ -260,7 +281,7 @@ internal static class Diagnostics
             }
             Check("Calendar boundary fixtures are deleted and Today restores current month",app.Calendar.Events.Count==0 && ActionButton("Previous calendar month").IsEnabled && ActionButton("Next calendar month").IsEnabled);
             overlay.ShowTools("awake",false);await Task.Delay(300);Check("Keep awake is off until explicitly started",!app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Start keep awake"));CaptureContour("tools-awake");
-            try{app.Awake.Start(TimeSpan.FromSeconds(2),false,DateTimeOffset.UtcNow);Check("Native keep-awake request succeeds and provides a stop action",app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Stop keep awake"));await Task.Delay(3100);Check("Keep-awake expiry releases the request and restores Start",!app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Start keep awake"));}finally{app.Awake.Stop();}
+            try{app.Awake.Start(TimeSpan.FromSeconds(2),false,DateTimeOffset.UtcNow);Check("Native keep-awake request succeeds and provides a stop action",app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Stop keep awake"));Check("Keep-awake expiry releases the request and restores Start",await WaitUntil(()=>!app.Awake.Active && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Start keep awake"),6000));}finally{app.Awake.Stop();}
             overlay.Collapse();await Task.Delay(800);app.Settings.SmartActivities=true;var beforeAutomatic=Native.GetForegroundWindow();overlay.TestAutomaticActivity();await Task.Delay(800);
             Check("Automatic activity preview does not take focus",overlay.IsPeeking && !overlay.IsExpanded && (Native.GetForegroundWindow()!=new WindowInteropHelper(overlay).Handle || beforeAutomatic==new WindowInteropHelper(overlay).Handle));overlay.Reveal(false);overlay.TestAutomaticActivity();Check("Automatic activities do not replace an open panel",overlay.IsExpanded);overlay.Collapse();app.Settings.SmartActivities=false;
             app.Settings.Performance="Hemat";app.ChangeSettings();overlay.Reveal(false);await Task.Delay(300);Check("Economy profile caps interactive animation at 60",Motion.FrameLimit<=60);overlay.Collapse();app.Settings.Performance="Auto";app.ChangeSettings();
@@ -340,8 +361,9 @@ internal static class Diagnostics
             var workArea=Native.ChooseScreen(app.Settings).WorkingArea;double workScale=Native.Scale(Native.ChooseScreen(app.Settings));
             Check("Settings window fits its work area",settings.ActualWidth<=workArea.Width/workScale && settings.ActualHeight<=workArea.Height/workScale);
             settings.Width=640;settings.Height=640;await Task.Delay(180);settings.UpdateLayout();Capture(settings,"settings-narrow");
-            var previewAtNarrow=Descendants(settings).OfType<TextBlock>().First(t=>t.Text=="Preview");
-            Check("Narrow Settings stacks preview above its controls",previewAtNarrow.TranslatePoint(new Point(),settings).Y<100 && Descendants(settings).OfType<ScrollViewer>().Any(v=>v.IsVisible && v.ActualWidth>300));
+            var previewAtNarrow=Descendants(settings).OfType<TextBlock>().First(t=>t.Text=="Live preview");
+            var narrowForm=Descendants(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
+            Check("Narrow Settings stacks preview above its controls",previewAtNarrow.TranslatePoint(new Point(),settings).Y<narrowForm.TranslatePoint(new Point(),settings).Y && narrowForm.ActualWidth>300);
             settings.Width=480;settings.Height=380;await Task.Delay(220);settings.UpdateLayout();Capture(settings,"settings-short");
             var formViewport=Descendants(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
             Check("Short Settings preserves a usable form viewport",formViewport.ActualHeight>=119 && formViewport.ActualWidth>=300);
@@ -490,7 +512,7 @@ internal static class Diagnostics
             if(app.Media.Sessions.Count==0)report.Add("MANUAL  Playback commands and session switching: no active media session during diagnostics.");
             else report.Add("INFO  Windows media sessions detected: "+app.Media.Sessions.Count+"; playback not altered.");
             report.Add("INFO  Audio endpoint: "+app.Audio.Device+"; volume="+Math.Round(app.Audio.Volume*100)+"%, mute="+app.Audio.Muted);
-            await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);
+            await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);await PremiumDiagnostics.Run(app,overlay,directory,Check);
             report.Add("INFO  Monitors attached: "+System.Windows.Forms.Screen.AllScreens.Length);
             report.Add("MANUAL  Physical monitor disconnect, alternate DPI, battery charging, and audio device hot-plug require hardware checks.");
             overlay.Collapse();

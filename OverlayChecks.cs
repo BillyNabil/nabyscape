@@ -23,8 +23,11 @@ public sealed partial class OverlayWindow
     internal string HoverOverflow()
     {
         if(!DiagnosticRun || !peeking)return "Preview is not open";UpdateLayout();
-        foreach(var control in Diagnostics.Descendants(peekPanel).OfType<FrameworkElement>().Where(e=>e.IsVisible && e.ActualWidth>0 && e.ActualHeight>0 && e is Button or TextBox or TextBlock or Slider))
+        foreach(var control in Diagnostics.Descendants(peekPanel).OfType<FrameworkElement>().Where(e=>e.IsVisible && e.ActualWidth>0 && e.ActualHeight>0 && e is Button or TextBox or TextBlock or Slider or MarqueeLabel))
         {
+            // Scrolling glyphs deliberately exceed their clipped label. Validate that viewport
+            // itself (included above), rather than reporting invisible offscreen glyphs as controls.
+            if(control is TextBlock {Parent:MarqueeLabel {ClipToBounds:true},TextTrimming:TextTrimming.None} text && double.IsFinite(text.Width))continue;
             // Pages remain attached during slide-out; inspect the selected page and footer only.
             if(peekViews.Any(pair=>pair.Key!=peekId && (pair.Value==control || pair.Value.IsAncestorOf(control))))continue;
             if(peekViews.TryGetValue(peekId,out var selected) && selected.IsAncestorOf(control))

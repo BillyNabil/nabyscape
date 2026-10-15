@@ -11,6 +11,9 @@ public sealed partial class AudioService
     private string mediaPeakSource="";
     internal bool MediaMeterMuted { get; private set; }
     private int meterSessions,meterAudible;
+    internal int MediaMeterSessions=>meterSessions;
+    internal int MediaAudibleSessions=>meterAudible;
+    internal float CurrentMediaPeak {get;private set;}
     private sealed record MediaEndpoint(MMDevice Device,List<AudioSessionControl> Sessions) : IDisposable
     {
         public void Dispose(){try{foreach(var session in Sessions)try{session.Dispose();}catch{}}finally{Device.Dispose();}}
@@ -33,7 +36,7 @@ public sealed partial class AudioService
     }
     internal float MediaPeak(string? source)
     {
-        if(disposed || string.IsNullOrWhiteSpace(source))return 0;
+        if(disposed || string.IsNullOrWhiteSpace(source)){MediaMeterMuted=false;meterSessions=meterAudible=0;return CurrentMediaPeak=0;}
         if(mediaPeaks==null || mediaPeakSource!=source)
         {
             mediaPeaks?.Dispose();mediaPeakSource=source;
@@ -42,7 +45,7 @@ public sealed partial class AudioService
         meterSessions=meterAudible=0;
         float peak=mediaPeaks.Read(DateTimeOffset.UtcNow);
         MediaMeterMuted=meterSessions>0 && meterAudible==0;
-        return peak;
+        return CurrentMediaPeak=peak;
     }
     private IEnumerable<MediaEndpoint> DiscoverMediaSessions(string source)
     {

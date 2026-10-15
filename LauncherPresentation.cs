@@ -33,16 +33,17 @@ public sealed partial class OverlayWindow
     }
     private void StyleCategory(Button button,string page,bool selected=false)
     {
-        bool iconsOnly=app.Settings.CategoryStyle=="Icons";
+        bool iconsOnly=app.Settings.CategoryStyle=="Icons" || app.Settings.CategoryStyle=="IconsLabels" && bodyWidth<300;
         button.MinWidth=iconsOnly?32:0;button.MinHeight=iconsOnly?32:30;button.Padding=iconsOnly?new Thickness(8):new Thickness(5,5,5,5);button.Tag=new CornerRadius(iconsOnly?10:15);
-        bool combined=LauncherPresentation.ShowIcon(app.Settings.CategoryStyle) && LauncherPresentation.ShowLabel(app.Settings.CategoryStyle);
+        bool combined=!iconsOnly && LauncherPresentation.ShowIcon(app.Settings.CategoryStyle) && LauncherPresentation.ShowLabel(app.Settings.CategoryStyle);
         var row=new StackPanel{Orientation=combined?Orientation.Vertical:Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center};
         if(LauncherPresentation.ShowIcon(app.Settings.CategoryStyle)){var icon=Icons.Create(LauncherPresentation.CategoryIcon(page),iconsOnly?16:15,selected?UI.ContrastText(app.Settings.SelectionFill):UI.Muted);icon.Margin=combined?new Thickness(0,0,0,3):new Thickness(0);row.Children.Add(icon);}
-        if(LauncherPresentation.ShowLabel(app.Settings.CategoryStyle)){var label=UI.Text(PageName(page),10.5,selected?UI.ContrastText(app.Settings.SelectionFill):UI.Muted);label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;row.Children.Add(label);}
+        if(!iconsOnly && LauncherPresentation.ShowLabel(app.Settings.CategoryStyle)){var label=UI.Text(PageName(page),10.5,selected?UI.ContrastText(app.Settings.SelectionFill):UI.Muted);label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;row.Children.Add(label);}
         button.Content=row;button.ToolTip=PageName(page);UI.Named(button,PageName(page));System.Windows.Automation.AutomationProperties.SetItemStatus(button,selected?"Selected":"");
     }
     private void ApplyTitleTypography(bool mediaSummary)
     {
+        if(!Motion.Enabled)foreach(var label in marqueeLabels.Values)label.Reset();
         ApplyMediaTypography(title,app.Settings.BoldMediaTitle);
         ApplyMediaTypography(peekTitle,app.Settings.BoldMediaTitle);
         ApplyMediaTypography(artist,false);

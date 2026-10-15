@@ -24,5 +24,14 @@ internal static class WaveformMotionTests
         bool smooth=release.WaveLevel(0)>0 && release.WaveLevel(0)<before;
         for(int i=0;i<240;i++)release.Sample(0,1/60d,0,false,false,true,3+i/60d,i%2==0);
         test("Waveform releases smoothly and settles after audio stops",smooth && Enumerable.Range(0,25).All(i=>release.WaveLevel(i)<.001));
+        var mastered=new ActivityVisual();double low=1,high=0;
+        for(int i=0;i<600;i++)
+        {mastered.Sample(.455+.028*Math.Sin(i*.19),1/60d,0,false,false,true,i/60d,i%2==0);if(i>300){low=Math.Min(low,mastered.Envelope);high=Math.Max(high,mastered.Envelope);}}
+        test("Narrow mastered-music peaks retain visible measured dynamics",high-low>.16);
+        mastered.Sample(double.NaN,.016,0,false,false,true,11);
+        test("Invalid audio samples never produce invalid bar geometry",double.IsFinite(mastered.Envelope) && Enumerable.Range(0,25).All(i=>double.IsFinite(mastered.WaveLevel(i))));
+        var quietReal=new ActivityVisual();var quietFallback=new ActivityVisual();
+        for(int i=0;i<360;i++){quietReal.Sample(.02,1/60d,0,false,false,true,i/60d,true,false);quietFallback.Sample(.02,1/60d,0,false,false,true,i/60d,true,true);}
+        test("Quiet audible levels remain measured even with decorative fallback enabled",Math.Abs(quietReal.Envelope-quietFallback.Envelope)<.0001);
     }
 }

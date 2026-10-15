@@ -12,7 +12,7 @@ internal sealed class ActivityVisual : FrameworkElement
     private readonly double[] history=new double[25];
     private readonly double[] levels=new double[25];
     internal double WaveLevel(int index)=>levels[index];
-    private double envelope,progress,pulse=1;
+    private double envelope,progress,pulse=1,levelFloor,levelCeiling=.15;
     private bool countdown,focus;
     private static readonly Brush focusColor=UI.Brush("#30D158"),timerColor=UI.Brush("#FF9F0A");
     private static readonly Pen trackPen=new(UI.Brush("#353537"),1.8),focusPen=new(focusColor,1.8){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},timerPen=new(timerColor,1.8){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round};
@@ -22,9 +22,20 @@ internal sealed class ActivityVisual : FrameworkElement
     internal ActivityVisual(){Width=18;Height=18;VerticalAlignment=VerticalAlignment.Center;IsHitTestVisible=false;}
     internal void Sample(double peak,double dt,double fraction,bool session,bool focused,bool animate,double seconds,bool advanceHistory=true,bool decorative=false)
     {
-        double target=animate?Math.Sqrt(Math.Clamp(peak,0,1)):0;
-        if(animate && decorative && target<.12)target=Math.Max(target,.055+.035*Math.Sin(seconds*3.1)+.02*Math.Sin(seconds*5.7));
-        double before=envelope;envelope=animate?target+(envelope-target)*Math.Exp(-dt/(target>envelope?.035:.18)):0;
+        peak=double.IsFinite(peak)?Math.Clamp(peak,0,1):0;dt=Math.Clamp(dt,.001,.5);
+        double target=0;
+        if(animate && peak>.002)
+        {
+            // Music is often mastered into a narrow peak range. Expand its measured dynamics
+            // locally instead of adding decorative oscillation to an audible signal.
+            levelFloor=peak+(levelFloor-peak)*Math.Exp(-dt/(peak<levelFloor?.045:2.4));
+            levelCeiling=peak+(levelCeiling-peak)*Math.Exp(-dt/(peak>levelCeiling?.018:1.2));
+            double dynamics=Math.Clamp((peak-levelFloor)/Math.Max(.04,levelCeiling-levelFloor),0,1);
+            target=.22*Math.Sqrt(peak)+.78*dynamics;
+        }
+        if(!animate){levelFloor=0;levelCeiling=.15;}
+        if(animate && decorative && peak<.002)target=Math.Max(target,.055+.035*Math.Sin(seconds*3.1)+.02*Math.Sin(seconds*5.7));
+        double before=envelope;envelope=animate?target+(envelope-target)*Math.Exp(-dt/(target>envelope?.018:.09)):0;
         if(!animate)Array.Clear(history);
         if(envelope<.001)envelope=0;
         bool changed=Math.Abs(before-envelope)>.0003 || Math.Abs(progress-fraction)>.00001 || session!=countdown || focused!=focus;

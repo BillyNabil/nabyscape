@@ -132,6 +132,7 @@ public sealed partial class OverlayWindow
         if(!app.Settings.CompactLayout || commandOpen || !compactPages.ContainsKey(page))return;
         if(animate && activePage==page && compactPages[page].Visibility==Visibility.Visible)return;
         InvalidateSystemMonitor();activePage=page;
+        scroll.VerticalScrollBarVisibility=page=="status"?ScrollBarVisibility.Hidden:ScrollBarVisibility.Auto;
         foreach(var entry in compactPages){entry.Value.Visibility=entry.Key==page?Visibility.Visible:Visibility.Collapsed;}
         UpdateSystemMonitor();
         foreach(var entry in compactTabs){entry.Value.Background=entry.Key==(page=="mixer"?"media":page)?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==(page=="mixer"?"media":page)?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;StyleCategory(entry.Value,entry.Key,entry.Key==(page=="mixer"?"media":page));}
@@ -166,26 +167,26 @@ public sealed partial class OverlayWindow
         }
         if(page=="focus")
         {
-            var row=new Grid();int count=app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus");for(int i=0;i<count;i++)row.ColumnDefinitions.Add(new());int column=0;
+            var row=new Grid();bool stacked=bodyWidth<310;int count=app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
             foreach(var widget in app.Settings.Widgets.Where(w=>w.Enabled && PageFor(w.Id)=="focus"))
             {
-                bool timer=widget.Id=="timer";var contents=new StackPanel();contents.Children.Add(UI.Heading(timer?"Timer":"Focus",11,UI.Muted));
-                var number=timer?timerTime:focusTime;number.Margin=new(0,8,0,4);contents.Children.Add(number);
+                bool timer=widget.Id=="timer";var contents=new StackPanel();var heading=UI.Heading(timer?"Timer":"Focus",13);heading.FontWeight=FontWeights.SemiBold;contents.Children.Add(heading);
+                var number=timer?timerTime:focusTime;number.Margin=new(0,10,0,8);contents.Children.Add(number);
                 if(timer)
                 {
-                    var minutes=UI.Input("Timer duration in minutes","5","0.1–1440 minutes");minutes.Width=43;minutes.Height=26;minutes.FontSize=12;minutes.Padding=new(4,0,4,0);minutes.Margin=new(0,0,4,0);var input=UI.Row(minutes,UI.Text("min",10,UI.Muted));input.Height=30;contents.Children.Add(input);
+                    var minutes=UI.Input("Timer duration in minutes","5","0.1–1440 minutes");minutes.Width=58;minutes.Height=30;minutes.FontSize=12;minutes.Padding=new(8,0,8,0);minutes.Margin=new(0,0,7,0);var input=UI.Row(minutes,UI.Text("minutes",11,UI.Muted));input.Height=38;contents.Children.Add(input);
                     var start=Icons.Button("play","Start",()=>{if(!double.TryParse(minutes.Text,out var n) || !double.IsFinite(n) || n<.1 || n>1440){app.Notify("Invalid duration","Enter a duration from 0.1 to 1440 minutes.");return;}app.Session.Timer.Start(n*60,DateTimeOffset.UtcNow);app.SaveSession();},true,26);
                     timerPause=Icons.Button("pause","Pause or resume timer",()=>{if(app.Session.Timer.Running)app.Session.Timer.Pause(DateTimeOffset.UtcNow);else app.Session.Timer.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,26);
-                    var reset=UI.Button("Reset",()=>{app.Session.Timer.Reset();app.SaveSession();});reset.MinHeight=26;reset.FontSize=9;reset.Padding=new(5,4,5,4);contents.Children.Add(UI.Row(start,timerPause,reset));
+                    var reset=UI.Button("Reset",()=>{app.Session.Timer.Reset();app.SaveSession();});contents.Children.Add(CountdownActions(start,timerPause,reset));
                 }
                 else
                 {
-                    focusPhase.Height=28;focusPhase.FontSize=10;focusPhase.Margin=new(0,0,0,4);contents.Children.Add(focusPhase);
+                    focusPhase.Height=38;focusPhase.FontSize=11;focusPhase.Margin=new(0);contents.Children.Add(focusPhase);
                     var start=Icons.Button("play","Start focus",()=>{app.Session.Focus.Start(app.Settings.FocusMinutes*60,DateTimeOffset.UtcNow,"work");app.SaveSession();},true,26);
                     focusPause=Icons.Button("pause","Pause or resume focus",()=>{if(app.Session.Focus.Running)app.Session.Focus.Pause(DateTimeOffset.UtcNow);else app.Session.Focus.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,26);
-                    var reset=UI.Button("Reset",()=>{app.Session.Focus.Reset();app.SaveSession();});reset.MinHeight=26;reset.FontSize=9;reset.Padding=new(5,4,5,4);contents.Children.Add(UI.Row(start,focusPause,reset));
+                    var reset=UI.Button("Reset",()=>{app.Session.Focus.Reset();app.SaveSession();});contents.Children.Add(CountdownActions(start,focusPause,reset));
                 }
-                var module=new Border{Background=UI.Brush("#1C1C1E"),CornerRadius=new(15),Padding=new(12),Margin=new(column==0?0:8,0,0,0),Child=contents};Grid.SetColumn(module,column++);row.Children.Add(module);
+                var module=new Border{BorderBrush=UI.Brush(app.Settings.ControlBorder),BorderThickness=stacked?new Thickness(0,column==0?0:1,0,0):new Thickness(column==0?0:1,0,0,0),Padding=stacked?new Thickness(0,column==0?4:16,0,4):new Thickness(column==0?0:8,4,0,4),Margin=stacked?new Thickness(0,column==0?0:16,0,0):new Thickness(column==0?0:8,0,0,0),Child=contents};if(stacked)Grid.SetRow(module,column++);else Grid.SetColumn(module,column++);row.Children.Add(module);
             }
             return row;
         }
@@ -209,6 +210,13 @@ public sealed partial class OverlayWindow
         }
         launch.Children.Add(UI.Button("Activities",()=>ShowActivities()));
         if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Text("Add shortcuts in Settings.",12,UI.Muted));return launch;
+    }
+    private static FrameworkElement CountdownActions(Button start,Button pause,Button reset)
+    {
+        var row=new Grid{Margin=new(0,10,0,0),MaxWidth=180,HorizontalAlignment=HorizontalAlignment.Stretch};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(32)});row.ColumnDefinitions.Add(new(){Width=new GridLength(40)});
+        start.Content="Start";start.Width=double.NaN;start.Height=32;start.MinHeight=32;start.Padding=new(5,0,5,0);start.FontSize=11;start.FontWeight=FontWeights.SemiBold;start.Tag=new CornerRadius(7);start.Margin=new(0,0,5,0);row.Children.Add(start);
+        pause.Width=pause.Height=pause.MinHeight=32;pause.Padding=new(7);pause.Margin=new(0);pause.Tag=new CornerRadius(7);Grid.SetColumn(pause,1);row.Children.Add(pause);
+        reset.MinHeight=32;reset.Padding=new(2);reset.FontSize=10;reset.Background=Brushes.Transparent;reset.Margin=new(0);Grid.SetColumn(reset,2);row.Children.Add(reset);return row;
     }
     private void UpdateTimeline()
     {
