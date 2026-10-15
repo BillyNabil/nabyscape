@@ -59,7 +59,7 @@ internal static class Installer
             File.Copy(source,executable+".new",true);File.Move(executable+".new",executable,true);
         }
         File.WriteAllText(Path.Combine(target,"Uninstall.ps1"),Uninstaller);
-        foreach(var name in new[]{"LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
+        foreach(var name in new[]{"LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
         {
             using var license=typeof(Installer).Assembly.GetManifestResourceStream("NabyScape."+name);
             if(license!=null){using var reader=new StreamReader(license);File.WriteAllText(Path.Combine(target,name),reader.ReadToEnd());}

@@ -2,7 +2,7 @@
 
 A compact, customizable notch for Windows 11. Control music, adjust app volumes, check your PC, and keep everyday tools close.
 
-**Windows 11 x64 · C# / WPF · .NET 10 · English interface · Local storage**
+**Windows 11 x64 · C# / WPF · .NET 10 · English interface · MIT license**
 
 ![NabyScape media controls](Assets/screenshots/compact-media.png)
 
@@ -118,4 +118,6 @@ See [FEATURE-ROADMAP.md](FEATURE-ROADMAP.md) for implemented capabilities and pr
 
 ## License and notices
 
-The project license is pending selection. Dependency notices: [NAudio](NAudio-LICENSE.txt), [Lucide](LUCIDE-LICENSE.txt), [.NET](DOTNET-LICENSE.txt), and [.NET third-party components](DOTNET-ThirdPartyNotices.txt).
+NabyScape is available under the [MIT License](LICENSE). Copyright (c) 2026 BillyNabil.
+
+Dependency notices: [NAudio](NAudio-LICENSE.txt), [Lucide](LUCIDE-LICENSE.txt), [.NET](DOTNET-LICENSE.txt), and [.NET third-party components](DOTNET-ThirdPartyNotices.txt).

@@ -12,7 +12,7 @@ New-Item -ItemType Directory -Force -Path $outputPath | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 $executable = Join-Path $outputPath 'NabyScape.exe'
 Copy-Item -LiteralPath $executable -Destination (Join-Path $outputPath 'NabyScape-Setup.exe') -Force
-foreach ($notice in @('LUCIDE-LICENSE.txt', 'NAudio-LICENSE.txt', 'DOTNET-LICENSE.txt', 'DOTNET-ThirdPartyNotices.txt')) {
+foreach ($notice in @('LICENSE', 'LUCIDE-LICENSE.txt', 'NAudio-LICENSE.txt', 'DOTNET-LICENSE.txt', 'DOTNET-ThirdPartyNotices.txt')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot $notice) -Destination (Join-Path $outputPath $notice) -Force
 }
 $testProcess = Start-Process -FilePath $executable -ArgumentList @('--self-test', '--report', ('"' + (Join-Path $outputPath 'unit-report.txt') + '"')) -WindowStyle Hidden -PassThru -Wait

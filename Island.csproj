@@ -14,6 +14,8 @@
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
     <Company>NabyScape</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/BillyNabil/nabyscape</RepositoryUrl>
     <!-- WPF owns DPI awareness; WinForms is used only for Screen and NotifyIcon. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
     <StartupObject>NabyScape.App</StartupObject>
@@ -22,6 +24,7 @@
     <PackageReference Include="System.Management" Version="10.0.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <Resource Include="Assets\island.ico" />
+    <EmbeddedResource Include="LICENSE" />
     <EmbeddedResource Include="NAudio-LICENSE.txt" />
     <EmbeddedResource Include="LUCIDE-LICENSE.txt" />
     <EmbeddedResource Include="DOTNET-LICENSE.txt" />
