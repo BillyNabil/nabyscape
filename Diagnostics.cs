@@ -47,6 +47,7 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--performance-benchmark")){await PerformanceDiagnostics.Run(app,overlay,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--tools240-only")){await Task.Delay(500);await Tools240Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--focus-only"))
             {

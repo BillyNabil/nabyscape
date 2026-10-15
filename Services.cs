@@ -35,7 +35,9 @@ public sealed class MediaService : IDisposable
     public string Artist { get; private set; }="Play something in your favorite app";
     public ImageSource? Artwork { get; private set; }
     public bool Playing { get; private set; }
-    public bool Available=>selected!=null;
+    internal bool DiagnosticFixture {get;set;}
+    internal void DiagnosticPlayback(bool playing){if(!DiagnosticFixture)throw new InvalidOperationException();Playing=playing;Title="Performance fixture";Artist="Deterministic local signal";CanToggle=CanSeek=true;Changed?.Invoke();}
+    public bool Available=>DiagnosticFixture || selected!=null;
     public bool CanToggle { get; private set; }
     public bool CanNext { get; private set; }
     public bool CanPrevious { get; private set; }
@@ -126,6 +128,7 @@ public sealed class MediaService : IDisposable
     }
     public (double elapsed,double duration) Timeline()
     {
+        if(DiagnosticFixture)return(Playing?Environment.TickCount64/1000d%240:40,240);
         try
         {
             if(selected==null)return(0,0);var timeline=selected.GetTimelineProperties();

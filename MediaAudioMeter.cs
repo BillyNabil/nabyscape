@@ -34,8 +34,12 @@ public sealed partial class AudioService
         source=source.ToLowerInvariant();process=process.ToLowerInvariant();
         return process.Length>2 && (source==process || source==process+".exe" || source.StartsWith(process+".") || source.StartsWith(process+"_") || source.Contains("."+process+"_") || source.EndsWith("!"+process));
     }
+    internal Func<float>? DiagnosticPeak;
+    internal long DiagnosticMeterReads {get;private set;}
     internal float MediaPeak(string? source)
     {
+        DiagnosticMeterReads++;
+        if(DiagnosticPeak!=null){meterSessions=meterAudible=1;MediaMeterMuted=false;return CurrentMediaPeak=DiagnosticPeak();}
         if(disposed || string.IsNullOrWhiteSpace(source)){MediaMeterMuted=false;meterSessions=meterAudible=0;return CurrentMediaPeak=0;}
         if(mediaPeaks==null || mediaPeakSource!=source)
         {

@@ -82,7 +82,7 @@ public sealed class App : Application
         overlay=new OverlayWindow(this);MainWindow=overlay;overlay.Show();Previews=new(this,overlay.OpenFeaturePage);
         Media.Changed+=()=>Updated?.Invoke();
         Audio.Changed+=()=>Updated?.Invoke();
-        _=Media.Initialize();
+        if(Array.Exists(e.Args,a=>a=="--performance-benchmark"))Media.DiagnosticFixture=true;else _=Media.Initialize();
         Audio.Read();Usage=Native.SystemUsage();
         int counter=0;
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};
