@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Windows.Shell;
 using Forms=System.Windows.Forms;
 
 namespace NabyScape;
@@ -52,7 +54,9 @@ public sealed class DetachedPreviewManager : IDisposable
         return kind is "media" or "timer" or "focus" or "calendar" or "notes" or "files" or "system"
             && (app.Settings.Widgets.Any(w=>w.Id==widget && w.Enabled) || kind=="media" && app.Settings.Widgets.Any(w=>w.Id=="volume" && w.Enabled));
     }
-    public void Open(string kind)
+    public void Open(string kind)=>OpenCore(kind,null,false);
+    public void OpenAt(string kind,Point screenPixels,bool drag)=>OpenCore(kind,screenPixels,drag);
+    private void OpenCore(string kind,Point? screenPixels,bool drag)
     {
         kind=NormalizeKind(kind);if(!CanOpen(kind))return;
         if(!windows.TryGetValue(kind,out var window))
@@ -61,13 +65,15 @@ public sealed class DetachedPreviewManager : IDisposable
             window.Closed+=(_,_)=>{windows.Remove(kind);state.Close(kind);};
         }
         if(state.Hidden)return;
-        window.Show();window.ClampToMonitor();if(window.WindowState==WindowState.Minimized)window.WindowState=WindowState.Normal;window.Activate();
+        if(window.WindowState==WindowState.Minimized)window.WindowState=WindowState.Normal;
+        window.Show();if(screenPixels is Point anchor)window.PlaceAt(anchor);else window.EnsureInitialPlacement();window.ClampToMonitor();window.Activate();
+        if(drag)window.BeginPointerDrag();
     }
     public bool AnyVisible(string kind)=>state.Visible(NormalizeKind(kind)) && windows.TryGetValue(NormalizeKind(kind),out var window) && window.IsVisible && window.WindowState!=WindowState.Minimized;
     public void SetHidden(bool hidden)
     {
         if(disposed || hidden==state.Hidden)return;state.SetHidden(hidden);
-        foreach(var window in windows.Values.ToArray())if(hidden)window.Hide();else {window.Show();window.ClampToMonitor();}
+        foreach(var window in windows.Values.ToArray())if(hidden)window.Hide();else {window.Show();window.EnsureInitialPlacement();window.ClampToMonitor();}
     }
     public void ApplySettings()
     {
@@ -83,24 +89,75 @@ internal sealed class DetachedPreviewWindow : Window
     private readonly Border surface;
     private readonly DispatcherTimer saveGeometry=new(){Interval=TimeSpan.FromMilliseconds(400)};
     private HwndSource? source;
-    private bool clamping;
+    private bool clamping,restored,placed;
     internal DetachedPreviewWindow(App app,string kind,Action openMain)
     {
         this.app=app;this.kind=kind;
         Title="NabyScape · "+NameFor(kind);Width=350;Height=330;MinWidth=280;MinHeight=220;
-        WindowStyle=WindowStyle.SingleBorderWindow;ResizeMode=ResizeMode.CanResize;ShowInTaskbar=true;Topmost=false;Background=Brushes.Black;Foreground=Brushes.White;
+        WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.CanResize;ShowInTaskbar=true;Topmost=false;Background=UI.Brush("#101114");Foreground=Brushes.White;
+        FontFamily=new FontFamily("Segoe UI Variable Text, Segoe UI");UseLayoutRounding=true;
+        WindowChrome.SetWindowChrome(this,new WindowChrome{CaptionHeight=0,ResizeBorderThickness=new(6),CornerRadius=new(16),GlassFrameThickness=new(0),UseAeroCaptionButtons=false});
         UI.Named(this,Title);var layout=new DockPanel();
-        var header=new DockPanel{Margin=new(12,6,10,8),LastChildFill=true};DockPanel.SetDock(header,Dock.Top);layout.Children.Add(header);
-        var pin=new CheckBox{Content="Always on top",IsChecked=false,Foreground=UI.Muted,VerticalAlignment=VerticalAlignment.Center,FontSize=11};pin.Style=(Style)app.FindResource("SettingsSwitch");UI.Named(pin,"Always on top");pin.Checked+=(_,_)=>Topmost=true;pin.Unchecked+=(_,_)=>Topmost=false;DockPanel.SetDock(pin,Dock.Right);header.Children.Add(pin);
-        var handle=UI.Text(NameFor(kind),13);handle.FontWeight=FontWeights.SemiBold;handle.Cursor=Cursors.SizeAll;handle.ToolTip="Drag to move · Alt+Space for window controls";handle.MouseLeftButtonDown+=(_,e)=>{if(e.ClickCount==1){DragMove();e.Handled=true;}};header.Children.Add(handle);
+        var header=new DockPanel{Margin=new(8,4,2,10),LastChildFill=true,Background=Brushes.Transparent};DockPanel.SetDock(header,Dock.Top);layout.Children.Add(header);
+        Button WindowButton(string symbol,string name,Action action)
+        {var button=UI.Button(name,action);button.Content=Icons.Create(symbol=="×"?"x":"minus",13);button.Width=28;button.Height=28;button.MinHeight=28;button.Padding=new(0);button.Margin=new(2,0,0,0);button.ToolTip=name;button.FontSize=14;button.Background=Brushes.Transparent;button.BorderThickness=new(0);WindowChrome.SetIsHitTestVisibleInChrome(button,true);DockPanel.SetDock(button,Dock.Right);return button;}
+        header.Children.Add(WindowButton("×","Close "+NameFor(kind)+" · Alt+F4",Close));
+        header.Children.Add(WindowButton("−","Minimize "+NameFor(kind),()=>WindowState=WindowState.Minimized));
+        var pin=new CheckBox{Content="On top",IsChecked=false,Foreground=UI.Muted,VerticalAlignment=VerticalAlignment.Center,FontSize=10,MinHeight=28,Margin=new(8,0,6,0),ToolTip="Keep this mini window above other apps"};pin.Style=(Style)app.FindResource("SettingsSwitch");UI.Named(pin,"Always on top");pin.Checked+=(_,_)=>Topmost=true;pin.Unchecked+=(_,_)=>Topmost=false;DockPanel.SetDock(pin,Dock.Right);header.Children.Add(pin);
+        var handle=UI.Heading(NameFor(kind),13);handle.FontWeight=FontWeights.SemiBold;handle.Cursor=Cursors.SizeAll;handle.ToolTip="Drag to move · Alt+Space for window controls";header.Children.Add(handle);
+        header.MouseLeftButtonDown+=(_,e)=>{if(e.OriginalSource is not DependencyObject target || IsControl(target,header))return;if(e.ClickCount==1){BeginPointerDrag();e.Handled=true;}};
         view=new(app,kind,openMain);layout.Children.Add(view.Content);
-        surface=new Border{Padding=new(8),Child=layout};Content=surface;ApplySettings();
-        try{var stored=app.Store.Load<DetachedPreviewGeometry>("detached-"+kind);var rect=SafeRect(stored);Left=rect.Left;Top=rect.Top;Width=rect.Width;Height=rect.Height;}catch(Exception ex){app.Store.Log(ex);}
+        surface=new Border{Padding=new(10),CornerRadius=new(16),BorderThickness=new(1),Child=layout};surface.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");Content=surface;ApplySettings();
+        try{if(File.Exists(Path.Combine(app.Store.DirectoryPath,"detached-"+kind+".json"))){var stored=app.Store.Load<DetachedPreviewGeometry>("detached-"+kind);var rect=SafeRect(stored);Left=rect.Left;Top=rect.Top;Width=rect.Width;Height=rect.Height;restored=true;}}catch(Exception ex){app.Store.Log(ex);}
         saveGeometry.Tick+=(_,_)=>{ClampToMonitor();PersistGeometry();};LocationChanged+=(_,_)=>ScheduleSave();SizeChanged+=(_,_)=>ScheduleSave();
         IsVisibleChanged+=(_,_)=>{view.SetVisible(IsVisible && WindowState!=WindowState.Minimized);if(!IsVisible){view.Flush();PersistGeometry();}};
         StateChanged+=(_,_)=>{view.SetVisible(IsVisible && WindowState!=WindowState.Minimized);if(WindowState==WindowState.Minimized){view.Flush();saveGeometry.Stop();}};
-        SourceInitialized+=(_,_)=>{Native.DarkTitleBar(this);source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source?.AddHook(Messages);ClampToMonitor();};
+        SourceInitialized+=(_,_)=>{Native.DarkTitleBar(this);source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source?.AddHook(Messages);};
         Closed+=(_,_)=>{view.Dispose();PersistGeometry();source?.RemoveHook(Messages);source=null;};
+        PreviewKeyDown+=(_,e)=>{if(e.SystemKey==Key.Space && (Keyboard.Modifiers&ModifierKeys.Alt)!=0){SystemCommands.ShowSystemMenu(this,PointToScreen(new Point(12,38)));e.Handled=true;}};
+    }
+    private static bool IsControl(DependencyObject target,DependencyObject header)
+    {
+        for(var current=target;current!=null && current!=header;current=current is Visual?VisualTreeHelper.GetParent(current):LogicalTreeHelper.GetParent(current))if(current is System.Windows.Controls.Primitives.ButtonBase)return true;
+        return false;
+    }
+    internal void BeginPointerDrag()
+    {
+        // Finish the originating preview's mouse event before transferring its gesture.
+        Dispatcher.BeginInvoke(()=>{if(!IsVisible || Mouse.LeftButton!=MouseButtonState.Pressed)return;Mouse.Capture(null);try{DragMove();}catch(InvalidOperationException){}},DispatcherPriority.Input);
+    }
+    private void PlaceNearIsland()
+    {
+        if(app.MainWindow is OverlayWindow island && new WindowInteropHelper(island).Handle!=IntPtr.Zero)
+        {PlaceAt(island.PointToScreen(new Point(island.ActualWidth/2,Math.Max(24,island.PaintedHeight)+18)));return;}
+        var area=Native.ChooseScreen(app.Settings).WorkingArea;PlaceAt(new Point(area.Left+area.Width/2d,area.Top+64));
+    }
+    internal void EnsureInitialPlacement(){if(placed)return;placed=true;if(!restored)PlaceNearIsland();}
+    internal void PlaceAt(Point screenPixels)
+    {
+        if(!double.IsFinite(screenPixels.X) || !double.IsFinite(screenPixels.Y))return;
+        placed=true;
+        var screen=Forms.Screen.FromPoint(new System.Drawing.Point(Pixel(screenPixels.X),Pixel(screenPixels.Y)));
+        double scale=MonitorScale(screen);var area=screen.WorkingArea;
+        // Put the pointer over the empty title area; moving can continue immediately.
+        var candidate=new Rect(screenPixels.X-48*scale,screenPixels.Y-22*scale,Width*scale,Height*scale);
+        var rect=DetachedPreviewGeometry.Clamp(candidate,new Rect(area.X,area.Y,area.Width,area.Height));
+        SetPhysicalBounds(rect,scale);
+    }
+    private static int Pixel(double value)=>(int)Math.Clamp(Math.Round(value),int.MinValue,int.MaxValue);
+    private static double MonitorScale(Forms.Screen screen)
+    {
+        try{var area=screen.Bounds;var monitor=MonitorFromPoint(new(area.Left+area.Width/2,area.Top+area.Height/2),2);if(GetDpiForMonitor(monitor,0,out var dpi,out _)==0 && dpi>0)return dpi/96d;}
+        catch(DllNotFoundException){}catch(EntryPointNotFoundException){}
+        return 1;
+    }
+    private void SetPhysicalBounds(Rect rect,double scale)
+    {
+        var hwnd=new WindowInteropHelper(this).Handle;if(hwnd==IntPtr.Zero)return;
+        bool wasClamping=clamping;clamping=true;
+        try{MinWidth=Math.Min(280,rect.Width/scale);MinHeight=Math.Min(220,rect.Height/scale);Native.SetWindowPos(hwnd,IntPtr.Zero,Pixel(rect.X),Pixel(rect.Y),Pixel(rect.Width),Pixel(rect.Height),0x0014);}
+        finally{clamping=wasClamping;}
+        ScheduleSave();
     }
     internal static string NameFor(string kind)=>kind switch{"media"=>"Music","files"=>"Shelf","notes"=>"Notes",_=>char.ToUpperInvariant(kind[0])+kind[1..]};
     private static Rect SafeRect(DetachedPreviewGeometry value)=>new(double.IsFinite(value.Left)?value.Left:80,double.IsFinite(value.Top)?value.Top:80,double.IsFinite(value.Width)&&value.Width>0?value.Width:350,double.IsFinite(value.Height)&&value.Height>0?value.Height:330);
@@ -114,21 +171,21 @@ internal sealed class DetachedPreviewWindow : Window
         if(clamping || WindowState!=WindowState.Normal || new WindowInteropHelper(this).Handle==IntPtr.Zero)return;clamping=true;
         try
         {
-            // Locate the nearest monitor in physical coordinates, then convert its work area to WPF units.
             var hwnd=new WindowInteropHelper(this).Handle;
-            var screen=hwnd!=IntPtr.Zero?Forms.Screen.FromHandle(hwnd):Forms.Screen.FromPoint(new System.Drawing.Point((int)Left,(int)Top));
-            var area=screen.WorkingArea;double scale=1;
-            try{var monitor=MonitorFromPoint(new(area.Left+area.Width/2,area.Top+area.Height/2),2);if(GetDpiForMonitor(monitor,0,out var dpi,out _)==0 && dpi>0)scale=dpi/96d;}catch(DllNotFoundException){}catch(EntryPointNotFoundException){}
-            var work=new Rect(area.Left/scale,area.Top/scale,area.Width/scale,area.Height/scale);
-            var rect=DetachedPreviewGeometry.Clamp(new Rect(Left,Top,Width,Height),work);
-            MinWidth=Math.Min(280,work.Width);MinHeight=Math.Min(220,work.Height);Left=rect.Left;Top=rect.Top;Width=rect.Width;Height=rect.Height;
+            if(!Native.GetWindowRect(hwnd,out var bounds))return;
+            var screen=Forms.Screen.FromHandle(hwnd);var area=screen.WorkingArea;double scale=MonitorScale(screen);
+            var work=new Rect(area.Left,area.Top,area.Width,area.Height);
+            var candidate=new Rect(bounds.Left,bounds.Top,Math.Max(1,bounds.Right-bounds.Left),Math.Max(1,bounds.Bottom-bounds.Top));
+            var rect=DetachedPreviewGeometry.Clamp(candidate,work);
+            MinWidth=Math.Min(280,work.Width/scale);MinHeight=Math.Min(220,work.Height/scale);
+            if(rect!=candidate)SetPhysicalBounds(rect,scale);
         }finally{clamping=false;}
     }
     internal void ApplySettings(){surface.Background=UI.Brush(app.Settings.Background);surface.Opacity=app.Settings.Opacity;view?.ApplySettings();}
     private void ScheduleSave(){if(clamping)return;saveGeometry.Stop();if(IsVisible)saveGeometry.Start();}
     private void PersistGeometry()
     {
-        saveGeometry.Stop();if(WindowState!=WindowState.Normal)return;
+        saveGeometry.Stop();if(WindowState!=WindowState.Normal || new WindowInteropHelper(this).Handle==IntPtr.Zero || !double.IsFinite(Left) || !double.IsFinite(Top))return;
         try{app.Store.Save("detached-"+kind,new DetachedPreviewGeometry{Left=Left,Top=Top,Width=Width,Height=Height});}catch(Exception ex){app.Store.Log(ex);}
     }
 }

@@ -62,7 +62,7 @@ public sealed class App : Application
         var diagnosticIndex=Array.IndexOf(e.Args,"--diagnostics");
         var diagnosticPath=diagnosticIndex>=0 && diagnosticIndex+1<e.Args.Length ? e.Args[diagnosticIndex+1] : null;
         Store=new(diagnosticPath==null ? null : Path.Combine(diagnosticPath,"test-profile"));Settings=diagnosticPath==null?Store.Load<Settings>("settings"):new Settings();Settings.Normalize();Settings.AutoStart=StartupService.Enabled();
-        Resources["Accent"]=UI.Brush(Settings.Accent);
+        Resources["Accent"]=UI.Brush(Settings.Accent);UI.ApplyControlTheme(Settings);
         Motion.Configure(Settings);
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
@@ -127,7 +127,7 @@ public sealed class App : Application
     public void SaveSession() { try { Store.Save("session",Session); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet", "Could not save the timer state."); } Updated?.Invoke(); }
     public void ChangeSettings()
     {
-        Settings.Normalize();Resources["Accent"]=UI.Brush(Settings.Accent);Motion.Configure(Settings);
+        Settings.Normalize();Resources["Accent"]=UI.Brush(Settings.Accent);UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         try { Store.Save("settings",Settings); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }
         Previews?.ApplySettings();SettingsChanged?.Invoke();Updated?.Invoke();

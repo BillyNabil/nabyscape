@@ -19,7 +19,7 @@ internal sealed class DetachedPreviewView : IDisposable
     private readonly App app;
     private readonly string kind;
     private readonly Action openMain;
-    private readonly StackPanel panel=new(){Margin=new(8)};
+    private readonly StackPanel panel=new(){Margin=new(6,2,6,6)};
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private TextBlock? title,detail,time,status;
     private Image? artwork;
@@ -60,7 +60,7 @@ internal sealed class DetachedPreviewView : IDisposable
         var metadata=new Grid();metadata.ColumnDefinitions.Add(new(){Width=new GridLength(54)});metadata.ColumnDefinitions.Add(new());
         artwork=new Image{Width=42,Height=42,Stretch=Stretch.UniformToFill,HorizontalAlignment=HorizontalAlignment.Left,Clip=new RectangleGeometry(new Rect(0,0,42,42),6,6)};UI.Named(artwork,"Current album artwork");metadata.Children.Add(artwork);
         var labels=new StackPanel{VerticalAlignment=VerticalAlignment.Center};title=UI.Text("Nothing playing",15);title.FontWeight=app.Settings.BoldMediaTitle?FontWeights.SemiBold:FontWeights.Normal;title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;labels.Children.Add(title);detail=UI.Text("",11,UI.Muted);detail.TextWrapping=TextWrapping.NoWrap;detail.TextTrimming=TextTrimming.CharacterEllipsis;labels.Children.Add(detail);Grid.SetColumn(labels,1);metadata.Children.Add(labels);Add(metadata);
-        sessions=new ComboBox{MinHeight=28};UI.Named(sessions,"Media session");sessions.SelectionChanged+=(_,_)=>{if(!updating && sessions.SelectedIndex>=0 && sessions.SelectedIndex<app.Media.Sessions.Count)app.Media.Select(app.Media.Sessions[sessions.SelectedIndex]);};Add(sessions);
+        sessions=new ComboBox{MinHeight=28};sessions.SetResourceReference(Control.BackgroundProperty,"ControlFill");sessions.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");UI.Named(sessions,"Media session");sessions.SelectionChanged+=(_,_)=>{if(!updating && sessions.SelectedIndex>=0 && sessions.SelectedIndex<app.Media.Sessions.Count)app.Media.Select(app.Media.Sessions[sessions.SelectedIndex]);};Add(sessions);
         previous=Action("Previous",()=>_=app.Media.Command("previous"));toggle=Action("Play",()=>_=app.Media.Command("toggle"));next=Action("Next",()=>_=app.Media.Command("next"));Add(UI.Row(previous,toggle,next));
         seek=new Slider{Minimum=0,Maximum=1};UI.Named(seek,"Track position");seek.ValueChanged+=(_,_)=>{if(!updating)_=app.Media.Seek(seek.Value);};Add(seek);
         volume=new Slider{Minimum=0,Maximum=100};UI.Named(volume,"Output volume");volume.ValueChanged+=(_,_)=>{if(!updating)app.Audio.SetVolume(volume.Value/100);};var volumeRow=new Grid();volumeRow.ColumnDefinitions.Add(new(){Width=new GridLength(52)});volumeRow.ColumnDefinitions.Add(new());volumeRow.Children.Add(UI.Text("Volume",11,UI.Muted));Grid.SetColumn(volume,1);volumeRow.Children.Add(volume);Add(volumeRow);
@@ -70,7 +70,7 @@ internal sealed class DetachedPreviewView : IDisposable
     private void BuildClock()
     {
         detail=UI.Text(kind=="focus"?"Focus session":"Countdown",12,UI.Muted);Add(detail);
-        time=UI.Text("00:00",38);Typography.SetNumeralAlignment(time,FontNumeralAlignment.Tabular);Add(time);
+        time=UI.Text("00:00",38);time.FontWeight=FontWeights.Medium;Typography.SetNumeralAlignment(time,FontNumeralAlignment.Tabular);Add(time);
         progress=new ProgressBar{Minimum=0,Maximum=1,Height=4,Background=UI.Brush("#34363C"),Foreground=Brushes.White};Add(progress);
         minutes=UI.Input(kind=="timer"?"Timer minutes":"Focus minutes",(kind=="timer"?5:app.Settings.FocusMinutes).ToString());minutes.MaxLength=4;Add(UI.Row(UI.Text("Minutes  ",12,UI.Muted),minutes));minutes.Width=80;
         toggle=Action("Start",ToggleClock);Add(UI.Row(toggle,Action("Reset",()=>{Clock.Reset();app.SaveSession();})));
@@ -90,7 +90,7 @@ internal sealed class DetachedPreviewView : IDisposable
     }
     private void BuildNotes()
     {
-        notes=UI.Input("Shared notes document",app.Productivity.Note);notes.AcceptsReturn=true;notes.TextWrapping=TextWrapping.Wrap;notes.VerticalContentAlignment=VerticalAlignment.Top;notes.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;notes.MaxLength=50000;notes.MinHeight=138;Add(notes);
+        notes=UI.Input("Shared notes document",app.Productivity.Note);notes.SetResourceReference(Control.BackgroundProperty,"ControlFill");notes.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");notes.AcceptsReturn=true;notes.TextWrapping=TextWrapping.Wrap;notes.VerticalContentAlignment=VerticalAlignment.Top;notes.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;notes.MaxLength=50000;notes.MinHeight=138;Add(notes);
         notes.TextChanged+=(_,_)=>{if(updating)return;app.Productivity.Note=notes.Text;dirty=true;status!.Text="Saving…";noteSave.Stop();noteSave.Start();};
         status=UI.Text("Saved locally",11,UI.Muted);Add(status);Add(Action("Save",Flush));
     }
@@ -103,7 +103,7 @@ internal sealed class DetachedPreviewView : IDisposable
     private void BuildShelf()
     {
         Add(UI.Text("Drop files here. Select files to open or drag out.",11,UI.Muted));
-        shelf=new ListBox{SelectionMode=SelectionMode.Extended,MinHeight=110,MaxHeight=250,AllowDrop=true};UI.Named(shelf,"File shelf; use Control or Shift to select multiple files");Add(shelf);
+        shelf=new ListBox{SelectionMode=SelectionMode.Extended,MinHeight=110,MaxHeight=250,AllowDrop=true};shelf.SetResourceReference(Control.BackgroundProperty,"ControlFill");shelf.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");UI.Named(shelf,"File shelf; use Control or Shift to select multiple files");Add(shelf);
         shelf.DragOver+=(_,e)=>{e.Effects=e.Data.GetDataPresent(DataFormats.FileDrop)?DragDropEffects.Copy:DragDropEffects.None;e.Handled=true;};
         shelf.Drop+=(_,e)=>{if(e.Data.GetData(DataFormats.FileDrop) is string[] paths)app.Productivity.AddFiles(paths);e.Handled=true;};
         shelf.PreviewMouseLeftButtonDown+=(_,e)=>dragStart=e.GetPosition(shelf);

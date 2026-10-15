@@ -247,7 +247,7 @@ internal static class InteractionDiagnostics
                 var before=Native.GetForegroundWindow();var bounds=new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height);
                 overlay.DiagnosticSatellitePointerPresent=true;satellite.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseEnterEvent});
                 Invoke("UpdateSatellite");await Task.Delay(1100);Invoke("UpdateSatellite");
-                Check("Satellite remains visible and stationary across own hover preview and shared update",overlay.IsPeeking && overlay.PeekPage=="timer" && satellite.IsVisible && bounds==new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height));
+                Check("Satellite withdraws while own hover preview opens",overlay.IsPeeking && overlay.PeekPage=="timer" && !satellite.IsVisible && bounds==new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height));
                 Check("Satellite hover preserves foreground and uses non-activating window",before==Native.GetForegroundWindow() && !satellite.ShowActivated);
                 // Simulate the crossing into the main preview, then departure from both surfaces.
                 overlay.DiagnosticPointerPresent=true;overlay.DiagnosticSatellitePointerPresent=false;satellite.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseLeaveEvent});await Task.Delay(400);
@@ -263,7 +263,7 @@ internal static class InteractionDiagnostics
                 satellite=(Window?)Field("satelliteWindow");Check(mode+" companion visible without countdown",satellite?.IsVisible==true);
                 Check(mode+" companion requests system sampling only for CPU/RAM",overlay.SystemSummaryVisible==(mode is "Auto" or "CPU" or "RAM"));
                 Invoke("OpenSatellite",false);Invoke("UpdateSatellite");await Task.Delay(180);
-                Check(mode+" companion opens system preview even if omitted from carousel",overlay.IsPeeking && overlay.PeekPage=="system" && satellite?.IsVisible==true);
+                Check(mode+" companion opens system preview even if omitted from carousel",overlay.IsPeeking && overlay.PeekPage=="system" && satellite?.IsVisible!=true);
                 if(satellite!=null)
                 {
                     satellite.UpdateLayout();Check(mode+" companion text fits",Diagnostics.Descendants(satellite).OfType<TextBlock>().Where(t=>t.IsVisible).All(t=>{var r=t.TransformToAncestor(satellite).TransformBounds(new Rect(t.RenderSize));return r.Left>=0 && r.Right<=satellite.ActualWidth;}));

@@ -70,6 +70,10 @@ public sealed class Settings
     public string Monitor { get; set; } = "";
     public string Background { get; set; } = "#000000";
     public string Accent { get; set; } = "#FFFFFF";
+    public string ControlFill { get; set; } = "#16171B";
+    public string ControlBorder { get; set; } = "#303238";
+    public string SelectionFill { get; set; } = "#34373E";
+    public bool PanelSwipe { get; set; } = true;
     public double Opacity { get; set; } = 1;
     public double AnimationMs { get; set; } = 420;
     public bool ReduceMotion { get; set; }
@@ -81,7 +85,7 @@ public sealed class Settings
     public string CategoryStyle { get; set; }="IconsLabels";
     public string LaunchStyle { get; set; }="IconsLabels";
     public bool BoldMediaTitle { get; set; }=true;
-    public bool BoldHeadings { get; set; }
+    public bool BoldHeadings { get; set; }=true;
     public bool WaveformIdleMotion { get; set; }=true;
     public bool VolumeFeedback { get; set; }=true;
     public bool BrightnessFeedback { get; set; }=true;
@@ -128,6 +132,9 @@ public sealed class Settings
         if(Preset!="Mac" && Preset!="iPhone") Preset="iPhone";
         if(!ValidColor(Background)) Background="#000000";
         if(!ValidColor(Accent)) Accent="#FFFFFF";
+        if(!ValidColor(ControlFill))ControlFill="#16171B";
+        if(!ValidColor(ControlBorder))ControlBorder="#303238";
+        if(!ValidColor(SelectionFill))SelectionFill="#34373E";
         Widgets=(Widgets ?? new()).Where(w=>w!=null && Names.ContainsKey(w.Id)).DistinctBy(w=>w.Id).ToList();
         foreach(var id in Names.Keys) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id});
         Shortcuts=(Shortcuts ?? new()).Where(s=>s!=null && !string.IsNullOrWhiteSpace(s.Name) && !string.IsNullOrWhiteSpace(s.Target)).Take(40).ToList();

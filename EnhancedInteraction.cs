@@ -52,13 +52,13 @@ public sealed partial class OverlayWindow
     [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr window,int id);
     private void InitializeEnhancements()
     {
-        InitializeUtilities();
+        InitializeUtilities();InitializePanelSwipe();
         detailDelay.Tick+=(_,_)=>{detailDelay.Stop();if(peeking){PromotePeek();}};
         activityDismiss.Tick+=(_,_)=>{activityDismiss.Stop();if(automaticPreview && !PointerInside()){Collapse();}else automaticPreview=false;};
         root.PreviewMouseWheel+=(_,e)=>
         {
             if(peeking){if(RoutePeekWheel(e.Delta,false,e.OriginalSource as DependencyObject))e.Handled=true;return;}
-            if(expanded)return;
+            if(expanded){if(RoutePanelWheel(e.Delta,Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),e.OriginalSource as DependencyObject))e.Handled=true;return;}
             if(app.Settings.WheelAction=="volume"){app.Audio.SetVolume(app.Audio.Volume+Math.Sign(e.Delta)*app.Settings.VolumeStep/100d);app.Audio.Read();Update();e.Handled=true;}
             else if(app.Settings.WheelAction=="pages"){Reveal();CyclePage(Math.Sign(e.Delta));e.Handled=true;}
         };

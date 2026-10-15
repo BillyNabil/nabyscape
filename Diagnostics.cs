@@ -48,7 +48,7 @@ internal static class Diagnostics
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
             if(Environment.GetCommandLineArgs().Contains("--interactions-only"))
-            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);return;}
+            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--review-regressions"))
             {await Task.Delay(500);await InteractionDiagnostics.RunReviewRegressions(app,overlay,directory,Check);return;}
             await Task.Delay(2500);
@@ -293,6 +293,7 @@ internal static class Diagnostics
             }
             Check("Settings shape and color controls stay inside their reserved viewport",SettingsControlsFit());
             Check("Settings navigation is English",settings.Title=="NabyScape · Settings" && new[]{"Appearance","Widgets","Controls","Application"}.All(label=>Descendants(settings).OfType<Button>().Any(b=>b.Content?.ToString()==label)));
+            Descendants(settings).OfType<Button>().Single(b=>AutomationProperties.GetName(b)=="Island color color picker").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));settings.UpdateLayout();
             foreach(var expander in Descendants(settings).OfType<Expander>().Where(e=>e.Header?.ToString()=="Color values · HEX / RGB").ToArray())expander.IsExpanded=true;settings.UpdateLayout();
             var islandHex=Descendants(settings).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Island color hex");islandHex.Text="#182028";await Task.Delay(300);
             Check("Integrated color picker persists a valid hex color",app.Store.Load<Settings>("settings").Background=="#182028");islandHex.Text="#000000";await Task.Delay(300);Capture(settings,"settings-color-picker");
@@ -489,7 +490,7 @@ internal static class Diagnostics
             if(app.Media.Sessions.Count==0)report.Add("MANUAL  Playback commands and session switching: no active media session during diagnostics.");
             else report.Add("INFO  Windows media sessions detected: "+app.Media.Sessions.Count+"; playback not altered.");
             report.Add("INFO  Audio endpoint: "+app.Audio.Device+"; volume="+Math.Round(app.Audio.Volume*100)+"%, mute="+app.Audio.Muted);
-            await InteractionDiagnostics.Run(app,overlay,directory,Check);
+            await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);
             report.Add("INFO  Monitors attached: "+System.Windows.Forms.Screen.AllScreens.Length);
             report.Add("MANUAL  Physical monitor disconnect, alternate DPI, battery charging, and audio device hot-plug require hardware checks.");
             overlay.Collapse();

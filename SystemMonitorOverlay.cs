@@ -20,7 +20,7 @@ public sealed partial class OverlayWindow
     internal void SelectMonitorTab(string id)
     {
         if(!monitorTabs.ContainsKey(id))return;monitorTab=id;RenderSystemMonitor();monitorDetailScroll?.ScrollToTop();
-        foreach(var pair in monitorTabs){pair.Value.Background=pair.Key==id?UI.Brush("#35383F"):Brushes.Transparent;pair.Value.Foreground=pair.Key==id?Brushes.White:UI.Muted;}
+        foreach(var pair in monitorTabs){pair.Value.Background=pair.Key==id?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;pair.Value.Foreground=pair.Key==id?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;}
     }
     private readonly Queue<double?> monitorCpuHistory=new();
     private MonitorSnapshot? monitorPrevious,monitorLatest;

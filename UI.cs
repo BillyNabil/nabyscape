@@ -9,12 +9,16 @@ namespace NabyScape;
 internal static class UI
 {
     public static SolidColorBrush Brush(string color)=>(SolidColorBrush)new BrushConverter().ConvertFromString(color)!;
+    public static Brush ContrastText(string color)
+    {var c=Brush(color).Color;return c.R*.2126+c.G*.7152+c.B*.0722>150?Brush("#111317"):Brushes.White;}
+    public static void ApplyControlTheme(Settings settings)
+    {if(Application.Current==null)return;foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})Application.Current.Resources[entry.Item1]=Brush(entry.Item2);Application.Current.Resources["ControlText"]=ContrastText(settings.ControlFill);Application.Current.Resources["SelectionText"]=ContrastText(settings.SelectionFill); }
     public static readonly Brush Muted=Brush("#A1A1A6");
     public static TextBlock Text(string text,double size=13,Brush? color=null)
         =>new(){Text=text,FontSize=size,Foreground=color ?? Brushes.White,VerticalAlignment=VerticalAlignment.Center,TextWrapping=TextWrapping.Wrap};
     private static readonly object HeadingTag=new();
     public static TextBlock Heading(string text,double size=13,Brush? color=null)
-    {var heading=Text(text,size,color);heading.Tag=HeadingTag;return heading;}
+    {var heading=Text(text,size,color);heading.Tag=HeadingTag;heading.FontWeight=App.Current is App app && app.Settings?.BoldHeadings==true?FontWeights.SemiBold:FontWeights.Normal;return heading;}
     internal static bool IsHeading(TextBlock text)=>ReferenceEquals(text.Tag,HeadingTag);
     public static TextBlock Label(string text)
     {var heading=Heading(text,11,Muted);heading.FontWeight=FontWeights.Medium;heading.Margin=new(0,0,0,10);return heading;}

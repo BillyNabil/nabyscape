@@ -100,11 +100,11 @@ Screenshots show the interface with different media sessions and settings.
 ## New in 2.3: take the island further
 
 - **Drag to Island.** Drag files onto the island or its tucked edge to stage them. Select several shelf items and drag them out together. Originals stay in place; cancelling a drag keeps your current editor intact.
-- **Detachable previews.** Use **Detach** or drag its grip to open Music, Timer, Focus, Calendar, Notes, Shelf, or System in a separate resizable window. Each uses the same live data. Always on top is optional; closing a preview leaves its activity running.
+- **Detachable previews.** Drag its grip to carry the window with your pointer, or use **Detach** to open it beside the preview. Music, Timer, Focus, Calendar, Notes, Shelf and System have borderless, resizable mini windows. Each uses the same live data. Always on top is optional; closing a preview leaves its activity running.
 - **Activity actions.** Open **Launch → Activities** to combine opening apps, folders and websites with Focus and timed Keep awake. Customize the Study template, save, then Start. Stop ends only the Focus/Keep awake owned by that run.
 - **Smart clipboard.** Text, links, images, and HEX/RGB colors get their own actions. Review cleaned links before copying, save images as PNG, or copy colors in either format. History remains opt-in.
 - **Closed cover gestures.** With Artwork selected, click the cover to play/pause or hold for 500 ms to choose a media session. Clicking elsewhere opens the panel. Existing wheel preferences still apply.
-- **Two live activities.** Choose a companion beside music: CPU usage, memory usage, the next local calendar event, Clock, or Timer/Focus. Automatic prefers a running countdown, then an event within 24 hours, then CPU (Clock if System is disabled). Hover to preview; click to open. Set the source in **Settings → Controls → Two live activities → Companion**.
+- **Two live activities.** Choose a companion beside music: CPU usage, memory usage, the next local calendar event, Clock, or Timer/Focus. Automatic prefers a running countdown, then an event within 24 hours, then CPU (Clock if System is disabled). Hover to preview; click to open. Set the source in **Settings → Controls → Two live activities → Companion**. The companion withdraws while the island opens and returns when closed.
 
 <table>
 <tr>
@@ -133,7 +133,7 @@ Screenshots show the interface with different media sessions and settings.
 </tr>
 </table>
 
-Configure these features in **Settings → Controls**. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
+Configure these features in **Settings → Controls**. Open panels support sideways swipes and horizontal trackpad scrolling; **Shift+wheel** switches panels anywhere outside text editors. Normal vertical scrolling stays available for long lists. **Appearance → Controls & outlines** changes button, input, outline and selected-tab colors. Typography has independent bold options for media and headings, with visual examples. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
 
 <details>
 <summary><strong>Calendar and system mini windows</strong></summary>
