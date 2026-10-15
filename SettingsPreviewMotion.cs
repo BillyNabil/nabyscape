@@ -59,7 +59,9 @@ public sealed partial class SettingsWindow
     private void ConfigurePreviewForSetting(string name)
     {
         previewFocus.Text=name;
-        if(name.Contains("Tuck",StringComparison.OrdinalIgnoreCase) || current=="Application"){previewMode="Panel";previewContent="Visibility";}
+        if(name=="Enable Activities"){previewMode="Panel";previewContent="Activities";}
+        else if(name.EndsWith(" tool")){previewMode="Hover";previewContent=name[..^5] switch{"File shelf"=>"Shelf","Notes"=>"Note","Clipboard"=>"Smart clipboard","Tasks"=>"Tasks","Calendar"=>"Calendar",_=>"Tools"};}
+        else if(name.Contains("Tuck",StringComparison.OrdinalIgnoreCase) || current=="Application"){previewMode="Panel";previewContent="Visibility";}
         else if(name=="Swipe between open panels"){previewMode="Panel";previewContent="Panel navigation";}
         else if(name=="Reveal shelf when dragging files"){previewMode="Hover";previewContent="Drop zone";}
         else if(name=="Allow detachable previews"){previewMode="Hover";previewContent="Detached preview";}

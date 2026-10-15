@@ -16,6 +16,7 @@ public sealed partial class OverlayWindow
     internal bool ClosedCoverVisible=>closedCover.Visibility==Visibility.Visible && closedCoverImage.Source!=null;
     private void UpdateClosedMediaIcon()
     {
+        compact.Visibility=expanded?Visibility.Collapsed:Visibility.Visible;
         var now=DateTimeOffset.Now;
         bool countdown=!ShowMediaPrimary && (WidgetOn("focus") && app.Session.Focus.Remaining(now)>0 || WidgetOn("timer") && app.Session.Timer.Remaining(now)>0);
         bool cover=!FeedbackVisible && !countdown && app.Settings.ClosedMediaIcon=="Artwork" && WidgetOn("media") && app.Media.Available && app.Media.Artwork!=null;

@@ -39,7 +39,7 @@ public sealed partial class OverlayWindow
         if(activate)Dispatcher.BeginInvoke(()=>commandInput?.Focus());
     }
     private void CloseCommands()
-    {if(!commandOpen)return;commandOpen=false;BuildBody();ResizeToolPanel();if(expanded)compact.Focus();}
+    {if(!commandOpen)return;commandOpen=false;BuildBody();ResizeToolPanel();if(expanded)scroll.Focus();}
     private FrameworkElement BuildCommandPage()
     {
         var panel=new StackPanel{HorizontalAlignment=HorizontalAlignment.Stretch,Margin=new(3,0,3,0)};var heading=new DockPanel();var back=UI.Button("Back",CloseCommands);back.FontSize=11;back.MinHeight=28;back.Margin=new(8,0,0,0);DockPanel.SetDock(back,Dock.Right);heading.Children.Add(back);heading.Children.Add(UI.Heading("Command bar",18));panel.Children.Add(heading);
@@ -51,8 +51,8 @@ public sealed partial class OverlayWindow
     }
     private IEnumerable<(string title,string detail,Action run)> Commands()
     {
-        yield return ("Activities","Run or edit your workspace routines",()=>ShowActivities());
-        foreach(var definition in app.Activities.Definitions){var action=definition;yield return ("Activity · "+action.Name,"Open activity controls",()=>ShowActivities());}
+        if(app.Settings.ActivitiesEnabled)yield return ("Activities","Run or edit your workspace routines",()=>ShowActivities());
+        foreach(var definition in app.Activities.Definitions.Where(_=>app.Settings.ActivitiesEnabled)){var action=definition;yield return ("Activity · "+action.Name,"Open activity controls",()=>ShowActivities());}
         yield return ("Open Settings","Appearance, widgets, and interaction",app.ShowSettings);
         foreach(var pair in new[]{("media","Media controls"),("focus","Timers & focus"),("status","System status"),("access","Quick launch")})
         {
@@ -61,8 +61,8 @@ public sealed partial class OverlayWindow
         }
         if(WidgetOn("tools"))
         {
-            foreach(var pair in new[]{("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("files","File shelf"),("notes","Notes & tasks"),("clips","Clipboard")})
-            {string mode=pair.Item1;yield return(pair.Item2,"Open everyday tool",()=>ShowTools(mode));}
+            foreach(var pair in new[]{("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard")})
+            {string mode=pair.Item1;if(!ToolOn(mode))continue;yield return(pair.Item2,"Open everyday tool",()=>ShowTools(mode));}
         }
         if(app.Awake.Active)yield return("Stop keep awake","Restore normal Windows idle behavior",()=>{app.Awake.Stop();RefreshCommands();});
         foreach(var shortcut in app.Settings.Shortcuts.Where(_=>WidgetOn("shortcuts")))

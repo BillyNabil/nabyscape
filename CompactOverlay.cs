@@ -208,7 +208,7 @@ public sealed partial class OverlayWindow
         {
             shortcuts.Children.Add(LaunchButton(shortcut));
         }
-        launch.Children.Add(UI.Button("Activities",()=>ShowActivities()));
+        if(app.Settings.ActivitiesEnabled)launch.Children.Add(UI.Button("Activities",()=>ShowActivities()));
         if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Text("Add shortcuts in Settings.",12,UI.Muted));return launch;
     }
     private static FrameworkElement CountdownActions(Button start,Button pause,Button reset)

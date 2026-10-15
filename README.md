@@ -135,6 +135,8 @@ Screenshots show the interface with different media sessions and settings.
 
 Configure these features in **Settings → Controls**. Open panels support sideways swipes and horizontal trackpad scrolling; **Shift+wheel** switches panels anywhere outside text editors. Normal vertical scrolling stays available for long lists. **Appearance → Controls & outlines** changes button, input, outline and selected-tab colors. Typography has independent bold options for media and headings, with visual examples. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
 
+Enable **Clipboard** and **Tasks** in **Controls → Hover pages** to browse recent clips or complete tasks without opening a panel. Clipboard capture stays opt-in. **Widgets → Individual tools** controls each tool independently, and **Widgets → Activity actions** turns Activities on or off. Hiding tools keeps saved content. **Controls → Automatic tucking** leaves a small edge above maximized/fullscreen apps; hover the edge to reveal it. Open panels omit the duplicate closed-media header.
+
 <details>
 <summary><strong>Calendar and system mini windows</strong></summary>
 

@@ -100,14 +100,14 @@ public sealed partial class OverlayWindow : Window
                 if(child==compactPageHost){if(!compactPages.TryGetValue(activePage,out var page))continue;measured=page;}
                 measured.InvalidateMeasure();measured.Measure(constraint);contentHeight+=measured.DesiredSize.Height;
             }
-            desired=Math.Clamp(app.Settings.Height+contentHeight*app.Settings.PanelScale+32,184,app.Settings.PanelMaxHeight);
+            desired=Math.Clamp(contentHeight*app.Settings.PanelScale+32,184,app.Settings.PanelMaxHeight);
         }
         expandedHeight=Math.Max(app.Settings.Height,Math.Min(desired,available));
-        scroll.Width=expandedWidth-app.Settings.PanelPadding*2;scroll.Height=Math.Max(0,expandedHeight-app.Settings.Height-26);scroll.Margin=new(0,app.Settings.Height+10,0,0);
+        scroll.Width=expandedWidth-app.Settings.PanelPadding*2;scroll.Height=Math.Max(0,expandedHeight-26);scroll.Margin=new(0,10,0,0);
     }
     private void ApplySettings()
     {
-        classicMixerOpen=false;if(activePage=="mixer")activePage="media";
+        if(!app.Settings.ActivitiesEnabled){activitiesOpen=false;activityDraft=null;}classicMixerOpen=false;if(activePage=="mixer")activePage="media";
         FlushNotes();ConfigureHotkey();var s=app.Settings;refreshHz=Native.RefreshRate(Native.ChooseScreen(s));Motion.Configure(s);Opacity=s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac";surface.Radius=s.Radius;tintedArtwork=null;
         hoverDelay.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDelayMs);detailDelay.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDetailDelayMs);
         EndPeekGesture();peeking=false;peekPanel.BeginAnimation(OpacityProperty,null);peekPanel.Opacity=0;peekPanel.Visibility=Visibility.Collapsed;compact.BeginAnimation(OpacityProperty,null);compact.Opacity=1;compact.IsHitTestVisible=true;StopHoverTimers();
@@ -179,7 +179,7 @@ public sealed partial class OverlayWindow : Window
         ConfigurePerformance();motion.Go(surface,IslandSurface.SurfaceWidthProperty,expandedWidth,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,app.Settings.AnimationMs);motion.OnComplete(()=>{});
         motion.Go(surface,IslandSurface.GlassLiftProperty,1,app.Settings.AnimationMs);WakeLiveRendering();
         Motion.Fade(scroll,1,Math.Min(260,app.Settings.AnimationMs));Motion.To(bodySlide,TranslateTransform.YProperty,0,320);
-        DismissSatellite();if(activate){Activate();compact.Focus();}outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>VisiblePoint(p) || sessions.IsDropDownOpen || audioMenu?.IsOpen==true);Update();
+        DismissSatellite();if(activate){Activate();if(app.Settings.CompactLayout && compactTabs.TryGetValue(activePage,out var focusTab))focusTab.Focus();else scroll.Focus();}outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>VisiblePoint(p) || sessions.IsDropDownOpen || audioMenu?.IsOpen==true);Update();
     }
     public void Collapse()
     {

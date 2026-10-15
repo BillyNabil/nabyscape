@@ -19,6 +19,7 @@ public sealed partial class OverlayWindow
     private void ActivitiesChanged(){if(activitiesOpen && activityDraft==null)RefreshActivities();}
     internal void ShowActivities(bool activate=true)
     {
+        if(!app.Settings.ActivitiesEnabled)return;
         FlushNotes();if(commandOpen)CloseCommands();activitiesOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
     }
     private void CloseActivities(){activitiesOpen=false;activityDraft=null;activityMessage="";BuildBody();ResizeToolPanel();}

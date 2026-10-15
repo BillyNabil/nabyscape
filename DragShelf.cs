@@ -52,7 +52,7 @@ public sealed partial class OverlayWindow
         // An expanded page stays mounted, including command/calendar editor state.
         if(!expanded){if(IsTucked)RevealTuckedPreview();if(!peeking)PreviewActivity();SelectPeek("files");PromotePeek();}
     }
-    private bool CanShelfDrop(DragEventArgs e)=>!userHidden && WidgetOn("tools") && e.Data.GetDataPresent(DataFormats.FileDrop) && (app.Settings.DropReveal || expanded && toolsMode=="files" || peeking && peekId=="files");
+    private bool CanShelfDrop(DragEventArgs e)=>!userHidden && ToolOn("files") && e.Data.GetDataPresent(DataFormats.FileDrop) && (app.Settings.DropReveal || expanded && toolsMode=="files" || peeking && peekId=="files");
     private void ShowShelfDropPreview(string[] paths)
     {
         if(!fileDragActive)return;var signature=string.Join("\n",paths);if(shelfDropPreview!=null && dropSignature==signature)return;dropSignature=signature;

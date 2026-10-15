@@ -10,7 +10,7 @@ internal static class CustomizationProfile
     internal static readonly string[] CustomizationKeys={"Preset","Width","Height","Radius","Top","Horizontal","Monitor","Background","Accent","Opacity","GlassStyle","GlassStrength","AlbumAccent","PanelWidth","PanelMaxHeight","PanelPadding","PanelScale","SectionGap","HoverWidth","HoverHeight","HoverDelayMs","HoverDetailDelayMs","SwipeDistance","HoverViews","Widgets","CompactLayout","HoverPeek","TwoStageHover","AnimationMs","ReduceMotion","LiveActivity","ClosedMediaIcon","ClosedMediaContent","Performance","WheelAction","MiddleAction","VolumeStep","Clock24Hour","ClockSeconds","ShowDate","MonitorNetwork","MonitorStorage","MonitorProcesses","CategoryStyle","LaunchStyle","BoldMediaTitle","BoldHeadings","WaveformIdleMotion","VolumeFeedback","BrightnessFeedback"};
     internal static string Export(Settings settings)
     {
-        var values=CustomizationKeys.Concat(new[]{"DropReveal","DetachablePreviews","CoverGestures","ActivitySatellite","SatelliteSource","ControlFill","ControlBorder","SelectionFill","PanelSwipe"}).ToDictionary(key=>key,key=>typeof(Settings).GetProperty(key)!.GetValue(settings));
+        var values=CustomizationKeys.Concat(new[]{"DropReveal","DetachablePreviews","CoverGestures","ActivitySatellite","SatelliteSource","ControlFill","ControlBorder","SelectionFill","PanelSwipe","Tools","ActivitiesEnabled"}).ToDictionary(key=>key,key=>typeof(Settings).GetProperty(key)!.GetValue(settings));
         return JsonSerializer.Serialize(new{format="luma.layout.v1",values},new JsonSerializerOptions{WriteIndented=true});
     }
     internal static void Import(string source,Settings target)
@@ -19,7 +19,7 @@ internal static class CustomizationProfile
         using var document=JsonDocument.Parse(source);
         var root=document.RootElement;
         if(root.ValueKind!=JsonValueKind.Object || !root.TryGetProperty("format",out var format) || format.GetString()!="luma.layout.v1" || !root.TryGetProperty("values",out var values) || values.ValueKind!=JsonValueKind.Object)throw new InvalidDataException("Choose a NabyScape layout file.");
-        var allKeys=CustomizationKeys.Concat(new[]{"DropReveal","DetachablePreviews","CoverGestures","ActivitySatellite","SatelliteSource","ControlFill","ControlBorder","SelectionFill","PanelSwipe"}).ToArray();
+        var allKeys=CustomizationKeys.Concat(new[]{"DropReveal","DetachablePreviews","CoverGestures","ActivitySatellite","SatelliteSource","ControlFill","ControlBorder","SelectionFill","PanelSwipe","Tools","ActivitiesEnabled"}).ToArray();
         var keys=allKeys.Where(key=>values.TryGetProperty(key,out _)).ToArray();if(keys.Length==0)throw new InvalidDataException("The layout has no customization values.");
         var incoming=JsonSerializer.Deserialize<Settings>(values.GetRawText())??throw new InvalidDataException("Layout is empty.");
         var candidate=JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(target))!;

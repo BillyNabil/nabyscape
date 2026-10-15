@@ -10,6 +10,7 @@ public sealed partial class SettingsWindow
     private void InteractionFeatureControls()
     {
         var s=app.Settings;
+        page.Children.Add(Section("Automatic tucking",Check("Tuck above maximized apps",s.HideMaximized,v=>s.HideMaximized=v),Check("Tuck above fullscreen apps",s.HideFullscreen,v=>s.HideFullscreen=v),UI.Text("Leaves a small edge at the top when Chrome or another app fills this display. Move the pointer to that edge to reveal the preview. Manual hide still hides the whole island.",11,UI.Muted)));
         page.Children.Add(Section("Panel navigation",Check("Swipe between open panels",s.PanelSwipe,v=>s.PanelSwipe=v),UI.Text("Swipe sideways on empty panel space, use a trackpad horizontal gesture, or hold Shift while scrolling. Normal scrolling changes panels when content fits; long lists and text editors keep vertical scrolling. Ctrl+Tab also switches panels.",11,UI.Muted)));
         page.Children.Add(Section("Drag to Island",Check("Reveal shelf when dragging files",s.DropReveal,v=>s.DropReveal=v),UI.Text("Drag files onto the island or its tucked edge. Drop to stage references; select multiple shelf items to drag them out together. Manual hiding stays hidden.",11,UI.Muted)));
         page.Children.Add(Section("Detachable previews",Check("Allow detachable previews",s.DetachablePreviews,v=>s.DetachablePreviews=v),UI.Text("Drag the grip out to carry a preview with your pointer. Detach opens it beside the current preview. Music, Timer, Focus, Calendar, Notes, Shelf and System open as independent windows. Always on top is optional. Closing a window keeps its activity running.",11,UI.Muted)));
@@ -27,7 +28,7 @@ public sealed partial class SettingsWindow
     {
         var panel=new StackPanel();
         var s=app.Settings;
-        if(kind=="Smart clipboard")return ClipboardExample();
+        if(kind=="Activities" && !s.ActivitiesEnabled)return UI.Text("Activities is off. Saved routines are kept.",12,UI.Muted);if(kind=="Smart clipboard")return ClipboardExample();
         if(kind is "Control colors" or "Typography" or "Panel navigation")return ControlExample(kind);
         string? inactive=kind switch
         {

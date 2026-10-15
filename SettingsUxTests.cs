@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows.Media;
 
 namespace NabyScape;
@@ -8,6 +9,12 @@ internal static class SettingsUxTests
     internal static void Run(Action<string,Action> test)
     {
         void Assert(bool value){if(!value)throw new Exception("Settings UX invariant failed");}
+        test("Tool preferences migrate without deleting old data or enabling new hover pages",()=>
+        {
+            var s=new Settings{Tools=new(){new(){Id="files",Enabled=false},new(){Id="files"},new(){Id="bad"}}};s.Normalize();
+            Assert(s.Tools.Count==7 && !s.ToolEnabled("files") && s.ToolEnabled("notes") && s.ActivitiesEnabled && s.HoverViews.Count==9 && !s.HoverViews.Single(v=>v.Id=="clips").Enabled && !s.HoverViews.Single(v=>v.Id=="tasks").Enabled);
+            s.ActivitiesEnabled=false;var target=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(s),target);Assert(!target.ActivitiesEnabled && !target.ToolEnabled("files") && target.ToolEnabled("tasks"));
+        });
         test("Leaving a scrolling media title restores its bounded ellipsis layout",()=>
         {
             var text=new System.Windows.Controls.TextBlock{Text=new string('W',180)};var label=new MarqueeLabel(text);

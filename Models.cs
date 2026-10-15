@@ -58,6 +58,10 @@ public sealed class Settings
     public bool MonitorProcesses { get; set; }=true;
     public List<WidgetSetting> HoverViews { get; set; }=new[]{"media","timer","focus","calendar","notes","files","system"}.Select(id=>new WidgetSetting{Id=id,Enabled=id!="system"}).ToList();
     public bool ClipboardHistory { get; set; }
+    public bool ActivitiesEnabled {get;set;}=true;
+    public List<WidgetSetting> Tools {get;set;}=ToolNames.Keys.Select(id=>new WidgetSetting{Id=id}).ToList();
+    public static readonly Dictionary<string,string> ToolNames=new(){["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links"};
+    public bool ToolEnabled(string id)=>Tools.Any(t=>t.Id==id && t.Enabled);
     public string Performance { get; set; } = "Auto";
     public string WheelAction { get; set; } = "volume";
     public string MiddleAction { get; set; } = "toggle";
@@ -113,7 +117,8 @@ public sealed class Settings
         AnimationMs=Clamp(AnimationMs,0,600,420);
         PanelWidth=Clamp(PanelWidth,340,640,384);PanelMaxHeight=Clamp(PanelMaxHeight,320,760,408);PanelPadding=Clamp(PanelPadding,16,40,32);PanelScale=Clamp(PanelScale,.85,1.25,1);SectionGap=Clamp(SectionGap,8,28,18);
         HoverWidth=Clamp(HoverWidth,300,500,350);HoverHeight=Clamp(HoverHeight,184,280,192);HoverDelayMs=Math.Clamp(HoverDelayMs,80,900);HoverDetailDelayMs=Math.Clamp(HoverDetailDelayMs,200,1200);SwipeDistance=Clamp(SwipeDistance,24,100,48);GlassStrength=Clamp(GlassStrength,0,1,1);
-        var hoverIds=new[]{"media","timer","focus","calendar","notes","files","system"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id!="system"});
+        var hoverIds=new[]{"media","timer","focus","calendar","notes","files","system","clips","tasks"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id is not ("system" or "clips" or "tasks")});
+        Tools=(Tools??new()).Where(t=>t!=null && ToolNames.ContainsKey(t.Id)).DistinctBy(t=>t.Id).ToList();foreach(var id in ToolNames.Keys)if(!Tools.Any(t=>t.Id==id))Tools.Add(new(){Id=id});
         if(Performance is not ("Auto" or "Hemat" or "Maksimal"))Performance="Auto";
         if(WheelAction is not ("volume" or "pages" or "none"))WheelAction="volume";
         if(MiddleAction is not ("toggle" or "microphone" or "none"))MiddleAction="toggle";

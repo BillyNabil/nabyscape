@@ -127,7 +127,7 @@ public sealed class App : Application
     public void SaveSession() { try { Store.Save("session",Session); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet", "Could not save the timer state."); } Updated?.Invoke(); }
     public void ChangeSettings()
     {
-        Settings.Normalize();Resources["Accent"]=UI.Brush(Settings.Accent);UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
+        Settings.Normalize();if(!Settings.ActivitiesEnabled)Activities?.Stop();Resources["Accent"]=UI.Brush(Settings.Accent);UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         try { Store.Save("settings",Settings); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }
         Previews?.ApplySettings();SettingsChanged?.Invoke();Updated?.Invoke();

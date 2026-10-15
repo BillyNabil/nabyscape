@@ -16,7 +16,8 @@ public sealed partial class OverlayWindow
     private string toolsMode="home";
     private string notesMode="write",taskDraft="";
     private bool utilityMutating;
-    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links") };
+    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links") };
+    private bool ToolOn(string id)=>WidgetOn("tools") && app.Settings.ToolEnabled(id);
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private ContextMenu? audioMenu;
     private FrameworkElement BuildToolsPage()
@@ -26,6 +27,7 @@ public sealed partial class OverlayWindow
     }
     private void NavigateTool(string mode)
     {
+        if(mode!="home" && !ToolOn(mode))return;if(mode=="tasks")notesMode="tasks";
         activitiesOpen=false;FlushNotes();bool back=mode=="home";toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();RefreshTools();
         if(Motion.Enabled){var move=new TranslateTransform(back?-14:14,0);toolsContent.RenderTransform=move;toolsContent.Opacity=0;Motion.Fade(toolsContent,1,180);Motion.To(move,TranslateTransform.XProperty,0,280);}
     }
@@ -35,7 +37,7 @@ public sealed partial class OverlayWindow
         for(int i=0;i<toolChoices.Length;i++)
         {
             
-            var choice=toolChoices[i];var content=new Grid();content.ColumnDefinitions.Add(new(){Width=new GridLength(28)});content.ColumnDefinitions.Add(new());content.ColumnDefinitions.Add(new(){Width=new GridLength(18)});
+            var choice=toolChoices[i];if(!ToolOn(choice.mode))continue;var content=new Grid();content.ColumnDefinitions.Add(new(){Width=new GridLength(28)});content.ColumnDefinitions.Add(new());content.ColumnDefinitions.Add(new(){Width=new GridLength(18)});
             var icon=ToolIcon(choice.mode);icon.Width=18;icon.Height=18;icon.HorizontalAlignment=HorizontalAlignment.Left;content.Children.Add(icon);
             var label=UI.Text(choice.title,12);Grid.SetColumn(label,1);content.Children.Add(label);
             var arrow=new System.Windows.Shapes.Path{Data=Geometry.Parse("M1,1 L5,5 1,9"),Stroke=UI.Brush("#ADB0B7"),StrokeThickness=1.3,Width=5,Height=9,VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Right,Opacity=0};Grid.SetColumn(arrow,2);content.Children.Add(arrow);
@@ -50,14 +52,14 @@ public sealed partial class OverlayWindow
             row.MouseEnter+=(_,_)=>Feedback();row.MouseLeave+=(_,_)=>Feedback();row.GotKeyboardFocus+=(_,_)=>Feedback();row.LostKeyboardFocus+=(_,_)=>Feedback();row.PreviewMouseLeftButtonDown+=(_,_)=>Feedback(true);row.PreviewMouseLeftButtonUp+=(_,_)=>Feedback();row.LostMouseCapture+=(_,_)=>Feedback();
             row.PreviewKeyDown+=(_,e)=>{if(e.Key is Key.Space or Key.Enter)Feedback(true);};row.PreviewKeyUp+=(_,_)=>Feedback();list.Children.Add(row);
         }
-        toolsContent.Children.Add(list);
+        if(list.Children.Count==0){list.Children.Add(UI.Text("All tools are hidden. Enable them in Settings → Widgets.",12,UI.Muted));list.Children.Add(UI.Button("Open Settings",app.ShowSettings));}toolsContent.Children.Add(list);
     }
 
     private static FrameworkElement ToolIcon(string mode)
     {
         string data=mode switch{
             "files"=>"M3,7 L9,7 11,9 21,9 21,20 3,20 Z M3,7 L3,4 10,4 12,6 21,6 21,9",
-            "notes"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
+            "notes" or "tasks"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
             "clips"=>"M9,5 L5,5 5,21 19,21 19,5 15,5 M9,3 L15,3 15,7 9,7 Z",
             "calendar"=>"M3,6 L21,6 21,21 3,21 Z M3,11 L21,11 M8,3 L8,8 M16,3 L16,8 M8,15 L10,15 M14,15 L16,15",
             "awake"=>"M4,8 L17,8 17,16 Q17,20 13,20 L8,20 Q4,20 4,16 Z M17,9 L20,9 Q24,13 17,15 M8,3 L8,5 M13,2 L13,5",
@@ -66,7 +68,8 @@ public sealed partial class OverlayWindow
     }
     private void BuildNotes()
     {
-        var p=app.Productivity;var heading=UI.Heading("Notes",19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
+        if(!ToolOn(notesMode=="tasks"?"tasks":"notes"))notesMode=ToolOn("notes")?"write":"tasks";
+        var p=app.Productivity;var heading=UI.Heading(toolsMode=="tasks"?"Tasks":"Notes",19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
         var tabs=new Grid{Height=32};tabs.ColumnDefinitions.Add(new());tabs.ColumnDefinitions.Add(new());
         var capsule=new Border{Background=UI.Brush("#34363C"),CornerRadius=new(11),Margin=new(3)};Grid.SetColumnSpan(capsule,2);capsule.HorizontalAlignment=HorizontalAlignment.Left;var slide=new TranslateTransform();capsule.RenderTransform=slide;tabs.Children.Add(capsule);
         var track=new Border{Background=UI.Brush("#14161A"),CornerRadius=new(13),Margin=new(0,0,0,15),Child=tabs};toolsContent.Children.Add(track);
@@ -92,6 +95,7 @@ public sealed partial class OverlayWindow
         var buttons=new Button[2];
         void Select(bool animate){write.Visibility=notesMode=="write"?Visibility.Visible:Visibility.Collapsed;tasks.Visibility=notesMode=="tasks"?Visibility.Visible:Visibility.Collapsed;capsule.Width=Math.Max(0,tabs.ActualWidth/2-6);double x=notesMode=="write"?0:tabs.ActualWidth/2;if(animate)Motion.To(slide,TranslateTransform.XProperty,x,240);else slide.X=x;for(int i=0;i<2;i++)buttons[i].Foreground=(notesMode=="write")==(i==0)?Brushes.White:UI.Muted;if(animate)Motion.Enter(notesMode=="write"?write:tasks,5);ResizeToolPanel();}
         for(int i=0;i<2;i++){int index=i;var button=UI.Button(i==0?"Write":"Tasks",()=>{FlushNotes();notesMode=index==0?"write":"tasks";scroll.ScrollToTop();Select(true);});button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=26;button.Margin=new(0);button.Padding=new(0);button.FontSize=11;Grid.SetColumn(button,i);tabs.Children.Add(button);buttons[i]=button;}
+        buttons[0].IsEnabled=ToolOn("notes");buttons[1].IsEnabled=ToolOn("tasks");
         tabs.SizeChanged+=(_,_)=>Select(false);Select(false);
     }
 
@@ -104,17 +108,18 @@ public sealed partial class OverlayWindow
 
     private void ProductivityChanged()
     {
-        SyncNoteEditors();if(toolsMode=="notes" && mainNoteEditor?.IsLoaded==true)return;
-        if(utilityMutating || toolsMode is not ("files" or "notes" or "clips") || (toolsMode=="notes" && Keyboard.FocusedElement is TextBox))return;
+        SyncNoteEditors();UpdateToolPeeks();if(toolsMode is "notes" or "tasks" && mainNoteEditor?.IsLoaded==true)return;
+        if(utilityMutating || toolsMode is not ("files" or "notes" or "tasks" or "clips") || (toolsMode=="notes" && Keyboard.FocusedElement is TextBox))return;
         RefreshTools();
     }
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(!WidgetOn("tools"))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
+    {if(!WidgetOn("tools") || mode!="home" && !ToolOn(mode))return;if(mode=="tasks")notesMode="tasks";if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
     private void RefreshTools()
     {
 
+        if(toolsMode!="home" && !ToolOn(toolsMode))toolsMode="home";
         toolsContent.Children.Clear();var p=app.Productivity;if(p==null)return;
         if(toolsMode!="home")
         {
@@ -125,7 +130,7 @@ public sealed partial class OverlayWindow
         {
             BuildFileShelf();
         }
-        else if(toolsMode=="notes")
+        else if(toolsMode is "notes" or "tasks")
         {
             BuildNotes();
         }
