@@ -17,7 +17,7 @@ internal static class PremiumDiagnostics
         string snapshot=JsonSerializer.Serialize(app.Settings);SettingsWindow? settings=null;
         const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
         object? Field(object target,string name)=>target.GetType().GetField(name,flags)?.GetValue(target);
-        void Check(string name,bool ok)=>check("UI 2.3.8: "+name,ok);
+        void Check(string name,bool ok)=>check("Settings 2.4.1: "+name,ok);
         void Capture(FrameworkElement element,string name,double scale=1)
         {
             element.UpdateLayout();var bmp=new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth*scale),(int)Math.Ceiling(element.ActualHeight*scale),96*scale,96*scale,PixelFormats.Pbgra32);bmp.Render(element);
@@ -49,16 +49,48 @@ internal static class PremiumDiagnostics
             foreach(double width in new[]{1100d,640d,480d})
             {
                 settings.Width=width;settings.Height=780;
-                foreach(string category in new[]{"Appearance","Layout","Widgets","Controls","Audio","System","Application"})
+                foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
                 {
                     typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(settings,new object[]{category});await Task.Delay(60);settings.UpdateLayout();
-                    Check(category+" has a section index and contextual illustrations at width "+width,Tree(settings).Any(n=>AutomationProperties.GetName(n)=="Settings section index") && Tree(settings).OfType<SettingIllustration>().Any());
+                    Check(category+" has a section index and contextual illustrations at width "+width,Tree(settings).Any(n=>AutomationProperties.GetName(n)=="Settings section index") && Tree(settings).OfType<SettingsScene>().Any());
                     Check(category+" form controls fit at width "+width,SettingsFit(settings));
                     var index=Tree(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Settings section index");
-                    index.SelectedIndex=index.Items.Count-1;await Task.Delay(20);
+                    var lastSection=(Border)((ComboBoxItem)index.Items[index.Items.Count-1]).Tag;
+                    index.SelectedIndex=index.Items.Count-1;await Task.Delay(60);
                     var form=Tree(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
-                    Check(category+" section picker navigates the form at width "+width,form.ScrollableHeight<=1 || form.VerticalOffset>0);
-                    form.ScrollToTop();await Task.Delay(20);
+                    Check(category+" section picker navigates the form at width "+width,Math.Abs(form.VerticalOffset-Math.Min(form.ScrollableHeight,lastSection.TranslatePoint(new Point(),(StackPanel)form.Content).Y+((StackPanel)form.Content).Margin.Top))<2);
+                    Check(category+" section picker remains visible at width "+width,index.TransformToAncestor(settings).Transform(new Point()).Y>=0 && index.TransformToAncestor(settings).Transform(new Point()).Y+index.ActualHeight<settings.ActualHeight);
+                    index.SelectedIndex=1;await Task.Delay(80);
+                    index.SelectedIndex=index.Items.Count-1;await Task.Delay(80);
+                    Check(category+" can jump repeatedly",Math.Abs(form.VerticalOffset-Math.Min(form.ScrollableHeight,lastSection.TranslatePoint(new Point(),(StackPanel)form.Content).Y+((StackPanel)form.Content).Margin.Top))<2);
+                    form.ScrollToVerticalOffset(Math.Min(220,form.ScrollableHeight));await Task.Delay(20);
+                    double beforeSave=form.VerticalOffset;var pageInstance=form.Content;
+                    var toggle=Tree(form).OfType<CheckBox>().FirstOrDefault(c=>AutomationProperties.GetName(c)!="Start automatically when signing in to Windows");
+                    if(toggle!=null){bool? originalToggle=toggle.IsChecked;toggle.IsChecked=!originalToggle;toggle.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));await Task.Delay(260);Check(category+" applying a toggle preserves scroll and controls",ReferenceEquals(pageInstance,form.Content) && Math.Abs(form.VerticalOffset-beforeSave)<2);toggle.IsChecked=originalToggle;toggle.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));await Task.Delay(220);}
+                    if(category=="Content")
+                    {
+                        var move=Tree(form).OfType<Button>().First(b=>AutomationProperties.GetName(b).StartsWith("Move down ") && b.IsEnabled);double beforeOrder=form.VerticalOffset;move.Focus();beforeOrder=form.VerticalOffset;move.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(100);
+                        Check("reordering Content preserves scroll at width "+width,Math.Abs(form.VerticalOffset-beforeOrder)<2);
+                    }
+                    if(category=="Launch")
+                    {
+                        var draft=Tree(form).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Shortcut name");draft.Text="Fixture draft";draft.Focus();draft.Select(4,3);await Task.Delay(80);double editOffset=form.VerticalOffset;
+                        typeof(SettingsWindow).GetMethod("Save",flags)!.Invoke(settings,null);await Task.Delay(260);
+                        Check("saving preserves shortcut draft, caret and focus at width "+width,draft.Text=="Fixture draft" && draft.SelectionStart==4 && draft.SelectionLength==3 && draft.IsKeyboardFocused && Math.Abs(form.VerticalOffset-editOffset)<2);
+                    }
+                    var slider=Tree(form).OfType<Slider>().FirstOrDefault();if(slider!=null){double originalValue=slider.Value,beforeSlider=form.VerticalOffset;slider.Value=Math.Min(slider.Maximum,slider.Value+slider.TickFrequency);await Task.Delay(230);Check(category+" slider updates preserve scroll",Math.Abs(form.VerticalOffset-beforeSlider)<2);slider.Value=originalValue;}
+                    if(width==1100)
+                    {
+                        index=Tree(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Settings section index");
+                        foreach(var option in index.Items.OfType<ComboBoxItem>().Where(i=>i.Tag is Border).ToArray())
+                        {
+                            index.SelectedItem=option;await Task.Delay(80);
+                            var destination=(Border)option.Tag;var expected=Math.Min(form.ScrollableHeight,destination.TranslatePoint(new Point(),(StackPanel)form.Content).Y+((StackPanel)form.Content).Margin.Top);
+                            Check(category+" jump aligns "+option.Content,Math.Abs(form.VerticalOffset-expected)<2);
+                            if(option.Content?.ToString() is "Hover pages" or "Clipboard history" or "Typography" or "Closed media display" or "Detachable previews" or "Automatic tucking")Capture(settings,"settings-detail-"+option.Content.ToString()!.ToLowerInvariant().Replace(' ','-'));
+                        }
+                    }
+                    form.ScrollToTop();await Task.Delay(30);
                     if(width==1100 || category is "Controls" or "Application")Capture(settings,$"premium-settings-{category.ToLowerInvariant()}-{width}");
                 }
             }

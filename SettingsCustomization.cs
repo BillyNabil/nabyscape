@@ -35,19 +35,19 @@ public sealed partial class SettingsWindow
 
     private void LayoutSettings()
     {
-        var s=app.Settings;var geometry=new StackPanel();AddSlider(geometry,"Closed width",s.Width,180,400,v=>s.Width=v,"px");AddSlider(geometry,"Closed height",s.Height,28,72,v=>s.Height=v,"px");AddSlider(geometry,"Corner radius",s.Radius,0,40,v=>s.Radius=v,"px");AddSlider(geometry,"Horizontal position",s.Horizontal,0,100,v=>s.Horizontal=v,"%");if(s.Preset!="Mac")AddSlider(geometry,"Top offset",s.Top,0,150,v=>s.Top=v,"px");page.Children.Add(Section("Closed island",geometry));
+        DisplaySettings();var s=app.Settings;var geometry=new StackPanel();AddSlider(geometry,"Closed width",s.Width,180,400,v=>s.Width=v,"px");AddSlider(geometry,"Closed height",s.Height,28,72,v=>s.Height=v,"px");AddSlider(geometry,"Corner radius",s.Radius,0,40,v=>s.Radius=v,"px");AddSlider(geometry,"Horizontal position",s.Horizontal,0,100,v=>s.Horizontal=v,"%");if(s.Preset!="Mac")AddSlider(geometry,"Top offset",s.Top,0,150,v=>s.Top=v,"px");page.Children.Add(Section("Closed island",geometry));
         var panel=new StackPanel();AddSlider(panel,"Panel width",s.PanelWidth,340,640,v=>s.PanelWidth=v,"px");AddSlider(panel,"Maximum panel height",s.PanelMaxHeight,320,760,v=>s.PanelMaxHeight=v,"px");AddSlider(panel,"Content inset",s.PanelPadding,16,40,v=>s.PanelPadding=v,"px");AddSlider(panel,"Content size",s.PanelScale*100,85,125,v=>s.PanelScale=v/100,"%");AddSlider(panel,"Section spacing",s.SectionGap,8,28,v=>s.SectionGap=v,"px");page.Children.Add(Section("Open panel",Check("Compact panel with tabs",s.CompactLayout,v=>s.CompactLayout=v),Advanced("Panel dimensions and spacing",panel)));
         var hover=new StackPanel();AddSlider(hover,"Preview width",s.HoverWidth,300,500,v=>s.HoverWidth=v,"px");AddSlider(hover,"Preview height",s.HoverHeight,184,280,v=>s.HoverHeight=v,"px");page.Children.Add(Section("Hover preview",hover));
         page.Children.Add(Section("Layout profile",UI.Row(UI.Button("Export layout",ExportCustomization),UI.Button("Import layout",ImportCustomization)),UI.Text("Includes appearance, layout, widget order and gestures. Personal notes, shortcuts and startup settings are excluded.",11,UI.Muted)));
     }
     private void AudioSettings()
     {
+        MediaAppearanceSettings();AudioFeedbackSettings();
         page.Children.Add(Section("Volume mixer",UI.Text("Choose Apps or Outputs, then drag a volume slider or use mute.",12,UI.Muted),UI.Button("Open volume mixer",()=>app.OpenMixer())));
-        page.Children.Add(Section("Waveform source",UI.Text("The bars follow the app selected in Media, including Spotify on a different output. Choose Spotify in the Media session menu to keep Discord audio out of the waveform. Quiet or unavailable readings use the optional gentle motion setting in Controls.",12,UI.Muted)));
         var signal=new StackPanel();audioSignalWave=new ActivityVisual{WaveOnly=true,Width=96,Height=16,HorizontalAlignment=HorizontalAlignment.Left,Margin=new(0,4,0,12)};signal.Children.Add(audioSignalWave);audioSignalState=UI.Text("Reading selected app…",11,UI.Muted);signal.Children.Add(audioSignalState);
-        page.Children.Add(Section("Live signal",signal,UI.Text("The waveform expands small level changes in mastered music. Bars show amplitude history, not bass or treble bands.",11,UI.Muted)));
+        page.Children.Add(Section("Live signal",UI.Text("Follows the app selected in Media, across Windows outputs. Select Spotify there to keep Discord out of the waveform.",11,UI.Muted),signal,UI.Text("The waveform expands small level changes in mastered music. Bars show amplitude history, not bass or treble bands.",11,UI.Muted)));
         page.Children.Add(Section("Audio behavior",UI.Text("Output selection changes the Windows default device. Microphone mute is available from the audio menu.",12,UI.Muted),UI.Button("Windows sound settings",()=>ShortcutService.Open(new(){Target="ms-settings:sound"}))));
-        var step=new StackPanel();AddSlider(step,"Volume step",app.Settings.VolumeStep,1,10,v=>app.Settings.VolumeStep=(int)v,"%");page.Children.Add(Section("Header wheel",step));
+
     }
     private void SystemSettings()
     {
@@ -57,13 +57,17 @@ public sealed partial class SettingsWindow
     private void HoverControls()
     {
         var s=app.Settings;var timing=new StackPanel();AddSlider(timing,"Hover delay",s.HoverDelayMs,80,900,v=>s.HoverDelayMs=(int)v,"ms",10);AddSlider(timing,"Detail delay",s.HoverDetailDelayMs,200,1200,v=>s.HoverDetailDelayMs=(int)v,"ms",10);AddSlider(timing,"Swipe distance",s.SwipeDistance,24,100,v=>s.SwipeDistance=v,"px");page.Children.Add(Section("Hover & swipe",UI.Text("Scroll anywhere on a preview to browse. Click to open its panel.",11,UI.Muted),Check("Preview on hover",s.HoverPeek,v=>s.HoverPeek=v),Check("Two-stage reveal",s.TwoStageHover,v=>s.TwoStageHover=v),Advanced("Hover timing",timing)));
+    }
+    private void HoverPageSettings()
+    {
+        var s=app.Settings;
         var views=new StackPanel{MaxWidth=600,HorizontalAlignment=HorizontalAlignment.Stretch};
         for(int i=0;i<s.HoverViews.Count;i++)
         {
             int index=i;var item=s.HoverViews[i];string title=item.Id switch{"media"=>"Music","notes"=>"Note","files"=>"Shelf","clips"=>"Clipboard","tasks"=>"Tasks",_=>char.ToUpperInvariant(item.Id[0])+item.Id[1..]};
             var row=new Grid{Margin=new(0,3,0,3)};row.ColumnDefinitions.Add(new(){Width=new GridLength(26)});row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(56)});row.ColumnDefinitions.Add(new(){Width=new GridLength(64)});
             row.Children.Add(UI.Text((i+1).ToString(),11,UI.Muted));
-            var show=UI.Button(title,()=>{previewMode="Hover";previewContent=title=="Clipboard"?"Smart clipboard":title;RefreshPreview();});show.Content=SettingCaption(title,new SettingIllustration("Preview "+title){Margin=new(0,0,8,0)});show.Background=Brushes.Transparent;show.HorizontalContentAlignment=HorizontalAlignment.Stretch;show.Padding=new(4,6,4,6);show.Margin=new(0);show.MinHeight=32;show.FontSize=12;show.ToolTip="Preview "+title;Grid.SetColumn(show,1);row.Children.Add(show);
+            var show=UI.Button(title,()=>{previewMode="Hover";previewContent=title=="Clipboard"?"Smart clipboard":title;RefreshPreview();});show.Content=title;show.Background=Brushes.Transparent;show.HorizontalContentAlignment=HorizontalAlignment.Stretch;show.Padding=new(4,6,4,6);show.Margin=new(0);show.MinHeight=32;show.FontSize=12;show.ToolTip="Preview "+title;Grid.SetColumn(show,1);row.Children.Add(show);
             var enabled=new CheckBox{IsChecked=item.Enabled,VerticalAlignment=VerticalAlignment.Center,MinHeight=32,Height=32,Margin=new(0,0,10,0)};UI.Named(enabled,"Show "+title+" in hover previews");enabled.ToolTip="Show "+title;enabled.Click+=(_,_)=>{item.Enabled=enabled.IsChecked==true;Save();};Grid.SetColumn(enabled,2);row.Children.Add(enabled);
             var controls=UI.Row(UI.Button("Move up "+title,()=>Move(s.HoverViews,index,-1)),UI.Button("Move down "+title,()=>Move(s.HoverViews,index,1)));controls.VerticalAlignment=VerticalAlignment.Center;
             for(int k=0;k<2;k++){var button=(Button)controls.Children[k];var icon=Icons.Create("chevron",10);icon.RenderTransformOrigin=new(.5,.5);icon.RenderTransform=new RotateTransform(k==0?180:0);button.Content=icon;button.Width=28;button.MinHeight=28;button.Padding=new(0);button.Margin=new(2,0,0,0);button.Tag=new CornerRadius(7);button.ToolTip=k==0?"Earlier in the swipe order":"Later in the swipe order";}
@@ -115,6 +119,7 @@ public sealed partial class SettingsWindow
                 var rows=new WrapPanel();var samples=previewContent=="Launch"?app.Settings.Shortcuts.Take(4).Select(x=>(x.Name,"arrow")).ToArray():new[]{("Media","nav-media"),("Focus","nav-focus"),("Status","nav-status"),("Launch","nav-launch"),("Tools","nav-tools")};
                 foreach(var (name,icon) in samples){var entry=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,0,12,14)};if(style!="Text")entry.Children.Add(Icons.Create(icon,16,UI.Brush(s.Accent)));if(style!="Icons"){var label=UI.Text(name,11);label.Margin=new(style=="Text"?0:7,0,0,0);label.FontWeight=s.BoldHeadings?FontWeights.SemiBold:FontWeights.Normal;label.MaxWidth=96;label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;entry.Children.Add(label);}rows.Children.Add(entry);}detail.Children.Add(rows);
             }
+            else if(previewContent=="Startup"){detail.Children.Add(UI.Heading("Start with Windows",16));detail.Children.Add(new CheckBox{Content=s.AutoStart?"Enabled":"Off",IsChecked=s.AutoStart,IsHitTestVisible=false,Focusable=false});detail.Children.Add(UI.Text("Closing Settings keeps NabyScape running. Quit from the tray.",11,UI.Muted));}
             else if(previewContent=="Volume feedback"){detail.Children.Add(Icons.Create("volume",24));detail.Children.Add(UI.Text($"{app.Audio.Volume*100:0}%",24));detail.Children.Add(new ProgressBar{Value=app.Audio.Volume*100,Height=4,Margin=new(0,14,0,0)});}
             else{var cpu=UI.Text($"CPU   {app.Usage.cpu:0}%",14);var memory=UI.Text($"Memory   {app.Usage.used:0.0} / {app.Usage.total:0.0} GB",12);var bar=new ProgressBar{Value=app.Usage.cpu,Maximum=100,Height=3,Margin=new(0,10,0,18),Foreground=Brushes.White,Background=UI.Brush("#40434B")};detail.Children.Add(cpu);detail.Children.Add(bar);detail.Children.Add(memory);previewFrames.Add(_=>{cpu.Text=$"CPU   {app.Usage.cpu:0}%";bar.Value=app.Usage.cpu;memory.Text=$"Memory   {app.Usage.used:0.0} / {app.Usage.total:0.0} GB";});}
             content.Children.Add(detail);

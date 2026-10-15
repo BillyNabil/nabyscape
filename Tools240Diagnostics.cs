@@ -45,7 +45,7 @@ internal static class Tools240Diagnostics
             var settings=new SettingsWindow(app);settings.Show();
             try
             {
-                foreach(string page in new[]{"Widgets","Controls"}){typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(settings,new object[]{page});await Task.Delay(100);Capture(settings,"settings-"+page);}
+                foreach(string page in new[]{"Content","Controls"}){typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(settings,new object[]{page});await Task.Delay(100);Capture(settings,"settings-"+page);}
                 Check("Controls exposes maximized tucking",Diagnostics.Descendants(settings).OfType<CheckBox>().Any(c=>AutomationProperties.GetName(c)=="Tuck above maximized apps"));
             }
             finally{settings.Close();}

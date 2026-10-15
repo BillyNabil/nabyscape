@@ -135,7 +135,7 @@ Screenshots show the interface with different media sessions and settings.
 
 Configure these features in **Settings → Controls**. Open panels support sideways swipes and horizontal trackpad scrolling; **Shift+wheel** switches panels anywhere outside text editors. Normal vertical scrolling stays available for long lists. **Appearance → Controls & outlines** changes button, input, outline and selected-tab colors. Typography has independent bold options for media and headings, with visual examples. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
 
-Enable **Clipboard** and **Tasks** in **Controls → Hover pages** to browse recent clips or complete tasks without opening a panel. Clipboard capture stays opt-in. **Widgets → Individual tools** controls each tool independently, and **Widgets → Activity actions** turns Activities on or off. Hiding tools keeps saved content. **Controls → Automatic tucking** leaves a small edge above maximized/fullscreen apps; hover the edge to reveal it. Open panels omit the duplicate closed-media header.
+Enable **Clipboard** and **Tasks** in **Content → Hover pages** to browse recent clips or complete tasks without opening a panel. Clipboard capture stays opt-in. **Content → Individual tools** controls each tool independently, and **Launch → Activity actions** turns Activities on or off. Hiding tools keeps saved content. **Controls → Automatic tucking** leaves a small edge above maximized/fullscreen apps; hover the edge to reveal it. Open panels omit the duplicate closed-media header.
 
 <details>
 <summary><strong>Calendar and system mini windows</strong></summary>
@@ -155,9 +155,9 @@ The 2.3 captures use local sample content. Windows window chrome can vary.
 
 Choose a **notch** or a **pill**, then adjust color, opacity, material, size, placement, typography, content scale, and widget order. Settings includes descriptions and a live preview. Category and Launch controls can use icons, labels, or both.
 
-Settings uses a custom title bar with window controls, seven categories and a **Jump to a section** menu. Setting illustrations sit beside the controls; pointing to a setting or focusing it updates the adjacent preview. On smaller windows the preview moves above the form.
+Settings uses a custom title bar with window controls, eight categories: Appearance, Layout, Content, Controls, Audio, System, Launch and Application. Panel order, tool visibility and hover pages live together in Content. A persistent **Jump to a section** menu scrolls directly to each heading. Each section has a detailed example reflecting its own purpose and current preferences; changes and reordering preserve your scroll position. Pointing to a setting or focusing it updates the adjacent preview. On smaller windows the preview moves above the form.
 
-<img src="Assets/readme/settings-238.png" alt="NabyScape Settings with a custom title bar, section picker, illustrated settings and a live auto-tuck preview" width="900">
+<img src="Assets/readme/settings-241.png" alt="NabyScape Settings with organized categories, a persistent section picker, detailed content examples and a contextual preview" width="900">
 
 Status keeps CPU, RAM, GPU usage and uptime in Overview. Hardware lists the main components first; sensor availability and adapter IDs sit in an expandable detail area. Scroll with the wheel, touchpad or Page Down; the monitor scrollbar stays hidden.
 

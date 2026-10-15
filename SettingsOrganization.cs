@@ -7,11 +7,6 @@ using System.Windows.Media;
 namespace NabyScape;
 public sealed partial class SettingsWindow
 {
-    private static Grid SettingCaption(string title,SettingIllustration image)=>SettingCaption(UI.Text(title,12),image);
-    private static Grid SettingCaption(UIElement label,SettingIllustration image)
-    {
-        var row=new Grid();row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.ColumnDefinitions.Add(new());row.Children.Add(image);Grid.SetColumn(label,1);row.Children.Add(label);return row;
-    }
     private void WireSettingPreview(FrameworkElement control,string name)
     {
         void Show(){ConfigurePreviewForSetting(name);RefreshPreview();}
@@ -23,47 +18,75 @@ public sealed partial class SettingsWindow
     {
         var descriptions=new System.Collections.Generic.Dictionary<string,string>
         {
-            ["Appearance"]="Shape, color, typography and motion. Each example reflects the option beside it.",
-            ["Layout"]="Adjust the closed island, hover preview and open panel separately.",
-            ["Widgets"]="Choose what appears, arrange it, and add the apps you use most.",
-            ["Controls"]="Set up hover, gestures, keyboard shortcuts and everyday tools.",
-            ["Audio"]="Choose how playback, output devices and the waveform behave.",
-            ["System"]="Select the information shown in Status. Readings stay on this PC.",
-            ["Application"]="Startup, automatic tucking and local storage. Your data stays on this device."
+            ["Appearance"]="Colors, text and animation.",
+            ["Layout"]="Display, position and sizes for each island state.",
+            ["Content"]="Panel order, tools, hover pages and clipboard capture.",
+            ["Controls"]="Hover timing, mouse gestures, keyboard shortcuts and auto-hide.",
+            ["Audio"]="Closed media display, waveform and sound controls.",
+            ["System"]="Status readings and clock format.",
+            ["Launch"]="Your app shortcuts and activity routines.",
+            ["Application"]="Startup, local data and app information."
         };
         var intro=UI.Text(descriptions[current],12,UI.Muted);intro.Margin=new(0,-14,0,18);page.Children.Insert(1,intro);
         var sections=page.Children.OfType<Border>().Where(b=>b.Tag is string).ToArray();
-        var links=new ComboBox{Margin=new(0,0,0,24),HorizontalAlignment=HorizontalAlignment.Stretch};UI.Named(links,"Settings section index");
+        var links=new ComboBox{HorizontalAlignment=HorizontalAlignment.Stretch};UI.Named(links,"Settings section index");
         links.Items.Add(new ComboBoxItem{Content="Jump to a section…",IsEnabled=false});links.SelectedIndex=0;
-        foreach(var section in sections)
+        foreach(var section in sections)links.Items.Add(new ComboBoxItem{Content=(string)section.Tag,Tag=section});
+        sectionIndexHost.Child=links;
+        links.SelectionChanged+=(_,_)=>
         {
-            links.Items.Add(new ComboBoxItem{Content=(string)section.Tag,Tag=section});
-        }
-        page.Children.Insert(2,links);
-        links.SelectionChanged+=(_,_)=>{if(links.SelectedItem is ComboBoxItem {Tag:Border section})section.BringIntoView();};
-        // Selectors get their own visual as well; numeric editors already belong to a slider.
-        foreach(var box in SettingTree(page).OfType<ComboBox>().ToArray())
+            if(links.SelectedItem is not ComboBoxItem {Tag:Border section})return;
+            links.Focus();int revision=++navigationRevision;
+            // Wait for the popup to return focus, then align the heading, not the entire section.
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,()=>
+            {
+                if(revision!=navigationRevision || !page.Children.Contains(section))return;
+                settingsScroll.UpdateLayout();
+                settingsScroll.ScrollToVerticalOffset(section.TranslatePoint(new Point(),page).Y+page.Margin.Top);
+                ConfigurePreviewForSection((string)section.Tag);RefreshPreview();
+                links.SelectedIndex=0;settingsScroll.UpdateLayout();
+            });
+        };
+        foreach(var box in SettingTree(page).OfType<ComboBox>())
         {
-            if(ReferenceEquals(box,links))continue;
             string name=AutomationProperties.GetName(box);if(name.Length==0)continue;
-            WireSettingPreview(box,name);
-            if(box.Parent is not Panel owner)continue;
-            if(owner is Grid existing && existing.ColumnDefinitions.Count>1)
-            {var selectorHelp=new StackPanel();selectorHelp.Children.Add(new SettingIllustration(name));selectorHelp.Children.Add(UI.Text(SettingDescription(name),11));box.ToolTip=selectorHelp;continue;}
-            int index=owner.Children.IndexOf(box),column=Grid.GetColumn(box),row=Grid.GetRow(box),span=Grid.GetColumnSpan(box);
-            owner.Children.RemoveAt(index);var image=new SettingIllustration(name){Margin=new(0,0,12,0)};var group=SettingCaption(box,image);Grid.SetColumn(group,column);Grid.SetRow(group,row);Grid.SetColumnSpan(group,span);Grid.SetColumn(box,1);Grid.SetRow(box,0);Grid.SetColumnSpan(box,1);owner.Children.Insert(index,group);
-            void Update(){image.Value=box.Items.Count>1?(double)box.SelectedIndex/(box.Items.Count-1):.5;image.InvalidateVisual();}Update();box.SelectionChanged+=(_,_)=>Update();
-            if(SettingDescription(name) is string help && help.Length>0)box.ToolTip=help;
+            WireSettingPreview(box,name);string help=SettingDescription(name);if(help.Length>0)box.ToolTip=help;
         }
-        // Every section also has a distinct, keyboard-accessible route to the full preview.
         foreach(var section in sections)
         {
             if(section.Child is not StackPanel content || content.Children.Count==0)continue;
             var title=(FrameworkElement)content.Children[0];content.Children.RemoveAt(0);
-            var head=new DockPanel{Margin=new(0,0,0,8)};
-            var previewButton=UI.Button("Preview "+section.Tag,()=>{ConfigurePreviewForSetting((string)section.Tag);RefreshPreview();});
-            previewButton.Content=Icons.Create("nav-media",14,UI.Muted);previewButton.ToolTip="Show example: "+section.Tag;previewButton.Width=30;previewButton.MinHeight=28;previewButton.Padding=new(0);previewButton.Margin=new(8,0,0,0);previewButton.Background=Brushes.Transparent;DockPanel.SetDock(previewButton,Dock.Right);head.Children.Add(previewButton);title.Margin=new(0);head.Children.Add(title);content.Children.Insert(0,head);
+            var head=new DockPanel{Margin=new(0,0,0,12)};
+            var previewButton=UI.Button("Preview "+section.Tag,()=>{ConfigurePreviewForSection((string)section.Tag);RefreshPreview();});
+            previewButton.Content="Try preview";previewButton.FontSize=10;previewButton.ToolTip="Explore "+section.Tag;previewButton.MinHeight=26;previewButton.Padding=new(8,4,8,4);previewButton.Margin=new(8,0,0,0);previewButton.Background=Brushes.Transparent;DockPanel.SetDock(previewButton,Dock.Right);if(new[]{"Enabled widgets & order","Text and navigation","Hover pages","Hover & swipe","Hover preview","Individual tools","Clipboard history","Focus sessions","Automatic tucking","Hide or show the island","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Shortcuts","Launch display","Activity actions","Clock","Monitor details","Controls & outlines","Typography","Panel navigation","Open panel","Closed media display","Live signal","Waveform source","Live feedback"}.Contains((string)section.Tag))head.Children.Add(previewButton);title.Margin=new(0);head.Children.Add(title);content.Children.Insert(0,head);
         }
+    }
+    private void ConfigurePreviewForSection(string title)
+    {
+        previewFocus.Text=title;
+        (previewMode,previewContent)=title switch
+        {
+            "Enabled widgets & order" or "Text and navigation" =>("Panel","Navigation"),
+            "Hover pages" or "Hover & swipe" or "Hover preview" =>("Hover","Music"),
+            "Individual tools" =>("Panel","Tools"),
+            "Clipboard history" =>("Panel","Smart clipboard"),
+            "Focus sessions" =>("Panel","Focus"),
+            "Automatic tucking" or "Hide or show the island" =>("Panel","Visibility"),
+            "Drag to Island" =>("Hover","Drop zone"),
+            "Detachable previews" =>("Hover","Detached preview"),
+            "Closed cover gestures" =>("Hover","Cover gestures"),
+            "Two live activities" =>("Hover","Two activities"),
+            "Launch display" or "Shortcuts" =>("Panel","Launch"),
+            "Activity actions" =>("Panel","Activities"),
+            "Clock" or "Monitor details" =>("Panel","System"),
+            "Controls & outlines" =>("Panel","Control colors"),
+            "Typography" =>("Panel","Typography"),
+            "Panel navigation" =>("Panel","Panel navigation"),
+            "Live signal" or "Waveform source" =>("Panel","Music"),
+            "Live feedback" =>("Closed","Volume feedback"),
+            "Open panel" =>("Panel","Music"),
+            _ =>("Closed","Music")
+        };
     }
     private FrameworkElement VisibilityExample()
     {

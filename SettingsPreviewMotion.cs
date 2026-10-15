@@ -61,7 +61,8 @@ public sealed partial class SettingsWindow
         previewFocus.Text=name;
         if(name=="Enable Activities"){previewMode="Panel";previewContent="Activities";}
         else if(name.EndsWith(" tool")){previewMode="Hover";previewContent=name[..^5] switch{"File shelf"=>"Shelf","Notes"=>"Note","Clipboard"=>"Smart clipboard","Tasks"=>"Tasks","Calendar"=>"Calendar",_=>"Tools"};}
-        else if(name.Contains("Tuck",StringComparison.OrdinalIgnoreCase) || current=="Application"){previewMode="Panel";previewContent="Visibility";}
+        else if(current=="Application"){previewMode="Panel";previewContent="Startup";}
+        else if(name.Contains("Tuck",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Visibility";}
         else if(name=="Swipe between open panels"){previewMode="Panel";previewContent="Panel navigation";}
         else if(name=="Reveal shelf when dragging files"){previewMode="Hover";previewContent="Drop zone";}
         else if(name=="Allow detachable previews"){previewMode="Hover";previewContent="Detached preview";}
@@ -94,6 +95,6 @@ public sealed partial class SettingsWindow
         float peak=app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;
         bool animate=app.Media.Playing && !app.Audio.MediaMeterMuted && app.Settings.LiveActivity && !app.Settings.ReduceMotion;
         audioSignalWave.Sample(peak,.033,0,false,false,animate,seconds,true,app.Settings.WaveformIdleMotion);
-        audioSignalState.Text=!app.Settings.LiveActivity?"Live activity is off · enable it in Appearance":app.Settings.ReduceMotion?"Reduce Motion is on · the waveform stays still":!app.Media.Playing?"Playback paused · quiet baseline":app.Audio.MediaMeterMuted?"Selected app or output is muted":app.Audio.MediaMeterSessions==0?"No matching audio meter · optional gentle fallback":$"Live meter · {app.Audio.MediaAudibleSessions} audible session · {peak*100:0}% peak";
+        audioSignalState.Text=!app.Settings.LiveActivity?"Live activity is off · enable it in Audio":app.Settings.ReduceMotion?"Reduce Motion is on · the waveform stays still":!app.Media.Playing?"Playback paused · quiet baseline":app.Audio.MediaMeterMuted?"Selected app or output is muted":app.Audio.MediaMeterSessions==0?"No matching audio meter · optional gentle fallback":$"Live meter · {app.Audio.MediaAudibleSessions} audible session · {peak*100:0}% peak";
     }
 }
