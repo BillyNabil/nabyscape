@@ -91,7 +91,7 @@ internal sealed class DetachedPreviewWindow : Window
         WindowStyle=WindowStyle.SingleBorderWindow;ResizeMode=ResizeMode.CanResize;ShowInTaskbar=true;Topmost=false;Background=Brushes.Black;Foreground=Brushes.White;
         UI.Named(this,Title);var layout=new DockPanel();
         var header=new DockPanel{Margin=new(12,6,10,8),LastChildFill=true};DockPanel.SetDock(header,Dock.Top);layout.Children.Add(header);
-        var pin=new CheckBox{Content="Always on top",IsChecked=false,Foreground=UI.Muted,VerticalAlignment=VerticalAlignment.Center,FontSize=11};UI.Named(pin,"Always on top");pin.Checked+=(_,_)=>Topmost=true;pin.Unchecked+=(_,_)=>Topmost=false;DockPanel.SetDock(pin,Dock.Right);header.Children.Add(pin);
+        var pin=new CheckBox{Content="Always on top",IsChecked=false,Foreground=UI.Muted,VerticalAlignment=VerticalAlignment.Center,FontSize=11};pin.Style=(Style)app.FindResource("SettingsSwitch");UI.Named(pin,"Always on top");pin.Checked+=(_,_)=>Topmost=true;pin.Unchecked+=(_,_)=>Topmost=false;DockPanel.SetDock(pin,Dock.Right);header.Children.Add(pin);
         var handle=UI.Text(NameFor(kind),13);handle.FontWeight=FontWeights.SemiBold;handle.Cursor=Cursors.SizeAll;handle.ToolTip="Drag to move · Alt+Space for window controls";handle.MouseLeftButtonDown+=(_,e)=>{if(e.ClickCount==1){DragMove();e.Handled=true;}};header.Children.Add(handle);
         view=new(app,kind,openMain);layout.Children.Add(view.Content);
         surface=new Border{Padding=new(8),Child=layout};Content=surface;ApplySettings();
@@ -132,4 +132,3 @@ internal sealed class DetachedPreviewWindow : Window
         try{app.Store.Save("detached-"+kind,new DetachedPreviewGeometry{Left=Left,Top=Top,Width=Width,Height=Height});}catch(Exception ex){app.Store.Log(ex);}
     }
 }
-

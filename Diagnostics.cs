@@ -47,6 +47,10 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--interactions-only"))
+            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--review-regressions"))
+            {await Task.Delay(500);await InteractionDiagnostics.RunReviewRegressions(app,overlay,directory,Check);return;}
             await Task.Delay(2500);
             Check("Overlay starts without taking focus",Native.GetForegroundWindow()!=new WindowInteropHelper(overlay).Handle);
             Check("Collapsed painted contour matches configured dimensions",Math.Abs(overlay.PaintedWidth-app.Settings.Width)<1 && Math.Abs(overlay.PaintedHeight-app.Settings.Height)<1);
@@ -277,7 +281,8 @@ internal static class Diagnostics
             app.Settings.Preset="iPhone";app.Settings.Top=12;app.Settings.Monitor="";app.ChangeSettings();
             app.ShowSettings();await Task.Delay(400);
             var settings=Application.Current.Windows.OfType<SettingsWindow>().Single();Capture(settings,"settings-appearance");
-            for(int revisit=0;revisit<3;revisit++)foreach(string section in new[]{"Controls","Appearance","Controls","System","Appearance"})Descendants(settings).OfType<Button>().Single(b=>b.Content?.ToString()==section).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var settingsNav=Descendants(settings).Single(node=>AutomationProperties.GetName(node)=="Settings navigation");
+            for(int revisit=0;revisit<3;revisit++)foreach(string section in new[]{"Controls","Appearance","Controls","System","Appearance"})Descendants(settingsNav).OfType<Button>().Single(b=>b.Content?.ToString()==section).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check("Settings status labels safely reattach on repeated Appearance and Controls visits",Descendants(settings).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Performance profile"));
             settings.UpdateLayout();Check("Appearance switches have visible concrete explanations",Descendants(settings).OfType<TextBlock>().Any(t=>t.Text==SettingsWindow.SettingDescription("Black glass")));
 

@@ -41,12 +41,12 @@ public sealed partial class OverlayWindow
             marker.HorizontalAlignment=HorizontalAlignment.Left;marker.VerticalAlignment=VerticalAlignment.Center;grid.Children.Add(marker);
             var label=UI.Text(item.Kind=="image"?"Image":item.Label,12);label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;label.VerticalAlignment=VerticalAlignment.Center;Grid.SetColumn(label,1);grid.Children.Add(label);
             var kind=UI.Text(item.Pinned?"Pinned":classified.Kind.ToString(),9,UI.Muted);kind.HorizontalAlignment=HorizontalAlignment.Right;kind.VerticalAlignment=VerticalAlignment.Center;Grid.SetColumn(kind,2);grid.Children.Add(kind);
-            var row=UI.Button("View "+classified.Kind,()=>{selectedClipId=selectedClipId==item.Id?null:item.Id;RefreshTools();});row.Content=grid;row.HorizontalContentAlignment=HorizontalAlignment.Stretch;row.MinHeight=38;row.Padding=new(7,4,7,4);row.Margin=new(0,2,0,0);row.Background=selectedClipId==item.Id?UI.Brush("#24FFFFFF"):Brushes.Transparent;row.BorderThickness=new(0);panel.Children.Add(row);
+            var row=UI.Button("View "+classified.Kind,()=>{selectedClipId=selectedClipId==item.Id?null:item.Id;RefreshTools();ResizeToolPanel();Dispatcher.BeginInvoke(()=>toolsContent.Children.OfType<StackPanel>().FirstOrDefault(part=>part.Tag as string=="clip-detail")?.BringIntoView());});row.Content=grid;row.HorizontalContentAlignment=HorizontalAlignment.Stretch;row.MinHeight=38;row.Padding=new(7,4,7,4);row.Margin=new(0,2,0,0);row.Background=selectedClipId==item.Id?UI.Brush("#24FFFFFF"):Brushes.Transparent;row.BorderThickness=new(0);panel.Children.Add(row);
         }
         if(clips.Length==0){var empty=UI.Text("Your next copied item will appear here.",12,UI.Muted);empty.Margin=new(0,12,0,0);panel.Children.Add(empty);return;}
         var selected=clips.FirstOrDefault(c=>c.Id==selectedClipId);if(selected==null)return;
         var detail=SmartClipboard.Classify(selected);
-        var section=new StackPanel{Margin=new(0,12,0,0)};panel.Children.Add(section);
+        var section=new StackPanel{Tag="clip-detail",Margin=new(0,12,0,0)};panel.Children.Add(section);
         section.Children.Add(UI.Text(detail.Kind+" · "+selected.Timestamp.ToLocalTime().ToString("g"),10,UI.Muted));
         var status=UI.Text("",10,UI.Muted);var actions=new WrapPanel{Margin=new(0,5,0,0)};
         void Copy(string? variant=null){status.Text=p.TryCopyClip(selected,variant)?"Copied.":"Could not copy. The clipboard may be busy; try again.";ResizeToolPanel();}

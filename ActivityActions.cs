@@ -132,4 +132,3 @@ public sealed class ActivityActionsService : IDisposable
     private void Report(Exception ex){LastError=ex.Message;log(ex);}
     public void Dispose(){if(disposed)return;Stop();awake.Changed-=AwakeChanged;disposed=true;}
 }
-

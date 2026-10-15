@@ -1,6 +1,6 @@
 # NabyScape feature roadmap
 
-Reviewed 14 October 2026. Reference sites: [NotchNook](https://getnotchnook.com/) and [Vorssaint](https://vorssaint.com/). The first batch was approved and implemented in 1.7. The remaining entries are proposals, not scheduled commitments.
+Reviewed 16 October 2026. Reference sites: [NotchNook](https://getnotchnook.com/) and [Vorssaint](https://vorssaint.com/). The first batch was approved and implemented in 1.7. Entries in the proposed sequence remain proposals, not scheduled commitments.
 
 NotchNook groups music, calendar/meeting access, notes, tasks, timers, a camera mirror, and a file tray around the notch. Vorssaint offers modular local tools, including clipboard history, a command bar, clean links, keep-awake controls, audio utilities, and optional Dynamic Island activities. These are feature references; NabyScape keeps its own black-glass presentation and implementation.
 
@@ -45,3 +45,14 @@ Windows integrations need Windows-specific feasibility checks. macOS AirDrop, Ap
 ## Version 2.0
 
 Shipped: app-session and output volume mixer with individual controls, visual Settings previews, expanded layout/hover customization and import/export, and detailed local system monitoring. GPU temperatures, general notification reading and automatic audio-device priority remain outside this release.
+
+## Version 2.3
+
+- Drag-to-island shelf reveal with three-thumbnail staging, multi-file selection, and cancellation that retains open editors.
+- Seven detachable previews: Music, Timer, Focus, Calendar, Notes, Shelf and System. Shared data, resizable windows, optional topmost, and manual hide/show recovery.
+- Activities in Launch and command search: ordered app/folder/website launches, Focus, and timed Keep awake. Explicit Start and ownership-aware Stop; no automatic execution.
+- Smart clipboard actions for text, links, images and HEX/RGB colors. Existing opt-in privacy and clearing rules remain.
+- Closed-cover playback gestures and a secondary countdown satellite alongside music.
+- New Controls descriptions, interactive Settings examples, and an optional System hover page (off by default).
+
+Detached notes share the main document. Closing a preview never stops its timer or media. Physical mixed-DPI transitions, monitor hot-plug and cross-application drag behavior still require device-specific verification.

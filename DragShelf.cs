@@ -18,7 +18,7 @@ public sealed partial class OverlayWindow
     private string dropSignature="";
     private bool shelfDropBrowsing;
     private bool fileDragActive,dragWasExpanded,dragWasPeeking;
-    private string dragPreviousPage="media",dragPreviousTool="home",dragPreviousPeek="media";
+    private string dragPreviousPeek="media";
     private void InitializeFileDrop()
     {
         AllowDrop=true;
@@ -27,10 +27,7 @@ public sealed partial class OverlayWindow
             if(!CanShelfDrop(e)){e.Effects=DragDropEffects.None;return;}
             if(!fileDragActive)
             {
-                fileDragActive=true;dragWasExpanded=expanded;dragWasPeeking=peeking;dragPreviousPage=activePage;dragPreviousTool=toolsMode;dragPreviousPeek=peekId;
-                if(IsTucked)RevealTuckedPreview();
-                if(!expanded){if(!peeking)PreviewActivity();SelectPeek("files");PromotePeek();}
-                else if(activePage!="tools" || toolsMode!="files")ShowTools("files",false);
+                BeginFileDrop();
             }
             ShowShelfDropPreview(e.Data.GetData(DataFormats.FileDrop) as string[]??Array.Empty<string>());e.Effects=DragDropEffects.Copy;e.Handled=true;
         };
@@ -47,10 +44,18 @@ public sealed partial class OverlayWindow
             e.Handled=true;
         };
     }
+    private void BeginFileDrop()
+    {
+        if(userHidden || fileDragActive)return;
+        fileDragActive=true;dragWasExpanded=expanded;dragWasPeeking=peeking;dragPreviousPeek=peekId;
+        StopHoverTimers();EndPeekGesture();
+        // An expanded page stays mounted, including command/calendar editor state.
+        if(!expanded){if(IsTucked)RevealTuckedPreview();if(!peeking)PreviewActivity();SelectPeek("files");PromotePeek();}
+    }
     private bool CanShelfDrop(DragEventArgs e)=>!userHidden && WidgetOn("tools") && e.Data.GetDataPresent(DataFormats.FileDrop) && (app.Settings.DropReveal || expanded && toolsMode=="files" || peeking && peekId=="files");
     private void ShowShelfDropPreview(string[] paths)
     {
-        if(!peeking)return;var signature=string.Join("\n",paths);if(shelfDropPreview!=null && dropSignature==signature)return;dropSignature=signature;
+        if(!fileDragActive)return;var signature=string.Join("\n",paths);if(shelfDropPreview!=null && dropSignature==signature)return;dropSignature=signature;
         var stack=new Grid{Width=144,Height=66,HorizontalAlignment=HorizontalAlignment.Center};
         for(int i=0;i<Math.Min(3,paths.Length);i++)
         {
@@ -58,15 +63,21 @@ public sealed partial class OverlayWindow
             var image=new Image{Stretch=Stretch.Uniform};tile.Child=image;stack.Children.Add(tile);_=LoadShelfThumbnail(paths[i],image);
         }
         var content=new StackPanel();content.Children.Add(stack);var text=UI.Text($"Drop {paths.Length} {(paths.Length==1?"item":"items")} onto your shelf",12);text.HorizontalAlignment=HorizontalAlignment.Center;text.Margin=new(0,6,0,0);content.Children.Add(text);
-        if(shelfDropPreview!=null)peekViewport.Children.Remove(shelfDropPreview);
-        shelfDropPreview=new Border{Background=Brushes.Black,CornerRadius=new(10),Child=content,IsHitTestVisible=false,Width=peekViewport.Width,Height=124};peekViewport.Children.Add(shelfDropPreview);
+        RemoveShelfDropPreview();
+        shelfDropPreview=new Border{Background=Brushes.Black,CornerRadius=new(10),Child=content,IsHitTestVisible=false,Width=expanded?Math.Max(144,scroll.Width):PeekWidth,Height=124,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=expanded?new Thickness(0,app.Settings.Height+10,0,0):new Thickness(0)};
+        if(expanded)visuals.Children.Add(shelfDropPreview);else peekViewport.Children.Add(shelfDropPreview);
+    }
+    private void RemoveShelfDropPreview()
+    {
+        if(shelfDropPreview?.Parent is Panel parent)parent.Children.Remove(shelfDropPreview);
+        shelfDropPreview=null;
     }
     private void FinishFileDrop(bool accepted)
     {
-        if(shelfDropPreview!=null){peekViewport.Children.Remove(shelfDropPreview);shelfDropPreview=null;}dropSignature="";
+        RemoveShelfDropPreview();dropSignature="";
         if(!fileDragActive)return;fileDragActive=false;
         if(accepted){shelfDropBrowsing=true;return;}
-        if(dragWasExpanded){ShowTools(dragPreviousTool,false);SelectPage(dragPreviousPage);}
+        if(dragWasExpanded)return;
         else if(dragWasPeeking){SelectPeek(dragPreviousPeek);}
         else Collapse();
     }

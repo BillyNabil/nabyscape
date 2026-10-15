@@ -47,7 +47,7 @@ public sealed partial class OverlayWindow
         root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !environmentHidden)hoverDelay.Start();};
         root.MouseLeave+=(_,_)=>{if(DiagnosticRun)return;hoverDelay.Stop();if(peeking || environmentHidden)leaveDelay.Start();};
         hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(PointerInside() && !expanded && !userHidden && !environmentHidden)PreviewActivity();};
-        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || environmentHidden) && !PointerInside() && !PeekInteractionActive)Collapse();};
+        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || environmentHidden) && !PointerInside() && !SatellitePointerInside && !PeekInteractionActive && !fileDragActive)Collapse();};
         peekMedia.HorizontalAlignment=HorizontalAlignment.Center;peekMedia.VerticalAlignment=VerticalAlignment.Top;peekMedia.Width=286;peekMedia.Height=100;peekMedia.Margin=new(0);
         peekMedia.RowDefinitions.Add(new(){Height=new GridLength(56)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});
         peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});peekMedia.ColumnDefinitions.Add(new());peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
@@ -73,7 +73,7 @@ public sealed partial class OverlayWindow
     private void StopHoverTimers(){hoverDelay.Stop();leaveDelay.Stop();detailDelay.Stop();}
     internal void PreviewActivity()
     {
-        if(PeekPages().Length==0 || (!app.Settings.CompactLayout && !tuckPreview) || (!app.Settings.HoverPeek && !automaticPreview && !tuckPreview) || expanded || peeking || userHidden || (environmentHidden && !tuckPreview))return;
+        if(PeekPages().Length==0 || (!app.Settings.CompactLayout && !tuckPreview && !fileDragActive) || (!app.Settings.HoverPeek && !automaticPreview && !tuckPreview && !fileDragActive) || expanded || peeking || userHidden || (environmentHidden && !tuckPreview && !fileDragActive))return;
         peeking=true;Show();Dimensions();ConfigurePerformance();peekDetailed=!app.Settings.TwoStageHover || automaticPreview;detailDelay.Stop();if(!peekDetailed)detailDelay.Start();
         scroll.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=false;Motion.Fade(compact,0,80);
         PreparePeekDeck();

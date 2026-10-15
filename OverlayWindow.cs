@@ -161,7 +161,7 @@ public sealed partial class OverlayWindow : Window
                 case "system":small=true;cpuBar.Foreground=ramBar.Foreground=Brushes.White;cpuBar.Background=ramBar.Background=UI.Brush("#3A3A3C");card=UI.Card("System",cpu,cpuBar,ram,ramBar);break;
                 case "battery":small=true;card=UI.Card("Battery",battery);batteryCard=card;break;
                 case "shortcuts":
-                    var shortcuts=new WrapPanel();foreach(var shortcut in app.Settings.Shortcuts){var button=LaunchButton(shortcut);shortcuts.Children.Add(button);}card=UI.Card("Quick launch",UI.Button("Search commands  ·  Ctrl+K",()=>ShowCommands()),shortcuts);break;
+                    var shortcuts=new WrapPanel();foreach(var shortcut in app.Settings.Shortcuts){var button=LaunchButton(shortcut);shortcuts.Children.Add(button);}card=UI.Card("Quick launch",UI.Button("Search commands  ·  Ctrl+K",()=>ShowCommands()),UI.Button("Activities",()=>ShowActivities()),shortcuts);break;
                 case "tools":card=UI.Card("Tools",BuildToolsPage());break;
                 default:continue;
             }
@@ -172,7 +172,7 @@ public sealed partial class OverlayWindow : Window
     }
     public void Reveal(bool activate=true)
     {
-        EndPeekGesture();StopHoverTimers();automaticPreview=false;activityDismiss.Stop();previewKind=activityTitle=activityDetail="";userHidden=false;RememberExternalForeground();visibilityOverride=lastExternalForeground;environmentHidden=false;SetTucked(false);Show();Position();if(expanded){if(activate)Activate();return;}expanded=true;peeking=false;peekPanel.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=true;Motion.Fade(compact,1,120);Dimensions();
+        EndPeekGesture();StopHoverTimers();automaticPreview=false;activityDismiss.Stop();previewKind=activityTitle=activityDetail="";userHidden=false;app.Previews?.SetHidden(false);RememberExternalForeground();visibilityOverride=lastExternalForeground;environmentHidden=false;SetTucked(false);Show();Position();if(expanded){if(activate)Activate();return;}expanded=true;peeking=false;peekPanel.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=true;Motion.Fade(compact,1,120);Dimensions();
         // The layered HWND stays fixed across all three states; only its alpha contour changes.
         scroll.Visibility=Visibility.Visible;scroll.IsHitTestVisible=true;
         ConfigurePerformance();motion.Go(surface,IslandSurface.SurfaceWidthProperty,expandedWidth,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,app.Settings.AnimationMs);motion.OnComplete(()=>{});
@@ -240,7 +240,7 @@ public sealed partial class OverlayWindow : Window
         UpdateSatellite();UpdateClosedMediaIcon();Motion.Text(compactClock,now.ToString(app.Settings.Clock24Hour?"HH:mm":"h:mm tt"));UpdateRoadmapStatus(now);
         Motion.Text(summary,FeedbackVisible?feedbackText:!ShowMediaPrimary && On("focus") && app.Session.Focus.Remaining(now)>0?(app.Session.Focus.Phase=="break"?"Break  ":"Focus  ")+app.Session.Focus.Display(now):!ShowMediaPrimary && On("timer") && app.Session.Timer.Remaining(now)>0?"Timer  "+app.Session.Timer.Display(now):On("media") && app.Media.Available?app.Media.Title:"NabyScape");
         if(!liveTick.IsEnabled){var session=ActiveCountdown();activity.Sample(0,1,session?.Progress(now)??0,session!=null,session==app.Session.Focus,false,0);}
-        ApplyTitleTypography(!FeedbackVisible && !(On("focus") && app.Session.Focus.Remaining(now)>0) && !(On("timer") && app.Session.Timer.Remaining(now)>0) && On("media") && app.Media.Available);UpdatePeek();UpdateMixer();UpdateSystemMonitor();if(!expanded)return;updating=true;
+        ApplyTitleTypography(!FeedbackVisible && (ShowMediaPrimary || !(On("focus") && app.Session.Focus.Remaining(now)>0) && !(On("timer") && app.Session.Timer.Remaining(now)>0)) && On("media") && app.Media.Available);UpdatePeek();UpdateMixer();UpdateSystemMonitor();if(!expanded)return;updating=true;
         try{
             SwapText(title,app.Media.Title);SwapText(artist,app.Media.Artist);SwapArtwork(artwork,app.Media.Artwork);artwork.Visibility=app.Media.Artwork==null?Visibility.Collapsed:Visibility.Visible;
             if(play!=null){var icon=app.Media.Playing?"pause":"play";if(playIcon!=icon){playIcon=icon;play.Content=Icons.Create(icon,22,Brushes.Black);}play.IsEnabled=app.Media.CanToggle;next.IsEnabled=app.Media.CanNext;previous.IsEnabled=app.Media.CanPrevious;}

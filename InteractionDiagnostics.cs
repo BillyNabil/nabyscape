@@ -19,6 +19,7 @@ internal static class InteractionDiagnostics
 {
     internal static async Task Run(App app,OverlayWindow overlay,string directory,Action<string,bool> check)
     {
+        await RunReviewRegressions(app,overlay,directory,check);
         const BindingFlags privateInstance=BindingFlags.Instance|BindingFlags.NonPublic;
         var kinds=new[]{"media","timer","focus","calendar","notes","files","system"};
         var output=Path.Combine(directory,"interactions");Directory.CreateDirectory(output);
@@ -42,16 +43,34 @@ internal static class InteractionDiagnostics
             var handlers=typeof(App).GetField("Updated",privateInstance)?.GetValue(app) as Delegate;
             return handlers?.GetInvocationList().Count(d=>d.Target is DetachedPreviewView)??0;
         }
+        string ControlOverflow(Window window)
+        {
+            var failures=new List<string>();
+            foreach(var control in Tree(window).OfType<FrameworkElement>().Where(e=>e.IsVisible && e.ActualWidth>0 && e is Button or TextBox or Slider or ComboBox or CheckBox))
+            {
+                FrameworkElement host=window;
+                for(var parent=VisualTreeHelper.GetParent(control);parent!=null;parent=VisualTreeHelper.GetParent(parent))
+                    if(parent is ScrollContentPresenter presenter){host=presenter;break;}
+                var rect=control.TransformToAncestor(host).TransformBounds(new Rect(control.RenderSize));
+                if(rect.Left< -1 || rect.Right>host.ActualWidth+1)failures.Add(AutomationProperties.GetName(control)+" "+rect+" / "+host.ActualWidth);
+            }
+            return string.Join("; ",failures);
+        }
         async Task Settle(){await Task.Delay(420);overlay.UpdateLayout();}
         void Capture(FrameworkElement target,string name,string? label=null)
         {
             target.UpdateLayout();int width=Math.Max(1,(int)Math.Ceiling(target.ActualWidth)),height=Math.Max(1,(int)Math.Ceiling(target.ActualHeight));
             var raw=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);raw.Render(target);BitmapSource result=raw;
+            if(target is OverlayWindow island)
+            {
+                width=Math.Max(1,Math.Min(raw.PixelWidth,(int)Math.Ceiling(island.PaintedWidth)));height=Math.Max(1,Math.Min(raw.PixelHeight,(int)Math.Ceiling(island.PaintedHeight)));
+                result=new CroppedBitmap(raw,new Int32Rect(Math.Max(0,(raw.PixelWidth-width)/2),0,width,height));
+            }
             if(label!=null)
             {
                 var visual=new DrawingVisual();using(var draw=visual.RenderOpen())
                 {
-                    draw.DrawRectangle(UI.Brush("#151515"),null,new Rect(0,0,width,height+48));draw.DrawImage(raw,new Rect(0,48,width,height));
+                    draw.DrawRectangle(UI.Brush("#151515"),null,new Rect(0,0,width,height+48));draw.DrawImage(result,new Rect(0,48,width,height));
                     draw.DrawText(new FormattedText(label,CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),11,Brushes.White,1){MaxTextWidth=Math.Max(1,width-16)},new Point(8,7));
                 }
                 var labeled=new RenderTargetBitmap(width,height+48,96,96,PixelFormats.Pbgra32);labeled.Render(visual);result=labeled;
@@ -67,7 +86,7 @@ internal static class InteractionDiagnostics
             if(Application.Current.Windows.OfType<DetachedPreviewWindow>().Any())throw new InvalidOperationException("Interaction diagnostics require no pre-existing detached windows.");
             if(hidden)overlay.ToggleVisibility();app.Settings.DetachablePreviews=true;app.Settings.ReduceMotion=true;app.Settings.HideFullscreen=false;app.Settings.HideMaximized=false;app.Settings.CompactLayout=true;
             foreach(var widget in app.Settings.Widgets)widget.Enabled=true;foreach(var page in app.Settings.HoverViews)page.Enabled=true;app.ChangeSettings();
-            app.Productivity.Note="A shared diagnostic note.\nSecond line for caret preservation.";
+            app.Productivity.Note="Ideas for today.\nFinish the draft. Plan the next session.";
             var shelfFile=Path.Combine(output,"shelf-fixture.txt");File.WriteAllText(shelfFile,"Local diagnostic shelf fixture.");app.Productivity.AddFiles(new[]{shelfFile,Path.Combine(output,"missing-file.txt")});
             calendarId=app.Calendar.Add("Local diagnostic review",DateTimeOffset.Now.AddMinutes(10),DateTimeOffset.Now.AddMinutes(40),"https://example.com/meeting").Id;
             foreach(var kind in kinds)
@@ -76,13 +95,38 @@ internal static class InteractionDiagnostics
                 Check(kind+" opens a visible native resizable window",window.IsVisible && window.ResizeMode==ResizeMode.CanResize && app.Previews.AnyVisible(kind));
                 Check(kind+" starts with Always on top off",!window.Topmost && Tree(window).OfType<CheckBox>().Single(c=>AutomationProperties.GetName(c)=="Always on top").IsChecked==false);
                 Check(kind+" default geometry respects minimum dimensions",window.ActualWidth>=window.MinWidth-.1 && window.ActualHeight>=window.MinHeight-.1);
+                var overflow=ControlOverflow(window);Check(kind+" default controls clear the scrolling viewport "+overflow,overflow.Length==0);
                 Capture(window,"detached-"+kind+"-default");
                 var width=window.Width;var height=window.Height;window.Width=window.MinWidth;window.Height=window.MinHeight;await Settle();
                 Check(kind+" minimum resize preserves window bounds",Math.Abs(window.ActualWidth-window.MinWidth)<1 && Math.Abs(window.ActualHeight-window.MinHeight)<1);
+                overflow=ControlOverflow(window);Check(kind+" minimum controls clear the scrolling viewport "+overflow,overflow.Length==0);
                 Capture(window,"detached-"+kind+"-minimum");window.Width=width;window.Height=height;
                 app.Previews.Open(kind);Check(kind+" repeated Open reuses the same window",ReferenceEquals(window,WindowFor(kind)) && Application.Current.Windows.Cast<Window>().Count(w=>w.Title==window.Title)==1);
             }
+            // Button.Click is the activation path shared by Enter/Space and pointer input.
+            // Re-query after every activation: mini-calendar controls are replaced by rendering.
+            var calendarWindow=WindowFor("calendar");calendarWindow.Activate();
+            foreach(string direction in new[]{"Next month","Previous month"})
+            {
+                var navigation=FindButton(calendarWindow,direction);navigation.Focus();
+                for(int activation=1;activation<=2;activation++)
+                {
+                    FindButton(calendarWindow,direction).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
+                    Check(direction+" activation "+activation+" keeps keyboard focus on replacement button",FindButton(calendarWindow,direction).IsKeyboardFocused);
+                }
+            }
+            var lastDate=Tree(calendarWindow).OfType<Button>().Where(b=>AutomationProperties.GetName(b).StartsWith("Select date ",StringComparison.Ordinal)).OrderBy(b=>AutomationProperties.GetName(b),StringComparer.Ordinal).Last();
+            string selectedName=AutomationProperties.GetName(lastDate);lastDate.Focus();lastDate.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
+            Check("date activation retains keyboard focus on selected replacement day",FindButton(calendarWindow,selectedName).IsKeyboardFocused);
+            var selectedDay=DateTime.ParseExact(selectedName.Substring("Select date ".Length),"yyyy-MM-dd",CultureInfo.InvariantCulture);
+            var nextDayName="Select date "+selectedDay.AddDays(1).ToString("yyyy-MM-dd");
+            FindButton(calendarWindow,selectedName).RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,System.Windows.PresentationSource.FromVisual(calendarWindow),0,System.Windows.Input.Key.Right){RoutedEvent=System.Windows.Input.Keyboard.KeyDownEvent});await Task.Delay(40);
+            Check("arrow after date activation crosses month and focuses new selected day",FindButton(calendarWindow,nextDayName).IsKeyboardFocused && FindButton(calendarWindow,nextDayName).IsTabStop);
+            FindButton(calendarWindow,nextDayName).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
+            Check("repeated selected-date activation retains current keyboard focus",FindButton(calendarWindow,nextDayName).IsKeyboardFocused);
             Check("all seven visible previews have one Updated subscription each",Subscribers()==7);
+            overlay.ToggleVisibility();await Settle();Check("manual hide before explicit Reveal releases preview subscriptions",overlay.UserHidden && Subscribers()==0 && kinds.All(k=>!app.Previews.AnyVisible(k)));
+            overlay.Reveal(false);await Settle();Check("explicit Reveal restores all seven open previews and subscriptions",!overlay.UserHidden && kinds.All(app.Previews.AnyVisible) && Subscribers()==7);overlay.Collapse();
             overlay.ToggleVisibility();await Settle();Check("manual overlay hide hides all seven previews",overlay.UserHidden && kinds.All(k=>!app.Previews.AnyVisible(k)) && created.All(w=>!w.IsVisible));
             Check("hidden previews have no Updated subscriptions",Subscribers()==0);
             overlay.ToggleVisibility();await Settle();Check("manual show restores all previously open previews",kinds.All(app.Previews.AnyVisible) && Subscribers()==7);
@@ -112,9 +156,9 @@ internal static class InteractionDiagnostics
             finally{content.LayoutTransform=oldTransform;noteWindow.Width=oldWidth;noteWindow.Height=oldHeight;}
             // Focus-only activity cannot launch an application, open a URL, write audio or hold display awake.
             if(app.Activities.ActiveActivity!=null)throw new InvalidOperationException("Diagnostic activity requires no pre-existing active activity.");
-            app.Session.Focus.Reset();var definition=new ActivityDefinition{Name="Diagnostic focus workflow",Steps=new(){new(){Kind="focus",Minutes=2}}};activityId=definition.Id;
+            app.Session.Focus.Reset();var definition=new ActivityDefinition{Name="Study session",Steps=new(){new(){Kind="focus",Minutes=2}}};activityId=definition.Id;
             Check("local focus-only activity definition saves",app.Activities.Save(definition) && app.Store.Load<ActivityActionsData>("activities").Activities.Any(a=>a.Id==definition.Id && a.Steps.All(s=>s.Kind=="focus")));overlay.ShowActivities(false);await Settle();Capture(overlay,"activity-definition");
-            FindButton(overlay,"Start activity Diagnostic focus workflow").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));activityStarted=app.Activities.ActiveActivity?.Id==definition.Id;await Settle();
+            FindButton(overlay,"Start activity Study session").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));activityStarted=app.Activities.ActiveActivity?.Id==definition.Id;await Settle();
             Check("activity Start starts shared Focus and reports its step",activityStarted && app.Session.Focus.Running && app.Activities.Results.Count==1 && app.Activities.Results[0].Success);Capture(overlay,"activity-running");
             FindButton(overlay,"Stop activity").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));activityStarted=false;Check("activity Stop releases its owned Focus",app.Activities.ActiveActivity==null && !app.Session.Focus.Running);Capture(overlay,"activity-stopped");
             var p=app.Productivity;p.SetClipboardEnabled(true);p.ClearClips();p.IngestText("Diagnostic plain text");p.IngestText("https://example.com/review?keep=yes&utm_source=diagnostic#section");p.IngestText("#2A6F9B");
@@ -144,9 +188,77 @@ internal static class InteractionDiagnostics
             foreach(var file in savedFiles)if(file.Value==null){if(File.Exists(file.Key))File.Delete(file.Key);}else File.WriteAllBytes(file.Key,file.Value);
         }
     }
+    internal static async Task RunReviewRegressions(App app,OverlayWindow overlay,string directory,Action<string,bool> check)
+    {
+        const BindingFlags flags=BindingFlags.Instance|BindingFlags.NonPublic;
+        var saved=JsonSerializer.Serialize(app.Settings);var timer=Snapshot(app.Session.Timer);var focus=Snapshot(app.Session.Focus);
+        bool hidden=overlay.UserHidden;bool diagnostic=overlay.DiagnosticRun;
+        object? Field(string name)=>typeof(OverlayWindow).GetField(name,flags)!.GetValue(overlay);
+        void Invoke(string name,params object[] args)=>typeof(OverlayWindow).GetMethod(name,flags)!.Invoke(overlay,args);
+        void Check(string name,bool value)=>check("Review regression: "+name,value);
+        TextBox Entry(string name)=>Diagnostics.Descendants(overlay).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)==name);
+        Button Button(string name)=>Diagnostics.Descendants(overlay).OfType<Button>().Single(b=>AutomationProperties.GetName(b)==name);
+        void Drag(){Invoke("BeginFileDrop");Invoke("ShowShelfDropPreview",(object)new[]{@"C:\fixture-a.txt",@"C:\fixture-b.txt",@"C:\fixture-c.txt",@"C:\fixture-d.txt"});}
+        void Cancel()=>Invoke("FinishFileDrop",false);
+        try
+        {
+            overlay.DiagnosticRun=true;if(hidden)overlay.ToggleVisibility();overlay.Collapse();
+            app.Settings.ReduceMotion=true;app.Settings.CompactLayout=true;app.Settings.HoverPeek=true;app.Settings.DropReveal=true;app.Settings.HideFullscreen=false;app.Settings.HideMaximized=false;
+            foreach(var widget in app.Settings.Widgets)widget.Enabled=true;foreach(var view in app.Settings.HoverViews)view.Enabled=true;app.ChangeSettings();
+            foreach(var mode in new[]{"notes","calendar","files"})
+            {
+                overlay.ShowActivities(false);overlay.OpenFeaturePage(mode);overlay.UpdateLayout();
+                Check("Activities to detached "+mode+" route mounts normal Tools body",!overlay.ActivitiesOpen && overlay.ActivePage=="tools" && Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="All tools"));
+            }
+            foreach(bool compact in new[]{true,false})
+            {
+                overlay.Collapse();app.Settings.CompactLayout=compact;app.Settings.HoverPeek=false;app.Settings.HoverViews.Single(v=>v.Id=="files").Enabled=false;app.ChangeSettings();Drag();overlay.UpdateLayout();
+                var target=(Border?)Field("shelfDropPreview");
+                Check("DropReveal independent of HoverPeek and shelf hover toggle, layout "+compact,overlay.IsPeeking && overlay.PeekPage=="files" && target?.IsVisible==true && !app.Settings.HoverPeek);
+                Check("Drop target renders three thumbnails and four-item count, layout "+compact,target!=null && Diagnostics.Descendants(target).OfType<Image>().Count()==3 && Diagnostics.Descendants(target).OfType<TextBlock>().Any(t=>t.Text=="Drop 4 items onto your shelf"));
+                Cancel();Check("Cancelled closed drag restores closed island, layout "+compact,!overlay.IsExpanded && !overlay.IsPeeking);
+            }
+            overlay.ToggleVisibility();Drag();Check("File drag preserves manual hide",overlay.UserHidden && !overlay.IsVisible && Field("fileDragActive") is false);Cancel();overlay.ToggleVisibility();
+            app.Settings.CompactLayout=true;app.Settings.HoverPeek=true;foreach(var view in app.Settings.HoverViews)view.Enabled=true;app.ChangeSettings();
+            overlay.ShowCommands(false);var command=Entry("Search commands");command.Text="unfinished search";command.Select(3,5);Drag();Cancel();
+            Check("Cancelled expanded drag retains command editor and selection",overlay.CommandsOpen && ReferenceEquals(command,Entry("Search commands")) && command.Text=="unfinished search" && command.SelectionStart==3 && command.SelectionLength==5);
+            overlay.ShowActivities(false);var activityBody=Field("activityContent");Drag();Cancel();Check("Cancelled drag retains Activities body",overlay.ActivitiesOpen && ReferenceEquals(activityBody,Field("activityContent")));
+            overlay.ShowTools("calendar",false);Button("Add local event").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));var title=Entry("Event title");title.Text="Unsaved local draft";title.Select(2,4);var start=Entry("Event start time");start.Text="13:45";Drag();Cancel();
+            Check("Cancelled drag retains calendar form instances, draft and caret",ReferenceEquals(title,Entry("Event title")) && title.Text=="Unsaved local draft" && title.SelectionStart==2 && title.SelectionLength==4 && ReferenceEquals(start,Entry("Event start time")) && start.Text=="13:45" && Field("calendarEditing") is true);
+            // Inject availability only; no media command or external session is created.
+            overlay.Collapse();app.Session.Timer.Start(300,DateTimeOffset.UtcNow);app.Session.Focus.Reset();overlay.DiagnosticSatelliteMedia=true;app.Settings.ActivitySatellite=true;app.ChangeSettings();Invoke("UpdateSatellite");
+            var satellite=(Window?)Field("satelliteWindow");Check("Satellite fixture has room and a visible click target",satellite?.IsVisible==true);
+            if(satellite!=null)
+            {
+                var before=Native.GetForegroundWindow();var bounds=new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height);
+                overlay.DiagnosticSatellitePointerPresent=true;satellite.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseEnterEvent});
+                Invoke("UpdateSatellite");await Task.Delay(1100);Invoke("UpdateSatellite");
+                Check("Satellite remains visible and stationary across own hover preview and shared update",overlay.IsPeeking && overlay.PeekPage=="timer" && satellite.IsVisible && bounds==new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height));
+                Check("Satellite hover preserves foreground and uses non-activating window",before==Native.GetForegroundWindow() && !satellite.ShowActivated);
+                // Simulate the crossing into the main preview, then departure from both surfaces.
+                overlay.DiagnosticPointerPresent=true;overlay.DiagnosticSatellitePointerPresent=false;satellite.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseLeaveEvent});await Task.Delay(400);
+                Check("Satellite-to-preview crossing keeps preview open",overlay.IsPeeking);
+                overlay.DiagnosticPointerPresent=false;((System.Windows.Threading.DispatcherTimer)Field("leaveDelay")!).Start();await Task.Delay(400);Check("Leaving satellite and preview dismisses orphan preview",!overlay.IsPeeking);
+                Invoke("UpdateSatellite");Invoke("OpenSatellite",false);Invoke("UpdateSatellite");Diagnostics.Descendants(satellite).OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                Check("Satellite click after hover opens countdown panel",overlay.IsExpanded && overlay.ActivePage=="focus");
+            }
+            overlay.DiagnosticSatelliteMedia=false;overlay.Collapse();app.Settings.CompactLayout=false;app.ChangeSettings();overlay.Reveal(false);overlay.UpdateLayout();
+            Check("Classic Quick launch exposes Activities",Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Activities"));
+            Check("Classic visible system card requests shared samples",overlay.SystemSummaryVisible && Diagnostics.Descendants(overlay).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text=="System"));
+            overlay.ShowCommands(false);Check("Classic commands exclude hidden system summary",!overlay.SystemSummaryVisible);overlay.ShowActivities(false);Check("Classic Activities exclude hidden system summary",!overlay.SystemSummaryVisible);
+            overlay.OpenFeaturePage("notes");Check("Classic Tools route restores actual system card visibility",!overlay.ActivitiesOpen && overlay.SystemSummaryVisible);
+            overlay.Collapse();Check("Collapsed island stops system-summary sample demand",!overlay.SystemSummaryVisible);
+        }
+        finally
+        {
+            Cancel();overlay.DiagnosticSatelliteMedia=false;overlay.DiagnosticSatellitePointerPresent=false;overlay.DiagnosticPointerPresent=false;overlay.Collapse();
+            Restore(app.Session.Timer,timer);Restore(app.Session.Focus,focus);
+            var original=JsonSerializer.Deserialize<Settings>(saved)!;foreach(var property in typeof(Settings).GetProperties().Where(p=>p.CanRead && p.CanWrite))property.SetValue(app.Settings,property.GetValue(original));app.ChangeSettings();
+            if(hidden!=overlay.UserHidden)overlay.ToggleVisibility();overlay.DiagnosticRun=diagnostic;
+        }
+    }
     private sealed record CountdownSnapshot(DateTimeOffset? Deadline,double Remaining,double Duration,string Phase,Guid RunId);
     private static CountdownSnapshot Snapshot(Countdown value)=>new(value.Deadline,value.RemainingSeconds,value.DurationSeconds,value.Phase,value.RunId);
     private static void Restore(Countdown value,CountdownSnapshot saved)
     {value.Deadline=saved.Deadline;value.RemainingSeconds=saved.Remaining;value.DurationSeconds=saved.Duration;value.Phase=saved.Phase;typeof(Countdown).GetProperty(nameof(Countdown.RunId))!.SetValue(value,saved.RunId);}
 }
-

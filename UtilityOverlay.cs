@@ -111,7 +111,7 @@ public sealed partial class OverlayWindow
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(!WidgetOn("tools"))return;activitiesOpen=false;if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
+    {if(!WidgetOn("tools"))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
     private void RefreshTools()
     {
 

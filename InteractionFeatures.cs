@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
@@ -37,6 +38,10 @@ public sealed partial class OverlayWindow
     private readonly TextBlock satelliteTime=UI.Text("",11);
     private readonly ActivityVisual satelliteRing=new(){Width=19,Height=19};
     private string? satelliteKind;
+    private bool satellitePreview;
+    internal bool DiagnosticSatelliteMedia {get;set;}
+    internal bool DiagnosticSatellitePointerPresent {get;set;}
+    private bool SatellitePointerInside=>DiagnosticRun?DiagnosticSatellitePointerPresent:satelliteWindow?.IsMouseOver==true;
     private bool SatelliteVisible=>satelliteWindow?.IsVisible==true;
     private readonly TextBlock peekSystem=UI.Text("",17);
     private TextBox? mainNoteEditor;
@@ -74,8 +79,8 @@ public sealed partial class OverlayWindow
         if(menu.Items.Count==0)menu.Items.Add(new MenuItem{Header="No media sessions",IsEnabled=false});
         menu.Closed+=(_,_)=>{if(audioMenu==menu)audioMenu=null;};menu.IsOpen=true;
     }
-    internal bool SystemSummaryVisible=>IsVisible && WidgetOn("system") && (peeking && peekId=="system" || expanded && activePage=="status");
-    private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && app.Media.Available && !expanded && !peeking && !FeedbackVisible && !environmentHidden && !userHidden && IsVisible;
+    internal bool SystemSummaryVisible=>IsVisible && WidgetOn("system") && (peeking && peekId=="system" || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen));
+    private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && (!peeking || satellitePreview) && !FeedbackVisible && !environmentHidden && !userHidden && IsVisible;
     private bool ShowMediaPrimary=>SatelliteEligible && SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus"))!=null && SatelliteHasRoom();
     private bool SatelliteHasRoom()
     {
@@ -84,6 +89,7 @@ public sealed partial class OverlayWindow
     }
     private void UpdateSatellite()
     {
+        if(!peeking)satellitePreview=false;
         satelliteKind=ShowMediaPrimary?SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")):null;
         if(satelliteKind==null){satelliteWindow?.Hide();return;}
         if(satelliteWindow==null)
@@ -92,7 +98,9 @@ public sealed partial class OverlayWindow
             var button=UI.Button("Open countdown",()=>OpenSatellite(true));button.Content=row;button.Padding=new(8,0,8,0);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=36;button.ToolTip="Hover to preview · click to open";
             var border=new Border{CornerRadius=new(18),Background=Brushes.Black,Child=button};
             satelliteWindow=new Window{Width=82,Height=36,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,AllowsTransparency=true,Background=Brushes.Transparent,ShowInTaskbar=false,ShowActivated=false,Topmost=true,Content=border,Owner=this};
-            satelliteWindow.MouseEnter+=(_,_)=>OpenSatellite(false);
+            satelliteWindow.SourceInitialized+=(_,_)=>HwndSource.FromHwnd(new WindowInteropHelper(satelliteWindow).Handle)?.AddHook((IntPtr hwnd,int message,IntPtr wparam,IntPtr lparam,ref bool handled)=>{if(message==0x21){handled=true;return new IntPtr(3);}return IntPtr.Zero;});
+            satelliteWindow.MouseEnter+=(_,_)=>{leaveDelay.Stop();OpenSatellite(false);};
+            satelliteWindow.MouseLeave+=(_,_)=>{if(satellitePreview && peeking)leaveDelay.Start();};
             satelliteWindow.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){Collapse();e.Handled=true;}};
         }
         var countdown=satelliteKind=="timer"?app.Session.Timer:app.Session.Focus;var now=DateTimeOffset.UtcNow;satelliteTime.Text=countdown.Display(now);satelliteRing.Sample(0,1,countdown.Progress(now),true,satelliteKind=="focus",false,0);
@@ -103,7 +111,8 @@ public sealed partial class OverlayWindow
     {
         var kind=satelliteKind;if(kind==null)return;
         if(panel){Reveal();SelectPage("focus");return;}
-        previewKind=kind;automaticPreview=true;PreviewActivity();SelectPeek(kind);
+        satellitePreview=true;previewKind=kind;automaticPreview=true;PreviewActivity();SelectPeek(kind);automaticPreview=false;
+        satellitePreview=peeking && peekId==kind;
     }
     private void SyncNoteEditors()
     {

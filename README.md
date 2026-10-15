@@ -97,6 +97,56 @@ Open command search with **Ctrl+K** while NabyScape is focused. Search actions a
 
 Screenshots show the interface with different media sessions and settings.
 
+## New in 2.3: take the island further
+
+- **Drag to Island.** Drag files onto the island or its tucked edge to stage them. Select several shelf items and drag them out together. Originals stay in place; cancelling a drag keeps your current editor intact.
+- **Detachable previews.** Use **Detach** or drag its grip to open Music, Timer, Focus, Calendar, Notes, Shelf, or System in a separate resizable window. Each uses the same live data. Always on top is optional; closing a preview leaves its activity running.
+- **Activity actions.** Open **Launch → Activities** to combine opening apps, folders and websites with Focus and timed Keep awake. Customize the Study template, save, then Start. Stop ends only the Focus/Keep awake owned by that run.
+- **Smart clipboard.** Text, links, images, and HEX/RGB colors get their own actions. Review cleaned links before copying, save images as PNG, or copy colors in either format. History remains opt-in.
+- **Closed cover gestures.** With Artwork selected, click the cover to play/pause or hold for 500 ms to choose a media session. Clicking elsewhere opens the panel. Existing wheel preferences still apply.
+- **Two live activities.** When music and a countdown are active together, a small timer satellite keeps the song visible. Hover to preview the countdown; click to open it. The nearest running deadline wins.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<h3>A timer you can keep nearby</h3>
+<p>Detach without interrupting a countdown. Each preview opens only once and remembers its size and position.</p>
+<img src="Assets/readme/23-detached-timer.png" alt="Detached Timer window with shared countdown controls" width="350">
+</td>
+<td width="50%" valign="top">
+<h3>Your notes, in every view</h3>
+<p>The panel, hover preview and detached window edit one shared local document.</p>
+<img src="Assets/readme/23-detached-notes.png" alt="Detached Notes window editing the shared local document" width="350">
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<h3>Start a whole activity</h3>
+<p>Choose the steps yourself. Activities run only when you press Start.</p>
+<img src="Assets/readme/23-activity.png" alt="Activity controls showing the result of a local Focus workflow" width="350">
+</td>
+<td width="50%" valign="top">
+<h3>A clipboard with useful actions</h3>
+<p>Color detection offers HEX and RGB copying; links and images have their own controls.</p>
+<img src="Assets/readme/23-clipboard-color.png" alt="Smart clipboard color details with HEX and RGB actions" width="350">
+</td>
+</tr>
+</table>
+
+Configure these features in **Settings → Controls**. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
+
+<details>
+<summary><strong>Calendar and system mini windows</strong></summary>
+
+<table><tr>
+<td width="50%" valign="top"><img src="Assets/readme/23-detached-calendar.png" alt="Detached dark calendar with month and day navigation" width="350"></td>
+<td width="50%" valign="top"><img src="Assets/readme/23-detached-system.png" alt="Detached System window using shared CPU and RAM samples" width="350"></td>
+</tr></table>
+
+</details>
+
+The 2.3 captures use local sample content. Windows window chrome can vary.
+
 ## Make it yours
 
 <img src="Assets/readme/shapes.svg" alt="Illustration of the attached notch and floating pill shape presets" width="100%">
@@ -124,6 +174,8 @@ Open Settings from the island or tray. Changes save automatically. Starting with
 | `Ctrl+Alt+I` | Open or close the panel. |
 | `Ctrl+Alt+H` | Hide or show the entire island. |
 | `Ctrl+K` | Search commands while the panel is focused. |
+| `Ctrl+Space` | Play/pause when the island header is focused and cover gestures are enabled. |
+| `Ctrl+M` | Choose a media session from the focused island header when cover gestures are enabled. |
 | `Escape` | Go back or close. |
 
 The two global shortcuts are configurable. Buttons retain their click actions; wheel input on hover previews switches pages. After clicking open a panel, content scrolls normally.

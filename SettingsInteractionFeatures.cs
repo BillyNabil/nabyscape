@@ -19,6 +19,17 @@ public sealed partial class SettingsWindow
     private FrameworkElement FeaturePreview(string kind)
     {
         var panel=new StackPanel();
+        var s=app.Settings;
+        string? inactive=kind switch
+        {
+            "Drop zone" when !s.DropReveal=>"Drop reveal is off. Open the shelf to add files.",
+            "Detached preview" when !s.DetachablePreviews=>"Detachable previews are off.",
+            "Cover gestures" when !s.CoverGestures=>"Cover gestures are off. Click to open the panel.",
+            "Cover gestures" when s.ClosedMediaIcon!="Artwork"=>"Choose Artwork in Appearance to use cover gestures.",
+            "Two activities" when !s.ActivitySatellite=>"Satellite is off. Countdown stays in the island.",
+            _=>null
+        };
+        if(inactive!=null){panel.Children.Add(UI.Text(inactive,12,UI.Muted));return panel;}
         if(kind=="Drop zone")
         {
             var row=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center};

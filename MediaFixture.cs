@@ -15,7 +15,7 @@ internal static class MediaFixture
 {
     public static async Task Verify(App app,string directory,Action<string,bool> check,Action<string> note,Func<Task>? verifyArtwork=null)
     {
-        var original=app.Media.Selected;
+        directory=Path.GetFullPath(directory);var original=app.Media.Selected;
         try
         {
             string coverPath=Path.Combine(directory,"fixture-cover.png");
