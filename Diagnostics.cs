@@ -47,6 +47,19 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--focus-only"))
+            {
+                overlay.Reveal();overlay.SelectPage("media",false);await Task.Delay(350);
+                var header=(Button)typeof(OverlayWindow).GetField("compact",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(overlay)!;
+                foreach(var button in new[]{header,ActionButton("Media")})
+                {
+                    button.Focus();await Task.Delay(60);button.ApplyTemplate();
+                    var focusFrame=(Border)button.Template.FindName("Frame",button);
+                    Check("Click/programmatic focus leaves button outline unchanged: "+AutomationProperties.GetName(button),button.IsKeyboardFocused && focusFrame.BorderThickness==button.BorderThickness);
+                    Check("Native keyboard focus visual remains available: "+AutomationProperties.GetName(button),button.FocusVisualStyle!=null);
+                }
+                CaptureContour("mouse-focus-without-stroke");return;
+            }
             if(Environment.GetCommandLineArgs().Contains("--awake-only"))
             {
                 overlay.Reveal(false);overlay.ShowTools("awake",false);await Task.Delay(200);var awakeWatch=Stopwatch.StartNew();
