@@ -271,6 +271,20 @@ internal static class InteractionDiagnostics
                     Diagnostics.Descendants(satellite).OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));Check(mode+" companion click opens status",overlay.IsExpanded && overlay.ActivePage=="status");
                 }
             }
+            foreach(var preset in new[]{"Mac","iPhone"})foreach(var h in new[]{28d,39d,72d})
+            {
+                overlay.Collapse();app.Settings.Width=295;app.Settings.Height=h;app.Settings.Preset=preset;app.Settings.SatelliteSource="CPU";app.ChangeSettings();Invoke("UpdateSatellite");await Task.Delay(160);overlay.UpdateLayout();
+                satellite=(Window?)Field("satelliteWindow");if(satellite==null)continue;satellite.UpdateLayout();
+                var shape=(IslandSurface)Field("satelliteSurface")!;double shoulder=preset=="Mac"?Math.Min(16,h*.36):0;
+                var dpi=VisualTreeHelper.GetDpi(overlay);var mainTop=overlay.PointToScreen(new Point(0,0));var mainBodyRight=overlay.PointToScreen(new Point((overlay.ActualWidth+app.Settings.Width)/2-shoulder,0));
+                Check($"Companion aligns height and top at {preset}/{h}",Math.Abs(satellite.Height-h)<.1 && Math.Abs(satellite.Top-mainTop.Y/dpi.DpiScaleY)<1);
+                Check($"Companion visible body gap stays 8px at {preset}/{h}",Math.Abs(satellite.Left+shoulder-mainBodyRight.X/dpi.DpiScaleX-8)<1);
+                Check($"Companion inherits contour and material at {preset}/{h}",shape.Notch==(preset=="Mac") && shape.Radius==app.Settings.Radius && shape.GlassStyle==app.Settings.GlassStyle && satellite.Opacity==overlay.Opacity);
+                Check($"Companion text fits contour safe insets at {preset}/{h}",Diagnostics.Descendants(satellite).OfType<TextBlock>().Where(t=>t.IsVisible).All(t=>{var r=t.TransformToAncestor(satellite).TransformBounds(new Rect(t.RenderSize));return r.Left>=shoulder && r.Right<=satellite.ActualWidth-shoulder && r.Bottom<=h;}));
+                var visual=new DrawingVisual();double crop=(overlay.ActualWidth-app.Settings.Width)/2;double delta=satellite.Left-mainTop.X/dpi.DpiScaleX-crop;int captureWidth=(int)Math.Ceiling(delta+satellite.Width);
+                using(var dc=visual.RenderOpen()){dc.DrawRectangle(UI.Brush("#C6C4C0"),null,new Rect(0,0,captureWidth,h+16));dc.PushClip(new RectangleGeometry(new Rect(0,0,captureWidth,h+16)));dc.DrawRectangle(new VisualBrush(overlay),null,new Rect(-crop,0,overlay.ActualWidth,overlay.ActualHeight));dc.DrawRectangle(new VisualBrush(satellite),null,new Rect(delta,0,satellite.ActualWidth,satellite.ActualHeight));dc.Pop();}
+                var pair=new RenderTargetBitmap(captureWidth,(int)h+16,96,96,PixelFormats.Pbgra32);pair.Render(visual);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(pair));using(var file=File.Create(Path.Combine(directory,$"companion-pair-{preset}-{h}.png")))encoder.Save(file);
+            }
             overlay.Collapse();app.Settings.SatelliteSource="Calendar";app.ChangeSettings();Invoke("UpdateSatellite");Check("Calendar companion omitted without nearby events",((Window?)Field("satelliteWindow"))?.IsVisible!=true);
             var companionEvent=app.Calendar.Add("Companion fixture",DateTimeOffset.Now.AddMinutes(20),DateTimeOffset.Now.AddMinutes(50),"");
             try{Invoke("UpdateSatellite");Check("Calendar companion shows next local event",((Window?)Field("satelliteWindow"))?.IsVisible==true);Invoke("OpenSatellite",false);Check("Calendar companion hover opens calendar",overlay.IsPeeking && overlay.PeekPage=="calendar");Invoke("OpenSatellite",true);Check("Calendar companion click opens calendar tools",overlay.IsExpanded && overlay.ActivePage=="tools");}finally{app.Calendar.Remove(companionEvent.Id);}

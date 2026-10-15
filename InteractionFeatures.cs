@@ -53,6 +53,8 @@ public sealed partial class OverlayWindow
     private Border? satelliteIcon;
     private Button? satelliteButton;
     private string? satelliteIconKind;
+    private IslandSurface? satelliteSurface;
+    private Grid? satelliteRoot;
     private bool satellitePreview;
     internal bool DiagnosticSatelliteMedia {get;set;}
     internal bool DiagnosticSatellitePointerPresent {get;set;}
@@ -101,10 +103,13 @@ public sealed partial class OverlayWindow
     private bool ShowMediaPrimary=>SatelliteEligible && SelectedSatellite!=null && SatelliteHasRoom();
     private bool SatelliteNeedsSystemSamples=>SatelliteEligible && SatelliteHasRoom() && SelectedSatellite is "cpu" or "ram";
     private string? SatellitePeekKind=>satelliteKind is "cpu" or "ram" or "clock"?"system":satelliteKind;
+    private double SatelliteShoulder=>surface.Notch?Math.Min(16,app.Settings.Height*.36):0;
+    private double SatelliteWidth=>76+2*SatelliteShoulder;
+    private Point SatelliteAnchor=>PointToScreen(new Point((ActualWidth+app.Settings.Width)/2-2*SatelliteShoulder+8,0));
     private bool SatelliteHasRoom()
     {
-        if(!IsLoaded)return false;var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);var p=PointToScreen(new Point((ActualWidth+app.Settings.Width)/2+8,0));
-        return p.X+104*scale<=screen.Bounds.Right-8*scale;
+        if(!IsLoaded)return false;var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);var p=SatelliteAnchor;
+        return p.X+SatelliteWidth*scale<=screen.Bounds.Right-8*scale;
     }
     private void UpdateSatellite()
     {
@@ -113,10 +118,10 @@ public sealed partial class OverlayWindow
         if(satelliteKind==null){satelliteWindow?.Hide();return;}
         if(satelliteWindow==null)
         {
-            var row=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};satelliteRing.Margin=new(0,0,6,0);row.Children.Add(satelliteRing);satelliteIcon=new Border{Width=16,Height=16,Margin=new(0,0,6,0)};row.Children.Add(satelliteIcon);row.Children.Add(satelliteTime);
-            var button=UI.Button("Open companion",()=>OpenSatellite(true));satelliteButton=button;button.Content=row;button.Padding=new(8,0,8,0);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=36;button.ToolTip="Hover to preview · click to open";
-            var border=new Border{CornerRadius=new(18),Background=Brushes.Black,Child=button};
-            satelliteWindow=new Window{Width=104,Height=36,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,AllowsTransparency=true,Background=Brushes.Transparent,ShowInTaskbar=false,ShowActivated=false,Topmost=true,Content=border,Owner=this};
+            var row=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};satelliteRing.Width=satelliteRing.Height=16;satelliteRing.Margin=new(0,0,5,0);row.Children.Add(satelliteRing);satelliteIcon=new Border{Width=14,Height=14,Margin=new(0,0,5,0)};row.Children.Add(satelliteIcon);row.Children.Add(satelliteTime);
+            var button=UI.Button("Open companion",()=>OpenSatellite(true));satelliteButton=button;button.Content=row;button.Padding=new(8,0,8,0);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=0;button.ToolTip="Hover to preview · click to open";
+            satelliteSurface=new IslandSurface();satelliteRoot=new Grid();satelliteRoot.Children.Add(satelliteSurface);satelliteRoot.Children.Add(button);
+            satelliteWindow=new Window{Width=SatelliteWidth,Height=app.Settings.Height,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,AllowsTransparency=true,Background=Brushes.Transparent,ShowInTaskbar=false,ShowActivated=false,Topmost=true,Content=satelliteRoot,Owner=this};
             satelliteWindow.SourceInitialized+=(_,_)=>HwndSource.FromHwnd(new WindowInteropHelper(satelliteWindow).Handle)?.AddHook((IntPtr hwnd,int message,IntPtr wparam,IntPtr lparam,ref bool handled)=>{if(message==0x21){handled=true;return new IntPtr(3);}return IntPtr.Zero;});
             satelliteWindow.MouseEnter+=(_,_)=>{leaveDelay.Stop();OpenSatellite(false);};
             satelliteWindow.MouseLeave+=(_,_)=>{if(satellitePreview && peeking)leaveDelay.Start();};
@@ -124,7 +129,7 @@ public sealed partial class OverlayWindow
         }
         var now=DateTimeOffset.UtcNow;bool countdownKind=satelliteKind is "timer" or "focus";
         satelliteRing.Visibility=countdownKind?Visibility.Visible:Visibility.Collapsed;
-        satelliteIcon!.Visibility=countdownKind?Visibility.Collapsed:Visibility.Visible;
+        satelliteIcon!.Visibility=countdownKind || satelliteKind is "cpu" or "ram"?Visibility.Collapsed:Visibility.Visible;
         if(satelliteIconKind!=satelliteKind){satelliteIcon.Child=Icons.Create(satelliteKind=="calendar"?"calendar":satelliteKind=="clock"?"clock":"nav-status",16);satelliteIconKind=satelliteKind;}
         string label;
         if(countdownKind){var countdown=satelliteKind=="timer"?app.Session.Timer:app.Session.Focus;satelliteTime.Text=countdown.Display(now);satelliteRing.Sample(0,1,countdown.Progress(now),true,satelliteKind=="focus",false,0);label=satelliteKind=="timer"?"Timer":"Focus";}
@@ -133,7 +138,12 @@ public sealed partial class OverlayWindow
         else if(satelliteKind=="calendar"){var next=SatelliteEvent;satelliteTime.Text=next?.Start<=now?"Now":next?.Start.ToLocalTime().ToString("HH:mm")??"—";label="Calendar · "+next?.Title;}
         else{satelliteTime.Text=DateTime.Now.ToString(app.Settings.Clock24Hour?"HH:mm":"h:mm tt");label="Clock";}
         UI.Named(satelliteButton!,"Open "+label);satelliteButton!.ToolTip=label+" · Hover to preview · click to open";
-        var p=PointToScreen(new Point((ActualWidth+app.Settings.Width)/2+8,0));var dpi=VisualTreeHelper.GetDpi(this);satelliteWindow.Left=p.X/dpi.DpiScaleX;satelliteWindow.Top=p.Y/dpi.DpiScaleY;
+        var settings=app.Settings;double width=SatelliteWidth,height=settings.Height;
+        satelliteWindow.Width=width;satelliteWindow.Height=height;satelliteWindow.Opacity=Opacity;
+        satelliteSurface!.SurfaceWidth=width;satelliteSurface.SurfaceHeight=height;satelliteSurface.Radius=settings.Radius;satelliteSurface.Notch=surface.Notch;satelliteSurface.Fill=surface.Fill;satelliteSurface.GlassStyle=surface.GlassStyle;satelliteSurface.SetMaterial(settings.Background,settings.GlassStrength);satelliteSurface.AlbumTint=surface.AlbumTint;satelliteSurface.Refresh();
+        satelliteRoot!.Clip=IslandGeometry.Create(width,height,settings.Radius,surface.Notch);
+        satelliteButton.Padding=new Thickness(SatelliteShoulder+6,0,SatelliteShoulder+6,0);
+        var p=SatelliteAnchor;var dpi=VisualTreeHelper.GetDpi(this);satelliteWindow.Left=p.X/dpi.DpiScaleX;satelliteWindow.Top=p.Y/dpi.DpiScaleY;
         if(!satelliteWindow.IsVisible)satelliteWindow.Show();
     }
     private void OpenSatellite(bool panel)
