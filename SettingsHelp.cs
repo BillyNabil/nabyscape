@@ -11,7 +11,7 @@ public sealed partial class SettingsWindow
         ["Compact panel with tabs"]="Shows one category at a time. Turn off to show the widget layout.",
         ["Preview on hover"]="Rest your pointer on the island to browse without opening a panel.",
         ["Two-stage reveal"]="Shows a small preview first, then more detail after a short delay.",
-        ["Live activity Â· audio, progress & focus breathing"]="Animates audio bars and running sessions. Stops rendering while hidden.",
+        ["Live activity · audio, progress & focus breathing"]="Shows a five-bar level indicator beside the artist and animates running sessions. These are audio-level envelopes, not frequency bands. Stops rendering while hidden.",
         ["Feedback for volume & audio device changes"]="Briefly shows changes made with Windows audio controls.",
         ["Reduce motion"]="Stops continuous animation and removes animated transitions.",
         ["Enable visibility shortcut"]="Hides the entire island or brings it back. The tray can always restore it.",

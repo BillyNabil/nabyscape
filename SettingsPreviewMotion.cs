@@ -51,6 +51,12 @@ public sealed partial class SettingsWindow
         var wave=new ActivityVisual{Width=60,Height=slender?12:14,WaveOnly=true,Slender=slender,Margin=new(0,8,8,0)};
         previewFrames.Add(seconds=>{double peak=app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;bool animate=!app.Settings.ReduceMotion && app.Settings.LiveActivity && app.Media.Playing && !app.Audio.MediaMeterMuted;wave.Sample(animate?peak:0,.033,0,false,false,animate,seconds,true,app.Settings.WaveformIdleMotion);});return wave;
     }
+    private ActivityVisual PreviewMiniEqualizer()
+    {
+        var meter=new ActivityVisual{Width=22,Height=12,Mini=true,WaveOnly=true};
+        previewFrames.Add(seconds=>{bool animate=!app.Settings.ReduceMotion && app.Settings.LiveActivity && app.Media.Playing && !app.Audio.MediaMeterMuted;double peak=animate?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;meter.Sample(peak,.033,0,false,false,animate,seconds,true,app.Settings.WaveformIdleMotion);});
+        meter.Visibility=app.Settings.LiveActivity?Visibility.Visible:Visibility.Collapsed;return meter;
+    }
     private void RefreshLivePreviewData()
     {
         string key=app.Media.Title+"|"+app.Media.Artist+"|"+app.Media.Playing;

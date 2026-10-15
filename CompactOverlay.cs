@@ -24,7 +24,7 @@ public sealed partial class OverlayWindow
     private readonly TranslateTransform peekArtSlide=new();
     private readonly System.Windows.Controls.Grid peekCoverContent=new();
     private FrameworkElement peekFallback=null!;
-    private readonly ActivityVisual peekWave=new(){Width=34,Height=12,WaveOnly=true};
+    private readonly ActivityVisual peekWave=new(){Width=22,Height=12,WaveOnly=true,Mini=true};
     private Button? peekPlay;
     private readonly Slider seekSlider=new(){Minimum=0,Maximum=1,TickFrequency=.001,SmallChange=.01,LargeChange=.05,IsMoveToPointEnabled=true,Height=24,Margin=new(0)};
     private readonly TextBlock elapsed=UI.Text("0:00",10,UI.Muted),duration=UI.Text("0:00",10,UI.Muted);
@@ -58,11 +58,10 @@ public sealed partial class OverlayWindow
         peekTitle.FontSize=15;peekSubtitle.FontSize=12;peekSubtitle.Margin=new(0,6,0,0);
         peekTitle.TextWrapping=TextWrapping.NoWrap;peekTitle.TextTrimming=TextTrimming.CharacterEllipsis;peekTitle.FontWeight=FontWeights.SemiBold;
         peekSubtitle.TextWrapping=TextWrapping.NoWrap;peekSubtitle.TextTrimming=TextTrimming.CharacterEllipsis;
-        var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};info.Children.Add(WrapTitle(peekTitle));info.Children.Add(WrapTitle(peekSubtitle));Grid.SetColumn(info,1);peekMedia.Children.Add(info);
+        var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};info.Children.Add(WrapTitle(peekTitle));peekSubtitle.Margin=new(0);info.Children.Add(new InlineMediaLabel(WrapArtistLabel(peekSubtitle),peekWave){Margin=new(0,6,0,0)});Grid.SetColumn(info,1);peekMedia.Children.Add(info);
         peekPlay=Icons.Button("play","Play or pause from preview",()=>_=app.Media.Command("toggle"),true,38);peekPlay.Margin=new(16,0,0,0);Grid.SetColumn(peekPlay,2);peekMedia.Children.Add(peekPlay);
         Grid.SetRow(peekProgress,1);Grid.SetColumnSpan(peekProgress,3);peekProgress.Margin=new(0,12,0,0);peekMedia.Children.Add(peekProgress);
         var peekTimes=new DockPanel{Margin=new(0,6,0,0)};DockPanel.SetDock(peekDuration,Dock.Right);peekTimes.Children.Add(peekDuration);peekTimes.Children.Add(peekElapsed);Grid.SetRow(peekTimes,2);Grid.SetColumnSpan(peekTimes,3);peekMedia.Children.Add(peekTimes);
-        Grid.SetRow(peekWave,2);Grid.SetColumn(peekWave,1);peekWave.HorizontalAlignment=HorizontalAlignment.Center;peekWave.Margin=new(0,6,0,0);peekMedia.Children.Add(peekWave);
         InitializePeekDeck();
         timelinePanel.RowDefinitions.Add(new(){Height=GridLength.Auto});timelinePanel.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var labels=new DockPanel();DockPanel.SetDock(duration,Dock.Right);labels.Children.Add(duration);labels.Children.Add(elapsed);timelinePanel.Children.Add(labels);
@@ -147,13 +146,13 @@ public sealed partial class OverlayWindow
             var panel=new StackPanel();
             if(WidgetOn("media"))
             {
-                var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;artist.TextWrapping=TextWrapping.NoWrap;artist.TextTrimming=TextTrimming.CharacterEllipsis;artist.Margin=new(0,4,0,0);info.Children.Add(WrapTitle(title));info.Children.Add(WrapTitle(artist));
+                var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;artist.TextWrapping=TextWrapping.NoWrap;artist.TextTrimming=TextTrimming.CharacterEllipsis;artist.Margin=new(0,4,0,0);info.Children.Add(WrapTitle(title));info.Children.Add(ArtistWithMeter(artist));
                 var cover=new Border{Child=WrapArtwork(artwork),Width=56,Height=56,Margin=new(0,0,16,0),Clip=new RectangleGeometry(new Rect(0,0,56,56),14,14)};
                 var row=new DockPanel{Margin=new(0,0,0,app.Settings.SectionGap)};DockPanel.SetDock(cover,Dock.Left);row.Children.Add(cover);row.Children.Add(info);panel.Children.Add(row);
                 previous=Icons.Button("previous","Previous track",()=>_=app.Media.Command("previous"),false,38);play=Icons.Button("play","Play or pause",()=>_=app.Media.Command("toggle"),true,46);playIcon="";next=Icons.Button("next","Next track",()=>_=app.Media.Command("next"),false,38);previous.Background=next.Background=Brushes.Transparent;
                 previous.Margin=new(0,0,18,0);play.Margin=new(0);next.Margin=new(18,0,0,0);
                 var buttons=UI.Row(previous,play,next);buttons.HorizontalAlignment=HorizontalAlignment.Center;buttons.Margin=new(0,0,0,12);panel.Children.Add(buttons);
-                if(app.Settings.LiveActivity){if(musicWave.Parent is Panel oldWave)oldWave.Children.Remove(musicWave);musicWave.Height=12;musicWave.Margin=new(0,0,0,8);panel.Children.Add(musicWave);}timelinePanel.Margin=new(0,0,0,10);panel.Children.Add(timelinePanel);
+                timelinePanel.Margin=new(0,0,0,10);panel.Children.Add(timelinePanel);
                 sessions.Margin=new(0,0,0,14);sessions.MinHeight=30;UI.Named(sessions,"Media session");panel.Children.Add(sessions);
             }
             if(WidgetOn("volume"))
