@@ -12,7 +12,7 @@ internal static class UI
     public static Brush ContrastText(string color)
     {var c=Brush(color).Color;return c.R*.2126+c.G*.7152+c.B*.0722>150?Brush("#111317"):Brushes.White;}
     public static void ApplyControlTheme(Settings settings)
-    {if(Application.Current==null)return;foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})Application.Current.Resources[entry.Item1]=Brush(entry.Item2);Application.Current.Resources["ActionRadius"]=new CornerRadius(settings.ButtonShape=="Pill"?999:10);Application.Current.Resources["ControlText"]=ContrastText(settings.ControlFill);Application.Current.Resources["SelectionText"]=ContrastText(settings.SelectionFill); }
+    {if(Application.Current==null)return;foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})Application.Current.Resources[entry.Item1]=Brush(entry.Item2);Application.Current.Resources["ControlText"]=ContrastText(settings.ControlFill);Application.Current.Resources["SelectionText"]=ContrastText(settings.SelectionFill); }
     public static readonly Brush Muted=Brush("#A1A1A6");
     public static TextBlock Text(string text,double size=13,Brush? color=null)
         =>new(){Text=text,FontSize=size,Foreground=color ?? Brushes.White,VerticalAlignment=VerticalAlignment.Center,TextWrapping=TextWrapping.Wrap};
@@ -24,7 +24,7 @@ internal static class UI
     {var heading=Heading(text,11,Muted);heading.FontWeight=FontWeights.Medium;heading.Margin=new(0,0,0,10);return heading;}
     public static Button Button(string text,Action action,bool primary=false)
     {
-        var b=new Button{Content=text};AutomationProperties.SetName(b,text);
+        var b=new Button{Content=text,Tag=new CornerRadius(8)};AutomationProperties.SetName(b,text);
         if(primary) { b.SetResourceReference(Control.BackgroundProperty,"Accent");b.Foreground=Brushes.Black;b.BorderThickness=new(0); }
         Motion.Button(b);b.Click+=(_,_)=>action();return b;
     }

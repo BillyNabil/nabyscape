@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\island.ico</ApplicationIcon>
     <AssemblyName>NabyScape</AssemblyName>
     <RootNamespace>NabyScape</RootNamespace>
-    <Version>2.3.5</Version>
+    <Version>2.3.4</Version>
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
     <Company>NabyScape</Company>

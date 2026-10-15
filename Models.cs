@@ -70,7 +70,6 @@ public sealed class Settings
     public string Monitor { get; set; } = "";
     public string Background { get; set; } = "#000000";
     public string Accent { get; set; } = "#FFFFFF";
-    public string ButtonShape { get; set; } = "Pill";
     public string ControlFill { get; set; } = "#16171B";
     public string ControlBorder { get; set; } = "#303238";
     public string SelectionFill { get; set; } = "#34373E";
@@ -133,7 +132,6 @@ public sealed class Settings
         if(Preset!="Mac" && Preset!="iPhone") Preset="iPhone";
         if(!ValidColor(Background)) Background="#000000";
         if(!ValidColor(Accent)) Accent="#FFFFFF";
-        if(ButtonShape is not ("Pill" or "Soft"))ButtonShape="Pill";
         if(!ValidColor(ControlFill))ControlFill="#16171B";
         if(!ValidColor(ControlBorder))ControlBorder="#303238";
         if(!ValidColor(SelectionFill))SelectionFill="#34373E";
