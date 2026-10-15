@@ -10,11 +10,6 @@ namespace NabyScape;
 internal sealed class ActivityVisual : FrameworkElement
 {
     private readonly double[] history=new double[25];
-    private readonly double[] miniLevels=new double[5];
-    private static readonly int[] miniDelays={0,2,5,1,8};
-    private static readonly double[] miniGains={.64,.94,.5,.81,.7};
-    internal bool Mini {get;init;}
-    internal double MiniLevel(int index)=>miniLevels[index];
     private double envelope,progress,pulse=1;
     private bool countdown,focus;
     private static readonly Brush focusColor=UI.Brush("#30D158"),timerColor=UI.Brush("#FF9F0A");
@@ -32,15 +27,6 @@ internal sealed class ActivityVisual : FrameworkElement
         if(envelope<.001)envelope=0;
         bool changed=Math.Abs(before-envelope)>.0003 || Math.Abs(progress-fraction)>.00001 || session!=countdown || focused!=focus;
         if(advanceHistory){for(int i=history.Length-1;i>0;i--){if(Math.Abs(history[i]-history[i-1])>.001)changed=true;history[i]=history[i-1];}history[0]=envelope;}
-        if(Mini)for(int i=0;i<5;i++)
-        {
-            // Five differently delayed level envelopes, not frequency bands.
-            double level=Math.Clamp(history[miniDelays[i]]+(envelope-history[0])*.65,0,1);
-            double transient=Math.Min(.3,Math.Abs(history[0]-history[4])*1.8);
-            double next=animate?Math.Clamp(level*miniGains[i]+transient*(i%2==0?.7:.25),0,1):0;
-            double beforeBar=miniLevels[i];miniLevels[i]=animate?next+(beforeBar-next)*Math.Exp(-dt/(next>beforeBar?.025+i*.004:.14+i*.018)):0;
-            if(Math.Abs(beforeBar-miniLevels[i])>.0002)changed=true;
-        }
         progress=fraction;countdown=session;focus=focused;
         double breathing=animate && session && focused?.76+.24*Math.Sin(seconds*Math.PI/1.9):1;
         if(Math.Abs(breathing-pulse)>.002)changed=true;pulse=breathing;
@@ -64,11 +50,6 @@ internal sealed class ActivityVisual : FrameworkElement
             }
             dc.Pop();return;
         }
-        if(Mini)
-        {
-            const int bars=5;double barWidth=Math.Min(1.8,w/9),barGap=(w-bars*barWidth)/(bars-1);
-            for(int i=0;i<bars;i++){double height=1+(h-1)*miniLevels[i];dc.DrawRoundedRectangle(UI.Muted,null,new Rect(i*(barWidth+barGap),h-height,barWidth,height),barWidth/2,barWidth/2);}return;
-        }
         int count=WaveOnly?Math.Min(25,Math.Max(5,(int)(w/3))):5;double gap=WaveOnly?1.5:1.4,bw=Math.Max(.4,(w-gap*(count-1))/count);
         if(Slender){bw=Math.Min(1.2,Math.Max(.4,(w-(count-1)*1.8)/count));gap=Math.Min(1.8,Math.Max(.8,(w-count*bw)/Math.Max(1,count-1)));}
         double start=Slender?(w-(count*bw+(count-1)*gap))/2:0;
@@ -84,7 +65,7 @@ internal sealed class ActivityVisual : FrameworkElement
 
 public sealed partial class OverlayWindow
 {
-    private readonly ActivityVisual activity=new(),musicWave=new(){Width=22,Height=12,Mini=true,WaveOnly=true,HorizontalAlignment=HorizontalAlignment.Left};
+    private readonly ActivityVisual activity=new(),musicWave=new(){Width=96,Height=16,WaveOnly=true,HorizontalAlignment=HorizontalAlignment.Center};
     private readonly DispatcherTimer liveTick=new(DispatcherPriority.Render){Interval=TimeSpan.FromMilliseconds(250)};
     private DateTimeOffset lastLive,quietSince,feedbackUntil,timelineAt;
     private DateTimeOffset audioSampleAt;

@@ -187,8 +187,6 @@ The two global shortcuts are configurable. Buttons retain their click actions; w
 
 Controls follow the Windows media sessions exposed by each app. Choose the app in **Media**. Waveforms read matching sessions across active outputs, so a selected Spotify session is not driven by Discord audio.
 
-Hover and open Media views place a compact five-bar level indicator beside the artist name. The bars use different response timings with quick attack and smooth release; pause, mute, and Reduce Motion return them to a quiet baseline.
-
 Choose **Appearance → Closed media icon** for album artwork or a waveform icon. **Closed media content** independently selects the song title or a compact waveform. Countdown and volume feedback keep priority.
 
 Waveforms show amplitude history, not a frequency spectrum. They do not record audio or use the microphone. Optional gentle motion during quiet or unavailable readings is decorative. Unsupported app identities may use this fallback. Muted sessions return to a quiet baseline.

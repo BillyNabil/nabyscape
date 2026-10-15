@@ -138,7 +138,7 @@ public sealed partial class OverlayWindow : Window
             switch(widget.Id)
             {
                 case "media":
-                    var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;artist.TextWrapping=TextWrapping.NoWrap;artist.TextTrimming=TextTrimming.CharacterEllipsis;artist.Margin=new(0,4,0,0);info.Children.Add(WrapTitle(title));info.Children.Add(ArtistWithMeter(artist));
+                    var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;artist.TextWrapping=TextWrapping.NoWrap;artist.TextTrimming=TextTrimming.CharacterEllipsis;artist.Margin=new(0,4,0,0);info.Children.Add(WrapTitle(title));info.Children.Add(WrapTitle(artist));
                     var art=new Border{CornerRadius=new(13),Child=WrapArtwork(artwork),ClipToBounds=true,Margin=new(0,0,14,0)};art.SizeChanged+=(_,_)=>art.Clip=new RectangleGeometry(new Rect(0,0,art.ActualWidth,art.ActualHeight),13,13);
                     var mediaGrid=new Grid();mediaGrid.ColumnDefinitions.Add(new(){Width=GridLength.Auto});mediaGrid.ColumnDefinitions.Add(new());mediaGrid.Children.Add(art);Grid.SetColumn(info,1);mediaGrid.Children.Add(info);
                     previous=Icons.Button("previous","Previous track",()=>_=app.Media.Command("previous"),false,42);play=Icons.Button("play","Play or pause",()=>_=app.Media.Command("toggle"),true,50);playIcon="";next=Icons.Button("next","Next track",()=>_=app.Media.Command("next"),false,42);previous.Background=next.Background=Brushes.Transparent;

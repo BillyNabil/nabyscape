@@ -48,7 +48,7 @@ internal static class Diagnostics
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
             if(Environment.GetCommandLineArgs().Contains("--interactions-only"))
-            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);await MiniEqualizerDiagnostics.Run(app,overlay,directory,Check);return;}
+            {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--review-regressions"))
             {await Task.Delay(500);await InteractionDiagnostics.RunReviewRegressions(app,overlay,directory,Check);return;}
             await Task.Delay(2500);
@@ -490,7 +490,7 @@ internal static class Diagnostics
             if(app.Media.Sessions.Count==0)report.Add("MANUAL  Playback commands and session switching: no active media session during diagnostics.");
             else report.Add("INFO  Windows media sessions detected: "+app.Media.Sessions.Count+"; playback not altered.");
             report.Add("INFO  Audio endpoint: "+app.Audio.Device+"; volume="+Math.Round(app.Audio.Volume*100)+"%, mute="+app.Audio.Muted);
-            await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);await MiniEqualizerDiagnostics.Run(app,overlay,directory,Check);
+            await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);
             report.Add("INFO  Monitors attached: "+System.Windows.Forms.Screen.AllScreens.Length);
             report.Add("MANUAL  Physical monitor disconnect, alternate DPI, battery charging, and audio device hot-plug require hardware checks.");
             overlay.Collapse();

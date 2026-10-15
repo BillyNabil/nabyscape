@@ -15,7 +15,6 @@ internal static class SelfTests
         {try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
         static void Assert(bool condition,string reason="Assertion failed") {if(!condition)throw new Exception(reason);}
         InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
-        MiniEqualizerTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         ActivityActionsTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         DetachedPreviewTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         SmartClipboardTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
