@@ -191,6 +191,8 @@ Choose **Appearance → Closed media icon** for album artwork or a waveform icon
 
 Waveforms show amplitude history, not a frequency spectrum. They do not record audio or use the microphone. Optional gentle motion during quiet or unavailable readings is decorative. Unsupported app identities may use this fallback. Muted sessions return to a quiet baseline.
 
+Each waveform bar follows a differently delayed level envelope with quick attack and smooth release, giving the original centered waveform more varied motion. Reduce Motion keeps it still.
+
 Mixer rows control individual Windows audio sessions; multiple sessions for one app can appear separately. Output selection changes the Windows default output. Apps with explicit routing preferences may keep their selected device.
 
 </details>

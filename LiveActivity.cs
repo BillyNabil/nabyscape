@@ -10,6 +10,8 @@ namespace NabyScape;
 internal sealed class ActivityVisual : FrameworkElement
 {
     private readonly double[] history=new double[25];
+    private readonly double[] levels=new double[25];
+    internal double WaveLevel(int index)=>levels[index];
     private double envelope,progress,pulse=1;
     private bool countdown,focus;
     private static readonly Brush focusColor=UI.Brush("#30D158"),timerColor=UI.Brush("#FF9F0A");
@@ -27,6 +29,19 @@ internal sealed class ActivityVisual : FrameworkElement
         if(envelope<.001)envelope=0;
         bool changed=Math.Abs(before-envelope)>.0003 || Math.Abs(progress-fraction)>.00001 || session!=countdown || focused!=focus;
         if(advanceHistory){for(int i=history.Length-1;i>0;i--){if(Math.Abs(history[i]-history[i-1])>.001)changed=true;history[i]=history[i-1];}history[0]=envelope;}
+        for(int i=0;i<levels.Length;i++)
+        {
+            // Staggered amplitude envelopes, not frequency bands. Avoid mirrored motion.
+            int delay=(i*7+i/4)%19;
+            double recent=Math.Clamp(history[delay]+(envelope-history[0])*Math.Exp(-delay*.12),0,1);
+            double transient=Math.Abs(history[delay]-history[Math.Min(24,delay+3)]);
+            double gain=.62+.38*((i*11+3)%17)/16d;
+            double targetBar=Math.Clamp(recent*gain+transient*(.2+.4*(i%3)/2d),0,1);
+            double old=levels[i],response=targetBar>old?.022+.004*(i%5):.11+.019*(i%7);
+            levels[i]=animate?targetBar+(old-targetBar)*Math.Exp(-dt/response):0;
+            if(levels[i]<.0001)levels[i]=0;
+            if(Math.Abs(old-levels[i])>.0002)changed=true;
+        }
         progress=fraction;countdown=session;focus=focused;
         double breathing=animate && session && focused?.76+.24*Math.Sin(seconds*Math.PI/1.9):1;
         if(Math.Abs(breathing-pulse)>.002)changed=true;pulse=breathing;
@@ -55,9 +70,8 @@ internal sealed class ActivityVisual : FrameworkElement
         double start=Slender?(w-(count*bw+(count-1)*gap))/2:0;
         for(int i=0;i<count;i++)
         {
-            double shape=.4+.6*Math.Pow(Math.Sin((i+1)*Math.PI/(count+1)),.65);
-            int index=WaveOnly?Math.Min(24,(int)(Math.Abs(i-(count-1)/2d)*48/Math.Max(1,count-1))):i*3;
-            double v=Math.Clamp(history[index]+(envelope-history[0])*Math.Exp(-index*.15),0,1)*shape;double baseline=Slender?1:1.8;double height=baseline+(h-2)*v;
+            int index=(int)Math.Round(i*24d/Math.Max(1,count-1));
+            double v=levels[index];double baseline=Slender?1:1.8;double height=baseline+(h-2)*v;
             dc.DrawRoundedRectangle(Brushes.White,null,new Rect(start+i*(bw+gap),(h-height)/2,bw,height),bw/2,bw/2);
         }
     }
