@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="240" viewBox="0 0 1280 240" role="img" aria-labelledby="title desc">
+<title id="title">NabyScape</title><desc id="desc">NabyScape wordmark on a charcoal background with a notch motif.</desc>
+<defs><linearGradient id="surface" x2="1" y2="1"><stop stop-color="#191c21"/><stop offset="1" stop-color="#090b0e"/></linearGradient></defs>
+<rect width="1280" height="240" rx="20" fill="url(#surface)"/>
+<text x="64" y="152" fill="#f7f8fa" font-family="Segoe UI,Arial,sans-serif" font-size="88" font-weight="600" letter-spacing="-3">NabyScape</text>
+<path d="M904 0H1216Q1192 0 1192 24V66Q1192 92 1166 92H954Q928 92 928 66V24Q928 0 904 0Z" fill="#000"/>
+<g fill="#b4f272"><rect x="1027" y="36" width="4" height="20" rx="2"/><rect x="1041" y="27" width="4" height="38" rx="2"/><rect x="1055" y="32" width="4" height="28" rx="2"/><rect x="1069" y="39" width="4" height="14" rx="2"/></g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="230" viewBox="0 0 1000 230" role="img" aria-labelledby="title desc">
+<title id="title">Notch and pill shape presets</title><desc id="desc">A notch attached to the top edge on the left and a floating rounded pill on the right. Shape illustration.</desc>
+<defs><linearGradient id="desktop" x2="1" y2="1"><stop stop-color="#353b47"/><stop offset="1" stop-color="#1b2029"/></linearGradient></defs>
+<rect width="488" height="230" rx="14" fill="url(#desktop)"/><rect x="512" width="488" height="230" rx="14" fill="url(#desktop)"/>
+<path d="M92 0H396Q376 0 376 20V54Q376 78 352 78H136Q112 78 112 54V20Q112 0 92 0Z" fill="#000"/>
+<rect x="634" y="22" width="244" height="48" rx="24" fill="#000"/>
+<g stroke="#f4f5f8" stroke-width="3" stroke-linecap="round"><path d="M207 37v6m12-12v18m12-8v10m12-17v16m12-13v10m12-16v20m12-12v4"/><path d="M719 43v6m12-12v18m12-8v10m12-17v16m12-13v10m12-16v20m12-12v4"/></g>
+<g fill="#f4f5f8" font-family="Segoe UI,Arial,sans-serif" font-size="30" font-weight="600" text-anchor="middle"><text x="244" y="173">Notch</text><text x="756" y="173">Pill</text></g>
+</svg>
