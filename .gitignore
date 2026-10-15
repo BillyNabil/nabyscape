@@ -1,0 +1,10 @@
+bin/
+obj/
+artifacts*/
+outputs/
+diagnostics/
+test-profile/
+.superpowers/
+.vs/
+*.user
+*.suo

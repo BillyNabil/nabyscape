@@ -1,0 +1,32 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish and run logic checks
+        shell: pwsh
+        run: ./build.ps1 -OutputDirectory "$env:RUNNER_TEMP/nabyscape"
+      - name: Upload Windows build
+        if: success()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: NabyScape-windows-x64
+          path: ${{ runner.temp }}/nabyscape/
+          retention-days: 14
