@@ -17,6 +17,18 @@ internal static class SecondaryActivity
         if(!t && !f)return null;
         return t && (!f || timer.Deadline<=focus.Deadline)?"timer":"focus";
     }
+    internal static string? SelectSource(string mode,string? countdown,bool upcoming,bool systemOn,bool toolsOn,bool clockOn)
+    {
+        return mode switch
+        {
+            "Countdown"=>countdown,
+            "CPU"=>systemOn?"cpu":null,
+            "RAM"=>systemOn?"ram":null,
+            "Calendar"=>toolsOn && upcoming?"calendar":null,
+            "Clock"=>clockOn?"clock":null,
+            _=>countdown??(toolsOn && upcoming?"calendar":systemOn?"cpu":clockOn?"clock":null)
+        };
+    }
 }
 
 internal sealed class CoverGesture
@@ -38,6 +50,9 @@ public sealed partial class OverlayWindow
     private readonly TextBlock satelliteTime=UI.Text("",11);
     private readonly ActivityVisual satelliteRing=new(){Width=19,Height=19};
     private string? satelliteKind;
+    private Border? satelliteIcon;
+    private Button? satelliteButton;
+    private string? satelliteIconKind;
     private bool satellitePreview;
     internal bool DiagnosticSatelliteMedia {get;set;}
     internal bool DiagnosticSatellitePointerPresent {get;set;}
@@ -79,38 +94,52 @@ public sealed partial class OverlayWindow
         if(menu.Items.Count==0)menu.Items.Add(new MenuItem{Header="No media sessions",IsEnabled=false});
         menu.Closed+=(_,_)=>{if(audioMenu==menu)audioMenu=null;};menu.IsOpen=true;
     }
-    internal bool SystemSummaryVisible=>IsVisible && WidgetOn("system") && (peeking && peekId=="system" || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen));
+    internal bool SystemSummaryVisible=>IsVisible && (peeking && satellitePreview && satelliteKind=="clock" && peekId=="system" || WidgetOn("system") && (SatelliteNeedsSystemSamples || peeking && peekId=="system" || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen)));
     private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && (!peeking || satellitePreview) && !FeedbackVisible && !environmentHidden && !userHidden && IsVisible;
-    private bool ShowMediaPrimary=>SatelliteEligible && SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus"))!=null && SatelliteHasRoom();
+    private CalendarEvent? SatelliteEvent=>app.Calendar.Events.Where(e=>e.End>DateTimeOffset.UtcNow && e.Start<=DateTimeOffset.UtcNow.AddHours(24)).OrderBy(e=>e.Start).FirstOrDefault();
+    private string? SelectedSatellite=>SecondaryActivity.SelectSource(app.Settings.SatelliteSource,SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")),SatelliteEvent!=null,WidgetOn("system"),WidgetOn("tools"),WidgetOn("clock"));
+    private bool ShowMediaPrimary=>SatelliteEligible && SelectedSatellite!=null && SatelliteHasRoom();
+    private bool SatelliteNeedsSystemSamples=>SatelliteEligible && SatelliteHasRoom() && SelectedSatellite is "cpu" or "ram";
+    private string? SatellitePeekKind=>satelliteKind is "cpu" or "ram" or "clock"?"system":satelliteKind;
     private bool SatelliteHasRoom()
     {
         if(!IsLoaded)return false;var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);var p=PointToScreen(new Point((ActualWidth+app.Settings.Width)/2+8,0));
-        return p.X+82*scale<=screen.Bounds.Right-8*scale;
+        return p.X+104*scale<=screen.Bounds.Right-8*scale;
     }
     private void UpdateSatellite()
     {
         if(!peeking)satellitePreview=false;
-        satelliteKind=ShowMediaPrimary?SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")):null;
+        satelliteKind=ShowMediaPrimary?SelectedSatellite:null;
         if(satelliteKind==null){satelliteWindow?.Hide();return;}
         if(satelliteWindow==null)
         {
-            var row=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};satelliteRing.Margin=new(0,0,6,0);row.Children.Add(satelliteRing);row.Children.Add(satelliteTime);
-            var button=UI.Button("Open countdown",()=>OpenSatellite(true));button.Content=row;button.Padding=new(8,0,8,0);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=36;button.ToolTip="Hover to preview · click to open";
+            var row=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};satelliteRing.Margin=new(0,0,6,0);row.Children.Add(satelliteRing);satelliteIcon=new Border{Width=16,Height=16,Margin=new(0,0,6,0)};row.Children.Add(satelliteIcon);row.Children.Add(satelliteTime);
+            var button=UI.Button("Open companion",()=>OpenSatellite(true));satelliteButton=button;button.Content=row;button.Padding=new(8,0,8,0);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=36;button.ToolTip="Hover to preview · click to open";
             var border=new Border{CornerRadius=new(18),Background=Brushes.Black,Child=button};
-            satelliteWindow=new Window{Width=82,Height=36,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,AllowsTransparency=true,Background=Brushes.Transparent,ShowInTaskbar=false,ShowActivated=false,Topmost=true,Content=border,Owner=this};
+            satelliteWindow=new Window{Width=104,Height=36,WindowStyle=WindowStyle.None,ResizeMode=ResizeMode.NoResize,AllowsTransparency=true,Background=Brushes.Transparent,ShowInTaskbar=false,ShowActivated=false,Topmost=true,Content=border,Owner=this};
             satelliteWindow.SourceInitialized+=(_,_)=>HwndSource.FromHwnd(new WindowInteropHelper(satelliteWindow).Handle)?.AddHook((IntPtr hwnd,int message,IntPtr wparam,IntPtr lparam,ref bool handled)=>{if(message==0x21){handled=true;return new IntPtr(3);}return IntPtr.Zero;});
             satelliteWindow.MouseEnter+=(_,_)=>{leaveDelay.Stop();OpenSatellite(false);};
             satelliteWindow.MouseLeave+=(_,_)=>{if(satellitePreview && peeking)leaveDelay.Start();};
             satelliteWindow.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){Collapse();e.Handled=true;}};
         }
-        var countdown=satelliteKind=="timer"?app.Session.Timer:app.Session.Focus;var now=DateTimeOffset.UtcNow;satelliteTime.Text=countdown.Display(now);satelliteRing.Sample(0,1,countdown.Progress(now),true,satelliteKind=="focus",false,0);
+        var now=DateTimeOffset.UtcNow;bool countdownKind=satelliteKind is "timer" or "focus";
+        satelliteRing.Visibility=countdownKind?Visibility.Visible:Visibility.Collapsed;
+        satelliteIcon!.Visibility=countdownKind?Visibility.Collapsed:Visibility.Visible;
+        if(satelliteIconKind!=satelliteKind){satelliteIcon.Child=Icons.Create(satelliteKind=="calendar"?"calendar":satelliteKind=="clock"?"clock":"nav-status",16);satelliteIconKind=satelliteKind;}
+        string label;
+        if(countdownKind){var countdown=satelliteKind=="timer"?app.Session.Timer:app.Session.Focus;satelliteTime.Text=countdown.Display(now);satelliteRing.Sample(0,1,countdown.Progress(now),true,satelliteKind=="focus",false,0);label=satelliteKind=="timer"?"Timer":"Focus";}
+        else if(satelliteKind=="cpu"){satelliteTime.Text=$"CPU {app.Usage.cpu:0}%";label="CPU usage";}
+        else if(satelliteKind=="ram"){satelliteTime.Text=app.Usage.total>0?$"RAM {app.Usage.used/app.Usage.total*100:0}%":"—";label="Memory usage";}
+        else if(satelliteKind=="calendar"){var next=SatelliteEvent;satelliteTime.Text=next?.Start<=now?"Now":next?.Start.ToLocalTime().ToString("HH:mm")??"—";label="Calendar · "+next?.Title;}
+        else{satelliteTime.Text=DateTime.Now.ToString(app.Settings.Clock24Hour?"HH:mm":"h:mm tt");label="Clock";}
+        UI.Named(satelliteButton!,"Open "+label);satelliteButton!.ToolTip=label+" · Hover to preview · click to open";
         var p=PointToScreen(new Point((ActualWidth+app.Settings.Width)/2+8,0));var dpi=VisualTreeHelper.GetDpi(this);satelliteWindow.Left=p.X/dpi.DpiScaleX;satelliteWindow.Top=p.Y/dpi.DpiScaleY;
         if(!satelliteWindow.IsVisible)satelliteWindow.Show();
     }
     private void OpenSatellite(bool panel)
     {
-        var kind=satelliteKind;if(kind==null)return;
-        if(panel){Reveal();SelectPage("focus");return;}
+        var kind=SatellitePeekKind;if(kind==null)return;
+        if(panel){OpenFeaturePage(kind);return;}
         satellitePreview=true;previewKind=kind;automaticPreview=true;PreviewActivity();SelectPeek(kind);automaticPreview=false;
         satellitePreview=peeking && peekId==kind;
     }
@@ -146,6 +175,18 @@ internal static class InteractionFeatureTests
         t.Pause(now);test("Satellite ignores paused timer",SecondaryActivity.Select(t,f,now)=="focus");
         test("Satellite respects disabled countdown widgets",SecondaryActivity.Select(t,f,now,true,false)==null);
         test("Satellite excludes overdue deadlines",SecondaryActivity.Select(t,f,now.AddHours(1))==null);
+        test("Automatic companion uses CPU without countdowns",SecondaryActivity.SelectSource("Auto",null,false,true,true,true)=="cpu");
+        test("Automatic companion prefers countdown over calendar",SecondaryActivity.SelectSource("Auto","timer",true,true,true,true)=="timer");
+        test("Automatic companion prefers nearby calendar over CPU",SecondaryActivity.SelectSource("Auto",null,true,true,true,true)=="calendar");
+        test("Fixed RAM companion ignores active countdown",SecondaryActivity.SelectSource("RAM","timer",true,true,true,true)=="ram");
+        test("Fixed CPU companion respects disabled system",SecondaryActivity.SelectSource("CPU",null,false,false,true,true)==null);
+        test("Fixed calendar hides without nearby event",SecondaryActivity.SelectSource("Calendar",null,false,true,true,true)==null);
+        test("Fixed calendar respects disabled tools",SecondaryActivity.SelectSource("Calendar",null,true,true,false,true)==null);
+        test("Automatic companion falls back to clock",SecondaryActivity.SelectSource("Auto",null,false,false,true,true)=="clock");
+        test("Companion hides when all eligible widgets are disabled",SecondaryActivity.SelectSource("Auto",null,true,false,false,false)==null);
+        test("Countdown-only mode keeps original behavior",SecondaryActivity.SelectSource("Countdown",null,true,true,true,true)==null);
+        var invalid=new Settings{SatelliteSource="unknown"};invalid.Normalize();test("Unknown companion source migrates to Automatic",invalid.SatelliteSource=="Auto");
+        var profile=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(new Settings{SatelliteSource="RAM"}),profile);test("Companion source survives layout profile round trip",profile.SatelliteSource=="RAM");
         var g=new CoverGesture();g.Begin();test("Cover short release is click",g.End());g.Begin();test("Cover hold fires once state",g.Hold());test("Held cover does not also click",!g.End());g.Begin();g.Cancel();test("Cancelled drag does not click or hold",!g.End() && !g.Hold());
         var id=t.RunId;t.Start(1,now);test("New countdown start changes ownership",id!=t.RunId);id=t.RunId;t.Pause(now);t.Resume(now);test("Countdown pause preserves ownership",id==t.RunId);
         var legacy=new Settings{HoverViews=new(){new(){Id="media"}}};legacy.Normalize();test("System hover migrates disabled",legacy.HoverViews.Single(x=>x.Id=="system").Enabled==false);

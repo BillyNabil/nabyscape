@@ -104,7 +104,7 @@ Screenshots show the interface with different media sessions and settings.
 - **Activity actions.** Open **Launch → Activities** to combine opening apps, folders and websites with Focus and timed Keep awake. Customize the Study template, save, then Start. Stop ends only the Focus/Keep awake owned by that run.
 - **Smart clipboard.** Text, links, images, and HEX/RGB colors get their own actions. Review cleaned links before copying, save images as PNG, or copy colors in either format. History remains opt-in.
 - **Closed cover gestures.** With Artwork selected, click the cover to play/pause or hold for 500 ms to choose a media session. Clicking elsewhere opens the panel. Existing wheel preferences still apply.
-- **Two live activities.** When music and a countdown are active together, a small timer satellite keeps the song visible. Hover to preview the countdown; click to open it. The nearest running deadline wins.
+- **Two live activities.** Choose a companion beside music: CPU usage, memory usage, the next local calendar event, Clock, or Timer/Focus. Automatic prefers a running countdown, then an event within 24 hours, then CPU (Clock if System is disabled). Hover to preview; click to open. Set the source in **Settings → Controls → Two live activities → Companion**.
 
 <table>
 <tr>

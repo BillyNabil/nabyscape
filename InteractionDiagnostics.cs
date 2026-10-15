@@ -111,18 +111,18 @@ internal static class InteractionDiagnostics
                 var navigation=FindButton(calendarWindow,direction);navigation.Focus();
                 for(int activation=1;activation<=2;activation++)
                 {
-                    FindButton(calendarWindow,direction).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
+                    FindButton(calendarWindow,direction).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(40);
                     Check(direction+" activation "+activation+" keeps keyboard focus on replacement button",FindButton(calendarWindow,direction).IsKeyboardFocused);
                 }
             }
             var lastDate=Tree(calendarWindow).OfType<Button>().Where(b=>AutomationProperties.GetName(b).StartsWith("Select date ",StringComparison.Ordinal)).OrderBy(b=>AutomationProperties.GetName(b),StringComparer.Ordinal).Last();
-            string selectedName=AutomationProperties.GetName(lastDate);lastDate.Focus();lastDate.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
+            string selectedName=AutomationProperties.GetName(lastDate);lastDate.Focus();lastDate.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(40);
             Check("date activation retains keyboard focus on selected replacement day",FindButton(calendarWindow,selectedName).IsKeyboardFocused);
             var selectedDay=DateTime.ParseExact(selectedName.Substring("Select date ".Length),"yyyy-MM-dd",CultureInfo.InvariantCulture);
             var nextDayName="Select date "+selectedDay.AddDays(1).ToString("yyyy-MM-dd");
             FindButton(calendarWindow,selectedName).RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,System.Windows.PresentationSource.FromVisual(calendarWindow),0,System.Windows.Input.Key.Right){RoutedEvent=System.Windows.Input.Keyboard.KeyDownEvent});await Task.Delay(40);
             Check("arrow after date activation crosses month and focuses new selected day",FindButton(calendarWindow,nextDayName).IsKeyboardFocused && FindButton(calendarWindow,nextDayName).IsTabStop);
-            FindButton(calendarWindow,nextDayName).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(40);
+            FindButton(calendarWindow,nextDayName).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(40);
             Check("repeated selected-date activation retains current keyboard focus",FindButton(calendarWindow,nextDayName).IsKeyboardFocused);
             var calendarView=typeof(DetachedPreviewWindow).GetField("view",privateInstance)!.GetValue(calendarWindow)!;
             var monthField=typeof(DetachedPreviewView).GetField("shownMonth",privateInstance)!;
@@ -130,12 +130,12 @@ internal static class InteractionDiagnostics
             foreach(var existingSelection in new[]{new DateTime(2026,10,31),new DateTime(2024,2,29)})
             {
                 monthField.SetValue(calendarView,new DateTime(existingSelection.Year,existingSelection.Month,1));selectionModel.SelectedDate=existingSelection;
-                FindButton(calendarWindow,"Next month").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                FindButton(calendarWindow,"Next month").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
                 string firstNextName="Select date "+existingSelection.AddDays(1).ToString("yyyy-MM-dd");var firstNext=FindButton(calendarWindow,firstNextName);firstNext.Focus();
                 firstNext.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,System.Windows.PresentationSource.FromVisual(calendarWindow),0,System.Windows.Input.Key.Left){RoutedEvent=System.Windows.Input.Keyboard.KeyDownEvent});await Task.Delay(40);
                 string existingName="Select date "+existingSelection.ToString("yyyy-MM-dd");var returned=Tree(calendarWindow).OfType<Button>().SingleOrDefault(b=>AutomationProperties.GetName(b)==existingName);
                 Check("arrow to existing selection redraws prior month and focuses target "+existingSelection.ToString("yyyy-MM-dd"),returned?.IsKeyboardFocused==true && returned.IsTabStop && selectionModel.SelectedDate==existingSelection && !Tree(calendarWindow).OfType<Button>().Any(b=>AutomationProperties.GetName(b)==firstNextName));
-                FindButton(calendarWindow,"Next month").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                FindButton(calendarWindow,"Next month").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
                 Check("month navigation stays aligned after same-selection arrow "+existingSelection.ToString("yyyy-MM-dd"),Tree(calendarWindow).OfType<Button>().Any(b=>AutomationProperties.GetName(b)==firstNextName));
             }
             Check("all seven visible previews have one Updated subscription each",Subscribers()==7);
@@ -256,12 +256,31 @@ internal static class InteractionDiagnostics
                 Invoke("UpdateSatellite");Invoke("OpenSatellite",false);Invoke("UpdateSatellite");Diagnostics.Descendants(satellite).OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
                 Check("Satellite click after hover opens countdown panel",overlay.IsExpanded && overlay.ActivePage=="focus");
             }
+            app.Session.Timer.Reset();app.Session.Focus.Reset();
+            foreach(var mode in new[]{"Auto","CPU","RAM","Clock"})
+            {
+                overlay.Collapse();app.Settings.SatelliteSource=mode;app.Settings.HoverViews.Single(v=>v.Id=="system").Enabled=false;app.ChangeSettings();Invoke("UpdateSatellite");
+                satellite=(Window?)Field("satelliteWindow");Check(mode+" companion visible without countdown",satellite?.IsVisible==true);
+                Check(mode+" companion requests system sampling only for CPU/RAM",overlay.SystemSummaryVisible==(mode is "Auto" or "CPU" or "RAM"));
+                Invoke("OpenSatellite",false);Invoke("UpdateSatellite");await Task.Delay(180);
+                Check(mode+" companion opens system preview even if omitted from carousel",overlay.IsPeeking && overlay.PeekPage=="system" && satellite?.IsVisible==true);
+                if(satellite!=null)
+                {
+                    satellite.UpdateLayout();Check(mode+" companion text fits",Diagnostics.Descendants(satellite).OfType<TextBlock>().Where(t=>t.IsVisible).All(t=>{var r=t.TransformToAncestor(satellite).TransformBounds(new Rect(t.RenderSize));return r.Left>=0 && r.Right<=satellite.ActualWidth;}));
+                    var bmp=new RenderTargetBitmap((int)satellite.ActualWidth,(int)satellite.ActualHeight,96,96,PixelFormats.Pbgra32);bmp.Render(satellite);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bmp));using(var capture=File.Create(Path.Combine(directory,"companion-"+mode.ToLowerInvariant()+".png")))encoder.Save(capture);
+                    Diagnostics.Descendants(satellite).OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));Check(mode+" companion click opens status",overlay.IsExpanded && overlay.ActivePage=="status");
+                }
+            }
+            overlay.Collapse();app.Settings.SatelliteSource="Calendar";app.ChangeSettings();Invoke("UpdateSatellite");Check("Calendar companion omitted without nearby events",((Window?)Field("satelliteWindow"))?.IsVisible!=true);
+            var companionEvent=app.Calendar.Add("Companion fixture",DateTimeOffset.Now.AddMinutes(20),DateTimeOffset.Now.AddMinutes(50),"");
+            try{Invoke("UpdateSatellite");Check("Calendar companion shows next local event",((Window?)Field("satelliteWindow"))?.IsVisible==true);Invoke("OpenSatellite",false);Check("Calendar companion hover opens calendar",overlay.IsPeeking && overlay.PeekPage=="calendar");Invoke("OpenSatellite",true);Check("Calendar companion click opens calendar tools",overlay.IsExpanded && overlay.ActivePage=="tools");}finally{app.Calendar.Remove(companionEvent.Id);}
+            app.Settings.SatelliteSource="Auto";
             overlay.DiagnosticSatelliteMedia=false;overlay.Collapse();app.Settings.CompactLayout=false;app.ChangeSettings();overlay.Reveal(false);overlay.UpdateLayout();
             Check("Classic Quick launch exposes Activities",Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Activities"));
             Check("Classic visible system card requests shared samples",overlay.SystemSummaryVisible && Diagnostics.Descendants(overlay).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text=="System"));
             overlay.ShowCommands(false);Check("Classic commands exclude hidden system summary",!overlay.SystemSummaryVisible);overlay.ShowActivities(false);Check("Classic Activities exclude hidden system summary",!overlay.SystemSummaryVisible);
             overlay.OpenFeaturePage("notes");Check("Classic Tools route restores actual system card visibility",!overlay.ActivitiesOpen && overlay.SystemSummaryVisible);
-            overlay.Collapse();Check("Collapsed island stops system-summary sample demand",!overlay.SystemSummaryVisible);
+            overlay.Collapse();app.Settings.ActivitySatellite=false;app.ChangeSettings();Check("Collapsed island with companion off stops system-summary sample demand",!overlay.SystemSummaryVisible);
         }
         finally
         {

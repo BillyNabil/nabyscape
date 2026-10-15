@@ -61,7 +61,7 @@ public sealed partial class SettingsWindow
         if(name=="Reveal shelf when dragging files"){previewMode="Hover";previewContent="Drop zone";}
         else if(name=="Allow detachable previews"){previewMode="Hover";previewContent="Detached preview";}
         else if(name=="Control playback from album cover"){previewMode="Hover";previewContent="Cover gestures";}
-        else if(name=="Show countdown beside music"){previewMode="Hover";previewContent="Two activities";}
+        else if(name is "Show companion beside music" or "Companion beside music"){previewMode="Hover";previewContent="Two activities";}
         else if(name.Contains("media title",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Music";}
         else if(name.Contains("heading",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Timer";}
         else if(name.Contains("volume indicator",StringComparison.OrdinalIgnoreCase) || name=="Volume step"){previewMode="Closed";previewContent="Volume feedback";}

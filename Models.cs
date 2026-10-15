@@ -30,6 +30,7 @@ public sealed class Settings
     public bool DetachablePreviews { get; set; } = true;
     public bool CoverGestures { get; set; } = true;
     public bool ActivitySatellite { get; set; } = true;
+    public string SatelliteSource { get; set; } = "Auto";
     public bool GlassStyle { get; set; } = true;
     public bool LiveActivity { get; set; } = true;
     public string ClosedMediaIcon { get; set; }="Waveform";
@@ -117,6 +118,7 @@ public sealed class Settings
         if(HotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))HotkeyModifiers="Ctrl+Alt";
         if(VisibilityHotkeyKey==null || VisibilityHotkeyKey.Length!=1 || VisibilityHotkeyKey[0]<'A' || VisibilityHotkeyKey[0]>'Z')VisibilityHotkeyKey="H";
         if(VisibilityHotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))VisibilityHotkeyModifiers="Ctrl+Alt";
+        if(SatelliteSource is not ("Auto" or "Countdown" or "CPU" or "RAM" or "Calendar" or "Clock"))SatelliteSource="Auto";
         if(ClosedMediaContent is not ("Title" or "Waveform"))ClosedMediaContent="Title";
         if(ClosedMediaIcon is not ("Waveform" or "Artwork"))ClosedMediaIcon="Waveform";
         if(CategoryStyle is not ("IconsLabels" or "Icons" or "Text"))CategoryStyle="IconsLabels";

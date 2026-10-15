@@ -41,7 +41,7 @@ public sealed partial class OverlayWindow
     internal string[] HoverDeckIds=>PeekPages();
     internal bool PeekTabSafe=>peekViews.Where(pair=>pair.Key!=peekId).All(pair=>KeyboardNavigation.GetTabNavigation(pair.Value)==KeyboardNavigationMode.None);
     internal bool PeekMoving=>peekMoves.Values.Any(move=>move.HasAnimatedProperties);
-    private string[] PeekPages()=>app.Settings.HoverViews.Where(view=>(view.Enabled || view.Id=="files" && (fileDragActive || shelfDropBrowsing)) && (view.Id=="media"?(WidgetOn("media") || WidgetOn("volume")):WidgetOn(view.Id is "calendar" or "notes" or "files"?"tools":view.Id))).Select(view=>view.Id).ToArray();
+    private string[] PeekPages()=>app.Settings.HoverViews.Where(view=>(view.Enabled || satellitePreview && view.Id==SatellitePeekKind || view.Id=="files" && (fileDragActive || shelfDropBrowsing)) && (view.Id=="system" && satellitePreview && satelliteKind=="clock" || (view.Id=="media"?(WidgetOn("media") || WidgetOn("volume")):WidgetOn(view.Id is "calendar" or "notes" or "files"?"tools":view.Id)))).Select(view=>view.Id).ToArray();
     private static string PeekName(string id)=>id switch{"media"=>"Music","timer"=>"Timer","focus"=>"Focus","calendar"=>"Calendar","notes"=>"Note","system"=>"System",_=>"Shelf"};
     private void InitializePeekDeck()
     {
