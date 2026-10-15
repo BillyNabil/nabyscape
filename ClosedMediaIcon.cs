@@ -12,12 +12,12 @@ public sealed partial class OverlayWindow
     internal double ClosedTitleWaveLevel=>closedTitleWave.Envelope;
     internal bool ClosedTitleWaveVisible=>closedTitleWave.Visibility==Visibility.Visible && summary.Visibility==Visibility.Collapsed;
     private readonly Image closedCoverImage=new(){Width=20,Height=20,Stretch=Stretch.UniformToFill};
-    private readonly Border closedCover=new(){Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,9,0),VerticalAlignment=VerticalAlignment.Center,Visibility=Visibility.Collapsed,IsHitTestVisible=false};
+    private readonly Border closedCover=new(){Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,9,0),VerticalAlignment=VerticalAlignment.Center,Visibility=Visibility.Collapsed,IsHitTestVisible=true};
     internal bool ClosedCoverVisible=>closedCover.Visibility==Visibility.Visible && closedCoverImage.Source!=null;
     private void UpdateClosedMediaIcon()
     {
         var now=DateTimeOffset.Now;
-        bool countdown=WidgetOn("focus") && app.Session.Focus.Remaining(now)>0 || WidgetOn("timer") && app.Session.Timer.Remaining(now)>0;
+        bool countdown=!ShowMediaPrimary && (WidgetOn("focus") && app.Session.Focus.Remaining(now)>0 || WidgetOn("timer") && app.Session.Timer.Remaining(now)>0);
         bool cover=!FeedbackVisible && !countdown && app.Settings.ClosedMediaIcon=="Artwork" && WidgetOn("media") && app.Media.Available && app.Media.Artwork!=null;
         bool waveform=!expanded && !peeking && !FeedbackVisible && !countdown && WidgetOn("media") && app.Media.Available && app.Settings.ClosedMediaContent=="Waveform";
         closedTitleWave.Visibility=waveform?Visibility.Visible:Visibility.Collapsed;summary.Visibility=waveform?Visibility.Collapsed:Visibility.Visible;

@@ -14,18 +14,22 @@ internal static class SelfTests
         void Test(string name,Action test)
         {try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
         static void Assert(bool condition,string reason="Assertion failed") {if(!condition)throw new Exception(reason);}
+        InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
+        ActivityActionsTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
+        DetachedPreviewTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
+        SmartClipboardTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         LauncherTests.Run(Test);
         SettingsUxTests.Run(Test);
         Test("Customization profiles round-trip without personal data or startup changes",()=>
         {
-            var original=new Settings{PanelWidth=520,PanelScale=1.1,Background="#182028",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Private",Target="https://private.example"}}};original.HoverViews.Reverse();var encoded=CustomizationProfile.Export(original);Assert(!encoded.Contains("Private") && !encoded.Contains("AutoStart") && !encoded.Contains("ClipboardHistory"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.PanelWidth==520 && target.PanelScale==1.1 && target.Background=="#182028" && target.HoverViews[0].Id=="files" && !target.AutoStart && !target.ClipboardHistory && target.Shortcuts.Count==2);
+            var original=new Settings{PanelWidth=520,PanelScale=1.1,Background="#182028",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Private",Target="https://private.example"}}};original.HoverViews.Reverse();var encoded=CustomizationProfile.Export(original);Assert(!encoded.Contains("Private") && !encoded.Contains("AutoStart") && !encoded.Contains("ClipboardHistory"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.PanelWidth==520 && target.PanelScale==1.1 && target.Background=="#182028" && target.HoverViews[0].Id=="system" && !target.AutoStart && !target.ClipboardHistory && target.Shortcuts.Count==2);
         });
         Test("Partial customization profiles preserve omitted values and normalize supplied geometry",()=>
         {var target=new Settings{Width=331,Background="#182028"};CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"PanelWidth\":99999,\"AutoStart\":true}}",target);Assert(target.PanelWidth==640 && target.Width==331 && target.Background=="#182028" && !target.AutoStart);});
         Test("Invalid customization profile does not mutate current preferences",()=>
         {var target=new Settings{Width=331};bool failed=false;try{CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{}}",target);}catch{failed=true;}Assert(failed && target.Width==331);});
         Test("Layout settings repair non-finite geometry and preserve unique hover order",()=>
-        {var s=new Settings{PanelWidth=double.NaN,PanelScale=9,HoverHeight=-1,SwipeDistance=0,HoverDelayMs=0,HoverViews=new(){new(){Id="notes",Enabled=false},new(){Id="notes"},new(){Id="unknown"}}};s.Normalize();Assert(s.PanelWidth==384 && s.PanelScale==1.25 && s.HoverHeight==184 && s.SwipeDistance==24 && s.HoverDelayMs==80 && s.HoverViews.Count==6 && s.HoverViews[0].Id=="notes" && !s.HoverViews[0].Enabled);});
+        {var s=new Settings{PanelWidth=double.NaN,PanelScale=9,HoverHeight=-1,SwipeDistance=0,HoverDelayMs=0,HoverViews=new(){new(){Id="notes",Enabled=false},new(){Id="notes"},new(){Id="unknown"}}};s.Normalize();Assert(s.PanelWidth==384 && s.PanelScale==1.25 && s.HoverHeight==184 && s.SwipeDistance==24 && s.HoverDelayMs==80 && s.HoverViews.Count==7 && s.HoverViews[0].Id=="notes" && !s.HoverViews[0].Enabled);});
         Test("Mixer includes paused sessions and rejects expired sessions",()=>Assert(AudioMixer.IsControllableSession(0) && AudioMixer.IsControllableSession(1) && !AudioMixer.IsControllableSession(2) && !AudioMixer.IsControllableSession(-1)));
         var now=new DateTimeOffset(2026,10,14,0,0,0,TimeSpan.Zero);
         Test("Timer keeps its absolute deadline while UI is closed",()=> {var c=new Countdown();c.Start(120,now);Assert(c.Remaining(now.AddSeconds(70))==50);});

@@ -26,6 +26,8 @@ public sealed class App : Application
     public string BrightnessStatus=>Brightness?.Status??"Brightness feedback unavailable";
     public AudioService Audio { get; private set; }=null!;
     public ProductivityService Productivity {get;private set;}=null!;
+    internal ActivityActionsService Activities {get;private set;}=null!;
+    internal DetachedPreviewManager Previews {get;private set;}=null!;
     public CalendarService Calendar {get;private set;}=null!;
     public KeepAwakeService Awake {get;private set;}=null!;
     public string HotkeyStatus=>!Settings.HotkeyEnabled?"Hotkey off":overlay?.HotkeyError.Length>0?overlay.HotkeyError:$"Active · {Settings.HotkeyModifiers}+{Settings.HotkeyKey}";
@@ -66,7 +68,7 @@ public sealed class App : Application
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
         Audio=new(Store.Log);Media=new(Store.Log);Productivity=new(Store,Store.Log,diagnosticPath==null);Productivity.SetClipboardEnabled(Settings.ClipboardHistory);
         Brightness=new();Brightness.Start(diagnosticPath==null);
-        Calendar=new(Store);Awake=new();
+        Calendar=new(Store);Awake=new();Activities=new(Store,Session.Focus,Awake,SaveSession,Store.Log);
         tray=new Forms.NotifyIcon{Text="NabyScape",Visible=diagnosticPath==null};
         using(var stream=GetResourceStream(new Uri("pack://application:,,,/Assets/island.ico")).Stream) tray.Icon=new System.Drawing.Icon(stream);
         var menu=new Forms.ContextMenuStrip();
@@ -77,7 +79,7 @@ public sealed class App : Application
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Quit",null,(_,_)=>Dispatcher.Invoke(Quit));
         tray.ContextMenuStrip=menu;tray.DoubleClick+=(_,_)=>Dispatcher.Invoke(ShowSettings);
-        overlay=new OverlayWindow(this);MainWindow=overlay;overlay.Show();
+        overlay=new OverlayWindow(this);MainWindow=overlay;overlay.Show();Previews=new(this,overlay.OpenFeaturePage);
         Media.Changed+=()=>Updated?.Invoke();
         Audio.Changed+=()=>Updated?.Invoke();
         _=Media.Initialize();
@@ -88,7 +90,7 @@ public sealed class App : Application
         {
             CheckCountdowns();
             try{Awake.Tick(DateTimeOffset.UtcNow);}catch(Exception ex){Store.Log(ex);Notify("Could not update keep awake",ex.Message);}
-            if(++counter%2==0) { Audio.Read();Usage=Native.SystemUsage();overlay.CheckEnvironment(); }
+            if(++counter%2==0) { Audio.Read();if(overlay.SystemSummaryVisible || Previews.AnyVisible("system") || settingsWindow?.IsVisible==true)Usage=Native.SystemUsage();overlay.CheckEnvironment(); }
             Updated?.Invoke();
         };
         tick.Start();CheckCountdowns();
@@ -113,7 +115,7 @@ public sealed class App : Application
             {
                 // The break starts at the actual work deadline, even across sleep, so a long sleep never starts a fresh break.
                 var end=focusDeadline!.Value.AddMinutes(Settings.BreakMinutes);
-                if(end>now) { Session.Focus.Start((end-now).TotalSeconds,now,"break");Session.Focus.DurationSeconds=Settings.BreakMinutes*60; Notify("Focus complete", "Time for a short break."); }
+                if(end>now) { Session.Focus.Start((end-now).TotalSeconds,now,"break",preserveRunId:true);Session.Focus.DurationSeconds=Settings.BreakMinutes*60; Notify("Focus complete", "Time for a short break."); }
                 else { Session.Focus.Reset();Notify("Focus session complete", "Your focus session and break have finished."); }
             }
             else { Session.Focus.Reset();Notify("Break finished", "Ready for your next focus session."); }
@@ -128,7 +130,7 @@ public sealed class App : Application
         Settings.Normalize();Resources["Accent"]=UI.Brush(Settings.Accent);Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         try { Store.Save("settings",Settings); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }
-        SettingsChanged?.Invoke();Updated?.Invoke();
+        Previews?.ApplySettings();SettingsChanged?.Invoke();Updated?.Invoke();
     }
     public void ShowSettings()
     {
@@ -145,7 +147,7 @@ public sealed class App : Application
         tick?.Stop();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();
-        overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();
+        Previews?.Dispose();Activities?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();
         if(tray!=null) { tray.Visible=false;tray.Dispose(); }
         openWait?.Unregister(null);exitWait?.Unregister(null);openEvent?.Dispose();exitEvent?.Dispose();mutex?.Dispose();base.OnExit(e);
     }

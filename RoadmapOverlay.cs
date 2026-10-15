@@ -35,7 +35,7 @@ public sealed partial class OverlayWindow
     {body.UpdateLayout();Dimensions();if(expanded)motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
     internal void ShowCommands(bool activate=true)
     {
-        FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
+        activitiesOpen=false;FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
         if(activate)Dispatcher.BeginInvoke(()=>commandInput?.Focus());
     }
     private void CloseCommands()
@@ -51,6 +51,8 @@ public sealed partial class OverlayWindow
     }
     private IEnumerable<(string title,string detail,Action run)> Commands()
     {
+        yield return ("Activities","Run or edit your workspace routines",()=>ShowActivities());
+        foreach(var definition in app.Activities.Definitions){var action=definition;yield return ("Activity · "+action.Name,"Open activity controls",()=>ShowActivities());}
         yield return ("Open Settings","Appearance, widgets, and interaction",app.ShowSettings);
         foreach(var pair in new[]{("media","Media controls"),("focus","Timers & focus"),("status","System status"),("access","Quick launch")})
         {

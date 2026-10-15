@@ -26,7 +26,7 @@ public sealed partial class OverlayWindow
     }
     private void NavigateTool(string mode)
     {
-        FlushNotes();bool back=mode=="home";toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();RefreshTools();
+        activitiesOpen=false;FlushNotes();bool back=mode=="home";toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();RefreshTools();
         if(Motion.Enabled){var move=new TranslateTransform(back?-14:14,0);toolsContent.RenderTransform=move;toolsContent.Opacity=0;Motion.Fade(toolsContent,1,180);Motion.To(move,TranslateTransform.XProperty,0,280);}
     }
     private void BuildToolLauncher()
@@ -71,11 +71,11 @@ public sealed partial class OverlayWindow
         var capsule=new Border{Background=UI.Brush("#34363C"),CornerRadius=new(11),Margin=new(3)};Grid.SetColumnSpan(capsule,2);capsule.HorizontalAlignment=HorizontalAlignment.Left;var slide=new TranslateTransform();capsule.RenderTransform=slide;tabs.Children.Add(capsule);
         var track=new Border{Background=UI.Brush("#14161A"),CornerRadius=new(13),Margin=new(0,0,0,15),Child=tabs};toolsContent.Children.Add(track);
         var write=new StackPanel();var tasks=new StackPanel();toolsContent.Children.Add(write);toolsContent.Children.Add(tasks);
-        var note=UI.Input("Quick notes",p.Note);note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=136;note.VerticalContentAlignment=VerticalAlignment.Top;note.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;note.MaxLength=50000;note.Padding=new(13);note.Margin=new(0);
+        var note=UI.Input("Quick notes",p.Note);mainNoteEditor=note;note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=136;note.VerticalContentAlignment=VerticalAlignment.Top;note.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;note.MaxLength=50000;note.Padding=new(13);note.Margin=new(0);
         var editor=new Grid();editor.Children.Add(note);var placeholder=UI.Text("Capture a thought…",13,UI.Muted);placeholder.IsHitTestVisible=false;placeholder.VerticalAlignment=VerticalAlignment.Top;placeholder.Margin=new(14);editor.Children.Add(placeholder);write.Children.Add(editor);
         var meta=UI.Text("Saved on this device",10,UI.Muted);meta.Margin=new(2,9,0,2);write.Children.Add(meta);
         void Placeholder()=>placeholder.Visibility=note.Text.Length==0?Visibility.Visible:Visibility.Collapsed;Placeholder();
-        note.TextChanged+=(_,_)=>{p.Note=note.Text;Placeholder();noteSave.Stop();noteSave.Start();};
+        note.TextChanged+=(_,_)=>{if(!syncingNote)p.Note=note.Text;Placeholder();noteSave.Stop();noteSave.Start();};
         var addRow=new DockPanel{Margin=new(0,0,0,9)};var input=UI.Input("New task",taskDraft);input.MaxLength=240;input.MinHeight=34;input.Margin=new(0);input.Padding=new(11,8,11,8);input.TextChanged+=(_,_)=>taskDraft=input.Text;
         void Add(){if(string.IsNullOrWhiteSpace(input.Text))return;string text=input.Text;MutateUtility(()=>{if(p.AddTask(text))taskDraft="";else app.Notify("Task limit reached","Remove a task before adding another. Your draft is still here.");});}
         var add=UI.Button("Add task",Add);add.Content="+";add.FontSize=18;add.Width=34;add.Height=34;add.MinHeight=34;add.Padding=new(0);add.Margin=new(7,0,0,0);DockPanel.SetDock(add,Dock.Right);addRow.Children.Add(add);addRow.Children.Add(input);tasks.Children.Add(addRow);
@@ -99,24 +99,19 @@ public sealed partial class OverlayWindow
     {
         noteSave.Tick+=(_,_)=>FlushNotes();app.Productivity.Changed+=ProductivityChanged;
         app.Calendar.Changed+=CalendarChanged;app.Awake.Changed+=AwakeChanged;
-        AllowDrop=true;
-        DragEnter+=(_,e)=>{if(WidgetOn("tools") && e.Data.GetDataPresent(DataFormats.FileDrop)){e.Effects=DragDropEffects.Copy;if(!expanded){if(!peeking)PreviewActivity();SelectPeek("files");}else if(activePage!="tools" || toolsMode!="files")ShowTools("files",false);e.Handled=true;}};
-        DragOver+=(_,e)=>{if(WidgetOn("tools") && e.Data.GetDataPresent(DataFormats.FileDrop)){e.Effects=DragDropEffects.Copy;e.Handled=true;}};
-        Drop+=(_,e)=>
-        {
-            if(!WidgetOn("tools") || !e.Data.GetDataPresent(DataFormats.FileDrop))return;
-            if(e.Data.GetData(DataFormats.FileDrop) is string[] paths){utilityMutating=true;try{app.Productivity.AddFiles(paths);}finally{utilityMutating=false;}if(peeking){SelectPeek("files");UpdatePeekDeck();}else ShowTools("files");}e.Handled=true;
-        };
+        InitializeFileDrop();
     }
+
     private void ProductivityChanged()
     {
+        SyncNoteEditors();if(toolsMode=="notes" && mainNoteEditor?.IsLoaded==true)return;
         if(utilityMutating || toolsMode is not ("files" or "notes" or "clips") || (toolsMode=="notes" && Keyboard.FocusedElement is TextBox))return;
         RefreshTools();
     }
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(!WidgetOn("tools"))return;if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
+    {if(!WidgetOn("tools"))return;activitiesOpen=false;if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
     private void RefreshTools()
     {
 
@@ -128,17 +123,7 @@ public sealed partial class OverlayWindow
         if(toolsMode=="home")BuildToolLauncher();
         else if(toolsMode=="files")
         {
-            toolsContent.Children.Add(UI.Heading("File shelf",18));var hint=UI.Text("Drop files here, then drag them into another app.",11,UI.Muted);hint.Margin=new(0,6,0,12);toolsContent.Children.Add(hint);
-            var add=UI.Button($"Add files…  {p.Shelf.Count}/40",()=>{var dialog=new Microsoft.Win32.OpenFileDialog{Multiselect=true,Title="Add to file shelf"};if(dialog.ShowDialog(this)==true)MutateUtility(()=>p.AddFiles(dialog.FileNames));});add.IsEnabled=p.Shelf.Count<40;toolsContent.Children.Add(add);
-            foreach(var item in p.Shelf.ToArray())
-            {
-                var row=new DockPanel{Margin=new(0,9,0,0)};var remove=UI.Button("×",()=>MutateUtility(()=>p.RemoveFile(item.Path)));remove.FontSize=17;remove.Padding=new(9,2,9,2);remove.MinHeight=29;remove.Margin=new(6,0,0,0);UI.Named(remove,"Unstage "+item.Name);DockPanel.SetDock(remove,Dock.Right);row.Children.Add(remove);
-                var label=new StackPanel();var name=UI.Text(item.Name,12,item.Exists?Brushes.White:UI.Muted);name.TextTrimming=TextTrimming.CharacterEllipsis;name.TextWrapping=TextWrapping.NoWrap;label.Children.Add(name);label.Children.Add(UI.Text(item.Exists?"Drag out · double-click to open":"File not found",10,UI.Muted));
-                var tile=new Border{Background=UI.Brush("#16FFFFFF"),CornerRadius=new(11),Padding=new(10,8,10,8),Child=label,ToolTip=item.Path};Point start=default;
-                tile.PreviewMouseLeftButtonDown+=(_,e)=>{start=e.GetPosition(tile);if(e.ClickCount==2){try{ShortcutService.Open(new(){Target=item.Path});}catch(Exception ex){app.Notify("Could not open file",ex.Message);}e.Handled=true;}};
-                tile.PreviewMouseMove+=(_,e)=>{if(e.LeftButton!=MouseButtonState.Pressed || !item.Exists)return;var now=e.GetPosition(tile);if(Math.Abs(now.X-start.X)<SystemParameters.MinimumHorizontalDragDistance && Math.Abs(now.Y-start.Y)<SystemParameters.MinimumVerticalDragDistance)return;DragDrop.DoDragDrop(tile,new DataObject(DataFormats.FileDrop,new[]{item.Path}),DragDropEffects.Copy|DragDropEffects.Link);};row.Children.Add(tile);toolsContent.Children.Add(row);
-            }
-            if(p.Shelf.Count==0)toolsContent.Children.Add(UI.Text("Your shelf is ready.",12,UI.Muted));
+            BuildFileShelf();
         }
         else if(toolsMode=="notes")
         {
@@ -149,24 +134,7 @@ public sealed partial class OverlayWindow
         else if(toolsMode=="links")BuildCleanLinks(toolsContent);
         else
         {
-            toolsContent.Children.Add(UI.Heading("Clipboard history",18));
-            if(!p.ClipboardEnabled)
-            {
-                var intro=UI.Text("History is off. Enable it to save the text and images you copy next, only on this device.",12,UI.Muted);intro.Margin=new(0,10,0,12);toolsContent.Children.Add(intro);
-                toolsContent.Children.Add(UI.Button("Enable history",()=>{app.Settings.ClipboardHistory=true;app.ChangeSettings();},true));
-            }
-            else
-            {
-                var pause=new CheckBox{Content="Pause capture",IsChecked=p.ClipboardPaused};pause.Click+=(_,_)=>p.ClipboardPaused=pause.IsChecked==true;toolsContent.Children.Add(pause);
-                toolsContent.Children.Add(UI.Row(UI.Button("Clear history",()=>MutateUtility(p.ClearClips)),UI.Button("Turn off",()=>{app.Settings.ClipboardHistory=false;app.ChangeSettings();})));
-                foreach(var item in p.Clips.OrderByDescending(c=>c.Pinned).ThenByDescending(c=>c.Timestamp).ToArray())
-                {
-                    var content=new StackPanel();var text=UI.Text(item.Label,12);text.MaxHeight=38;content.Children.Add(text);
-                    if(item.Kind=="image" && File.Exists(item.ImagePath)){try{var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.UriSource=new Uri(item.ImagePath);bitmap.DecodePixelWidth=80;bitmap.EndInit();bitmap.Freeze();content.Children.Add(new Image{Source=bitmap,Height=48,HorizontalAlignment=HorizontalAlignment.Left,Margin=new(0,5,0,0)});}catch(Exception ex){app.Store.Log(ex);}}
-                    var copy=UI.Button("Copy",()=>{try{p.CopyClip(item);}catch(Exception ex){app.Notify("Could not copy item",ex.Message);}});var pin=UI.Button(item.Pinned?"Unpin":"Pin",()=>MutateUtility(()=>p.ToggleClipPin(item.Id)));var remove=UI.Button("Remove",()=>MutateUtility(()=>p.RemoveClip(item.Id)));foreach(var b in new[]{copy,pin,remove}){b.FontSize=10;b.Padding=new(9,5,9,5);b.MinHeight=27;}content.Children.Add(UI.Row(copy,pin,remove));toolsContent.Children.Add(new Border{Background=UI.Brush("#14FFFFFF"),CornerRadius=new(12),Padding=new(10),Margin=new(0,8,0,0),Child=content});
-                }
-                if(p.Clips.Count==0)toolsContent.Children.Add(UI.Text("Your next copied item will appear here.",12,UI.Muted));
-            }
+            BuildSmartClipboard(toolsContent);
         }
         ApplyHeadingTypography(toolsContent);
         if(expanded && activePage=="tools"){Dimensions();motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}

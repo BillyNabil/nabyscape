@@ -44,7 +44,7 @@ public sealed partial class OverlayWindow
     private bool WidgetOn(string id)=>app.Settings.Widgets.Any(w=>w.Enabled && w.Id==id);
     private void InitializeCompactInteraction()
     {
-        root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !environmentHidden)hoverDelay.Start();};
+        root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !environmentHidden)hoverDelay.Start();};
         root.MouseLeave+=(_,_)=>{if(DiagnosticRun)return;hoverDelay.Stop();if(peeking || environmentHidden)leaveDelay.Start();};
         hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(PointerInside() && !expanded && !userHidden && !environmentHidden)PreviewActivity();};
         leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || environmentHidden) && !PointerInside() && !PeekInteractionActive)Collapse();};
@@ -128,6 +128,7 @@ public sealed partial class OverlayWindow
     }
     internal void SelectPage(string page,bool animate=true)
     {
+        if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}
         if(!app.Settings.CompactLayout || commandOpen || !compactPages.ContainsKey(page))return;
         if(animate && activePage==page && compactPages[page].Visibility==Visibility.Visible)return;
         InvalidateSystemMonitor();activePage=page;
@@ -206,6 +207,7 @@ public sealed partial class OverlayWindow
         {
             shortcuts.Children.Add(LaunchButton(shortcut));
         }
+        launch.Children.Add(UI.Button("Activities",()=>ShowActivities()));
         if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Text("Add shortcuts in Settings.",12,UI.Muted));return launch;
     }
     private void UpdateTimeline()

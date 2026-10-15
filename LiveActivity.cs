@@ -107,6 +107,7 @@ public sealed partial class OverlayWindow
     private Countdown? ActiveCountdown()
     {
         var now=DateTimeOffset.UtcNow;
+        if(ShowMediaPrimary)return null;
         return WidgetOn("focus") && app.Session.Focus.Remaining(now)>0?app.Session.Focus:WidgetOn("timer") && app.Session.Timer.Remaining(now)>0?app.Session.Timer:null;
     }
     private void LiveFrame()

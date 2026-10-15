@@ -200,8 +200,8 @@ public static class ProductivityTests
             service.Changed+=()=>changes++;
             Directory.CreateDirectory(Path.Combine(root,"productivity.json.tmp"));
             service.Note="editable despite disk error";
-            Assert(errors==0 && changes==0); Assert(!service.Save());
-            Assert(errors==1 && changes==0 && service.Note=="editable despite disk error" && !string.IsNullOrEmpty(service.LastError));
+            Assert(errors==0 && changes==1); service.Note="editable despite disk error"; Assert(changes==1); Assert(!service.Save());
+            Assert(errors==1 && changes==1 && service.Note=="editable despite disk error" && !string.IsNullOrEmpty(service.LastError));
         });
     }
 }

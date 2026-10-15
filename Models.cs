@@ -26,6 +26,10 @@ public sealed class Settings
     public double Radius { get; set; } = 16;
     public bool CompactLayout { get; set; } = true;
     public bool HoverPeek { get; set; } = true;
+    public bool DropReveal { get; set; } = true;
+    public bool DetachablePreviews { get; set; } = true;
+    public bool CoverGestures { get; set; } = true;
+    public bool ActivitySatellite { get; set; } = true;
     public bool GlassStyle { get; set; } = true;
     public bool LiveActivity { get; set; } = true;
     public string ClosedMediaIcon { get; set; }="Waveform";
@@ -51,7 +55,7 @@ public sealed class Settings
     public bool MonitorNetwork { get; set; }=true;
     public bool MonitorStorage { get; set; }=true;
     public bool MonitorProcesses { get; set; }=true;
-    public List<WidgetSetting> HoverViews { get; set; }=new[]{"media","timer","focus","calendar","notes","files"}.Select(id=>new WidgetSetting{Id=id}).ToList();
+    public List<WidgetSetting> HoverViews { get; set; }=new[]{"media","timer","focus","calendar","notes","files","system"}.Select(id=>new WidgetSetting{Id=id,Enabled=id!="system"}).ToList();
     public bool ClipboardHistory { get; set; }
     public string Performance { get; set; } = "Auto";
     public string WheelAction { get; set; } = "volume";
@@ -104,7 +108,7 @@ public sealed class Settings
         AnimationMs=Clamp(AnimationMs,0,600,420);
         PanelWidth=Clamp(PanelWidth,340,640,384);PanelMaxHeight=Clamp(PanelMaxHeight,320,760,408);PanelPadding=Clamp(PanelPadding,16,40,32);PanelScale=Clamp(PanelScale,.85,1.25,1);SectionGap=Clamp(SectionGap,8,28,18);
         HoverWidth=Clamp(HoverWidth,300,500,350);HoverHeight=Clamp(HoverHeight,184,280,192);HoverDelayMs=Math.Clamp(HoverDelayMs,80,900);HoverDetailDelayMs=Math.Clamp(HoverDetailDelayMs,200,1200);SwipeDistance=Clamp(SwipeDistance,24,100,48);GlassStrength=Clamp(GlassStrength,0,1,1);
-        var hoverIds=new[]{"media","timer","focus","calendar","notes","files"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id});
+        var hoverIds=new[]{"media","timer","focus","calendar","notes","files","system"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id!="system"});
         if(Performance is not ("Auto" or "Hemat" or "Maksimal"))Performance="Auto";
         if(WheelAction is not ("volume" or "pages" or "none"))WheelAction="volume";
         if(MiddleAction is not ("toggle" or "microphone" or "none"))MiddleAction="toggle";
@@ -132,18 +136,19 @@ public sealed class Settings
 
 public sealed class Countdown
 {
+    [JsonIgnore] public Guid RunId { get; private set; }
     public DateTimeOffset? Deadline { get; set; }
     public double RemainingSeconds { get; set; }
     public double DurationSeconds { get; set; }
     public string Phase { get; set; } = "";
     [JsonIgnore] public bool Running => Deadline.HasValue;
     public double Remaining(DateTimeOffset now) => Math.Max(0,Deadline.HasValue ? (Deadline.Value-now).TotalSeconds : RemainingSeconds);
-    public void Start(double seconds,DateTimeOffset now,string phase="")
-    { DurationSeconds=RemainingSeconds=Math.Max(1,seconds); Deadline=now.AddSeconds(RemainingSeconds); Phase=phase; }
+    public void Start(double seconds,DateTimeOffset now,string phase="",bool preserveRunId=false)
+    { if(!preserveRunId)RunId=Guid.NewGuid();DurationSeconds=RemainingSeconds=Math.Max(1,seconds); Deadline=now.AddSeconds(RemainingSeconds); Phase=phase; }
     public double Progress(DateTimeOffset now) => Math.Clamp(1-Remaining(now)/Math.Max(1,DurationSeconds>0?DurationSeconds:RemainingSeconds),0,1);
     public void Pause(DateTimeOffset now) { RemainingSeconds=Remaining(now); Deadline=null; }
     public void Resume(DateTimeOffset now) { if(RemainingSeconds>0) Deadline=now.AddSeconds(RemainingSeconds); }
-    public void Reset() { Deadline=null; RemainingSeconds=DurationSeconds=0; Phase=""; }
+    public void Reset() { RunId=Guid.NewGuid();Deadline=null; RemainingSeconds=DurationSeconds=0; Phase=""; }
     public bool Complete(DateTimeOffset now)
     { if(!Deadline.HasValue || now<Deadline.Value) return false; Deadline=null; RemainingSeconds=0; return true; }
     public string Display(DateTimeOffset now)

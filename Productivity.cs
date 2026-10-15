@@ -76,7 +76,7 @@ public sealed class ProductivityService : IDisposable
     {
         get => _note;
         // The editor owns its debounce and calls Save; avoid rebuilding it on every keystroke.
-        set { if(!_disposed)_note=Bound(value,50000); }
+        set { if(_disposed)return;var next=Bound(value,50000);if(_note==next)return;_note=next;Changed?.Invoke(); }
     }
     public ProductivityService(Store store,Action<Exception> log) : this(store,log,true) { }
 
@@ -147,27 +147,69 @@ public sealed class ProductivityService : IDisposable
         catch(Exception ex) { DetachListener(); ReportError(ex); Changed?.Invoke(); }
     }
 
-    public void CopyClip(ClipItem item)
+    public void CopyClip(ClipItem item) => TryCopyClip(item);
+
+    public bool TryCopyClip(ClipItem item,string? textVariant=null)
     {
-        if(_disposed || !_nativeClipboard || item==null)return;
+        if(_disposed || !_nativeClipboard || !ClipboardEnabled || item==null)return false;
         var clip=Clips.FirstOrDefault(c=>c.Id==item.Id);
-        if(clip==null)return;
+        if(clip==null)return false;
         try
         {
             _writingClipboard=true;
-            if(clip.Kind=="text") System.Windows.Clipboard.SetText(clip.Text);
+            if(clip.Kind=="text")
+            {
+                var classified=SmartClipboard.Classify(clip);
+                if(textVariant!=null && textVariant!=clip.Text &&
+                    !(classified.Kind==SmartClipKind.Link && textVariant==classified.CleanedLink) &&
+                    !(classified.Kind==SmartClipKind.Color && (textVariant==classified.Hex || textVariant==classified.Rgb)))return false;
+                // SetText exports only Unicode text, without HTML/RTF or simulated paste.
+                System.Windows.Clipboard.SetText(textVariant ?? clip.Text);
+            }
             else
             {
-                if(!ValidImageFile(clip.ImagePath))return;
-                using var stream=File.OpenRead(clip.ImagePath);
-                var decoder=new PngBitmapDecoder(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
-                var bitmap=decoder.Frames[0]; bitmap.Freeze();
+                var bitmap=LoadClipImage(clip);
+                if(bitmap==null)return false;
                 System.Windows.Clipboard.SetImage(bitmap);
             }
-            _lastWriteSequence=GetClipboardSequenceNumber();
+            _lastWriteSequence=GetClipboardSequenceNumber(); LastError=null; return true;
         }
-        catch(Exception ex) { ReportError(ex); }
+        catch(Exception ex) { ReportError(ex); return false; }
         finally { _writingClipboard=false; }
+    }
+
+    public BitmapSource? LoadClipImage(ClipItem item,int decodeWidth=0)
+    {
+        if(_disposed || !ClipboardEnabled || item==null)return null;
+        var clip=Clips.FirstOrDefault(c=>c.Id==item.Id && c.Kind=="image");
+        if(clip==null || !ValidImageFile(clip.ImagePath))return null;
+        try
+        {
+            using var stream=File.OpenRead(clip.ImagePath);
+            if(decodeWidth>0)
+            {
+                var thumbnail=new BitmapImage();thumbnail.BeginInit();thumbnail.CacheOption=BitmapCacheOption.OnLoad;
+                thumbnail.DecodePixelWidth=decodeWidth;thumbnail.StreamSource=stream;thumbnail.EndInit();thumbnail.Freeze();return thumbnail;
+            }
+            var decoder=new PngBitmapDecoder(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
+            var bitmap=decoder.Frames[0]; bitmap.Freeze(); return bitmap;
+        }
+        catch(Exception ex) { ReportError(ex); return null; }
+    }
+
+    public bool SaveClipImage(ClipItem item,string destination)
+    {
+        var bitmap=LoadClipImage(item);
+        if(bitmap==null)return false;
+        try
+        {
+            // Encode before opening the destination so a decoding failure cannot truncate it.
+            var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using var encoded=new MemoryStream();encoder.Save(encoded);
+            using var output=new FileStream(destination,FileMode.Create,FileAccess.Write,FileShare.None);
+            encoded.Position=0;encoded.CopyTo(output); LastError=null; return true;
+        }
+        catch(Exception ex) { ReportError(ex); return false; }
     }
 
     public void ToggleClipPin(string id)
