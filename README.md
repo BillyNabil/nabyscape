@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml"><strong>Get the Windows build</strong></a>
+  <a href="https://github.com/BillyNabil/nabyscape/releases/latest"><strong>Download for Windows</strong></a>
   &nbsp; · &nbsp; <a href="#a-closer-look">Explore the app</a>
   &nbsp; · &nbsp; <a href="#build-from-source">Build from source</a>
 </p>
@@ -107,9 +107,11 @@ Pick a monitor, choose which hover pages appear, or enable **Reduce Motion**. Fu
 
 ## Get NabyScape
 
-1. Open the [Windows build workflow](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml) and choose a successful run on `main`.
-2. Under **Artifacts**, download **NabyScape-windows-x64** and extract the ZIP. GitHub requires an account to download workflow artifacts.
-3. Run **NabyScape-Setup.exe** to install for your Windows user, or **NabyScape.exe** directly for portable use.
+1. Open the [latest release](https://github.com/BillyNabil/nabyscape/releases/latest). No GitHub account is needed to download.
+2. Download **NabyScape-Setup.exe** and run it to install for your Windows user.
+3. Prefer portable use? Download the **windows-x64-portable.zip**, extract it, and run **NabyScape.exe**.
+
+Each release includes **SHA256SUMS.txt** for verifying the downloads. For development builds, use the [Windows build workflow](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml); downloading its artifacts requires a GitHub account.
 
 **Windows 11 x64 is required.** The self-contained build includes the .NET runtime; you do not need an SDK to run it. The current installer is unsigned. Portable use still stores preferences in your Windows user profile.
 
