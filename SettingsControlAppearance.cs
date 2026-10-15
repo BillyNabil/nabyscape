@@ -8,6 +8,9 @@ public sealed partial class SettingsWindow
     private void ControlColorSettings()
     {
         var s=app.Settings;var colors=new StackPanel();
+        var shape=new ComboBox();shape.Items.Add("Pill");shape.Items.Add("Soft corners");shape.SelectedIndex=s.ButtonShape=="Soft"?1:0;UI.Named(shape,"Action button shape");
+        shape.SelectionChanged+=(_,_)=>{s.ButtonShape=shape.SelectedIndex==1?"Soft":"Pill";UI.ApplyControlTheme(s);previewMode="Panel";previewContent="Control colors";Save();};
+        page.Children.Add(Section("Action buttons",UI.Text("Shape",12,UI.Muted),shape,UI.Text("Pill gives action buttons and chips rounded ends. Soft corners uses a quieter rectangle. Icon controls stay circular. The adjacent preview uses the same button style.",11,UI.Muted)));
         void Changed(Action action){action();previewMode="Panel";previewContent="Control colors";}
         ColorControl(colors,"Control background",s.ControlFill,v=>Changed(()=>s.ControlFill=v),new[]{"#16171B","#101010","#15202A","#211E1B"});
         ColorControl(colors,"Control outlines",s.ControlBorder,v=>Changed(()=>s.ControlBorder=v),new[]{"#303238","#202125","#4B5664","#645C50"});

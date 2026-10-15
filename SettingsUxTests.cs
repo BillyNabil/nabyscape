@@ -51,10 +51,16 @@ internal static class SettingsUxTests
             var s=new Settings{ClosedMediaContent="invalid",ClosedMediaIcon="invalid",CategoryStyle="invalid",LaunchStyle="Icons",VisibilityHotkeyKey="?",VisibilityHotkeyModifiers="bad",RecentColors=new(){"bad","#182028","#182028"},BoldMediaTitle=false,BoldHeadings=true};s.Normalize();
             Assert(s.ClosedMediaContent=="Title" && s.ClosedMediaIcon=="Waveform" && s.CategoryStyle=="IconsLabels" && s.LaunchStyle=="Icons" && s.VisibilityHotkeyKey=="H" && s.VisibilityHotkeyModifiers=="Ctrl+Alt" && s.RecentColors.Count==1 && !s.BoldMediaTitle && s.BoldHeadings && !s.HideMaximized);
         });
+        test("Pill radius follows the shortest side instead of stretching to an ellipse",()=>
+        {
+            var converter=new ButtonCornerRadiusConverter();var culture=System.Globalization.CultureInfo.InvariantCulture;
+            Assert((System.Windows.CornerRadius)converter.Convert(new object[]{new System.Windows.CornerRadius(999),34d,310d},typeof(System.Windows.CornerRadius),null!,culture)==new System.Windows.CornerRadius(17));
+            Assert((System.Windows.CornerRadius)converter.Convert(new object[]{new System.Windows.CornerRadius(10),34d,310d},typeof(System.Windows.CornerRadius),null!,culture)==new System.Windows.CornerRadius(10));
+        });
         test("Control colors validate and profile preferences preserve navigation",()=>
         {
             var s=new Settings{ControlFill="bad",ControlBorder="bad",SelectionFill="bad"};s.Normalize();Assert(s.ControlFill=="#16171B" && s.ControlBorder=="#303238" && s.SelectionFill=="#34373E");
-            s.ControlFill="#151922";s.ControlBorder="#414958";s.SelectionFill="#283B54";s.PanelSwipe=false;var target=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(s),target);Assert(target.ControlFill==s.ControlFill && target.ControlBorder==s.ControlBorder && target.SelectionFill==s.SelectionFill && !target.PanelSwipe);
+            s.ControlFill="#151922";s.ControlBorder="#414958";s.SelectionFill="#283B54";s.PanelSwipe=false;s.ButtonShape="Soft";var target=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(s),target);Assert(target.ControlFill==s.ControlFill && target.ControlBorder==s.ControlBorder && target.SelectionFill==s.SelectionFill && !target.PanelSwipe && target.ButtonShape=="Soft");
         });
         test("Control contrast follows light and dark custom surfaces",()=>
         {Assert(((SolidColorBrush)UI.ContrastText("#FFFFFF")).Color==Color.FromRgb(17,19,23) && ((SolidColorBrush)UI.ContrastText("#101114")).Color==Colors.White);});

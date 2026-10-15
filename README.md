@@ -133,7 +133,7 @@ Screenshots show the interface with different media sessions and settings.
 </tr>
 </table>
 
-Configure these features in **Settings → Controls**. Open panels support sideways swipes and horizontal trackpad scrolling; **Shift+wheel** switches panels anywhere outside text editors. Normal vertical scrolling stays available for long lists. **Appearance → Controls & outlines** changes button, input, outline and selected-tab colors. Typography has independent bold options for media and headings, with visual examples. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
+Configure these features in **Settings → Controls**. Open panels support sideways swipes and horizontal trackpad scrolling; **Shift+wheel** switches panels anywhere outside text editors. Normal vertical scrolling stays available for long lists. **Appearance → Controls & outlines** changes button, input, outline and selected-tab colors. **Appearance → Action buttons** offers Pill or Soft corners, with a live control preview. Typography has independent bold options for media and headings, with visual examples. System is an optional hover page, initially off. Manual hide also hides detached windows; automatic tucking only affects the island. Open windows return after manual show, but do not reopen automatically after restarting the app.
 
 <details>
 <summary><strong>Calendar and system mini windows</strong></summary>
