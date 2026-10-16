@@ -11,9 +11,17 @@ namespace NabyScape;
 
 public sealed partial class SettingsWindow
 {
-    private readonly DispatcherTimer previewTick=new(){Interval=TimeSpan.FromMilliseconds(33)};
+    private readonly FramePacer previewPacer=new();
+    private bool previewRendering,hasPreviewWave;
+    private double lastPreviewFrame,previewDt=1/30d;
+    private long signalSequence;
+    private bool AudioSignalVisible
+    {
+        get{if(current!="Audio" || audioSignalWave?.IsVisible!=true || !IsVisible || WindowState==WindowState.Minimized)return false;try{var bounds=audioSignalWave.TransformToAncestor(settingsScroll).TransformBounds(new Rect(audioSignalWave.RenderSize));return bounds.IntersectsWith(new Rect(0,0,settingsScroll.ActualWidth,settingsScroll.ActualHeight));}catch(InvalidOperationException){return false;}}
+    }
+    internal bool NeedsSystemSample=>IsVisible && WindowState!=WindowState.Minimized && previewStage.IsVisible && previewContent=="System";
     private readonly Stopwatch previewClock=Stopwatch.StartNew();
-    private readonly List<Action<double>> previewFrames=new();
+    private readonly List<Action<double>> previewFrames=new(),previewRealtimeFrames=new();
     private ComboBox? previewExamples;
     private bool previewClosed,previewReplaying;
     private string livePreviewKey="";
@@ -25,11 +33,28 @@ public sealed partial class SettingsWindow
             try{foreach(string mode in new[]{"Closed","Hover","Panel"}){if(previewClosed)return;previewMode=mode;RefreshPreview();await System.Threading.Tasks.Task.Delay(Math.Max(500,(int)app.Settings.AnimationMs+180));}}
             finally{previewReplaying=false;if(!previewClosed){previewMode=previous;RefreshPreview();}}
         });replay.Margin=new(0,12,0,0);replay.FontSize=11;column.Children.Add(replay);
-        preview.SizeChanged+=(_,_)=>RefreshPreviewClip();
-        previewTick.Tick+=(_,_)=>{if(!IsVisible || WindowState==WindowState.Minimized)return;previewTick.Interval=TimeSpan.FromMilliseconds(app.Settings.ReduceMotion?1000:33);double seconds=previewClock.Elapsed.TotalSeconds;foreach(var frame in previewFrames.ToArray())frame(seconds);UpdateAudioSignal(seconds);};
-        IsVisibleChanged+=(_,_)=>{if(IsVisible)previewTick.Start();else previewTick.Stop();};
-        StateChanged+=(_,_)=>{if(IsVisible && WindowState!=WindowState.Minimized)previewTick.Start();else previewTick.Stop();};
-        Loaded+=(_,_)=>previewTick.Start();Closed+=(_,_)=>{previewClosed=true;previewTick.Stop();previewFrames.Clear();};
+        preview.SizeChanged+=(_,_)=>RefreshPreviewClip();previewStage.IsVisibleChanged+=(_,_)=>SyncPreviewRendering();settingsScroll.ScrollChanged+=(_,_)=>SyncPreviewRendering();
+        IsVisibleChanged+=(_,_)=>{if(IsVisible)RefreshLivePreviewData();SyncPreviewRendering();};StateChanged+=(_,_)=>{if(WindowState!=WindowState.Minimized)RefreshLivePreviewData();SyncPreviewRendering();};
+        Loaded+=(_,_)=>SyncPreviewRendering();Closed+=(_,_)=>{previewClosed=true;StopPreviewRendering();previewFrames.Clear();previewRealtimeFrames.Clear();};
+    }
+    private void StopPreviewRendering(){if(previewRendering)CompositionTarget.Rendering-=PreviewDisplayFrame;previewRendering=false;}
+    private void SyncPreviewRendering()
+    {
+        bool visible=IsVisible && WindowState!=WindowState.Minimized;
+        bool live=app.Settings.LiveActivity && app.Media.Playing;
+        bool work=!app.Settings.ReduceMotion && Motion.Enabled && (previewStage.IsVisible && (previewContent=="Drop zone" || live && hasPreviewWave) || live && AudioSignalVisible);
+        if(!visible || !work){bool settle=previewRendering && visible;StopPreviewRendering();if(settle)RunPreviewFrame();return;}
+        if(previewRendering)return;previewRendering=true;previewPacer.Reset();lastPreviewFrame=previewClock.Elapsed.TotalSeconds;CompositionTarget.Rendering+=PreviewDisplayFrame;
+    }
+    private void PreviewDisplayFrame(object? sender,EventArgs args)
+    {
+        var stamp=((RenderingEventArgs)args).RenderingTime;if(!previewPacer.Accept(stamp,Math.Min(30,Motion.FrameLimit)))return;
+        RunPreviewFrame();
+    }
+    private void RunPreviewFrame()
+    {
+        double seconds=previewClock.Elapsed.TotalSeconds;previewDt=Math.Clamp(seconds-lastPreviewFrame,.001,.5);lastPreviewFrame=seconds;
+        if(previewStage.IsVisible)foreach(var frame in previewRealtimeFrames)frame(seconds);UpdateAudioSignal(seconds);
     }
     private void RefreshPreviewClip()
     {
@@ -49,7 +74,14 @@ public sealed partial class SettingsWindow
     private ActivityVisual PreviewWave(bool slender=false)
     {
         var wave=new ActivityVisual{Width=60,Height=slender?12:14,WaveOnly=true,Slender=slender,Margin=new(0,8,8,0)};
-        previewFrames.Add(seconds=>{double peak=app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;bool animate=!app.Settings.ReduceMotion && app.Settings.LiveActivity && app.Media.Playing && !app.Audio.MediaMeterMuted;wave.Sample(animate?peak:0,.033,0,false,false,animate,seconds,true,app.Settings.WaveformIdleMotion);});return wave;
+        hasPreviewWave=true;long sequence=0;
+        previewRealtimeFrames.Add(seconds=>
+        {
+            bool animate=!app.Settings.ReduceMotion && app.Settings.LiveActivity && app.Media.Playing;
+            double peak=animate?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;animate=animate && !app.Audio.MediaMeterMuted;
+            bool fresh=animate && sequence!=app.Audio.MediaLevel.Sequence;sequence=app.Audio.MediaLevel.Sequence;
+            wave.Sample(animate?peak:0,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion);
+        });return wave;
     }
     private void RefreshLivePreviewData()
     {
@@ -91,10 +123,11 @@ public sealed partial class SettingsWindow
     private TextBlock? audioSignalState;
     private void UpdateAudioSignal(double seconds)
     {
-        if(current!="Audio" || audioSignalWave==null || audioSignalState==null)return;
-        float peak=app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;
+        if(!AudioSignalVisible || audioSignalWave==null || audioSignalState==null)return;
+        float peak=app.Media.Playing && app.Settings.LiveActivity && !app.Settings.ReduceMotion?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;
         bool animate=app.Media.Playing && !app.Audio.MediaMeterMuted && app.Settings.LiveActivity && !app.Settings.ReduceMotion;
-        audioSignalWave.Sample(peak,.033,0,false,false,animate,seconds,true,app.Settings.WaveformIdleMotion);
+        bool fresh=animate && signalSequence!=app.Audio.MediaLevel.Sequence;signalSequence=app.Audio.MediaLevel.Sequence;
+        audioSignalWave.Sample(peak,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion);
         audioSignalState.Text=!app.Settings.LiveActivity?"Live activity is off · enable it in Audio":app.Settings.ReduceMotion?"Reduce Motion is on · the waveform stays still":!app.Media.Playing?"Playback paused · quiet baseline":app.Audio.MediaMeterMuted?"Selected app or output is muted":app.Audio.MediaMeterSessions==0?"No matching audio meter · optional gentle fallback":$"Live meter · {app.Audio.MediaAudibleSessions} audible session · {peak*100:0}% peak";
     }
 }

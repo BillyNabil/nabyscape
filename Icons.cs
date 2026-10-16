@@ -48,15 +48,17 @@ internal static class Icons
         ["mixer"]="M 10 5 H 3 M 12 19 H 3 M 14 3 v 4 M 16 17 v 4 M 21 12 h -9 M 21 19 h -5 M 21 5 h -7 M 8 10 v 4 M 8 12 H 3",
         ["settings"]="M 14 17 H 5 M 19 7 h -9 M 20.0 17.0 A 3.0 3.0 0 1 1 14.0 17.0 A 3.0 3.0 0 1 1 20.0 17.0 M 10.0 7.0 A 3.0 3.0 0 1 1 4.0 7.0 A 3.0 3.0 0 1 1 10.0 7.0"
     };
+    private static readonly System.Collections.Generic.Dictionary<string,Geometry> geometries=new();
+    private static Geometry IconGeometry(string data){lock(geometries){if(geometries.TryGetValue(data,out var geometry))return geometry;geometry=Geometry.Parse(data);geometry.Freeze();geometries.Add(data,geometry);return geometry;}}
     public static FrameworkElement Create(string name,double size=20,Brush? color=null)
     {
         if(NavigationPaths.TryGetValue(name,out var outline))
         {
             var canvas=new Canvas{Width=24,Height=24};
-            canvas.Children.Add(new Path{Data=Geometry.Parse(outline),Stroke=color??Brushes.White,StrokeThickness=1.6,StrokeStartLineCap=PenLineCap.Round,StrokeEndLineCap=PenLineCap.Round,StrokeLineJoin=PenLineJoin.Round});
+            canvas.Children.Add(new Path{Data=IconGeometry(outline),Stroke=color??Brushes.White,StrokeThickness=1.6,StrokeStartLineCap=PenLineCap.Round,StrokeEndLineCap=PenLineCap.Round,StrokeLineJoin=PenLineJoin.Round});
             return new Viewbox{Width=size,Height=size,Child=canvas,IsHitTestVisible=false};
         }
-        var path=new Path{Data=Geometry.Parse(Paths.TryGetValue(name,out var data)?data:Paths["arrow"]),Fill=color??Brushes.White,Stretch=Stretch.Uniform,Width=size,Height=size};
+        var path=new Path{Data=IconGeometry(Paths.TryGetValue(name,out var data)?data:Paths["arrow"]),Fill=color??Brushes.White,Stretch=Stretch.Uniform,Width=size,Height=size};
         return path;
     }
     public static Button Button(string icon,string name,System.Action action,bool primary=false,double size=42)

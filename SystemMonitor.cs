@@ -25,14 +25,14 @@ internal static class SystemMonitor
     [DllImport("kernel32.dll")] private static extern bool GlobalMemoryStatusEx(ref Memory memory);
 
     // Called only by the overlay's single background worker; all native handles are scoped here.
-    internal static MonitorSnapshot Capture(bool network,bool storage,bool processes)
+    internal static MonitorSnapshot Capture(bool network,bool storage,bool processes,bool processCounts=true,bool hardware=true,bool gpuOnly=false)
     {
         var errors=new List<string>();long? idle=null,totalCpu=null;
         if(GetSystemTimes(out long i,out long k,out long u)){idle=i;totalCpu=k+u;}else errors.Add("CPU unavailable");
         var memory=new Memory{Length=(uint)Marshal.SizeOf<Memory>()};
         bool hasMemory=GlobalMemoryStatusEx(ref memory);if(!hasMemory)errors.Add("Memory unavailable");
-        var (count,threads,partial,top)=CaptureProcesses(processes,Process.GetProcesses);
-        if(count==null)errors.Add("Process enumeration unavailable");
+        var (count,threads,partial,top)=processCounts || processes?CaptureProcesses(processes,Process.GetProcesses):(null,null,false,Array.Empty<MonitorProcess>());
+        if(processCounts && count==null)errors.Add("Process enumeration unavailable");
         var networks=new List<MonitorNetwork>();
         if(network)try
         {
@@ -53,7 +53,7 @@ internal static class SystemMonitor
         }catch{errors.Add("Storage unavailable");}
         return new(Stopwatch.GetTimestamp(),idle,totalCpu,hasMemory?memory.AvailablePhysical:null,hasMemory?memory.TotalPhysical:null,
             TimeSpan.FromMilliseconds(Environment.TickCount64),count,threads,partial,networks,drives,
-            top,errors.Distinct().ToArray(),HardwareMonitor.Capture());
+            top,errors.Distinct().ToArray(),hardware?HardwareMonitor.Capture(gpuOnly):null);
     }
 
     internal static (int? Count,int? Threads,bool Partial,MonitorProcess[] Top) CaptureProcesses(bool includeTop,Func<Process[]> enumerate)

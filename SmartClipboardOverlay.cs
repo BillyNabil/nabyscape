@@ -38,7 +38,7 @@ public sealed partial class OverlayWindow
             FrameworkElement marker=Icons.Create(classified.Kind switch{SmartClipKind.Link=>"link",SmartClipKind.Image=>"image",_=>"file-text"},19,UI.Muted);
             string? dimensions=null;
             if(classified.Kind==SmartClipKind.Color)marker=new Border{Width=32,Height=32,CornerRadius=new(6),Background=UI.Brush(classified.Hex),BorderThickness=new(1)};
-            else if(classified.Kind==SmartClipKind.Image && p.LoadClipImage(item,120) is { } bitmap){marker=new Image{Source=bitmap,Width=44,Height=44,Stretch=Stretch.Uniform};dimensions=$"{bitmap.PixelWidth} × {bitmap.PixelHeight} preview";}
+            else if(classified.Kind==SmartClipKind.Image && p.LoadClipImage(item,(int)Math.Ceiling(44*VisualTreeHelper.GetDpi(this).DpiScaleX)) is { } bitmap){marker=new Image{Source=bitmap,Width=44,Height=44,Stretch=Stretch.Uniform};dimensions=$"{bitmap.PixelWidth} × {bitmap.PixelHeight} preview";}
             var preview=new Border{Child=marker,Width=44,Height=44,CornerRadius=new(6),HorizontalAlignment=HorizontalAlignment.Left,VerticalAlignment=VerticalAlignment.Center};
             if(classified.Kind!=SmartClipKind.Image){preview.SetResourceReference(Border.BackgroundProperty,"ControlFill");preview.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");preview.BorderThickness=new(1);}
             grid.Children.Add(preview);
@@ -62,7 +62,7 @@ public sealed partial class OverlayWindow
         }
         if(detail.Kind==SmartClipKind.Image)
         {
-            if(p.LoadClipImage(selected,400) is { } image)section.Children.Add(new Image{Source=image,MaxHeight=112,Stretch=Stretch.Uniform,HorizontalAlignment=HorizontalAlignment.Left,Margin=new(0,7,0,4)});
+            if(p.LoadClipImage(selected,(int)Math.Ceiling(Math.Min(bodyWidth,400)*VisualTreeHelper.GetDpi(this).DpiScaleX)) is { } image)section.Children.Add(new Image{Source=image,MaxHeight=112,Stretch=Stretch.Uniform,HorizontalAlignment=HorizontalAlignment.Left,Margin=new(0,7,0,4)});
             actions.Children.Add(ActionButton("Copy image",()=>Copy()));
             actions.Children.Add(ActionButton("Save as PNG…",()=>
             {

@@ -98,14 +98,14 @@ internal static class HardwareMonitorTests
 
         int failedAttempts=0;now=0;
         var absent=new HardwareMonitor.Reader((scope,query)=>{if(query.Contains("Win32_Processor"))failedAttempts++;return new();},()=>now);
-        long[] retryTimes={0,5000,15000,35000,75000,135000,195000};
+        long[] retryTimes={0,5000,15000,35000,65000,95000,125000};
         bool bounded=true;
         for(int i=0;i<retryTimes.Length;i++)
         {
             if(i>0){now=retryTimes[i]-1;absent.Read(0);bounded&=failedAttempts==i;}
             now=retryTimes[i];absent.Read(0);bounded&=failedAttempts==i+1;
         }
-        check("Unavailable metadata retries cap backoff at sixty seconds",bounded);
+        check("Unavailable metadata retries cap backoff at thirty seconds",bounded);
 
         ulong counter=100,timestamp=1000;
         const string engine="pid_1_luid_0x00000000_0x00000001_phys_0_eng_0_engtype_3D";

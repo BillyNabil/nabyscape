@@ -1,0 +1,11 @@
+{
+  "cycles": 100,
+  "handleGrowth": -5,
+  "managedGrowthBytes": -142072,
+  "remainingSettings": 0,
+  "remainingMiniWindows": 0,
+  "retainedClosedWindows": 0,
+  "updateSubscriberGrowth": 0,
+  "settingsSubscriberGrowth": 0,
+  "note": "Forced GC only in this isolated retention diagnostic; not in runtime or timing measurements. Weak references include the five warm-up cycles."
+}

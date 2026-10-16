@@ -81,18 +81,21 @@ public sealed partial class OverlayWindow
         else if(dragWasPeeking){SelectPeek(dragPreviousPeek);}
         else Collapse();
     }
-    private static async Task LoadShelfThumbnail(string path,Image image)
+    private readonly ThumbnailCache shelfThumbnails=new();
+    private async Task LoadShelfThumbnail(string path,Image image)
     {
         try
         {
-            BitmapSource? source=null;
+            int pixels=(int)Math.Ceiling(44*VisualTreeHelper.GetDpi(this).DpiScaleX);
+            var info=new FileInfo(path);string key=path+"|"+(info.Exists?info.LastWriteTimeUtc.Ticks:0)+"|"+pixels;
+            BitmapSource? source=shelfThumbnails.Get(key);if(source!=null){image.Source=source;return;}
             try
             {
             if(new[]{".png",".jpg",".jpeg",".bmp",".gif",".tif",".tiff"}.Contains(Path.GetExtension(path).ToLowerInvariant()) && File.Exists(path) && new FileInfo(path).Length<10*1024*1024)
-                source=await Task.Run(()=>{using var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.DecodePixelWidth=120;bitmap.StreamSource=stream;bitmap.EndInit();bitmap.Freeze();return bitmap;});
+                source=await Task.Run(()=>{using var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.DecodePixelWidth=pixels;bitmap.StreamSource=stream;bitmap.EndInit();bitmap.Freeze();return bitmap;});
             }
             catch { /* An unreadable preview can still use the file's shell icon. */ }
-            source??=await AppIconCache.GetAsync(new(){Target=path});image.Source=source;
+            source??=await AppIconCache.GetAsync(new(){Target=path});if(source!=null)shelfThumbnails.Add(key,source);image.Source=source;
         }catch{image.Source=null;}
     }
     private void BuildFileShelf()

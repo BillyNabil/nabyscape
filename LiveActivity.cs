@@ -93,7 +93,7 @@ public sealed partial class OverlayWindow
     private readonly ActivityVisual activity=new(),musicWave=new(){Width=96,Height=16,WaveOnly=true,HorizontalAlignment=HorizontalAlignment.Center};
     private readonly DispatcherTimer liveTick=new(DispatcherPriority.Render){Interval=TimeSpan.FromMilliseconds(250)};
     private DateTimeOffset lastLive,quietSince,feedbackUntil,timelineAt;
-    private DateTimeOffset audioSampleAt;
+    private long audioSequence;
     private double sampledPeak,reflectionX=.5,reflectionY=.25;
     private bool liveRendering;
     private TimeSpan? renderedAt;
@@ -109,19 +109,34 @@ public sealed partial class OverlayWindow
     private bool FeedbackVisible=>app.Settings.ReactiveFeedback && (feedbackBrightness?app.Settings.BrightnessFeedback:app.Settings.VolumeFeedback) && !expanded && !peeking && IsVisible && !environmentHidden && !userHidden && DateTimeOffset.UtcNow<feedbackUntil;
     private void InitializeLiveActivity()
     {
-        liveTick.Tick+=(_,_)=>{sampledPeak=WidgetOn("media") && app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;audioSampleAt=DateTimeOffset.UtcNow;if(sampledPeak>.002 || expanded || peeking || app.Media.Playing || ActiveCountdown()?.Running==true)WakeLiveRendering();};
+        root.MouseMove+=(_,_)=>{if(app.Settings.GlassStyle && (expanded || peeking))WakeLiveRendering();};
         InitializeFeedback();
         IsVisibleChanged+=(_,_)=>{ConfigureLiveActivity();if(!IsVisible)ClearFeedback();};
     }
+    private bool AudioVisualDemand=>IsVisible && !IsTucked && app.Settings.LiveActivity && app.Media.Playing && WidgetOn("media") &&
+        ((!expanded && !peeking && !FeedbackVisible && (activity.IsVisible || closedTitleWave.IsVisible)) || (expanded && musicWave.IsVisible) || (peeking && peekId=="media" && peekWave.IsVisible));
+    private bool ReflectionMoving
+    {
+        get
+        {
+            if(!app.Settings.GlassStyle || !(expanded || peeking || motion.Active))return false;
+            var point=Mouse.GetPosition(this);
+            double x=Math.Clamp((point.X-(ActualWidth-surface.SurfaceWidth)/2)/Math.Max(1,surface.SurfaceWidth),0,1),y=Math.Clamp(point.Y/Math.Max(1,surface.SurfaceHeight),0,1);
+            return Math.Abs(x-reflectionX)+Math.Abs(y-reflectionY)>.001;
+        }
+    }
+    private bool HasLiveWork=>AudioVisualDemand || motion.Active || ReflectionMoving ||
+        (app.Media.Playing && timelineDuration>0 && ((peeking && peekId=="media") || (expanded && musicWave.IsVisible))) ||
+        (ActiveCountdown()?.Running==true && ((!expanded && !peeking && activity.IsVisible) || (peeking && peekId is "timer" or "focus")));
     private void ConfigureLiveActivity()
     {
-        StopLiveRendering();lastLive=DateTimeOffset.UtcNow;quietSince=lastLive;
-        if(IsVisible && !IsTucked && app.Settings.LiveActivity && Motion.Enabled){liveTick.Interval=TimeSpan.FromMilliseconds(250);liveTick.Start();}
-        else{liveTick.Stop();activity.Sample(0,1,ActiveCountdown()?.Progress(lastLive)??0,ActiveCountdown()!=null,app.Session.Focus.Remaining(lastLive)>0,false,0);closedTitleWave.Sample(0,1,0,false,false,false,0);musicWave.Sample(0,1,0,false,false,false,0);peekWave.Sample(0,1,0,false,false,false,0);}
+        StopLiveRendering();liveTick.Stop();lastLive=DateTimeOffset.UtcNow;quietSince=lastLive;
+        if(IsVisible && !IsTucked && app.Settings.LiveActivity && Motion.Enabled){if(HasLiveWork)WakeLiveRendering();}
+        else{activity.Sample(0,1,ActiveCountdown()?.Progress(lastLive)??0,ActiveCountdown()!=null,app.Session.Focus.Remaining(lastLive)>0,false,0);closedTitleWave.Sample(0,1,0,false,false,false,0);musicWave.Sample(0,1,0,false,false,false,0);peekWave.Sample(0,1,0,false,false,false,0);}
     }
     private void WakeLiveRendering()
     {
-        if(liveRendering || !IsVisible || IsTucked || !app.Settings.LiveActivity || !Motion.Enabled)return;
+        if(liveRendering || !IsVisible || IsTucked || !app.Settings.LiveActivity || !Motion.Enabled || !HasLiveWork)return;
         lastLive=quietSince=DateTimeOffset.UtcNow;renderedAt=null;livePacer.Reset();liveRendering=true;CompositionTarget.Rendering+=DisplayFrame;
     }
     private void StopLiveRendering(){if(liveRendering)CompositionTarget.Rendering-=DisplayFrame;liveRendering=false;renderedAt=null;}
@@ -138,18 +153,19 @@ public sealed partial class OverlayWindow
     private void LiveFrame()
     {
         var now=DateTimeOffset.UtcNow;double dt=Math.Clamp((now-lastLive).TotalSeconds,.001,.5);lastLive=now;
-        bool sample=(now-audioSampleAt).TotalSeconds>=1/30d;
-        if(sample){sampledPeak=WidgetOn("media") && app.Media.Playing?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;audioSampleAt=now;}
+        bool audioWanted=AudioVisualDemand,sample=false;
+        if(audioWanted){sampledPeak=app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId);sample=audioSequence!=app.Audio.MediaLevel.Sequence;audioSequence=app.Audio.MediaLevel.Sequence;}
+        else sampledPeak=0;
         double peak=app.Media.Playing && !app.Audio.MediaMeterMuted?sampledPeak:0;
         var session=ActiveCountdown();bool running=session?.Running==true;
-        if(peak>.002 || running || expanded || peeking || app.Media.Playing || motion.Active)quietSince=now;
+        if(HasLiveWork)quietSince=now;
         if((now-quietSince).TotalSeconds>1.2){StopLiveRendering();return;}
         bool decorative=app.Settings.WaveformIdleMotion && app.Media.Playing && !app.Audio.MediaMeterMuted;
         double seconds=now.ToUnixTimeMilliseconds()/1000d;
-        activity.Sample(peak,dt,session?.Progress(now)??0,session!=null,session==app.Session.Focus,running || session==null,seconds,sample,decorative);
-        if(closedTitleWave.IsVisible)closedTitleWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
-        if(musicWave.IsVisible)musicWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
-        if(peekWave.IsVisible)peekWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
+        if(!expanded && !peeking && activity.IsVisible)activity.Sample(peak,dt,session?.Progress(now)??0,session!=null,session==app.Session.Focus,running || session==null,seconds,sample,decorative);
+        if(!expanded && !peeking && closedTitleWave.IsVisible)closedTitleWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
+        if(expanded && musicWave.IsVisible)musicWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
+        if(peeking && peekId=="media" && peekWave.IsVisible)peekWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
         if(app.Settings.GlassStyle && (peeking || expanded || motion.Active))
         {
             var p=Mouse.GetPosition(this);double x=Math.Clamp((p.X-(ActualWidth-surface.SurfaceWidth)/2)/surface.SurfaceWidth,0,1),y=Math.Clamp(p.Y/surface.SurfaceHeight,0,1);

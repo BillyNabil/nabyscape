@@ -10,6 +10,7 @@ namespace NabyScape;
 internal sealed class SettingsScene : FrameworkElement
 {
     private readonly string kind;
+    internal string Section=>kind;
     private readonly Settings s;
     internal SettingsScene(string kind,Settings settings){this.kind=kind;s=settings;Height=126;ClipToBounds=true;IsHitTestVisible=false;}
     protected override void OnRender(DrawingContext dc)

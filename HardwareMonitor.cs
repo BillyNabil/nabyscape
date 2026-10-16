@@ -67,28 +67,33 @@ internal sealed class HardwareCaptureWorker(Func<int,Task<MonitorHardware>> read
 internal static class HardwareMonitor
 {
     private static readonly Reader reader=new(Query,()=>Environment.TickCount64);
-    private static readonly HardwareCaptureWorker worker=new(generation=>Task.Run(()=>reader.Read(generation)),Unavailable,()=>Environment.TickCount64);
-    internal static void ResetSampling()=>worker.ResetSampling();
+    private static bool gpuOnly;
+    private static readonly HardwareCaptureWorker worker=new(generation=>{bool gpu=gpuOnly;return Task.Run(()=>reader.Read(generation,gpu));},Unavailable,()=>Environment.TickCount64);
+    internal static void ResetSampling(){reader.RequestRetry();worker.ResetSampling();}
     internal static MonitorHardware Unavailable(string reason)=>reader.Unavailable(reason);
-    internal static MonitorHardware Capture()=>worker.Capture();
+    internal static MonitorHardware Capture(bool onlyGpu=false){gpuOnly=onlyGpu;return worker.Capture();}
 
     internal sealed class Reader(Func<string,string,List<Dictionary<string,object?>>> query,Func<long> now)
     {
         private HardwareCpu[]? cpus;
         private string[]? models;
         private readonly MetadataRetry cpuRetry=new(),modelRetry=new();
+        private readonly Dictionary<string,MetadataRetry> sensorRetries=new(){["LibreHardwareMonitor"]=new(),["OpenHardwareMonitor"]=new()};
+        private volatile bool retryRequested;
+        internal void RequestRetry()=>retryRequested=true;
         private GpuEngine[] previous=Array.Empty<GpuEngine>();
         private int previousGeneration=-1;
         internal MonitorHardware Unavailable(string reason)=>new(cpus??Array.Empty<HardwareCpu>(),models??Array.Empty<string>(),Array.Empty<HardwareGpu>(),Array.Empty<HardwareSensor>(),reason);
-        internal MonitorHardware Read(int generation)
+        internal MonitorHardware Read(int generation,bool onlyGpu=false)
         {
-            if(cpus==null && cpuRetry.Due(now()))
+            if(retryRequested){retryRequested=false;cpuRetry.Reset();modelRetry.Reset();foreach(var retry in sensorRetries.Values)retry.Reset();}
+            if(!onlyGpu && cpus==null && cpuRetry.Due(now()))
             {
                 var found=query("root\\cimv2","SELECT Name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed FROM Win32_Processor")
                     .Select(r=>new HardwareCpu(Text(r,"Name"),Integer(r,"NumberOfCores"),Integer(r,"NumberOfLogicalProcessors"),Number(r,"MaxClockSpeed"))).Where(c=>c.Name.Length>0).ToArray();
                 if(found.Length>0)cpus=found;else cpuRetry.Failed(now());
             }
-            if(models==null && modelRetry.Due(now()))
+            if(!onlyGpu && models==null && modelRetry.Due(now()))
             {
                 var found=query("root\\cimv2","SELECT Name FROM Win32_VideoController").Select(r=>Text(r,"Name")).Where(n=>n.Length>0).ToArray();
                 if(found.Length>0)models=found;else modelRetry.Failed(now());
@@ -105,11 +110,16 @@ internal static class HardwareMonitor
                 return new HardwareGpu(id!,usage.TryGetValue(id!,out double value)?value:null,row==null?null:Unsigned(row,"DedicatedUsage"),row==null?null:Unsigned(row,"SharedUsage"));
             }).ToArray();
             var sensors=new List<HardwareSensor>();
-            foreach(string provider in new[]{"LibreHardwareMonitor","OpenHardwareMonitor"})
-            foreach(var row in query("root\\"+provider,"SELECT Name,SensorType,Value FROM Sensor"))
+            if(!onlyGpu)foreach(var entry in sensorRetries)
             {
-                string type=Text(row,"SensorType");double? value=Number(row,"Value");
-                if(type is "Temperature" or "Fan" && value is double v && double.IsFinite(v))sensors.Add(new(Text(row,"Name"),type,v,provider));
+                if(!entry.Value.Due(now()))continue;
+                var rows=query("root\\"+entry.Key,"SELECT Name,SensorType,Value FROM Sensor");
+                if(rows.Count==0){entry.Value.Failed(now());continue;}
+                foreach(var row in rows)
+                {
+                    string type=Text(row,"SensorType");double? value=Number(row,"Value");
+                    if(type is "Temperature" or "Fan" && value is double v && double.IsFinite(v))sensors.Add(new(Text(row,"Name"),type,v,entry.Key));
+                }
             }
             return new(cpus??Array.Empty<HardwareCpu>(),models??Array.Empty<string>(),gpus,sensors,gpus.Length==0?"GPU performance counters unavailable":null);
         }
@@ -121,7 +131,8 @@ internal static class HardwareMonitor
         private long next;
         private int delay=5000;
         internal bool Due(long now)=>now>=next;
-        internal void Failed(long now){next=now+delay;delay=Math.Min(delay*2,60000);}
+        internal void Reset(){next=0;delay=5000;}
+        internal void Failed(long now){next=now+delay;delay=Math.Min(delay*2,30000);}
     }
 
     // Windows engine instances include the process ID, adapter LUID and physical engine.

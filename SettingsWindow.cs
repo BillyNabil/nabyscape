@@ -18,7 +18,10 @@ public sealed partial class SettingsWindow : Window
     private readonly DispatcherTimer saveTimer=new(){Interval=TimeSpan.FromMilliseconds(180)};
     private readonly System.Collections.Generic.Dictionary<string,Button> navigationButtons=new();
     private readonly Border sectionIndexHost=new(){Margin=new(28,12,28,8)};
-    private int navigationRevision;
+    private int navigationRevision,previewRevision;
+    private int? previewBuildKey;
+    private bool applyingSettings;
+    private readonly System.Collections.Generic.List<SettingsScene> settingExamples=new();
     private string current="Appearance";
     private readonly TextBlock frameStatus=UI.Text("",11,UI.Muted);
     private readonly TextBlock hotkeyState=UI.Text("",11,UI.Muted);
@@ -52,7 +55,7 @@ public sealed partial class SettingsWindow : Window
             workspace.ColumnDefinitions[1].Width=narrow?new GridLength(0):new GridLength(284);Grid.SetColumn(rail,narrow?0:1);Grid.SetRowSpan(rail,narrow?1:3);
             // Reserve a usable scrolling form before spending height on the stacked preview.
             // workspace.SizeChanged reruns this after navigation/footer have been measured.
-            double previewHeight=narrow?Math.Clamp(workspace.ActualHeight-120,0,210):double.NaN;
+            double previewHeight=narrow?Math.Clamp(workspace.ActualHeight-sectionIndexHost.ActualHeight-sectionIndexHost.Margin.Top-sectionIndexHost.Margin.Bottom-120,0,210):double.NaN;
             bool showPreview=!narrow || previewHeight>=110;
             rail.Visibility=showPreview?Visibility.Visible:Visibility.Collapsed;
             rail.Height=narrow?previewHeight:double.NaN;
@@ -66,24 +69,35 @@ public sealed partial class SettingsWindow : Window
         SizeChanged+=(_,_)=>Responsive();workspace.SizeChanged+=(_,_)=>Responsive();Loaded+=(_,_)=>Responsive();
         page.MaxWidth=660;page.HorizontalAlignment=HorizontalAlignment.Stretch;
         var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);
-        saveTimer.Tick+=(_,_)=>{saveTimer.Stop();try{app.ChangeSettings();status.Text="Saved on this device";}catch(Exception ex){status.Text="Could not save changes. Try again.";app.Store.Log(ex);}};
-        app.SettingsChanged+=RefreshPreview;app.Updated+=UpdateFrameStatus;
-        Closed+=(_,_)=>{if(saveTimer.IsEnabled){saveTimer.Stop();app.ChangeSettings();}app.SettingsChanged-=RefreshPreview;app.Updated-=UpdateFrameStatus;};Navigate("Appearance");RefreshPreview();
+        saveTimer.Tick+=(_,_)=>{saveTimer.Stop();try{applyingSettings=true;app.ChangeSettings();status.Text="Saved on this device";}catch(Exception ex){status.Text="Could not save changes. Try again.";app.Store.Log(ex);}finally{applyingSettings=false;}};
+        app.SettingsChanged+=SettingsApplied;app.Updated+=UpdateFrameStatus;
+        Closed+=(_,_)=>{if(saveTimer.IsEnabled){saveTimer.Stop();app.ChangeSettings();}app.SettingsChanged-=SettingsApplied;app.Updated-=UpdateFrameStatus;};Navigate("Appearance");RefreshPreview();
     }
-    private void Save() {RefreshPreview();status.Text="Saving changes…";saveTimer.Stop();saveTimer.Start();}
-    private void RefreshPreview(){RenderSettingsPreview();foreach(var scene in SettingTree(page).OfType<SettingsScene>())scene.InvalidateVisual();}
+    private void Save() {previewRevision++;InvalidateExamples(System.Windows.Input.Keyboard.FocusedElement as DependencyObject??System.Windows.Input.Mouse.DirectlyOver as DependencyObject);RefreshPreview();status.Text="Saving changes…";saveTimer.Stop();saveTimer.Start();}
+    private void SettingsApplied(){if(applyingSettings)return;previewRevision++;InvalidateExamples(null);RefreshPreview();}
+    private void InvalidateExamples(DependencyObject? source)
+    {
+        for(var node=source;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))
+            if(node is Border {Tag:string title}){var example=settingExamples.FirstOrDefault(e=>e.Section==title);if(example!=null){example.InvalidateVisual();return;}}
+        foreach(var example in settingExamples)example.InvalidateVisual();
+    }
+    private void RefreshPreview()
+    {
+        int key=HashCode.Combine(HashCode.Combine(current,previewMode,previewContent,previewRevision),app.Media.Title,app.Media.Artist,app.Media.Playing,app.Media.Artwork,app.Audio.Volume,app.Audio.Muted);
+        if(previewBuildKey!=key){previewBuildKey=key;RenderSettingsPreview();}SyncPreviewRendering();
+    }
     private void Navigate(string name)
     {
         bool same=name==current && page.Children.Count>0;double offset=settingsScroll.VerticalOffset;int revision=++navigationRevision;
         var expanded=SettingTree(page).OfType<Expander>().Where(e=>e.IsExpanded).Select(e=>e.Header?.ToString()).ToHashSet();
         string focused=System.Windows.Input.Keyboard.FocusedElement is DependencyObject oldFocus?System.Windows.Automation.AutomationProperties.GetName(oldFocus):"";
-        current=name;previewFocus.Text=name+" overview";previewContent="Music";previewMode="Closed";if(name=="Launch"){previewContent="Launch";previewMode="Panel";}if(name=="Content"){previewContent="Navigation";previewMode="Panel";}if(name=="Controls"){previewContent="Music";previewMode="Hover";}if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}if(name=="Application"){previewContent="Startup";previewMode="Panel";}if(!same)settingsScroll.ScrollToTop();page.Children.Clear();var heading=UI.Text(name,24);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,26);page.Children.Add(heading);
+        previewRevision++;settingExamples.Clear();current=name;previewFocus.Text=name+" overview";previewContent="Music";previewMode="Closed";if(name=="Launch"){previewContent="Launch";previewMode="Panel";}if(name=="Content"){previewContent="Navigation";previewMode="Panel";}if(name=="Controls"){previewContent="Music";previewMode="Hover";}if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}if(name=="Application"){previewContent="Startup";previewMode="Panel";}if(!same)settingsScroll.ScrollToTop();page.Children.Clear();var heading=UI.Text(name,24);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,26);page.Children.Add(heading);
         foreach(var entry in navigationButtons){entry.Value.Background=entry.Key==name?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==name?Brushes.White:UI.Muted;}
         switch(name){case "Appearance":Appearance();break;case "Layout":LayoutSettings();break;case "Content":ContentSettings();break;case "Launch":LaunchSettings();break;case "Controls":Interactions();break;case "Audio":AudioSettings();break;case "System":SystemSettings();break;default:General();break;}OrganizeSettings();if(same){foreach(var group in SettingTree(page).OfType<Expander>())group.IsExpanded=expanded.Contains(group.Header?.ToString());page.UpdateLayout();settingsScroll.ScrollToVerticalOffset(offset);Dispatcher.BeginInvoke(DispatcherPriority.Loaded,()=>{if(revision!=navigationRevision)return;var replacement=SettingTree(page).OfType<Control>().FirstOrDefault(c=>focused.Length>0 && System.Windows.Automation.AutomationProperties.GetName(c)==focused);replacement?.Focus();settingsScroll.ScrollToVerticalOffset(offset);});}RefreshPreview();
     }
     private Border Section(string title,params UIElement[] children)
     {
-        var content=new StackPanel();var label=UI.Text(title,13);label.FontWeight=FontWeights.SemiBold;label.Margin=new(0,0,0,12);content.Children.Add(label);content.Children.Add(new SettingsScene(title,app.Settings){Margin=new(0,0,0,16)});foreach(var child in children){if(child is Button action){action.HorizontalAlignment=HorizontalAlignment.Left;action.Margin=new(0,8,0,0);}if(child is FrameworkElement element && element.Parent is Panel old)old.Children.Remove(child);else if(child is FrameworkElement owned && owned.Parent is Expander expander)expander.Content=null;content.Children.Add(child);}
+        var content=new StackPanel();var label=UI.Text(title,13);label.FontWeight=FontWeights.SemiBold;label.Margin=new(0,0,0,12);content.Children.Add(label);var example=new SettingsScene(title,app.Settings){Margin=new(0,0,0,16)};settingExamples.Add(example);content.Children.Add(example);foreach(var child in children){if(child is Button action){action.HorizontalAlignment=HorizontalAlignment.Left;action.Margin=new(0,8,0,0);}if(child is FrameworkElement element && element.Parent is Panel old)old.Children.Remove(child);else if(child is FrameworkElement owned && owned.Parent is Expander expander)expander.Content=null;content.Children.Add(child);}
         return new Border{Tag=title,BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,0,0,1),Padding=new(0,0,0,22),Margin=new(0,0,0,24),Child=content};
     }
     private static Expander Advanced(string title,UIElement content)
@@ -126,7 +140,7 @@ public sealed partial class SettingsWindow : Window
         var profiles=new[]{("Auto","Auto"),("Eco","Hemat"),("Maximum","Maksimal")};
         var performance=new ComboBox();foreach(var profile in profiles)performance.Items.Add(profile.Item1);performance.SelectedIndex=Math.Max(0,Array.FindIndex(profiles,p=>p.Item2==s.Performance));UI.Named(performance,"Performance profile");performance.SelectionChanged+=(_,_)=>{if(performance.SelectedIndex>=0){s.Performance=profiles[performance.SelectedIndex].Item2;Save();}};UpdateFrameStatus();page.Children.Add(Section("Animation performance",UI.Text("Auto follows your screen refresh rate. Eco limits updates to save power; Maximum allows more frequent frames. Your display and GPU still determine visible FPS.",11,UI.Muted),performance,Advanced("Render statistics",frameStatus)));
     }
-    private void UpdateFrameStatus(){frameStatus.Text=FrameTelemetry.Status;hotkeyState.Text=app.HotkeyStatus+"\n"+app.VisibilityHotkeyStatus;brightnessState.Text=app.BrightnessStatus;RefreshLivePreviewData();}
+    private void UpdateFrameStatus(){if(!IsVisible || WindowState==WindowState.Minimized)return;if(frameStatus.IsVisible)Motion.Text(frameStatus,FrameTelemetry.Status);if((app.CurrentUpdate&RuntimeChange.Settings)!=0){Motion.Text(hotkeyState,app.HotkeyStatus+"\n"+app.VisibilityHotkeyStatus);Motion.Text(brightnessState,app.BrightnessStatus);}if((app.CurrentUpdate&(RuntimeChange.Media|RuntimeChange.Audio))!=0)RefreshLivePreviewData();if(IsVisible && WindowState!=WindowState.Minimized && (app.CurrentUpdate&(RuntimeChange.Clock|RuntimeChange.Audio|RuntimeChange.System|RuntimeChange.Countdown))!=0)foreach(var frame in previewFrames)frame(previewClock.Elapsed.TotalSeconds);SyncPreviewRendering();}
     private void Interactions()
     {
         var s=app.Settings;

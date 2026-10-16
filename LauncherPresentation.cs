@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace NabyScape;
 
@@ -31,9 +32,15 @@ public sealed partial class OverlayWindow
         if(icon!=null && !LauncherPresentation.ShowLabel(app.Settings.LaunchStyle))icon.AvailabilityChanged+=available=>label.Visibility=available?Visibility.Collapsed:Visibility.Visible;
         button.Content=row;return button;
     }
+    private static readonly DependencyProperty CategoryAppearanceKeyProperty=DependencyProperty.RegisterAttached("CategoryAppearanceKey",typeof(object),typeof(OverlayWindow));
+    private (bool Media,bool Summary,bool Headings,bool Motion)? titleAppearance;
+    private bool? bodyHeadingWeight;
     private void StyleCategory(Button button,string page,bool selected=false)
     {
         bool iconsOnly=app.Settings.CategoryStyle=="Icons" || app.Settings.CategoryStyle=="IconsLabels" && bodyWidth<300;
+        button.Background=selected?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;button.Foreground=selected?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;
+        var key=(page,app.Settings.CategoryStyle,iconsOnly,selected,app.Settings.SelectionFill);
+        if(button.GetValue(CategoryAppearanceKeyProperty) is ValueTuple<string,string,bool,bool,string> previous && previous==key)return;button.SetValue(CategoryAppearanceKeyProperty,key);
         button.MinWidth=iconsOnly?32:0;button.MinHeight=iconsOnly?32:30;button.Padding=iconsOnly?new Thickness(8):new Thickness(5,5,5,5);button.Tag=new CornerRadius(iconsOnly?10:15);
         bool combined=!iconsOnly && LauncherPresentation.ShowIcon(app.Settings.CategoryStyle) && LauncherPresentation.ShowLabel(app.Settings.CategoryStyle);
         var row=new StackPanel{Orientation=combined?Orientation.Vertical:Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center};
@@ -43,15 +50,16 @@ public sealed partial class OverlayWindow
     }
     private void ApplyTitleTypography(bool mediaSummary)
     {
+        var key=(app.Settings.BoldMediaTitle,mediaSummary,app.Settings.BoldHeadings,Motion.Enabled);if(titleAppearance==key)return;titleAppearance=key;
         if(!Motion.Enabled)foreach(var label in marqueeLabels.Values)label.Reset();
         ApplyMediaTypography(title,app.Settings.BoldMediaTitle);
         ApplyMediaTypography(peekTitle,app.Settings.BoldMediaTitle);
         ApplyMediaTypography(artist,false);
         ApplyMediaTypography(peekSubtitle,false);
         summary.FontWeight=mediaSummary && app.Settings.BoldMediaTitle?FontWeights.SemiBold:FontWeights.Normal;
-        ApplyHeadingTypography(body);
+        if(bodyHeadingWeight!=app.Settings.BoldHeadings)ApplyHeadingTypography(body);
     }
     private void ApplyMediaTypography(TextBlock current,bool bold)
     {previousText.TryGetValue(current,out var outgoing);LauncherPresentation.ApplyMediaTypography(current,outgoing,bold);}
-    private void ApplyHeadingTypography(DependencyObject node)=>LauncherPresentation.ApplyHeadingTypography(node,app.Settings.BoldHeadings);
+    private void ApplyHeadingTypography(DependencyObject node){LauncherPresentation.ApplyHeadingTypography(node,app.Settings.BoldHeadings);if(ReferenceEquals(node,body))bodyHeadingWeight=app.Settings.BoldHeadings;}
 }

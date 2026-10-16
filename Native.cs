@@ -100,10 +100,13 @@ internal sealed class OutsideClick : IDisposable
 {
     private IntPtr hook;
     private readonly Native.HookProc callback;
-    public OutsideClick(Window window,Action close,Func<System.Windows.Point,bool>? contains=null)
+    public OutsideClick(Window window,Action close,Func<System.Windows.Point,bool>? contains=null,Action? pointerMoved=null,Func<bool>? needsPointerWake=null)
     {
+        bool pointerQueued=false;
         callback=(code,wparam,lparam)=>
         {
+            if(code>=0 && (int)wparam==0x200 && pointerMoved!=null && !pointerQueued && needsPointerWake?.Invoke()==true)
+            {pointerQueued=true;window.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Render,()=>{pointerQueued=false;if(hook!=IntPtr.Zero)pointerMoved();});}
             if(code>=0 && ((int)wparam==0x201 || (int)wparam==0x204))
             {
                 var p=Marshal.PtrToStructure<Native.Point>(lparam);

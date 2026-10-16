@@ -264,6 +264,20 @@ Logic checks cover persistence, profile compatibility, audio fixtures, layout, t
 
 Desktop diagnostics use an isolated profile and a muted publisher. They do not change daily playback, routing, microphone state, or clipboard contents. A keep-awake test briefly prevents automatic sleep. Physical hot-plug, other DPI configurations, cross-app drops, hardware volume changes, clipboard-busy behavior, and battery transitions still need device-specific checks.
 
+Performance workloads use a deterministic local media fixture and the same animation and frame-rate settings as the app. Quit other NabyScape instances first:
+
+```powershell
+# Demand-driven sampling, editor retention, and window lifecycle checks.
+.\artifacts\NabyScape.exe --diagnostics "$PWD\artifacts\performance-checks" --performance-checks-only
+
+# Fourteen scenes, three repetitions, 60 seconds per scene, then 100 window cycles.
+.\artifacts\NabyScape.exe --diagnostics "$PWD\artifacts\performance" --performance-benchmark
+```
+
+See the [local v2.4.2 performance verification](docs/performance-2.4.2.md) for measured comparisons, app captures, raw runs, and limitations.
+
+The benchmark writes `performance.json`, `retention.json`, progress, and screenshots. CPU is normalized across all logical processors. WPF callback intervals describe callback pacing, not frames presented by the GPU; GPU utilization is left unavailable when it cannot be measured reliably. Synthetic media isolates UI work and does not replace device-specific Spotify, audio-routing, or hardware checks.
+
 | Files | Responsibility |
 | --- | --- |
 | `OverlayWindow`, `CompactOverlay`, `PeekCarousel` | Overlay states, panels, and hover navigation. |

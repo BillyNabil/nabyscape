@@ -44,13 +44,19 @@ internal sealed class IslandSurface : FrameworkElement
     internal static Brush GlassMaterial=>glass;
     public double GlassStrength {get;set;}=1;
     private Brush material=glass;
+    private string materialColor="#000000";
+    private (double Width,double Height,double Radius,bool Notch,double Offset)? contourKey;
+    private int updateDepth;
+    private bool refreshPending;
+    internal void BeginUpdate()=>updateDepth++;
+    internal void EndUpdate(){if(--updateDepth==0 && refreshPending){refreshPending=false;Refresh();}}
     internal static Brush Material(string color)
     {
         var c=((SolidColorBrush)UI.Brush(color)).Color;if(c==Colors.Black)return glass;
         Color Lift(byte amount)=>Color.FromRgb((byte)Math.Min(255,c.R+amount),(byte)Math.Min(255,c.G+amount),(byte)Math.Min(255,c.B+amount));
         return Frozen(new LinearGradientBrush(new GradientStopCollection{new(Lift(18),0),new(Lift(8),.46),new(Lift(1),1)},new Point(0,0),new Point(.65,1)));
     }
-    public void SetMaterial(string color,double strength){material=Material(color);GlassStrength=strength;InvalidateVisual();}
+    public void SetMaterial(string color,double strength){bool same=string.Equals(materialColor,color,StringComparison.OrdinalIgnoreCase);if(same && GlassStrength==strength)return;if(!same){material=Material(color);materialColor=color;}GlassStrength=strength;InvalidateVisual();}
     private static readonly Pen edge=new(Frozen(new LinearGradientBrush(new GradientStopCollection{new(Color.FromArgb(66,255,255,255),0),new(Color.FromArgb(9,255,255,255),.4),new(Color.FromArgb(34,255,255,255),1)},new Point(0,0),new Point(1,1))),.75);
     private readonly RadialGradientBrush reflection=new(){GradientStops=new(){new(Color.FromArgb(35,232,239,255),0),new(Color.FromArgb(0,232,239,255),1)},RadiusX=.85,RadiusY=.8};
     private static Brush Frozen(Brush brush){brush.Freeze();return brush;}
@@ -68,8 +74,10 @@ internal sealed class IslandSurface : FrameworkElement
     protected override void OnRenderSizeChanged(SizeChangedInfo info) {base.OnRenderSizeChanged(info);Refresh();}
     public void Refresh()
     {
-        Contour=IslandGeometry.Create(SurfaceWidth,SurfaceHeight,Radius,Notch,Math.Max(0,(ActualWidth-SurfaceWidth)/2));
-        ContourChanged?.Invoke();InvalidateVisual();
+        if(updateDepth>0){refreshPending=true;return;}
+        var key=(SurfaceWidth,SurfaceHeight,Radius,Notch,Math.Max(0,(ActualWidth-SurfaceWidth)/2));
+        if(contourKey!=key){contourKey=key;Contour=IslandGeometry.Create(key.SurfaceWidth,key.SurfaceHeight,key.Radius,key.Notch,key.Item5);ContourChanged?.Invoke();}
+        InvalidateVisual();
     }
     protected override void OnRender(DrawingContext context)
     {

@@ -12,6 +12,7 @@ public sealed partial class OverlayWindow
     {var page=new StackPanel();page.Children.Add(UI.Heading(id=="clips"?"Clipboard":"Tasks",13));page.Children.Add(id=="clips"?peekClipboard:peekTasks);var open=PlainPeekButton("Open all "+id,()=>{if(id=="tasks")notesMode="tasks";ShowTools(id);});open.Content=id=="clips"?"Open clipboard":"All tasks";open.FontSize=11;open.Margin=new(0,5,0,0);page.Children.Add(open);return page;}
     private void UpdateToolPeeks()
     {
+        if(!peekInitialized)return;
         var p=app.Productivity;
         string clips=p.ClipboardEnabled?string.Join("|",p.Clips.Take(2).Select(c=>c.Id))+"|"+p.ClipboardPaused:"off";
         if(clips!=clipboardPeekKey)
@@ -22,7 +23,7 @@ public sealed partial class OverlayWindow
             else foreach(var clip in p.Clips.Take(2))
             {
                 var row=new DockPanel{Height=28};
-                if(clip.Kind=="image"){var image=new Image{Source=p.LoadClipImage(clip,48),Width=24,Height=24,Stretch=Stretch.Uniform,Margin=new(0,0,8,0)};row.Children.Add(image);}
+                if(clip.Kind=="image"){var image=new Image{Source=p.LoadClipImage(clip,(int)Math.Ceiling(24*VisualTreeHelper.GetDpi(this).DpiScaleX)),Width=24,Height=24,Stretch=Stretch.Uniform,Margin=new(0,0,8,0)};row.Children.Add(image);}
                 var line=UI.Text(clip.Label,12);line.TextWrapping=TextWrapping.NoWrap;line.TextTrimming=TextTrimming.CharacterEllipsis;line.ToolTip=clip.Kind=="image"?"Image":clip.Label;row.Children.Add(line);peekClipboard.Children.Add(row);
             }
         }

@@ -61,12 +61,17 @@ public sealed partial class AudioService
     {
         try
         {
-            using var device=MicrophoneEndpoint();
-            MicrophoneName=device.FriendlyName;MicrophoneMuted=device.AudioEndpointVolume.Mute;MicrophoneAvailable=true;
+            MMDevice? current=MicrophoneEndpoint();
+            try
+            {
+                if(microphoneDevice==null || microphoneDevice.ID!=current.ID){ReleaseMicrophone();microphoneDevice=current;microphoneId=current.ID;current=null;microphoneDevice.AudioEndpointVolume.OnVolumeNotification+=MicrophoneChanged;}
+                MicrophoneName=microphoneDevice.FriendlyName;MicrophoneMuted=microphoneDevice.AudioEndpointVolume.Mute;MicrophoneAvailable=true;
+            }
+            finally{current?.Dispose();}
         }
         catch(Exception ex)
         {
-            MicrophoneAvailable=false;MicrophoneMuted=false;MicrophoneName="No microphone";AudioError(ex,AudioOperation.ReadMicrophone);
+            ReleaseMicrophone();MicrophoneAvailable=false;MicrophoneMuted=false;MicrophoneName="No microphone";AudioError(ex,AudioOperation.ReadMicrophone);
         }
     }
 

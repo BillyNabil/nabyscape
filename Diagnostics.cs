@@ -47,6 +47,7 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--performance-checks-only")){await PerformanceChecks.Run(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--performance-benchmark")){await PerformanceDiagnostics.Run(app,overlay,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--tools240-only")){await Task.Delay(500);await Tools240Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--focus-only"))
@@ -166,7 +167,8 @@ internal static class Diagnostics
             Check("Playback controls have at least 18 DIP breathing room",playButton.TranslatePoint(new Point(0,0),overlay).X-prev.TranslatePoint(new Point(prev.ActualWidth,0),overlay).X>=17.9);
             var volumeControl=Descendants(overlay).OfType<Slider>().First(s=>AutomationProperties.GetName(s)=="Windows volume");
             Check("Music content fits without clipping the volume row",overlay.ContentFits && volumeControl.ActualWidth>80 && volumeControl.TranslatePoint(new Point(0,volumeControl.ActualHeight),overlay).Y<overlay.PaintedHeight-12);
-            Check("Timer and media controls remain available",Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Start") && Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)=="Next track"));
+            overlay.SelectPage("focus",false);bool timerControls=Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Start");overlay.SelectPage("media",false);
+            Check("Timer and media controls remain available on their selected pages",timerControls && Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Next track"));
             Capture(overlay,"island-expanded");
             foreach(var page in new[]{"focus","status","access","media"}){overlay.SelectPage(page);await Task.Delay(650);Check("Compact tab remains bounded: "+page,overlay.ActivePage==page && overlay.PaintedHeight<=408.1);Capture(overlay,"tab-"+page);CaptureContour("compact-"+page);}
             overlay.Collapse();await Task.Delay(75);overlay.Reveal(false);await Task.Delay(75);overlay.Collapse();await Task.Delay(900);

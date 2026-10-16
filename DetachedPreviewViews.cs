@@ -46,11 +46,10 @@ internal sealed class DetachedPreviewView : IDisposable
     internal void SetVisible(bool value)
     {
         if(visible==value)return;visible=value;
-        if(value){if(Motion.Enabled)Motion.Enter(panel,4);app.Updated+=Refresh;app.Productivity.Changed+=DataChanged;app.Calendar.Changed+=DataChanged;Refresh();}
-        else{app.Updated-=Refresh;app.Productivity.Changed-=DataChanged;app.Calendar.Changed-=DataChanged;Flush();}
+        if(value){if(Motion.Enabled)Motion.Enter(panel,4);app.Updated+=Refresh;Refresh(RuntimeChange.All);}
+        else{app.Updated-=Refresh;Flush();}
     }
-    internal void ApplySettings(){if(title!=null)title.FontWeight=kind=="media" && app.Settings.BoldMediaTitle?FontWeights.SemiBold:FontWeights.Normal;if(visible)Refresh();}
-    private void DataChanged(){if(!visible)return;Refresh();}
+    internal void ApplySettings(){if(title!=null)title.FontWeight=kind=="media" && app.Settings.BoldMediaTitle?FontWeights.SemiBold:FontWeights.Normal;if(visible)Refresh(RuntimeChange.All);}
     internal void Flush(){noteSave.Stop();if(dirty){dirty=!app.Productivity.Save();if(status!=null)status.Text=dirty?"Could not save. Try Save again.":"Saved locally";}}
     public void Dispose(){SetVisible(false);Flush();noteSave.Stop();}
     private void Add(FrameworkElement element){element.Margin=new(0,0,0,9);panel.Children.Add(element);}
@@ -177,9 +176,12 @@ internal sealed class DetachedPreviewView : IDisposable
     {
         title=UI.Text("CPU",14);Add(title);progress=new ProgressBar{Minimum=0,Maximum=100,Height=5,Background=UI.Brush("#34363C"),Foreground=Brushes.White};Add(progress);detail=UI.Text("RAM",14);Add(detail);memory=new ProgressBar{Minimum=0,Maximum=100,Height=5,Background=UI.Brush("#34363C"),Foreground=Brushes.White};Add(memory);Add(UI.Text("Uses the island’s shared system sample.",11,UI.Muted));
     }
-    private void Refresh()
+    private void Refresh()=>Refresh(app.CurrentUpdate);
+    private void Refresh(RuntimeChange change)
     {
-        if(!visible)return;updating=true;
+        if(!visible)return;
+        var relevant=RuntimeChange.Settings | (kind switch{"media"=>RuntimeChange.Media|RuntimeChange.Audio|RuntimeChange.Clock,"timer" or "focus"=>RuntimeChange.Countdown,"notes" or "files"=>RuntimeChange.Productivity,"calendar"=>RuntimeChange.Calendar|RuntimeChange.Clock,"system"=>RuntimeChange.System,_=>RuntimeChange.All});
+        if((change&relevant)==0)return;updating=true;
         try
         {
             if(kind=="media")
@@ -194,7 +196,7 @@ internal sealed class DetachedPreviewView : IDisposable
             }
             else if(kind is "timer" or "focus")
             {
-                var now=DateTimeOffset.UtcNow;double remaining=Clock.Remaining(now);time!.Text=remaining>0?Clock.Display(now):int.TryParse(minutes!.Text,out int ready) && ready>=1 && ready<=1440?new Countdown{RemainingSeconds=ready*60}.Display(now):"—";progress!.Value=remaining>0?Clock.Progress(now):0;toggle!.Content=Clock.Running?"Pause":Clock.Remaining(now)>0?"Resume":"Start";minutes!.IsEnabled=!Clock.Running && Clock.Remaining(now)<=0;detail!.Text=kind=="focus"?(Clock.Phase=="break"?"Break":"Focus session"):"Countdown";
+                var now=DateTimeOffset.UtcNow;double remaining=Clock.Remaining(now);time!.Text=remaining>0?Clock.Display(now):int.TryParse(minutes!.Text,out int ready) && ready>=1 && ready<=1440?Countdown.FormatSeconds(ready*60):"—";progress!.Value=remaining>0?Clock.Progress(now):0;toggle!.Content=Clock.Running?"Pause":Clock.Remaining(now)>0?"Resume":"Start";minutes!.IsEnabled=!Clock.Running && Clock.Remaining(now)<=0;detail!.Text=kind=="focus"?(Clock.Phase=="break"?"Break":"Focus session"):"Countdown";
             }
             else if(kind=="notes")SyncNotes();else if(kind=="files")RefreshShelf();else if(kind=="calendar")RenderEvents();
             else if(kind=="system")

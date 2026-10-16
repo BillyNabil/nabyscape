@@ -35,6 +35,8 @@ public sealed class App : Application
     public event Action<string,string,string>? ActivityRaised;
     public event Action? SettingsChanged;
     public event Action? Updated;
+    internal RuntimeChange CurrentUpdate {get;private set;}=RuntimeChange.All;
+    internal void PublishUpdate(RuntimeChange change){var previous=CurrentUpdate;CurrentUpdate=change;try{Updated?.Invoke();}finally{CurrentUpdate=previous;}}
     public (double cpu,double used,double total) Usage { get; private set; }
     public static new App Current=>(App)Application.Current;
     [STAThread] public static void Main(string[] args)
@@ -62,7 +64,7 @@ public sealed class App : Application
         var diagnosticIndex=Array.IndexOf(e.Args,"--diagnostics");
         var diagnosticPath=diagnosticIndex>=0 && diagnosticIndex+1<e.Args.Length ? e.Args[diagnosticIndex+1] : null;
         Store=new(diagnosticPath==null ? null : Path.Combine(diagnosticPath,"test-profile"));Settings=diagnosticPath==null?Store.Load<Settings>("settings"):new Settings();Settings.Normalize();Settings.AutoStart=StartupService.Enabled();
-        Resources["Accent"]=UI.Brush(Settings.Accent);UI.ApplyControlTheme(Settings);
+        UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);
         Motion.Configure(Settings);
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
@@ -79,10 +81,11 @@ public sealed class App : Application
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Quit",null,(_,_)=>Dispatcher.Invoke(Quit));
         tray.ContextMenuStrip=menu;tray.DoubleClick+=(_,_)=>Dispatcher.Invoke(ShowSettings);
-        overlay=new OverlayWindow(this);MainWindow=overlay;overlay.Show();Previews=new(this,overlay.OpenFeaturePage);
-        Media.Changed+=()=>Updated?.Invoke();
-        Audio.Changed+=()=>Updated?.Invoke();
-        if(Array.Exists(e.Args,a=>a=="--performance-benchmark"))Media.DiagnosticFixture=true;else _=Media.Initialize();
+        overlay=new OverlayWindow(this);MainWindow=overlay;StartupTrace.Attach(overlay,e.Args,Store.Log);overlay.Show();Previews=new(this,overlay.OpenFeaturePage);
+        Media.Changed+=()=>PublishUpdate(RuntimeChange.Media);
+        Audio.Changed+=()=>PublishUpdate(RuntimeChange.Audio);
+        Productivity.Changed+=()=>PublishUpdate(RuntimeChange.Productivity);Calendar.Changed+=()=>PublishUpdate(RuntimeChange.Calendar);
+        if(Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only"))Media.DiagnosticFixture=true;else _=Media.Initialize();
         Audio.Read();Usage=Native.SystemUsage();
         int counter=0;
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};
@@ -90,8 +93,16 @@ public sealed class App : Application
         {
             CheckCountdowns();
             try{Awake.Tick(DateTimeOffset.UtcNow);}catch(Exception ex){Store.Log(ex);Notify("Could not update keep awake",ex.Message);}
-            if(++counter%2==0) { Audio.Read();if(overlay.SystemSummaryVisible || Previews.AnyVisible("system") || settingsWindow?.IsVisible==true)Usage=Native.SystemUsage();overlay.CheckEnvironment(); }
-            Updated?.Invoke();
+            var changed=RuntimeChange.Clock;
+            if(Session.Timer.Running || Session.Focus.Running)changed|=RuntimeChange.Countdown;
+            if(++counter%2==0)
+            {
+                Audio.Poll();bool system=overlay.SystemSummaryVisible || Previews.AnyVisible("system") || settingsWindow?.NeedsSystemSample==true;
+                if(system || overlay.NeedsAdaptiveCpuSample)Usage=Native.SystemUsage();
+                if(system)changed|=RuntimeChange.System;
+                overlay.CheckEnvironment();
+            }
+            PublishUpdate(changed);
         };
         tick.Start();CheckCountdowns();
         if(Store.Warning!=null) Notify("Settings recovered",Store.Warning);
@@ -101,7 +112,7 @@ public sealed class App : Application
         else if(Array.Exists(e.Args,a=>a=="--settings"))ShowSettings();
     }
     private void PowerChanged(object sender,Microsoft.Win32.PowerModeChangedEventArgs e)
-    { if(e.Mode==Microsoft.Win32.PowerModes.Resume) Dispatcher.BeginInvoke(()=> { CheckCountdowns();Awake?.Tick(DateTimeOffset.UtcNow);overlay?.CheckEnvironment();Updated?.Invoke(); }); }
+    { if(e.Mode==Microsoft.Win32.PowerModes.Resume) Dispatcher.BeginInvoke(()=> { CheckCountdowns();Audio.Read();Awake?.Tick(DateTimeOffset.UtcNow);overlay?.CheckEnvironment();HardwareMonitor.ResetSampling();PublishUpdate(RuntimeChange.All); }); }
     public void CheckCountdowns()
     {
         var now=DateTimeOffset.UtcNow;bool changed=false;
@@ -124,13 +135,13 @@ public sealed class App : Application
         if(changed) SaveSession();
     }
     internal void OpenMixer()=>overlay?.OpenMixer();
-    public void SaveSession() { try { Store.Save("session",Session); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet", "Could not save the timer state."); } Updated?.Invoke(); }
+    public void SaveSession() { try { Store.Save("session",Session); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet", "Could not save the timer state."); } PublishUpdate(RuntimeChange.Countdown); }
     public void ChangeSettings()
     {
-        Settings.Normalize();if(!Settings.ActivitiesEnabled)Activities?.Stop();Resources["Accent"]=UI.Brush(Settings.Accent);UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
+        Settings.Normalize();if(!Settings.ActivitiesEnabled)Activities?.Stop();UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         try { Store.Save("settings",Settings); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }
-        Previews?.ApplySettings();SettingsChanged?.Invoke();Updated?.Invoke();
+        Previews?.ApplySettings();SettingsChanged?.Invoke();PublishUpdate(RuntimeChange.Settings);
     }
     public void ShowSettings()
     {

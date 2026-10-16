@@ -166,7 +166,9 @@ public sealed class Countdown
     public bool Complete(DateTimeOffset now)
     { if(!Deadline.HasValue || now<Deadline.Value) return false; Deadline=null; RemainingSeconds=0; return true; }
     public string Display(DateTimeOffset now)
-    { var span=TimeSpan.FromSeconds(Math.Ceiling(Remaining(now))); return span.TotalHours>=1 ? span.ToString(@"h\:mm\:ss") : span.ToString(@"mm\:ss"); }
+    =>FormatSeconds(Remaining(now));
+    internal static string FormatSeconds(double seconds)
+    { var span=TimeSpan.FromSeconds(Math.Ceiling(seconds)); return span.TotalHours>=1 ? span.ToString(@"h\:mm\:ss") : span.ToString(@"mm\:ss"); }
 }
 public sealed class SessionState
 {

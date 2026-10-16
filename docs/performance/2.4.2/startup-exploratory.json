@@ -1,0 +1,55 @@
+{
+  "results": [
+    {
+      "run": 0,
+      "inputIdleMs": 7227.8552,
+      "warmup": true,
+      "build": "baseline"
+    },
+    {
+      "run": 0,
+      "inputIdleMs": 2398.4783,
+      "warmup": true,
+      "build": "candidate"
+    },
+    {
+      "run": 1,
+      "inputIdleMs": 1187.5425,
+      "warmup": false,
+      "build": "candidate"
+    },
+    {
+      "run": 1,
+      "inputIdleMs": 722.7182,
+      "warmup": false,
+      "build": "baseline"
+    },
+    {
+      "run": 2,
+      "inputIdleMs": 886.4394,
+      "warmup": false,
+      "build": "baseline"
+    },
+    {
+      "run": 2,
+      "inputIdleMs": 1238.7958,
+      "warmup": false,
+      "build": "candidate"
+    },
+    {
+      "run": 3,
+      "inputIdleMs": 1235.4481,
+      "warmup": false,
+      "build": "candidate"
+    },
+    {
+      "run": 3,
+      "inputIdleMs": 910.2792,
+      "warmup": false,
+      "build": "baseline"
+    }
+  ],
+  "nonSessionJsonPreserved": true,
+  "startupPreserved": true,
+  "note": "Real app starts with the existing local profile, after one warm-up per build; three measured starts in alternating order. Win32 input-idle readiness includes process launch, not first GPU presentation or cold-boot startup. Session deadlines continue normally."
+}

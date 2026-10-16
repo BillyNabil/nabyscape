@@ -53,6 +53,8 @@ public sealed class ProductivityService : IDisposable
     private readonly Action<Exception> _log;
     private readonly bool _nativeClipboard;
     private readonly string _cache;
+    private readonly ThumbnailCache thumbnails=new();
+    private bool clipboardConfigured;
     private readonly Dictionary<string,string> _imageHashes=new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string,(long Length,DateTime Modified)> _validatedImages=new(StringComparer.OrdinalIgnoreCase);
     private HwndSource? _source;
@@ -131,7 +133,8 @@ public sealed class ProductivityService : IDisposable
         if(_disposed)return;
         if(!enabled)
         {
-            DetachListener(); ClipboardEnabled=false; _paused=false; ClearClips(); Changed?.Invoke(); return;
+            if(clipboardConfigured && !ClipboardEnabled && !_paused && Clips.Count==0)return;
+            DetachListener(); ClipboardEnabled=false; _paused=false; ClearClips();clipboardConfigured=true; Changed?.Invoke(); return;
         }
         if(ClipboardEnabled)return;
         try
@@ -185,11 +188,13 @@ public sealed class ProductivityService : IDisposable
         if(clip==null || !ValidImageFile(clip.ImagePath))return null;
         try
         {
+            string thumbnailKey=clip.Id+"|"+decodeWidth+"|"+File.GetLastWriteTimeUtc(clip.ImagePath).Ticks;
+            if(decodeWidth>0 && thumbnails.Get(thumbnailKey) is BitmapSource cached)return cached;
             using var stream=File.OpenRead(clip.ImagePath);
             if(decodeWidth>0)
             {
                 var thumbnail=new BitmapImage();thumbnail.BeginInit();thumbnail.CacheOption=BitmapCacheOption.OnLoad;
-                thumbnail.DecodePixelWidth=decodeWidth;thumbnail.StreamSource=stream;thumbnail.EndInit();thumbnail.Freeze();return thumbnail;
+                thumbnail.DecodePixelWidth=decodeWidth;thumbnail.StreamSource=stream;thumbnail.EndInit();thumbnail.Freeze();thumbnails.Add(thumbnailKey,thumbnail);return thumbnail;
             }
             var decoder=new PngBitmapDecoder(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
             var bitmap=decoder.Frames[0]; bitmap.Freeze(); return bitmap;
@@ -224,13 +229,13 @@ public sealed class ProductivityService : IDisposable
         if(_disposed)return;
         var clip=Clips.FirstOrDefault(c=>c.Id==id);
         if(clip==null)return;
-        Clips.Remove(clip); DeleteImage(clip.ImagePath); Commit();
+        Clips.Remove(clip);thumbnails.Clear(); DeleteImage(clip.ImagePath); Commit();
     }
     public void ClearClips()
     {
         if(_disposed)return;
         foreach(var clip in Clips)DeleteImage(clip.ImagePath);
-        Clips.Clear(); _imageHashes.Clear(); PurgeOrphanImages(); Commit();
+        Clips.Clear();thumbnails.Clear(); _imageHashes.Clear(); PurgeOrphanImages(); Commit();
     }
 
     internal bool IngestText(string? text)
@@ -334,7 +339,7 @@ public sealed class ProductivityService : IDisposable
         foreach(var clip in Clips.ToArray())
         {
             if(clip.Pinned ? ++pinned<=20 : ++regular<=30)continue;
-            Clips.Remove(clip); DeleteImage(clip.ImagePath);
+            Clips.Remove(clip);thumbnails.Clear(); DeleteImage(clip.ImagePath);
         }
     }
     private void EnsureCache()
@@ -398,7 +403,7 @@ public sealed class ProductivityService : IDisposable
     public void Dispose()
     {
         if(_disposed)return;
-        Save(); DetachListener(); ClipboardEnabled=false; _disposed=true;
+        Save(); DetachListener();thumbnails.Clear(); ClipboardEnabled=false; _disposed=true;
     }
     [DllImport("user32.dll",SetLastError=true)] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool AddClipboardFormatListener(IntPtr hwnd);
     [DllImport("user32.dll",SetLastError=true)] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool RemoveClipboardFormatListener(IntPtr hwnd);

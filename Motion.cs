@@ -103,14 +103,20 @@ internal sealed class SurfaceMotion : IDisposable
         double dt=lastFrame.HasValue?Math.Clamp((time-lastFrame.Value).TotalSeconds,0,.05):1/60d;lastFrame=time;
         if(dt==0)return;
         bool finished=true;
+        foreach(var channel in channels)if(channel.Target is IslandSurface surface)surface.BeginUpdate();
+        try
+        {
         foreach(var c in channels)
         {
+            if(!Motion.Enabled){c.Value=c.Destination;c.Velocity=0;c.Target.SetValue(c.Property,c.Value);continue;}
             var delta=c.Value-c.Destination;var temp=(c.Velocity+omega*delta)*dt;var decay=Math.Exp(-omega*dt);
             c.Value=c.Destination+(delta+temp)*decay;c.Velocity=(c.Velocity-omega*temp)*decay;
             if(Math.Abs(c.Value-c.Destination)<.05 && Math.Abs(c.Velocity)<.5){c.Value=c.Destination;c.Velocity=0;}
             else finished=false;
             c.Target.SetValue(c.Property,c.Value);
         }
+        }
+        finally{foreach(var channel in channels)if(channel.Target is IslandSurface surface)surface.EndUpdate();}
         if(finished){Stop();var callback=completed;completed=null;callback?.Invoke();}
     }
     public void Snap(DependencyObject target,DependencyProperty property,double value)

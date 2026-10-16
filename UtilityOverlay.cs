@@ -142,7 +142,7 @@ public sealed partial class OverlayWindow
             BuildSmartClipboard(toolsContent);
         }
         ApplyHeadingTypography(toolsContent);
-        if(expanded && activePage=="tools"){Dimensions();motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
+        if(expanded && activePage=="tools"){Dimensions(true);motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
     }
     internal ContextMenu? AudioPopup=>audioMenu;
     internal void OpenAudioMenu()

@@ -1,0 +1,8 @@
+{
+  "cycles": 100,
+  "handleGrowth": -7,
+  "managedGrowthBytes": -229632,
+  "remainingSettings": 0,
+  "remainingMiniWindows": 0,
+  "note": "Forced GC only in this isolated retention diagnostic; not in runtime or timing measurements."
+}

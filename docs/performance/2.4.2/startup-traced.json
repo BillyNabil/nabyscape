@@ -1,0 +1,63 @@
+{
+  "nonSessionJsonPreserved": true,
+  "startupPreserved": true,
+  "results": [
+    {
+      "inputIdleMs": 730.3326,
+      "warmup": true,
+      "contentRenderedMs": 1932.9812,
+      "run": 0,
+      "build": "baseline"
+    },
+    {
+      "inputIdleMs": 740.8605,
+      "warmup": true,
+      "contentRenderedMs": 1637.6248,
+      "run": 0,
+      "build": "candidate"
+    },
+    {
+      "inputIdleMs": 709.6781,
+      "warmup": false,
+      "contentRenderedMs": 1703.4828,
+      "run": 1,
+      "build": "candidate"
+    },
+    {
+      "inputIdleMs": 697.3869,
+      "warmup": false,
+      "contentRenderedMs": 1756.9712,
+      "run": 1,
+      "build": "baseline"
+    },
+    {
+      "inputIdleMs": 695.1703,
+      "warmup": false,
+      "contentRenderedMs": 1780.5967,
+      "run": 2,
+      "build": "baseline"
+    },
+    {
+      "inputIdleMs": 703.4576,
+      "warmup": false,
+      "contentRenderedMs": 1697.0845,
+      "run": 2,
+      "build": "candidate"
+    },
+    {
+      "inputIdleMs": 704.8053,
+      "warmup": false,
+      "contentRenderedMs": 1650.5958,
+      "run": 3,
+      "build": "candidate"
+    },
+    {
+      "inputIdleMs": 701.8883,
+      "warmup": false,
+      "contentRenderedMs": 1683.508,
+      "run": 3,
+      "build": "baseline"
+    }
+  ],
+  "note": "Real app starts with the existing local profile, after one warm-up per build; three measured starts in alternating order. Win32 input idle and first WPF ContentRendered are separate milestones; neither measures first GPU presentation or cold-boot startup. Session deadlines continue normally."
+}

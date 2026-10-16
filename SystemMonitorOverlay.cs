@@ -19,8 +19,9 @@ public sealed partial class OverlayWindow
     internal string MonitorTab=>monitorTab;
     internal void SelectMonitorTab(string id)
     {
-        if(!monitorTabs.ContainsKey(id))return;monitorTab=id;RenderSystemMonitor();monitorDetailScroll?.ScrollToTop();
+        if(!monitorTabs.ContainsKey(id))return;if(monitorTab!=id){monitorGeneration++;monitorReadAt=0;monitorPrevious=monitorLatest=null;if(id=="hardware")HardwareMonitor.ResetSampling();}monitorTab=id;RenderSystemMonitor();monitorDetailScroll?.ScrollToTop();
         foreach(var pair in monitorTabs){pair.Value.Background=pair.Key==id?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;pair.Value.Foreground=pair.Key==id?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;}
+        UpdateSystemMonitor();
     }
     private readonly Queue<double?> monitorCpuHistory=new();
     private MonitorSnapshot? monitorPrevious,monitorLatest;
@@ -55,6 +56,7 @@ public sealed partial class OverlayWindow
         tabs.Measure(new Size(Math.Max(1,bodyWidth),double.PositiveInfinity));
         double reserved=(WidgetOn("clock")?80:0)+49+tabs.DesiredSize.Height;
         monitorDetailScroll.Height=Math.Clamp((app.Settings.PanelMaxHeight-app.Settings.Height-32)/app.Settings.PanelScale-reserved,92,240);
+        bodyReflow.Add(()=>{tabs.Measure(new Size(Math.Max(1,bodyWidth),double.PositiveInfinity));double reserved=(WidgetOn("clock")?80:0)+49+tabs.DesiredSize.Height;monitorDetailScroll.Height=Math.Clamp((app.Settings.PanelMaxHeight-app.Settings.Height-32)/app.Settings.PanelScale-reserved,92,240);});
         Grid.SetRow(monitorDetailScroll,1);panel.Children.Add(monitorDetailScroll);SelectMonitorTab(monitorTabs.ContainsKey(monitorTab)?monitorTab:"overview");return panel;
     }
 
@@ -76,10 +78,10 @@ public sealed partial class OverlayWindow
         monitorActive=true;
         if(monitorBusy || (monitorReadAt!=0 && Stopwatch.GetElapsedTime(monitorReadAt).TotalSeconds<2))return;
         monitorBusy=true;MonitorReads++;monitorReadAt=Stopwatch.GetTimestamp();int generation=monitorGeneration;
-        bool network=app.Settings.MonitorNetwork,storage=app.Settings.MonitorStorage,processes=app.Settings.MonitorProcesses;
+        bool network=monitorTab=="network" && app.Settings.MonitorNetwork,storage=monitorTab=="storage" && app.Settings.MonitorStorage,processes=monitorTab=="processes" && app.Settings.MonitorProcesses;bool hardware=monitorTab is "overview" or "hardware",gpuOnly=monitorTab=="overview";
         try
         {
-            var snapshot=await Task.Run(()=>SystemMonitor.Capture(network,storage,processes));
+            var snapshot=await Task.Run(()=>SystemMonitor.Capture(network,storage,processes,processes,hardware,gpuOnly));
             // Diagnostics can hold delivery to exercise navigation during an in-flight read.
             if(DiagnosticRun && MonitorDeliveryGate is Task gate)await Task.WhenAny(gate,Task.Delay(3000));
             // A quick return to Status must not revive a read from the detached body.
@@ -92,41 +94,25 @@ public sealed partial class OverlayWindow
         {
             if(generation==monitorGeneration && SystemMonitorVisible){monitorRows.Children.Clear();monitorRows.Children.Add(UI.Text("System information unavailable. Retrying…",11,UI.Muted));}
         }
-        finally{monitorBusy=false;}
+        finally{monitorBusy=false;if(generation!=monitorGeneration && SystemMonitorVisible)UpdateSystemMonitor();}
     }
 
     private void StopSystemMonitor(){monitorClosed=true;InvalidateSystemMonitor();}
 
     private void RenderSystemMonitor()
     {
-        monitorRows.Children.Clear();var s=monitorLatest;
-        if(s==null){monitorRows.Children.Add(UI.Text("Sampling system information…",11,UI.Muted));return;}
+        BeginMonitorRender();var s=monitorLatest;
+        if(s==null){AddMonitorElement(UI.Text("Sampling system information…",11,UI.Muted));CommitMonitorRender();return;}
         if(monitorTab=="overview")
         {
         double? cpu=SystemMonitor.Cpu(s,monitorPrevious);
         MonitorRow("CPU",cpu.HasValue?$"{cpu:0.#}%":"Sampling…",true);
-        var chart=new Canvas{Height=42,ClipToBounds=true,Margin=new(0,4,0,2)};
-        void DrawHistory()
-        {
-            chart.Children.Clear();double width=chart.ActualWidth;if(width<=0)return;
-            chart.Children.Add(new Line{X1=0,X2=width,Y1=41,Y2=41,Stroke=UI.Brush("#28FFFFFF"),StrokeThickness=1});
-            var values=monitorCpuHistory.ToArray();Polyline? line=null;
-            for(int n=0;n<values.Length;n++)
-            {
-                if(values[n] is not double value){line=null;continue;}
-                if(line==null){line=new Polyline{Stroke=UI.Brush(app.Settings.Accent),StrokeThickness=1.6};chart.Children.Add(line);}
-                line.Points.Add(new Point(width*(30-values.Length+n)/29,40-value*.38));
-            }
-        }
-        chart.SizeChanged+=(_,_)=>DrawHistory();monitorRows.Children.Add(chart);DrawHistory();
-        monitorRows.Children.Add(UI.Text("CPU · 60 second window · 2 second samples",10,UI.Muted));
+        monitorHistory.SetValues(monitorCpuHistory,UI.Brush(app.Settings.Accent));AddMonitorElement(monitorHistory);
+        AddMonitorElement(UI.Text("CPU · 60 second window · 2 second samples",10,UI.Muted));
         if(s.Total is ulong total && s.Available is ulong available)
         {
             MonitorRow("Memory",SystemMonitor.Bytes(total-available)+" / "+SystemMonitor.Bytes(total),true);
-            var track=new Grid{Height=3,Margin=new(0,4,0,8),Background=UI.Brush("#28FFFFFF")};
-            track.ColumnDefinitions.Add(new(){Width=new GridLength(Math.Max(1,total-available),GridUnitType.Star)});
-            track.ColumnDefinitions.Add(new(){Width=new GridLength(Math.Max(1,available),GridUnitType.Star)});
-            track.Children.Add(new Border{Background=UI.Brush(app.Settings.Accent)});monitorRows.Children.Add(track);
+            UpdateMonitorMemory(total,available);AddMonitorElement(monitorMemoryTrack);
         }
         else MonitorRow("Physical memory","Unavailable");
         if(s.Hardware?.Gpus.Any(g=>g.Utilization.HasValue)==true)MonitorRow("GPU",HardwareMonitor.Percent(s.Hardware.Gpus.Where(g=>g.Utilization.HasValue).Max(g=>g.Utilization)),true);
@@ -156,11 +142,11 @@ public sealed partial class OverlayWindow
             MonitorSection("TOP PROCESSES · WORKING SET");
             foreach(var process in s.Processes)MonitorRow(process.Name+" · "+process.Id,SystemMonitor.Bytes(process.WorkingSet));
             if(s.Processes.Count==0)MonitorRow("Processes","Unavailable");
-            var note=UI.Text("Working sets can share memory; they do not sum to total RAM usage.",10,UI.Muted);note.Margin=new(0,6,0,0);monitorRows.Children.Add(note);
+            var note=UI.Text("Working sets can share memory; they do not sum to total RAM usage.",10,UI.Muted);note.Margin=new(0,6,0,0);AddMonitorElement(note);
         }
         if(monitorTab=="hardware")RenderHardware(s.Hardware);
-        ApplyHeadingTypography(monitorRows);
-        if(s.Errors.Length>0){var errors=UI.Text(string.Join(" · ",s.Errors),10,UI.Muted);errors.Margin=new(0,8,0,0);monitorRows.Children.Add(errors);}
+        if(s.Errors.Length>0){var errors=UI.Text(string.Join(" · ",s.Errors),10,UI.Muted);errors.Margin=new(0,8,0,0);AddMonitorElement(errors);}
+        CommitMonitorRender();ApplyHeadingTypography(monitorRows);
     }
 
     private void RenderHardware(MonitorHardware? hardware)
@@ -169,12 +155,12 @@ public sealed partial class OverlayWindow
         MonitorSection("PROCESSOR");
         foreach(var cpu in hardware.Cpus)
         {
-            var model=UI.Heading(cpu.Name.Length>0?cpu.Name:"Processor unavailable",12);model.TextWrapping=TextWrapping.NoWrap;model.TextTrimming=TextTrimming.CharacterEllipsis;model.ToolTip=cpu.Name;monitorRows.Children.Add(model);
+            var model=UI.Heading(cpu.Name.Length>0?cpu.Name:"Processor unavailable",12);model.TextWrapping=TextWrapping.NoWrap;model.TextTrimming=TextTrimming.CharacterEllipsis;model.ToolTip=cpu.Name;AddMonitorElement(model);
             MonitorRow("Cores / threads",(cpu.Cores?.ToString()??"—")+" / "+(cpu.Threads?.ToString()??"—")+(cpu.MaxClock is double mhz && mhz>0?$" · {mhz:0} MHz":""));
         }
         if(hardware.Cpus.Count==0)MonitorRow("CPU details","Unavailable");
         MonitorSection("GRAPHICS");
-        foreach(string model in hardware.GpuModels){var text=UI.Heading(model,12);text.TextWrapping=TextWrapping.NoWrap;text.TextTrimming=TextTrimming.CharacterEllipsis;text.ToolTip=model;text.Margin=new(0,0,0,4);monitorRows.Children.Add(text);}
+        foreach(string model in hardware.GpuModels){var text=UI.Heading(model,12);text.TextWrapping=TextWrapping.NoWrap;text.TextTrimming=TextTrimming.CharacterEllipsis;text.ToolTip=model;text.Margin=new(0,0,0,4);AddMonitorElement(text);}
         if(hardware.GpuModels.Count==0)MonitorRow("GPU model","Unavailable");
         for(int i=0;i<hardware.Gpus.Count;i++)
         {
@@ -193,15 +179,16 @@ public sealed partial class OverlayWindow
         technical.Children.Add(UI.Text("Utilization uses the busiest GPU engine. Counter IDs do not identify the model above.",11,UI.Muted));
         technical.Children.Add(UI.Text(hardware.Sensors.Count>0?"Sensors: "+string.Join(" / ",hardware.Sensors.Select(s=>s.Provider).Distinct()):"Temperature and fan sensors need an already running LibreHardwareMonitor or OpenHardwareMonitor WMI provider.",11,UI.Muted));
         if(hardware.Status!=null)technical.Children.Add(UI.Text(hardware.Status,10,UI.Muted));
-        var more=new Expander{Header="Sensor availability & technical details",Foreground=UI.Muted,FontSize=11,Margin=new(0,14,0,0),Content=technical,IsExpanded=hardwareDetailsOpen};more.Expanded+=(_,_)=>hardwareDetailsOpen=true;more.Collapsed+=(_,_)=>hardwareDetailsOpen=false;monitorRows.Children.Add(more);
+        if(monitorTechnical==null){monitorTechnical=new Expander{Header="Sensor availability & technical details",Foreground=UI.Muted,FontSize=11,Margin=new(0,14,0,0)};monitorTechnical.Expanded+=(_,_)=>hardwareDetailsOpen=true;monitorTechnical.Collapsed+=(_,_)=>hardwareDetailsOpen=false;}
+        monitorTechnical.Content=technical;monitorTechnical.IsExpanded=hardwareDetailsOpen;AddMonitorElement(monitorTechnical);
     }
     private bool hardwareDetailsOpen;
+    private Expander? monitorTechnical;
 
-    private void MonitorSection(string title){var label=UI.Label(title);label.Margin=new(0,15,0,7);monitorRows.Children.Add(label);}
+    private void MonitorSection(string title){var label=UI.Label(title);label.Margin=new(0,15,0,7);AddMonitorElement(label);}
     private void MonitorRow(string label,string value,bool prominent=false)
     {
-        var row=new Grid{Margin=new(0,3,0,3)};row.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
-        var name=UI.Text(label,11,UI.Muted);name.TextWrapping=TextWrapping.NoWrap;name.TextTrimming=TextTrimming.CharacterEllipsis;name.ToolTip=label;name.Margin=new(0,0,8,0);row.Children.Add(name);
-        var text=UI.Text(value,prominent?15:11);text.TextWrapping=TextWrapping.NoWrap;text.TextTrimming=TextTrimming.CharacterEllipsis;text.MaxWidth=Math.Max(90,bodyWidth*.61);text.ToolTip=value;Grid.SetColumn(text,1);row.Children.Add(text);monitorRows.Children.Add(row);
+        var row=GetMonitorRow();var name=(TextBlock)row.Children[0];var text=(TextBlock)row.Children[1];
+        Motion.Text(name,label);name.ToolTip=label;Motion.Text(text,value);text.FontSize=prominent?15:11;text.MaxWidth=Math.Max(90,bodyWidth*.61);text.ToolTip=value;AddMonitorElement(row);
     }
 }

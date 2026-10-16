@@ -1,0 +1,6 @@
+{
+  "baselineMeasuredSha256": "358280b9589c19d903793e32803484a96da1edc04f5fd6f95c680a02802b17bc",
+  "fullCandidateMeasuredSha256": "99c8c2a309e7a782b122d172db76e12205a49d2a0212df9e02d64946b92b5783",
+  "shippingSha256": "e501eadc56c23e54fafe7ab4ff82c093ee4174d8c1fe58b9585cd90928797f84",
+  "releaseFollowupNote": "The follow-up measured the final adaptive-CPU guard. Optional one-shot startup trace instrumentation was subsequently added; it is inactive without --startup-trace. Shipping logic/runtime checks and paired real-profile startup probes passed after that instrumentation build."
+}

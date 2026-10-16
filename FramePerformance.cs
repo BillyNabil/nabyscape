@@ -31,6 +31,7 @@ public sealed partial class OverlayWindow
 {
     private uint refreshHz=60;
     private readonly FramePacer livePacer=new();
+    internal bool NeedsAdaptiveCpuSample=>IsVisible && !IsTucked && app.Settings.Performance=="Auto" && (liveRendering || motion.Active);
     private void ConfigurePerformance()
     {
         if(refreshHz<2)refreshHz=60;

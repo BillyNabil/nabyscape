@@ -8,11 +8,18 @@ namespace NabyScape;
 
 internal static class UI
 {
-    public static SolidColorBrush Brush(string color)=>(SolidColorBrush)new BrushConverter().ConvertFromString(color)!;
+    private static readonly System.Collections.Generic.Dictionary<string,SolidColorBrush> brushes=new(StringComparer.OrdinalIgnoreCase);
+    private static readonly System.Collections.Generic.Queue<string> brushOrder=new();
+    public static SolidColorBrush Brush(string color)
+    {
+        lock(brushes){if(brushes.TryGetValue(color,out var cached))return cached;var brush=(SolidColorBrush)new BrushConverter().ConvertFromString(color)!;brush.Freeze();if(brushes.Count>=128)brushes.Remove(brushOrder.Dequeue());brushes.Add(color,brush);brushOrder.Enqueue(color);return brush;}
+    }
+    internal static void ResourceBrush(string key,Brush brush)
+    {if(Application.Current==null)return;var old=Application.Current.Resources[key];if(ReferenceEquals(old,brush) || old is SolidColorBrush a && brush is SolidColorBrush b && a.Color==b.Color)return;Application.Current.Resources[key]=brush;}
     public static Brush ContrastText(string color)
     {var c=Brush(color).Color;return c.R*.2126+c.G*.7152+c.B*.0722>150?Brush("#111317"):Brushes.White;}
     public static void ApplyControlTheme(Settings settings)
-    {if(Application.Current==null)return;foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})Application.Current.Resources[entry.Item1]=Brush(entry.Item2);Application.Current.Resources["ControlText"]=ContrastText(settings.ControlFill);Application.Current.Resources["SelectionText"]=ContrastText(settings.SelectionFill); }
+    {if(Application.Current==null)return;foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})ResourceBrush(entry.Item1,Brush(entry.Item2));ResourceBrush("ControlText",ContrastText(settings.ControlFill));ResourceBrush("SelectionText",ContrastText(settings.SelectionFill)); }
     public static readonly Brush Muted=Brush("#A1A1A6");
     public static TextBlock Text(string text,double size=13,Brush? color=null)
         =>new(){Text=text,FontSize=size,Foreground=color ?? Brushes.White,VerticalAlignment=VerticalAlignment.Center,TextWrapping=TextWrapping.Wrap};
