@@ -33,7 +33,7 @@ public sealed partial class SettingsWindow : Window
         Resources[typeof(CheckBox)]=FindResource("SettingsSwitch");
         InitializeSettingsBounds();
         var root=new Grid();root.RowDefinitions.Add(new(){Height=GridLength.Auto});root.RowDefinitions.Add(new());root.ColumnDefinitions.Add(new(){Width=new GridLength(168)});root.ColumnDefinitions.Add(new());
-        var navigation=new StackPanel{Orientation=Orientation.Vertical,Margin=new(14,26,12,18)};var brand=UI.Text("NabyScape",21);brand.FontWeight=FontWeights.SemiBold;brand.Margin=new(12,0,0,28);navigation.Children.Add(brand);
+        var navigation=new StackPanel{Orientation=Orientation.Vertical,Margin=new(14,26,12,18)};var brand=UI.Text("NabyScape",20);brand.TextWrapping=TextWrapping.NoWrap;brand.FontWeight=FontWeights.SemiBold;brand.Margin=new(12,0,0,28);navigation.Children.Add(brand);
         foreach(var name in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"}){var button=UI.Button(name,()=>Navigate(name));button.HorizontalContentAlignment=HorizontalAlignment.Left;button.Padding=new(12,9,12,9);button.Margin=new(0,2,0,2);button.Tag=new CornerRadius(8);button.FontSize=12;navigationButtons[name]=button;navigation.Children.Add(button);}
         var navigationScroll=UI.Scroll(navigation);UI.Named(navigationScroll,"Settings category viewport");
         var navBorder=new Border{Background=UI.Brush("#17181B"),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,0,1,0),Child=navigationScroll};root.Children.Add(navBorder);
@@ -75,8 +75,9 @@ public sealed partial class SettingsWindow : Window
         page.MaxWidth=660;page.HorizontalAlignment=HorizontalAlignment.Stretch;
         var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);
         saveTimer.Tick+=(_,_)=>{saveTimer.Stop();try{applyingSettings=true;app.ChangeSettings();status.Text="Saved on this device";}catch(Exception ex){status.Text="Could not save changes. Try again.";app.Store.Log(ex);}finally{applyingSettings=false;}};
+        app.Updates.Changed+=UpdateControls;
         app.SettingsChanged+=SettingsApplied;app.Updated+=UpdateFrameStatus;
-        Closed+=(_,_)=>{if(saveTimer.IsEnabled){saveTimer.Stop();app.ChangeSettings();}app.SettingsChanged-=SettingsApplied;app.Updated-=UpdateFrameStatus;};Navigate("Appearance");RefreshPreview();
+        Closed+=(_,_)=>{if(saveTimer.IsEnabled){saveTimer.Stop();app.ChangeSettings();}app.Updates.Changed-=UpdateControls;app.SettingsChanged-=SettingsApplied;app.Updated-=UpdateFrameStatus;};Navigate("Appearance");RefreshPreview();
     }
     private void Save() {previewRevision++;InvalidateExamples(System.Windows.Input.Keyboard.FocusedElement as DependencyObject??System.Windows.Input.Mouse.DirectlyOver as DependencyObject);RefreshPreview();status.Text="Saving changes…";saveTimer.Stop();saveTimer.Start();}
     private void SettingsApplied(){if(applyingSettings)return;previewRevision++;InvalidateExamples(null);RefreshPreview();}
@@ -232,6 +233,7 @@ public sealed partial class SettingsWindow : Window
     private void General()
     {
         var s=app.Settings;
+        UpdatesSection();
         var startup=new CheckBox{Content="Start automatically when signing in to Windows",IsChecked=s.AutoStart};
         UI.Named(startup,"Start automatically when signing in to Windows");        startup.Click+=(_,_)=>
         {

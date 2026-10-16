@@ -19,6 +19,7 @@ public sealed class App : Application
     private OverlayWindow? overlay;
     private bool quitting;
     public Store Store { get; private set; }=null!;
+    internal OfficialUpdates Updates {get;private set;}=null!;
     public Settings Settings { get; private set; }=null!;
     public SessionState Session { get; private set; }=null!;
     public MediaService Media { get; private set; }=null!;
@@ -46,6 +47,7 @@ public sealed class App : Application
         var culture=System.Globalization.CultureInfo.GetCultureInfo("en-US");
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture=culture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture=culture;
+        if(Array.Exists(args,a=>a=="--update-handoff")){Environment.ExitCode=UpdateHandoff.Run();return;}
         if(WindowFixture.TryRun(args))return;
         if(Array.Exists(args,a=>a=="--exit")) {try {using var signal=EventWaitHandle.OpenExisting("Local\\LumaIsland.Exit");signal.Set();}catch(WaitHandleCannotBeOpenedException){}return;}
         if(Array.Exists(args,a=>a=="--self-test")) { SelfTests.Run(args);return; }
@@ -66,6 +68,7 @@ public sealed class App : Application
         var diagnosticIndex=Array.IndexOf(e.Args,"--diagnostics");
         var diagnosticPath=diagnosticIndex>=0 && diagnosticIndex+1<e.Args.Length ? e.Args[diagnosticIndex+1] : null;
         Store=new(diagnosticPath==null ? null : Path.Combine(diagnosticPath,"test-profile"));Settings=diagnosticPath==null?Store.Load<Settings>("settings"):new Settings();Settings.Normalize();Settings.AutoStart=StartupService.Enabled();
+        Updates=new(Store,Array.Exists(e.Args,a=>a=="--stage3-only")?new Stage3Diagnostics.Network():null);
         UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);
         Motion.Configure(Settings);
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();
@@ -88,7 +91,7 @@ public sealed class App : Application
         Media.Changed+=()=>PublishUpdate(RuntimeChange.Media);
         Audio.Changed+=()=>PublishUpdate(RuntimeChange.Audio);
         Productivity.Changed+=()=>PublishUpdate(RuntimeChange.Productivity);Calendar.Changed+=()=>PublishUpdate(RuntimeChange.Calendar);
-        if(Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only" or "--stage1-only" or "--stage2-only") || diagnosticPath!=null && Array.Exists(e.Args,a=>a=="--showcase"))Media.DiagnosticFixture=true;else _=Media.Initialize();
+        if(Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only" or "--stage1-only" or "--stage2-only" or "--stage3-only") || diagnosticPath!=null && Array.Exists(e.Args,a=>a=="--showcase"))Media.DiagnosticFixture=true;else _=Media.Initialize();
         Audio.Read();Usage=Native.SystemUsage();
         int counter=0;
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};
@@ -111,6 +114,7 @@ public sealed class App : Application
         if(Store.Warning!=null) Notify("Settings recovered",Store.Warning);
         if(!Array.Exists(e.Args,a=>a=="--background")) Notify("NabyScape is ready", "Click the island for your widgets. Right-click the tray icon for settings.");
         Microsoft.Win32.SystemEvents.PowerModeChanged+=PowerChanged;
+        if(diagnosticPath==null) _=Updates.Check(false,Settings.AutoCheckUpdates);
         if(diagnosticPath!=null) _=Diagnostics.Run(this,overlay,diagnosticPath);
         else if(Array.Exists(e.Args,a=>a=="--settings"))ShowSettings();
     }
@@ -158,7 +162,7 @@ public sealed class App : Application
     { quitting=true;Shutdown(); }
     protected override void OnExit(ExitEventArgs e)
     {
-        tick?.Stop();
+        tick?.Stop();Updates?.Dispose();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();
         Previews?.Dispose();Activities?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();

@@ -9,10 +9,11 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
+    internal static readonly string[] Sections={"Shape","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
-    internal SettingsScene(string kind,Settings settings){this.kind=kind;s=settings;ClipToBounds=true;IsHitTestVisible=false;}
+    internal SettingsScene(string kind,Settings settings){if(!Sections.Contains(kind))throw new ArgumentException("Unknown Settings example: "+kind);this.kind=kind;s=settings;ClipToBounds=true;IsHitTestVisible=false;}
     internal sealed record WidgetTile(Rect Bounds,FormattedText Label);
     internal static WidgetTile[] WidgetTiles(Settings settings,double pixelsPerDip=1)
     {
@@ -49,7 +50,7 @@ internal sealed class SettingsScene : FrameworkElement
         void Wave(double x,double y){for(int i=0;i<25;i++){double h=3+(i*13%19);Box(x+i*3.6,y-h/2,1.5,h,white,1);}}
         void Cover(double x,double y,double size)
         {
-            if(App.Current.Media.Artwork is ImageSource artwork){dc.PushClip(new RectangleGeometry(new Rect(x,y,size,size),5,5));dc.DrawImage(artwork,new Rect(x,y,size,size));dc.Pop();}
+            if(System.Windows.Application.Current is App app && app.Media?.Artwork is ImageSource artwork){dc.PushClip(new RectangleGeometry(new Rect(x,y,size,size),5,5));dc.DrawImage(artwork,new Rect(x,y,size,size));dc.Pop();}
             else {Box(x,y,size,size,UI.Brush("#737D8C"),5);dc.DrawEllipse(null,new Pen(white,1),new Point(x+size/2,y+size/2),size*.27,size*.27);}
         }
         void Note(string message)=>Text(message,14,99,11,false,muted);
@@ -150,6 +151,10 @@ internal sealed class SettingsScene : FrameworkElement
                 Keys("Open app",22,30,106);Line(139,45,159,45);Keys("Start Focus",170,30,106);Line(287,45,307,45);Keys("Keep awake",316,30,90);Note(s.ActivitiesEnabled?"Example routine · starts only when you press Start":"Activities hidden; saved routines are kept");break;
             case "Layout profile":
                 Text("Appearance + layout",24,22,16,true);Text("Content order + gestures",24,50,12);Keys("Export / Import",250,27,143);Note("Excludes notes, clipboard items, app targets and startup");break;
+            case "Updates":
+                Text("Installed "+OfficialUpdates.InstalledVersion,22,15,13,true);Text("Example: newer stable",225,15,12,true);Bar(24,55,365,.6);Text("Check > download 60% > verify > install",24,70,12);Note("Automatic checks "+(s.AutoCheckUpdates?"on":"off")+" - no automatic installation");break;
+            case "Reset preferences":
+                Keys("Your preferences",20,24,128);Line(158,39,196,39);Keys("Backup saved",208,24,120);Text("Reset selected category",22,71,12,true);Note("Notes, Tasks, startup and clipboard capture stay intact");break;
             case "Behavior":
                 Text("Windows sign-in",24,23,15,true);Line(163,41,217,41);Text("NabyScape",240,23,15,true);Toggle(244,60,s.AutoStart);Text(s.AutoStart?"Starts automatically":"Start manually",24,68,12,false,muted);break;
             case "Local storage":

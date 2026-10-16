@@ -9,6 +9,15 @@ internal static class SettingsUxTests
     internal static void Run(Action<string,Action> test)
     {
         void Assert(bool value){if(!value)throw new Exception("Settings UX invariant failed");}
+        test("Every registered Settings example is unique and renders without a running app",()=>
+        {
+            Assert(SettingsScene.Sections.Contains("Updates") && SettingsScene.Sections.Contains("Reset preferences") && SettingsScene.Sections.Distinct().Count()==SettingsScene.Sections.Length);
+            foreach(string kind in SettingsScene.Sections)
+            {
+                var scene=new SettingsScene(kind,new Settings());scene.Measure(new System.Windows.Size(420,200));scene.Arrange(new System.Windows.Rect(0,0,420,200));scene.UpdateLayout();
+                var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(420,200,96,96,PixelFormats.Pbgra32);bitmap.Render(scene);
+            }
+        });
         test("Settings bounds fit small, detached and scaled work areas",()=>
         {
             foreach(double scale in new[]{1d,1.5,2})

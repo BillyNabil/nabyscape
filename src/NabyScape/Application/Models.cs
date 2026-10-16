@@ -99,6 +99,7 @@ public sealed class Settings
     public bool VolumeFeedback { get; set; }=true;
     public bool BrightnessFeedback { get; set; }=true;
     public List<string> RecentColors { get; set; }=new();
+    public bool AutoCheckUpdates { get; set; }=true;
     public bool AutoStart { get; set; }
     public int FocusMinutes { get; set; } = 25;
     public int BreakMinutes { get; set; } = 5;

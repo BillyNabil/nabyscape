@@ -17,7 +17,7 @@ internal static class PreferenceReset
         ["Audio"]="ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
         ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
-        ["Application"]=Array.Empty<string>()
+        ["Application"]=new[]{"AutoCheckUpdates"}
     };
     internal static string Summary(string? category)
     {
@@ -50,7 +50,7 @@ internal static class PreferenceReset
         string file=Path.Combine(store.DirectoryPath,"preference-backup.json");
         using var json=JsonDocument.Parse(File.ReadAllText(file));
         if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException("The preference backup is invalid.");
-        foreach(string key in Keys(null))if(!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null)throw new InvalidDataException("The preference backup is incomplete: "+key);
+        foreach(string key in Keys(null))if(key!=nameof(Settings.AutoCheckUpdates) && (!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null))throw new InvalidDataException("The preference backup is incomplete: "+key);
         var restored=json.RootElement.Deserialize<Settings>()??throw new InvalidDataException("The preference backup is empty.");
         var candidate=Clone(target);
         foreach(string key in Keys(null))Copy(restored,candidate,key);

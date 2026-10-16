@@ -5,6 +5,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+& (Join-Path $PSScriptRoot 'tools\Test-SettingsScenes.ps1')
 $islandProject = Join-Path $PSScriptRoot 'src\NabyScape\NabyScape.csproj'
 $outputPath = [IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $outputPath | Out-Null

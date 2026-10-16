@@ -189,6 +189,8 @@ cd nabyscape
 
 The build publishes the app and installer, includes third-party notices, and runs logic checks. Use `-RunDiagnostics` on an interactive Windows desktop for rendered UI checks. CI builds pushes and pull requests; **[workflow artifacts](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml)** provide development builds.
 
+**[Official updates and release workflow](docs/RELEASING.md)** - updater behavior, draft packaging, WinGet manifests and signing assessment.
+
 **[Developer and verification guide](docs/guide.md#build-from-source)** · **[Recreate the showcase](docs/showcase.md#reproduce-the-captures)** · **[Roadmap](docs/roadmap.md)**
 
 <details>
