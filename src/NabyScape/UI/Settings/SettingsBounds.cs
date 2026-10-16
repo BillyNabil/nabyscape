@@ -9,7 +9,9 @@ namespace NabyScape;
 public sealed partial class SettingsWindow
 {
     private IntPtr settingsHandle;
-    private bool fittingBounds,boundsQueued;
+    private bool fittingBounds,boundsQueued,interactiveBounds,boundsRecoveryQueued;
+    private HwndSource? settingsSource;
+    internal static bool ShouldFitSettingsBounds(bool interactive,bool recovery)=>!interactive || recovery;
     internal static Rect FitWorkingArea(Rect bounds,Rect area,double scale)
     {
         double width=Math.Min(bounds.Width,area.Width),height=Math.Min(bounds.Height,area.Height);
@@ -22,19 +24,32 @@ public sealed partial class SettingsWindow
         SourceInitialized+=(_,_)=>
         {
             Native.DarkTitleBar(this);settingsHandle=new WindowInteropHelper(this).Handle;
+            settingsSource=HwndSource.FromHwnd(settingsHandle);settingsSource?.AddHook(SettingsWindowMessage);
             FitSettingsBounds(openingScreen,true);
         };
         LocationChanged+=(_,_)=>QueueSettingsBounds();
         SizeChanged+=(_,_)=>QueueSettingsBounds();
-        DpiChanged+=(_,_)=>QueueSettingsBounds();
+        DpiChanged+=(_,_)=>QueueSettingsBounds(true);
         Microsoft.Win32.SystemEvents.DisplaySettingsChanged+=SettingsDisplaysChanged;
-        Closed+=(_,_)=>Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=SettingsDisplaysChanged;
+        Closed+=(_,_)=>{Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=SettingsDisplaysChanged;settingsSource?.RemoveHook(SettingsWindowMessage);settingsSource=null;settingsHandle=IntPtr.Zero;};
     }
-    private void SettingsDisplaysChanged(object? sender,EventArgs e)=>Dispatcher.BeginInvoke(QueueSettingsBounds);
-    private void QueueSettingsBounds()
+    private IntPtr SettingsWindowMessage(IntPtr hwnd,int message,IntPtr wparam,IntPtr lparam,ref bool handled)
     {
-        if(settingsHandle==IntPtr.Zero || fittingBounds || boundsQueued)return;boundsQueued=true;
-        Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,()=>{boundsQueued=false;if(IsVisible)FitSettingsBounds(Forms.Screen.FromHandle(settingsHandle),false);});
+        if(message==0x0231)interactiveBounds=true; // WM_ENTERSIZEMOVE
+        else if(message==0x0232){interactiveBounds=false;QueueSettingsBounds();} // WM_EXITSIZEMOVE
+        return IntPtr.Zero;
+    }
+    private void SettingsDisplaysChanged(object? sender,EventArgs e)=>Dispatcher.BeginInvoke(()=>QueueSettingsBounds(true));
+    private void QueueSettingsBounds(bool recovery=false)
+    {
+        if(settingsHandle==IntPtr.Zero || fittingBounds)return;
+        boundsRecoveryQueued|=recovery;
+        if(boundsQueued)return;boundsQueued=true;
+        Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle,()=>
+        {
+            boundsQueued=false;bool recover=boundsRecoveryQueued;boundsRecoveryQueued=false;
+            if(settingsHandle!=IntPtr.Zero && IsVisible && ShouldFitSettingsBounds(interactiveBounds,recover))FitSettingsBounds(Forms.Screen.FromHandle(settingsHandle),false);
+        });
     }
     private void FitSettingsBounds(Forms.Screen screen,bool initial)
     {

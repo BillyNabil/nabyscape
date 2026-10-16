@@ -18,6 +18,23 @@ internal static class SettingsUxTests
                 Assert(area.Contains(result) && result.Width>=Math.Min(480*scale,area.Width) && result.Height>=Math.Min(300*scale,area.Height));
             }
         });
+        test("Interactive Settings movement crosses adjacent displays before containment",()=>
+        {
+            var left=new System.Windows.Rect(0,0,1920,1080);var right=new System.Windows.Rect(1920,0,1920,1080);
+            foreach(int x in new[]{1000,1300,1500,1700,1900,2100})
+            {
+                var moving=new System.Windows.Rect(x,100,900,700);
+                var area=x+moving.Width/2<1920?left:right;
+                var result=SettingsWindow.ShouldFitSettingsBounds(true,false)?SettingsWindow.FitWorkingArea(moving,area,1):moving;
+                Assert(result==moving);
+            }
+            var destination=new System.Windows.Rect(2100,100,900,700);
+            Assert(SettingsWindow.ShouldFitSettingsBounds(false,false) && SettingsWindow.FitWorkingArea(destination,right,1)==destination);
+            var detached=new System.Windows.Rect(2600,-100,900,700);
+            Assert(SettingsWindow.ShouldFitSettingsBounds(true,true) && left.Contains(SettingsWindow.FitWorkingArea(detached,left,1)));
+            var scaled=new System.Windows.Rect(1700,900,1100,780);
+            Assert(right.Contains(SettingsWindow.FitWorkingArea(scaled,right,1.5)));
+        });
         test("Widget labels and caption have separate measured tile space",()=>
         {
             var settings=new Settings();foreach(var widget in settings.Widgets)widget.Enabled=true;

@@ -69,6 +69,43 @@ internal static class Stage1Diagnostics
         foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
         {chooser.SelectedItem=category;settings.UpdateLayout();Check("compact category is reachable: "+category,form.ExtentHeight>0 && form.ActualWidth>=300);}
         Capture(settings,"settings-480x300");
+        settings.Width=900;settings.Height=300;await Task.Delay(100);settings.UpdateLayout();
+        var navigation=Diagnostics.Descendants(settings).OfType<ScrollViewer>().Single(c=>AutomationProperties.GetName(c)=="Settings category viewport");
+        Check("900x300 sidebar has a scrolling category viewport",!chooser.IsVisible && navigation.IsVisible && navigation.ScrollableHeight>0);
+        foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
+        {
+            var button=Diagnostics.Descendants(navigation).OfType<Button>().Single(b=>b.Content?.ToString()==category);
+            button.BringIntoView();await Task.Delay(30);settings.UpdateLayout();
+            var position=button.TransformToAncestor(navigation).Transform(new Point());
+            bool reachable=position.Y>=0 && position.Y+button.ActualHeight<=navigation.ActualHeight;
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));settings.UpdateLayout();
+            Check("short sidebar category is reachable: "+category,reachable && form.ExtentHeight>0);
+        }
+        Capture(settings,"settings-900x300");
+        // Exercise the registered hook handler and queued LocationChanged containment on an isolated HWND.
+        var handle=new System.Windows.Interop.WindowInteropHelper(settings).Handle;
+        var message=typeof(SettingsWindow).GetMethod("SettingsWindowMessage",BindingFlags.NonPublic|BindingFlags.Instance)!;
+        void MoveMessage(int value)=>message.Invoke(settings,new object[]{handle,value,IntPtr.Zero,IntPtr.Zero,false});
+        var screen=System.Windows.Forms.Screen.FromHandle(handle);var work=screen.WorkingArea;
+        Native.GetWindowRect(handle,out var beforeMove);
+        MoveMessage(0x0231);
+        bool retained=true;
+        for(int step=1;step<=4;step++)
+        {
+            int x=work.Right-100+step*10;
+            Native.SetWindowPos(handle,IntPtr.Zero,x,work.Top+20,0,0,0x15);await Task.Delay(50);
+            Native.GetWindowRect(handle,out var moving);retained&=moving.Left==x;
+        }
+        Check("interactive HWND positions are not clamped before move end",retained);
+        MoveMessage(0x0232);await Task.Delay(100);Native.GetWindowRect(handle,out var afterMove);
+        var destination=System.Windows.Forms.Screen.FromHandle(handle).WorkingArea;
+        Check("move end restores working-area containment",destination.Contains(System.Drawing.Rectangle.FromLTRB(afterMove.Left,afterMove.Top,afterMove.Right,afterMove.Bottom)));
+        MoveMessage(0x0231);Native.SetWindowPos(handle,IntPtr.Zero,work.Right+10000,work.Bottom+10000,0,0,0x15);
+        typeof(SettingsWindow).GetMethod("SettingsDisplaysChanged",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(settings,new object?[]{null,EventArgs.Empty});
+        await Task.Delay(100);Native.GetWindowRect(handle,out var recovered);
+        var recoveredArea=System.Windows.Forms.Screen.FromHandle(handle).WorkingArea;
+        Check("display recovery contains HWND even during interactive move",recoveredArea.Contains(System.Drawing.Rectangle.FromLTRB(recovered.Left,recovered.Top,recovered.Right,recovered.Bottom)));
+        MoveMessage(0x0232);Native.SetWindowPos(handle,IntPtr.Zero,beforeMove.Left,beforeMove.Top,0,0,0x15);await Task.Delay(100);
         settings.Width=900;settings.Height=680;await Task.Delay(100);Check("narrow preview can be expanded",!preview.IsExpanded);preview.IsExpanded=true;settings.UpdateLayout();Check("expanded narrow preview leaves scrolling form",preview.IsExpanded && form.ActualHeight>=80);Capture(settings,"settings-narrow-preview");
         settings.Width=1100;settings.Height=780;await Task.Delay(100);settings.UpdateLayout();
         Check("wide Settings displays sidebar, form and preview",!chooser.IsVisible && preview.IsExpanded && form.ActualWidth>=300);Capture(settings,"settings-wide");
