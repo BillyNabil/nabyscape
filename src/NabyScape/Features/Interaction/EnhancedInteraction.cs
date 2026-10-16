@@ -35,14 +35,15 @@ internal sealed class MarqueeLabel : Border
 public sealed partial class OverlayWindow
 {
     private readonly DispatcherTimer detailDelay=new(){Interval=TimeSpan.FromMilliseconds(550)},activityDismiss=new(){Interval=TimeSpan.FromSeconds(3.8)};
-    private bool peekDetailed,automaticPreview,hotkeyRegistered,visibilityHotkeyRegistered;
+    private bool peekDetailed,automaticPreview,hotkeyRegistered,visibilityHotkeyRegistered,tuckHotkeyRegistered;
     private string previewKind="",activityTitle="",activityDetail="",lastActivityTrack="";
     private DateTimeOffset? warnedTimer,warnedFocus;
     private readonly Dictionary<Image,Image> previousArtwork=new();
     private readonly Dictionary<TextBlock,TextBlock> previousText=new();
     private readonly Dictionary<TextBlock,MarqueeLabel> marqueeLabels=new();
     private ImageSource? tintedArtwork;
-    private const int HotkeyId=0x4C55,VisibilityHotkeyId=0x4C56;
+    private const int HotkeyId=0x4C55,VisibilityHotkeyId=0x4C56,TuckHotkeyId=0x4C57;
+    internal string TuckHotkeyError {get;private set;}="";
     internal string VisibilityHotkeyError {get;private set;}="";
     internal bool HasVisibilityHotkey=>visibilityHotkeyRegistered;
     internal string HotkeyError {get;private set;}="";
@@ -73,15 +74,17 @@ public sealed partial class OverlayWindow
         if(hwnd==IntPtr.Zero)return;
         if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);
         if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);
-        hotkeyRegistered=visibilityHotkeyRegistered=false;HotkeyError=VisibilityHotkeyError="";
+        if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);
+        hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;HotkeyError=HotkeyPolicy.Conflict(app.Settings,"Panel");VisibilityHotkeyError=HotkeyPolicy.Conflict(app.Settings,"Visibility");TuckHotkeyError=HotkeyPolicy.Conflict(app.Settings,"Tuck");
         static uint Modifiers(string value)=>value switch{"Ctrl+Shift"=>6u,"Alt+Shift"=>5u,_=>3u};
-        if(app.Settings.HotkeyEnabled){hotkeyRegistered=RegisterHotKey(hwnd,HotkeyId,Modifiers(app.Settings.HotkeyModifiers)|0x4000,(uint)app.Settings.HotkeyKey[0]);if(!hotkeyRegistered)HotkeyError="Open / close hotkey is in use. Choose another combination in Settings.";}
-        if(app.Settings.VisibilityHotkeyEnabled){visibilityHotkeyRegistered=RegisterHotKey(hwnd,VisibilityHotkeyId,Modifiers(app.Settings.VisibilityHotkeyModifiers)|0x4000,(uint)app.Settings.VisibilityHotkeyKey[0]);if(!visibilityHotkeyRegistered)VisibilityHotkeyError="Hide / show hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.HotkeyEnabled && HotkeyError.Length==0){hotkeyRegistered=RegisterHotKey(hwnd,HotkeyId,Modifiers(app.Settings.HotkeyModifiers)|0x4000,(uint)app.Settings.HotkeyKey[0]);if(!hotkeyRegistered)HotkeyError="Open / close hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.VisibilityHotkeyEnabled && VisibilityHotkeyError.Length==0){visibilityHotkeyRegistered=RegisterHotKey(hwnd,VisibilityHotkeyId,Modifiers(app.Settings.VisibilityHotkeyModifiers)|0x4000,(uint)app.Settings.VisibilityHotkeyKey[0]);if(!visibilityHotkeyRegistered)VisibilityHotkeyError="Hide / show hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.TuckHotkeyEnabled && TuckHotkeyError.Length==0){tuckHotkeyRegistered=RegisterHotKey(hwnd,TuckHotkeyId,Modifiers(app.Settings.TuckHotkeyModifiers)|0x4000,(uint)app.Settings.TuckHotkeyKey[0]);if(!tuckHotkeyRegistered)TuckHotkeyError="Tuck hotkey is in use. Choose another combination in Settings.";}
     }
 
     private void AutomaticActivity(string kind,string heading,string detail)
     {
-        if(!app.Settings.SmartActivities || expanded || userHidden || environmentHidden || !IsVisible || (peeking && !automaticPreview))return;
+        if(!app.Settings.SmartActivities || expanded || userHidden || TuckRequested || !IsVisible || (peeking && !automaticPreview))return;
         if(!WidgetOn(kind))return;
         if(!DiagnosticRun && app.Settings.HideFullscreen && Native.FullscreenOn(Native.ChooseScreen(app.Settings),hwnd))return;
         previewKind=kind;activityTitle=heading;activityDetail=detail;automaticPreview=true;

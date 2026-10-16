@@ -4,6 +4,9 @@ public sealed partial class SettingsWindow
 {
     private static readonly Dictionary<string,string> SettingDescriptions=new()
     {
+        ["Always tucked"]="Keeps a small top edge visible until you hover; for example keep music out of the way while working.",
+        ["Tucked edge height"]="Choose a 3–12 DIP hover target. Default 6 DIP leaves a narrow, reachable edge.",
+        ["Enable tuck shortcut"]="Ctrl+Alt+T tucks the island; press again to release the manual latch to automatic rules.",
         ["Black glass"]="Adds a dark gradient and soft reflections to the island.",
         ["Color from album artwork"]="Tints the open media panel using the current cover.",
         ["Bold media titles"]="Uses heavier text for song titles, including the closed island.",

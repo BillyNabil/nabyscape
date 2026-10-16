@@ -61,7 +61,7 @@ public sealed partial class OverlayWindow : Window
         Motion.Button(compact);
         compact.Click+=(_,_)=> {if(expanded)Collapse();else Reveal();};
         scroll=UI.Scroll(body);scroll.VerticalAlignment=VerticalAlignment.Top;scroll.HorizontalAlignment=HorizontalAlignment.Center;scroll.Visibility=Visibility.Collapsed;scroll.Opacity=0;scroll.RenderTransform=bodySlide;
-        root.RenderTransform=tuckSlide;root.MouseLeftButtonDown+=(_,e)=>{if(environmentHidden && !expanded && e.OriginalSource==surface){Reveal();e.Handled=true;}};root.Children.Add(surface);root.Children.Add(visuals);visuals.Children.Add(compact);visuals.Children.Add(scroll);Content=root;
+        root.RenderTransform=tuckSlide;root.MouseLeftButtonDown+=(_,e)=>{if(TuckRequested && !expanded && e.OriginalSource==surface){Reveal();e.Handled=true;}};root.Children.Add(surface);root.Children.Add(visuals);visuals.Children.Add(compact);visuals.Children.Add(scroll);Content=root;
         surface.ContourChanged+=()=>visuals.Clip=surface.Contour;
         foreach(var number in new[]{clock,compactClock,timerTime,focusTime,cpu,ram})Typography.SetNumeralAlignment(number,FontNumeralAlignment.Tabular);
         title.FontWeight=FontWeights.SemiBold;timerTime.FontWeight=focusTime.FontWeight=FontWeights.SemiBold;clock.FontWeight=compactClock.FontWeight=FontWeights.Bold;
@@ -78,7 +78,7 @@ public sealed partial class OverlayWindow : Window
         InitializeCompactInteraction();InitializeLiveActivity();InitializeEnhancements();InitializeInteractionFeatures();InitializeActivities();ApplySettings();
     }
     private IntPtr WindowMessage(IntPtr handle,int message,IntPtr wparam,IntPtr lparam,ref bool handled)
-    {if(message==0x84){var packed=lparam.ToInt64();var point=PointFromScreen(new Point((short)(packed & 0xffff),(short)((packed>>16)&0xffff)));if(!VisiblePoint(point)){handled=true;return new IntPtr(-1);}}if(message==0x20E && (peeking || expanded) && PointerInside()){int delta=(short)((wparam.ToInt64()>>16)&0xffff);if(peeking)RoutePeekWheel(delta,true,InputHitTest(Mouse.GetPosition(this)) as DependencyObject);else if(!RoutePanelWheel(delta,true,InputHitTest(Mouse.GetPosition(this)) as DependencyObject))return IntPtr.Zero;handled=true;return IntPtr.Zero;}if(message==0x312 && wparam.ToInt32()==VisibilityHotkeyId){if(DiagnosticRun){handled=true;return IntPtr.Zero;}ToggleVisibility();handled=true;return IntPtr.Zero;}if(message==0x312 && wparam.ToInt32()==HotkeyId){if(DiagnosticRun){handled=true;return IntPtr.Zero;}if(expanded)Collapse();else Reveal();handled=true;}if(message==0x21 && !expanded){handled=true;return new IntPtr(3);}if(message==0x2E0)Dispatcher.BeginInvoke(Position);return IntPtr.Zero;}
+    {if(message==0x84){var packed=lparam.ToInt64();var point=PointFromScreen(new Point((short)(packed & 0xffff),(short)((packed>>16)&0xffff)));if(!VisiblePoint(point)){handled=true;return new IntPtr(-1);}}if(message==0x20E && (peeking || expanded) && PointerInside()){int delta=(short)((wparam.ToInt64()>>16)&0xffff);if(peeking)RoutePeekWheel(delta,true,InputHitTest(Mouse.GetPosition(this)) as DependencyObject);else if(!RoutePanelWheel(delta,true,InputHitTest(Mouse.GetPosition(this)) as DependencyObject))return IntPtr.Zero;handled=true;return IntPtr.Zero;}if(message==0x312 && wparam.ToInt32()==TuckHotkeyId){if(!DiagnosticRun)ToggleTuck();handled=true;return IntPtr.Zero;}if(message==0x312 && wparam.ToInt32()==VisibilityHotkeyId){if(DiagnosticRun){handled=true;return IntPtr.Zero;}ToggleVisibility();handled=true;return IntPtr.Zero;}if(message==0x312 && wparam.ToInt32()==HotkeyId){if(DiagnosticRun){handled=true;return IntPtr.Zero;}if(expanded)Collapse();else Reveal();handled=true;}if(message==0x21 && !expanded){handled=true;return new IntPtr(3);}if(message==0x2E0)Dispatcher.BeginInvoke(Position);return IntPtr.Zero;}
     private void DisplayChanged(object? sender,EventArgs e)=>Dispatcher.BeginInvoke(()=> {if(DiagnosticRun)return;ApplySettings();CheckEnvironment();});
     private void Dimensions(bool contentChanged=false)
     {
@@ -192,7 +192,7 @@ public sealed partial class OverlayWindow : Window
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,app.Settings.Width,Math.Max(160,app.Settings.AnimationMs*.78));motion.Go(surface,IslandSurface.SurfaceHeightProperty,app.Settings.Height,Math.Max(160,app.Settings.AnimationMs*.78));
         motion.Go(surface,IslandSurface.GlassLiftProperty,0,Math.Max(160,app.Settings.AnimationMs*.78));
         CloseMixer();
-        if(environmentHidden){ApplyEnvironmentTuck();return;}
+        if(TuckRequested){ApplyEnvironmentTuck();return;}
         motion.OnComplete(()=> {if(expanded || peeking)return;peekPanel.Visibility=Visibility.Collapsed;scroll.Visibility=Visibility.Collapsed;UpdateSatellite();});
     }
     public void ToggleVisibility()
@@ -211,7 +211,7 @@ public sealed partial class OverlayWindow : Window
         lastExternalForeground=VisibilityPolicy.LatestExternalForeground(foreground,lastExternalForeground,Native.IsExternalWindow(lastExternalForeground));
         return foreground;
     }
-    internal bool EnvironmentHidden=>environmentHidden;
+    internal bool EnvironmentHidden=>TuckRequested;
     internal bool UserHidden=>userHidden;
     internal IntPtr VisibilityOverride=>visibilityOverride;
     private void Position()
@@ -219,21 +219,21 @@ public sealed partial class OverlayWindow : Window
         if(hwnd==IntPtr.Zero || positioning)return;positioning=true;
         try{var s=app.Settings;var screen=Native.ChooseScreen(s);var scale=Native.Scale(screen);var b=screen.Bounds;var width=(int)Math.Ceiling(ActualWidth*scale);var height=(int)Math.Ceiling(ActualHeight*scale);if(width<1 || height<1)return;
             double compactWidth=s.Width*scale;
-            int x=b.Left+(int)((b.Width-compactWidth)*s.Horizontal/100+compactWidth/2-width/2d),y=b.Top+(int)((environmentHidden || s.Preset=="Mac"?0:s.Top)*scale);x=Math.Clamp(x,b.Left,Math.Max(b.Left,b.Right-width));y=Math.Clamp(y,b.Top,Math.Max(b.Top,b.Bottom-height));Native.GetWindowRect(hwnd,out var current);if(current.Left!=x || current.Top!=y)Native.SetWindowPos(hwnd,new IntPtr(-1),x,y,0,0,0x0010|0x0001);
+            int x=b.Left+(int)((b.Width-compactWidth)*s.Horizontal/100+compactWidth/2-width/2d),y=b.Top+(int)((TuckRequested || s.Preset=="Mac"?0:s.Top)*scale);x=Math.Clamp(x,b.Left,Math.Max(b.Left,b.Right-width));y=Math.Clamp(y,b.Top,Math.Max(b.Top,b.Bottom-height));Native.GetWindowRect(hwnd,out var current);if(current.Left!=x || current.Top!=y)Native.SetWindowPos(hwnd,new IntPtr(-1),x,y,0,0,0x0010|0x0001);
         }finally{positioning=false;}
     }
     public void CheckEnvironment()
     {
-        if(DiagnosticRun && !diagnosticForeground.HasValue){Position();return;}
+        if(DiagnosticRun && !diagnosticForeground.HasValue && !manualTuck && !app.Settings.AlwaysTucked){Position();return;}
         var foreground=RememberExternalForeground();
         if(userHidden)return;
         visibilityOverride=VisibilityPolicy.RetainOverride(visibilityOverride,foreground);
         bool hide=visibilityOverride==IntPtr.Zero && Native.ShouldHideOn(Native.ChooseScreen(app.Settings),foreground,app.Settings.HideFullscreen,app.Settings.HideMaximized);
         environmentHidden=hide;
-        if(hide)
+        if(TuckRequested)
         {
             bool engaged=PointerInside() || PeekInteractionActive || IsMouseCaptureWithin || (expanded && IsKeyboardFocusWithin);
-            if(AutoTuckPolicy.ShouldTuck(hide,userHidden,expanded,peeking,engaged)){Collapse();ApplyEnvironmentTuck();}
+            if(AutoTuckPolicy.ShouldTuck(TuckRequested,userHidden,expanded,peeking,engaged)){Collapse();ApplyEnvironmentTuck();}
         }
         else SetTucked(false);
         Position();
@@ -264,5 +264,5 @@ public sealed partial class OverlayWindow : Window
             UpdateTimeline();
         }finally{updating=false;}
     }
-    public void Cleanup(){shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;app.ActivityRaised-=AutomaticActivity;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
+    public void Cleanup(){shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;app.ActivityRaised-=AutomaticActivity;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
 }

@@ -62,15 +62,22 @@ Mixer rows control individual Windows audio sessions; multiple sessions for one 
 
 No account or cloud service is required. Preferences, timers, notes, tasks, shortcuts, and calendar events stay on this device. Clipboard history is opt-in; disabling it clears stored clipboard history and images. File shelf entries refer to the originals.
 
-Existing installations retain these internal paths and identifiers for compatibility:
+Local data uses the NabyScape folder. Existing installations retain their install path and internal identifiers for compatibility:
 
 ```text
-%LOCALAPPDATA%\LumaIsland\             Local preferences and content
+%LOCALAPPDATA%\NabyScape\              Local preferences and content
+%LOCALAPPDATA%\LumaIsland\             Preserved legacy backup, if present
 %LOCALAPPDATA%\Programs\LumaIsland\    Per-user installation
 luma.layout.v1                         Existing layout-profile format
 ```
 
 The executable, Start Menu shortcut, app display name, and enabled startup entry use **NabyScape**. Updates recognize previous app names and preserve settings, local content, and startup state. Internal single-instance and uninstall registration identifiers remain compatible.
+
+On first launch, migration copies legacy data into a sibling staging folder, validates JSON and clipboard-image references, then activates the complete copy with a directory rename. External shelf, shortcut and activity targets stay unchanged. If both data folders exist, NabyScape uses its own folder and warns you to review the legacy copy. If migration fails, it uses the legacy folder with a warning; fix the reported permissions or invalid file and restart to retry. Failed staging folders are kept for review and are never loaded as active data.
+
+**Application → Reset preferences** offers a category chooser, Reset this category, Reset all preferences and Restore last preference backup. A confirmation describes the affected values. Reset writes a preference backup before changing settings; backup failures abort the reset. Reset and restore preserve startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets. Restore applies preference categories only, so it cannot re-enable clipboard capture or startup from an old backup.
+
+**Controls → Automatic tucking** offers Always tucked and an edge height from 3 to 12 DIP (default 6 DIP). Fullscreen and maximized rules keep their previous defaults. The configurable `Ctrl+Alt+T` shortcut, tray action and command action toggle a manual tuck latch; the second toggle releases it to automatic rules. Hover reveals a preview without taking focus. Manual Hide stays fully hidden, including when the tuck shortcut is used. Settings reports conflicts between the panel, visibility and tuck shortcuts and failures to register a shortcut already used by another app.
 
 Uninstall through **Windows Settings → Apps → Installed apps → NabyScape**. Personal content is retained. The current installer is unsigned.
 

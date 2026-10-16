@@ -109,7 +109,9 @@ internal sealed class SettingsScene : FrameworkElement
             case "Focus sessions":
                 Text(s.FocusMinutes+":00",28,20,28,true);Text("Focus",30,59,12,false,muted);Line(170,25,170,77);Text(s.BreakMinutes+":00",224,20,28,true);Text("Break",226,59,12,false,muted);Note("Used when the next session starts");break;
             case "Automatic tucking":
-                Box(20,15,178,69,UI.Brush("#292D35"));Box(71,15,76,4,white);Text("Maximized app",48,48,11);Box(226,15,174,69,UI.Brush("#292D35"));Box(273,15,80,22,Brushes.Black);Text("Hover top edge",252,55,11);Note($"Maximized: {(s.HideMaximized?"tuck":"visible")} · fullscreen: {(s.HideFullscreen?"tuck":"visible")}");break;
+                Box(20,18,112,35,Brushes.Black);Text("Visible",45,66,11);Box(154,18,112,s.TuckEdge,Brushes.Black,2);Text($"Tucked · {s.TuckEdge:0} DIP",164,66,11);dc.DrawRoundedRectangle(null,line,new Rect(288,18,112,35),8,8);Text("Hidden",320,66,11);Note(s.AlwaysTucked?"Always tucked · hover the edge for a preview":"Automatic rules · manual hide removes the whole island");break;
+            case "Manual tuck shortcut":
+                Keys(s.TuckHotkeyModifiers,24,24,130);Keys(s.TuckHotkeyKey,166,24,40);Text("Tuck / automatic",232,30,13,true);Note("First press tucks · second returns to automatic rules");break;
             case "Panel navigation":
                 Box(20,15,146,68,Brushes.Black);Text("Media",35,28,14,true);Line(182,48,234,48);Box(252,15,146,68,Brushes.Black);Text("Status",268,28,14,true);Note("Swipe empty space · Shift + wheel · Ctrl + Tab");break;
             case "Drag to Island":

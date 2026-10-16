@@ -21,7 +21,7 @@ public sealed partial class OverlayWindow
     }
     private void ShowFeedback(bool brightness,double level,bool muted)
     {
-        if(!app.Settings.ReactiveFeedback || !(brightness?app.Settings.BrightnessFeedback:app.Settings.VolumeFeedback) || expanded || peeking || !IsVisible || environmentHidden || userHidden)return;
+        if(!app.Settings.ReactiveFeedback || !(brightness?app.Settings.BrightnessFeedback:app.Settings.VolumeFeedback) || expanded || peeking || !IsVisible || TuckRequested || userHidden)return;
         feedbackBrightness=brightness;
         feedbackText=muted?"Muted":$"{Math.Clamp(level,0,1)*100:0}%";
         feedbackIcon.Text=brightness?"\uE706":muted?"\uE74F":"\uE767";

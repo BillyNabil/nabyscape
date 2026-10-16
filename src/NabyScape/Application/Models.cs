@@ -83,6 +83,11 @@ public sealed class Settings
     public bool ReduceMotion { get; set; }
     public bool HideFullscreen { get; set; } = true;
     public bool HideMaximized { get; set; }
+    public bool AlwaysTucked {get;set;}
+    public double TuckEdge {get;set;}=6;
+    public bool TuckHotkeyEnabled {get;set;}=true;
+    public string TuckHotkeyKey {get;set;}="T";
+    public string TuckHotkeyModifiers {get;set;}="Ctrl+Alt";
     public bool VisibilityHotkeyEnabled { get; set; }=true;
     public string VisibilityHotkeyKey { get; set; }="H";
     public string VisibilityHotkeyModifiers { get; set; }="Ctrl+Alt";
@@ -112,6 +117,9 @@ public sealed class Settings
     public void Normalize()
     {
         static double Clamp(double value,double min,double max,double fallback) => double.IsFinite(value) ? Math.Clamp(value,min,max) : fallback;
+        TuckEdge=Clamp(TuckEdge,3,12,6);
+        if(TuckHotkeyKey==null || TuckHotkeyKey.Length!=1 || TuckHotkeyKey[0]<'A' || TuckHotkeyKey[0]>'Z')TuckHotkeyKey="T";
+        if(TuckHotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))TuckHotkeyModifiers="Ctrl+Alt";
         Width=Clamp(Width,180,400,228); Height=Clamp(Height,28,72,32); Radius=Clamp(Radius,0,40,16);
         Horizontal=Clamp(Horizontal,0,100,50); Top=Clamp(Top,0,150,0); Opacity=Clamp(Opacity,.65,1,1);
         AnimationMs=Clamp(AnimationMs,0,600,420);
@@ -175,12 +183,21 @@ public sealed class SessionState
     public Countdown Timer { get; set; } = new();
     public Countdown Focus { get; set; } = new();
 }
-public sealed class Store
+public sealed partial class Store
 {
     public string DirectoryPath { get; }
     public string? Warning { get; private set; }
     private static readonly JsonSerializerOptions Options=new(){WriteIndented=true};
-    public Store(string? path=null) { DirectoryPath=path ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"LumaIsland"); Directory.CreateDirectory(DirectoryPath); }
+    public Store(string? path=null) : this(path,Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)) { }
+    private Store(string? path,string root)
+    {
+        string? warning=null;
+        DirectoryPath=path!=null?Path.GetFullPath(path):ResolveMigration(Path.Combine(root,"LumaIsland"),Path.Combine(root,"NabyScape"),out warning);
+        if(path==null)Warning=warning;
+        Directory.CreateDirectory(DirectoryPath);
+    }
+    internal Store(string legacyRoot,string newRoot,bool migrate)
+    { DirectoryPath=ResolveMigration(legacyRoot,newRoot,out var warning);Warning=warning;Directory.CreateDirectory(DirectoryPath); }
     public T Load<T>(string name) where T:new()
     {
         var file=Path.Combine(DirectoryPath,name+".json");

@@ -6,8 +6,8 @@ namespace NabyScape;
 
 internal static class AutoTuckPolicy
 {
-    internal const double EdgeHeight=4;
-    internal static double Offset(double compactHeight)=>-Math.Max(0,compactHeight-EdgeHeight);
+    internal const double EdgeHeight=6;
+    internal static double Offset(double compactHeight,double edge=EdgeHeight)=>-Math.Max(0,compactHeight-Math.Clamp(edge,3,12));
     internal static bool ShouldTuck(bool requested,bool manuallyHidden,bool expanded,bool peeking,bool engaged)=>requested && !manuallyHidden && !engaged;
     internal static bool CanHover(bool manuallyHidden,bool requested,bool tucked)=>!manuallyHidden && requested && tucked;
 }
@@ -15,7 +15,17 @@ internal static class AutoTuckPolicy
 public sealed partial class OverlayWindow
 {
     private readonly TranslateTransform tuckSlide=new();
-    private bool tucked,tuckPreview;
+    private bool tucked,tuckPreview,manualTuck;
+    private bool TuckRequested=>manualTuck || app.Settings.AlwaysTucked || environmentHidden;
+    internal bool ManualTuck=>manualTuck;
+    internal void FlushPreferenceEditors()
+    {noteSave.Stop();utilityMutating=true;try{if(!app.Productivity.Save())throw new System.IO.IOException("Pending editor changes could not be saved.");}finally{utilityMutating=false;}}
+    public void ToggleTuck()
+    {
+        manualTuck=!manualTuck;
+        if(userHidden)return;
+        Collapse();if(manualTuck){SetTucked(true);Position();}else{SetTucked(false);CheckEnvironment();}
+    }
     internal bool IsTucked=>tucked;
     internal double TuckOffset=>tuckSlide.Y;
     // Coordinates are local to the HWND, including the content translation and its clip.
@@ -29,7 +39,7 @@ public sealed partial class OverlayWindow
     }
     internal Rect VisibleBounds=>VisibleContour.Bounds;
     internal bool VisiblePoint(Point point)=>point.X>=0 && point.Y>=0 && point.X<ActualWidth && point.Y<ActualHeight && surface.Contour.FillContains(new Point(point.X,point.Y-tuckSlide.Y));
-    private void ApplyEnvironmentTuck(){if(environmentHidden && !userHidden)SetTucked(true);}
+    private void ApplyEnvironmentTuck(){if(TuckRequested && !userHidden && !expanded && !peeking)SetTucked(true);else if(!TuckRequested)SetTucked(false);}
     private void SetTucked(bool value)
     {
         bool changed=tucked!=value;tucked=value;
@@ -41,12 +51,12 @@ public sealed partial class OverlayWindow
             compact.BeginAnimation(OpacityProperty,null);compact.Opacity=1;compact.IsHitTestVisible=true;
             InvalidateSystemMonitor();StopLiveRendering();liveTick.Stop();ClearFeedback();
         }
-        tuckSlide.Y=value?AutoTuckPolicy.Offset(app.Settings.Height):0;
+        tuckSlide.Y=value?AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge):0;
         if(changed && !value)ConfigureLiveActivity();
     }
     internal void RevealTuckedPreview()
     {
-        if(!AutoTuckPolicy.CanHover(userHidden,environmentHidden,tucked))return;
+        if(!AutoTuckPolicy.CanHover(userHidden,TuckRequested,tucked))return;
         SetTucked(false);Position();tuckPreview=true;
         try{PreviewActivity();}finally{tuckPreview=false;}
     }
@@ -56,7 +66,7 @@ internal static class AutoTuckTests
 {
     internal static void Run(Action<string,bool> test)
     {
-        test("Automatic tuck leaves four DIP at the display edge",AutoTuckPolicy.Offset(44)==-40 && AutoTuckPolicy.Offset(28)==-24 && AutoTuckPolicy.Offset(72)==-68);
+        test("Automatic tuck leaves six DIP at the display edge",AutoTuckPolicy.Offset(44)==-38 && AutoTuckPolicy.Offset(28)==-22 && AutoTuckPolicy.Offset(72)==-66);
         test("Short surfaces are never moved below the edge",AutoTuckPolicy.Offset(2)==0);
         foreach(bool expanded in new[]{false,true})foreach(bool preview in new[]{false,true})
         {
@@ -70,7 +80,7 @@ internal static class AutoTuckTests
         {
             var contour=IslandGeometry.Create(300,44,22,notch);contour=contour.Clone();contour.Transform=new TranslateTransform(0,AutoTuckPolicy.Offset(44));
             var visible=Geometry.Combine(contour,new RectangleGeometry(new Rect(0,0,300,400)),GeometryCombineMode.Intersect,null);
-            test($"Translated contour retains a narrow clickable center {notch}",visible.FillContains(new Point(150,2)) && !visible.FillContains(new Point(150,6)) && !visible.FillContains(new Point(1,2)) && Math.Abs(visible.Bounds.Height-4)<.01);
+            test($"Translated contour retains a narrow clickable center {notch}",visible.FillContains(new Point(150,2)) && !visible.FillContains(new Point(150,8)) && !visible.FillContains(new Point(1,2)) && Math.Abs(visible.Bounds.Height-6)<.01);
         }
     }
 }

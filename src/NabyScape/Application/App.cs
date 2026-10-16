@@ -32,6 +32,8 @@ public sealed class App : Application
     public KeepAwakeService Awake {get;private set;}=null!;
     public string HotkeyStatus=>!Settings.HotkeyEnabled?"Hotkey off":overlay?.HotkeyError.Length>0?overlay.HotkeyError:$"Active · {Settings.HotkeyModifiers}+{Settings.HotkeyKey}";
     public string VisibilityHotkeyStatus=>!Settings.VisibilityHotkeyEnabled?"Visibility shortcut off":overlay?.VisibilityHotkeyError.Length>0?overlay.VisibilityHotkeyError:$"Hide / show · {Settings.VisibilityHotkeyModifiers}+{Settings.VisibilityHotkeyKey}";
+    public string TuckHotkeyStatus=>!Settings.TuckHotkeyEnabled?"Tuck shortcut off":overlay?.TuckHotkeyError.Length>0?overlay.TuckHotkeyError:$"Tuck / return to automatic · {Settings.TuckHotkeyModifiers}+{Settings.TuckHotkeyKey}";
+    internal void FlushPreferenceEditors()=>overlay?.FlushPreferenceEditors();
     public event Action<string,string,string>? ActivityRaised;
     public event Action? SettingsChanged;
     public event Action? Updated;
@@ -77,6 +79,7 @@ public sealed class App : Application
         menu.Items.Add("Open island",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.Reveal()));
         menu.Items.Add("Command bar",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ShowCommands()));
         menu.Items.Add("Settings",null,(_,_)=>Dispatcher.Invoke(ShowSettings));
+        menu.Items.Add("Tuck / Return to automatic",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleTuck()));
         menu.Items.Add("Hide / show",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleVisibility()));
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add("Quit",null,(_,_)=>Dispatcher.Invoke(Quit));
@@ -85,7 +88,7 @@ public sealed class App : Application
         Media.Changed+=()=>PublishUpdate(RuntimeChange.Media);
         Audio.Changed+=()=>PublishUpdate(RuntimeChange.Audio);
         Productivity.Changed+=()=>PublishUpdate(RuntimeChange.Productivity);Calendar.Changed+=()=>PublishUpdate(RuntimeChange.Calendar);
-        if(Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only" or "--stage1-only") || diagnosticPath!=null && Array.Exists(e.Args,a=>a=="--showcase"))Media.DiagnosticFixture=true;else _=Media.Initialize();
+        if(Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only" or "--stage1-only" or "--stage2-only") || diagnosticPath!=null && Array.Exists(e.Args,a=>a=="--showcase"))Media.DiagnosticFixture=true;else _=Media.Initialize();
         Audio.Read();Usage=Native.SystemUsage();
         int counter=0;
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};

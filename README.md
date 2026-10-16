@@ -151,10 +151,11 @@ The installer is currently unsigned. Startup is optional. Closing Settings keeps
 | --- | --- |
 | `Ctrl+Alt+I` | Open or close the island panel. |
 | `Ctrl+Alt+H` | Hide or show the island. |
+| `Ctrl+Alt+T` | Tuck to the edge; press again to return to automatic rules. |
 | `Ctrl+K` | Command search while the island is focused. |
 | `Escape` | Go back or close. |
 
-Global shortcuts are configurable. With artwork gestures enabled, click the closed cover to play/pause or hold for 500 ms to choose a session. Hover the tucked edge to reveal an automatically hidden island.
+Global shortcuts are configurable; Settings reports duplicate combinations and registration conflicts. Controls also offers Always tucked and a 3–12 DIP edge (default 6 DIP). Manual hide removes the whole island. With artwork gestures enabled, click the closed cover to play/pause or hold for 500 ms to choose a session. Hover the tucked edge to reveal an automatically hidden island.
 
 ## Local by design
 
@@ -169,7 +170,8 @@ No NabyScape account, cloud sync or AI service. Notes, tasks, clipboard history,
 - Glass uses gradients, reflections and artwork tint; it does not capture or blur the desktop.
 - Brightness feedback requires supported Windows events. Battery controls appear only on devices with a battery.
 - Focus sessions do not change Windows Do Not Disturb. No activity runs automatically after restart.
-- The compatible `%LOCALAPPDATA%\LumaIsland` storage path and `luma.layout.v1` profile format remain in use. Updates preserve personal data and startup preference.
+- Local data now uses `%LOCALAPPDATA%\NabyScape`. First launch copies and validates legacy LumaIsland data before activation and preserves the original folder. Existing NabyScape data wins if both exist; the app asks you to review the legacy backup. The `luma.layout.v1` format, install path, and internal identifiers remain compatible.
+- Application Settings can reset a chosen category or all preferences and restore the last preference backup. Startup, clipboard capture/history, saved shortcuts and personal content are preserved.
 
 See the **[full usage, privacy and compatibility guide](docs/guide.md)**.
 

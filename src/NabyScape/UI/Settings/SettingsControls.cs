@@ -19,6 +19,10 @@ public sealed partial class SettingsWindow
         var key=new ComboBox();foreach(string label in Enumerable.Range('A',26).Select(n=>((char)n).ToString()))key.Items.Add(label);key.SelectedItem=s.VisibilityHotkeyKey;UI.Named(key,"Visibility hotkey key");key.SelectionChanged+=(_,_)=>{s.VisibilityHotkeyKey=key.SelectedItem?.ToString()??"H";Save();};
         var keys=new Grid();keys.ColumnDefinitions.Add(new());keys.ColumnDefinitions.Add(new(){Width=new GridLength(80)});keys.Children.Add(modifiers);Grid.SetColumn(key,1);keys.Children.Add(key);
         page.Children.Add(Section("Hide or show the island",Check("Enable visibility shortcut",s.VisibilityHotkeyEnabled,v=>s.VisibilityHotkeyEnabled=v),keys,UI.Text("Default: Ctrl+Alt+H. Shows the closed island even over the current maximized or fullscreen app. Switching apps restores automatic hiding.",11,UI.Muted)));
+        var tuckModifiers=new ComboBox{ItemsSource=new[]{"Ctrl+Alt","Ctrl+Shift","Alt+Shift"},SelectedItem=s.TuckHotkeyModifiers};UI.Named(tuckModifiers,"Tuck hotkey modifiers");tuckModifiers.SelectionChanged+=(_,_)=>{s.TuckHotkeyModifiers=tuckModifiers.SelectedItem?.ToString()??"Ctrl+Alt";Save();};
+        var tuckKey=new ComboBox{ItemsSource=Enumerable.Range('A',26).Select(n=>((char)n).ToString()).ToArray(),SelectedItem=s.TuckHotkeyKey};UI.Named(tuckKey,"Tuck hotkey key");tuckKey.SelectionChanged+=(_,_)=>{s.TuckHotkeyKey=tuckKey.SelectedItem?.ToString()??"T";Save();};
+        page.Children.Add(Section("Manual tuck shortcut",Check("Enable tuck shortcut",s.TuckHotkeyEnabled,v=>s.TuckHotkeyEnabled=v),tuckModifiers,tuckKey,UI.Text("Default: Ctrl+Alt+T. First press tucks to the edge; second returns to automatic rules. Manual hide stays hidden. Choose distinct combinations for panel, visibility and tuck; registration errors appear above.",11,UI.Muted)));
+
     }
     private void AudioFeedbackSettings()
     {

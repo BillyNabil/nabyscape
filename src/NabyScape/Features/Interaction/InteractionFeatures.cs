@@ -100,7 +100,7 @@ public sealed partial class OverlayWindow
         menu.Closed+=(_,_)=>{if(audioMenu==menu)audioMenu=null;};menu.IsOpen=true;
     }
     internal bool SystemSummaryVisible=>IsVisible && (peeking && satellitePreview && satelliteKind=="clock" && peekId=="system" || WidgetOn("system") && (SatelliteNeedsSystemSamples || peeking && peekId=="system" || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen)));
-    private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && !peeking && surface.SurfaceHeight<=app.Settings.Height+.5 && surface.SurfaceWidth<=app.Settings.Width+.5 && !FeedbackVisible && !environmentHidden && !userHidden && IsVisible;
+    private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && !peeking && surface.SurfaceHeight<=app.Settings.Height+.5 && surface.SurfaceWidth<=app.Settings.Width+.5 && !FeedbackVisible && !TuckRequested && !userHidden && IsVisible;
     private CalendarEvent? SatelliteEvent=>app.Calendar.Events.Where(e=>e.End>DateTimeOffset.UtcNow && e.Start<=DateTimeOffset.UtcNow.AddHours(24)).OrderBy(e=>e.Start).FirstOrDefault();
     private string? SelectedSatellite=>SecondaryActivity.SelectSource(app.Settings.SatelliteSource,SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")),SatelliteEvent!=null,WidgetOn("system"),WidgetOn("tools"),WidgetOn("clock"));
     private bool ShowMediaPrimary=>SatelliteEligible && SelectedSatellite!=null && SatelliteHasRoom();
@@ -118,7 +118,7 @@ public sealed partial class OverlayWindow
     {
         if(!peeking)satellitePreview=false;
         var selectedNext=ShowMediaPrimary?SelectedSatellite:null;
-        if(selectedNext==null){DismissSatellite(userHidden || environmentHidden || !IsVisible);if(!peeking && satelliteWindow?.IsVisible!=true)satelliteKind=null;return;}
+        if(selectedNext==null){DismissSatellite(userHidden || TuckRequested || !IsVisible);if(!peeking && satelliteWindow?.IsVisible!=true)satelliteKind=null;return;}
         satelliteKind=selectedNext;satelliteDismiss.Stop();
         if(satelliteWindow==null)
         {
@@ -162,7 +162,7 @@ public sealed partial class OverlayWindow
     }
     private void OpenSatellite(bool panel)
     {
-        var kind=SatellitePeekKind;if(kind==null || userHidden || environmentHidden || !IsVisible)return;
+        var kind=SatellitePeekKind;if(kind==null || userHidden || TuckRequested || !IsVisible)return;
         if(panel){OpenFeaturePage(kind);return;}
         satellitePreview=true;previewKind=kind;automaticPreview=true;PreviewActivity();SelectPeek(kind);automaticPreview=false;
         satellitePreview=peeking && peekId==kind;

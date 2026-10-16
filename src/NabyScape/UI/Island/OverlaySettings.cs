@@ -14,7 +14,7 @@ internal readonly record struct OverlaySettingsState(int Content,int Reflow,int 
         foreach(var widget in s.Widgets){content.Add(widget.Id);content.Add(widget.Enabled);}foreach(var tool in s.Tools){content.Add(tool.Id);content.Add(tool.Enabled);}foreach(var shortcut in s.Shortcuts){content.Add(shortcut.Name);content.Add(shortcut.Target);content.Add(shortcut.AppId);}
         int reflow=HashCode.Combine(s.PanelWidth,s.PanelPadding,s.PanelScale,s.SectionGap);
         int geometry=HashCode.Combine(HashCode.Combine(s.Width,s.Height,s.Radius,s.Preset,s.Horizontal,s.Top,s.Monitor),s.PanelMaxHeight,s.HoverWidth,s.HoverHeight);
-        int hotkeys=HashCode.Combine(s.HotkeyEnabled,s.HotkeyModifiers,s.HotkeyKey,s.VisibilityHotkeyEnabled,s.VisibilityHotkeyModifiers,s.VisibilityHotkeyKey);
+        int hotkeys=HashCode.Combine(HashCode.Combine(s.TuckHotkeyEnabled,s.TuckHotkeyModifiers,s.TuckHotkeyKey),HashCode.Combine(s.HotkeyEnabled,s.HotkeyModifiers,s.HotkeyKey,s.VisibilityHotkeyEnabled,s.VisibilityHotkeyModifiers,s.VisibilityHotkeyKey));
         return new(content.ToHashCode(),reflow,geometry,hotkeys);
     }
 }

@@ -106,7 +106,7 @@ public sealed partial class OverlayWindow
     internal bool LiveRunning=>liveTick.IsEnabled || liveRendering;
     internal bool DisplaySynchronized=>liveRendering;
     internal double LiveInterval=>liveTick.Interval.TotalMilliseconds;
-    private bool FeedbackVisible=>app.Settings.ReactiveFeedback && (feedbackBrightness?app.Settings.BrightnessFeedback:app.Settings.VolumeFeedback) && !expanded && !peeking && IsVisible && !environmentHidden && !userHidden && DateTimeOffset.UtcNow<feedbackUntil;
+    private bool FeedbackVisible=>app.Settings.ReactiveFeedback && (feedbackBrightness?app.Settings.BrightnessFeedback:app.Settings.VolumeFeedback) && !expanded && !peeking && IsVisible && !TuckRequested && !userHidden && DateTimeOffset.UtcNow<feedbackUntil;
     private void InitializeLiveActivity()
     {
         root.MouseMove+=(_,_)=>{if(app.Settings.GlassStyle && (expanded || peeking))WakeLiveRendering();};
@@ -182,7 +182,7 @@ public sealed partial class OverlayWindow
     private void UpdateAudioFeedback()
     {
         RefreshFeedback();var audio=app.Audio;if(!audio.Available)return;
-        if(audioSeen && app.Settings.ReactiveFeedback && app.Settings.VolumeFeedback && !expanded && !peeking && IsVisible && !environmentHidden && !userHidden)
+        if(audioSeen && app.Settings.ReactiveFeedback && app.Settings.VolumeFeedback && !expanded && !peeking && IsVisible && !TuckRequested && !userHidden)
         {
             string text=audio.Device!=lastDevice?"Output · "+audio.Device:audio.Muted!=lastMuted || Math.Abs(audio.Volume-lastVolume)>.005?audio.Muted?"Audio muted":$"Volume  {audio.Volume*100:0}%":"";
             if(text!="")ShowFeedback(false,audio.Volume,audio.Muted);
