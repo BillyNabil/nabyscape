@@ -69,7 +69,7 @@ def label(img, number, title, subtitle, x, y):
 
 # A legible repository header with the app itself as the hero.
 hero = backdrop((1600, 1000))
-logo = Image.open(ROOT / 'Assets' / 'island.ico').convert('RGBA')
+logo = Image.open(ROOT / 'src' / 'NabyScape' / 'Assets' / 'island.ico').convert('RGBA')
 place(hero, logo, (80, 57), 42, False)
 text(hero, (135, 57), 'NabyScape', 31, True)
 text(hero, (83, 173), 'Your desktop,\nwithin reach.', 96, True)

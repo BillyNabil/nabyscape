@@ -187,7 +187,27 @@ cd nabyscape
 
 The build publishes the app and installer, includes third-party notices, and runs logic checks. Use `-RunDiagnostics` on an interactive Windows desktop for rendered UI checks. CI builds pushes and pull requests; **[workflow artifacts](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml)** provide development builds.
 
-**[Developer and verification guide](docs/guide.md#build-from-source)** · **[Recreate the showcase](docs/showcase.md#reproduce-the-captures)** · **[Roadmap](FEATURE-ROADMAP.md)**
+**[Developer and verification guide](docs/guide.md#build-from-source)** · **[Recreate the showcase](docs/showcase.md#reproduce-the-captures)** · **[Roadmap](docs/roadmap.md)**
+
+<details>
+<summary><strong>Repository layout</strong></summary>
+
+```text
+nabyscape/
+├── src/NabyScape/       Application, features, UI, motion, tests and diagnostics
+├── Assets/             README visuals, screenshots and demo media
+├── docs/               Guides, presets, releases, roadmap and performance evidence
+├── licenses/           Third-party license notices
+├── tools/              Documentation tooling
+├── NabyScape.slnx      Solution for Visual Studio and dotnet build
+├── build.ps1           Standalone publish, installer packaging and logic checks
+├── LICENSE
+└── README.md
+```
+
+See the [source map](docs/guide.md#source-layout) for the application folders. Tests and diagnostics share the application assembly so they exercise the shipped implementation through the existing `--self-test` and `--diagnostics` entry points.
+
+</details>
 
 ## Contribute
 
@@ -195,4 +215,4 @@ Found a problem or have an idea? **[Open an issue](https://github.com/BillyNabil
 
 Available under the **[MIT License](LICENSE)**. Copyright © 2026 BillyNabil.
 
-Notices: [NAudio](NAudio-LICENSE.txt) · [Lucide](LUCIDE-LICENSE.txt) · [.NET](DOTNET-LICENSE.txt) · [.NET third-party components](DOTNET-ThirdPartyNotices.txt).
+Notices: [NAudio](licenses/NAudio-LICENSE.txt) · [Lucide](licenses/LUCIDE-LICENSE.txt) · [.NET](licenses/DOTNET-LICENSE.txt) · [.NET third-party components](licenses/DOTNET-ThirdPartyNotices.txt).

@@ -2,7 +2,7 @@ bin/
 obj/
 artifacts*/
 outputs/
-diagnostics/
+/diagnostics/
 test-profile/
 .superpowers/
 .vs/

@@ -80,6 +80,8 @@ Uninstall through **Windows Settings → Apps → Installed apps → NabyScape**
 
 You need **Windows 11 x64** and **.NET SDK 10**.
 
+Open [`NabyScape.slnx`](../NabyScape.slnx) in your IDE, or run `dotnet build NabyScape.slnx -c Release` from the repository root. The app project is [`src/NabyScape/NabyScape.csproj`](../src/NabyScape/NabyScape.csproj). The root build script publishes the standalone distribution and runs checks as before.
+
 ```powershell
 git clone https://github.com/BillyNabil/nabyscape.git
 cd nabyscape
@@ -128,14 +130,37 @@ The benchmark writes `performance.json`, `retention.json`, progress, and screens
 
 </details>
 
+## Source layout
+
+The repository root contains the solution, build entry point and project documentation. Application code lives under `src/NabyScape/`:
+
+| Directory | Responsibility |
+| --- | --- |
+| `Application/` | App lifecycle, storage/models, native integration, profiles and installer. |
+| `Features/Media/` | Media sessions, waveform input, audio devices, mixer and feedback. |
+| `Features/System/` | System/hardware sampling and monitor views. |
+| `Features/Productivity/` | Notes, tasks, clipboard, calendar and utility views/services. |
+| `Features/Activities/` | Activity runner, editor and live activity visuals. |
+| `Features/Interaction/` | Drop shelf, detached previews and shared gesture behavior. |
+| `Features/Launch/` | App catalog, icons, target picker and launcher presentation. |
+| `UI/Island/` | Closed/hover/expanded surfaces, carousel, panel navigation and feedback. |
+| `UI/Settings/` | Settings window, categories, controls and contextual previews. |
+| `UI/Shared/` | Common controls, icons, color picker, scrolling and thumbnails. |
+| `Motion/` | Animation, frame pacing and island geometry. |
+| `Tests/` | Logic checks run by the existing `--self-test` command. |
+| `Diagnostics/` | Isolated desktop, performance and showcase checks/fixtures. |
+| `Assets/` | Runtime app icon. `Theme.xaml` remains at project level for its stable WPF URI. |
+
+`Assets/` at the repository root holds documentation imagery; runtime assets belong to the app project. Third-party notices live in `licenses/` and are embedded under their existing resource names. The published filenames, namespaces, storage paths and installer behavior are unchanged. CI uses the root `build.ps1`, which resolves the app project from its own location.
+
 ## Contribute
 
 Found a bug or have a feature idea? [Open an issue](https://github.com/BillyNabil/nabyscape/issues) with your Windows version, app version, and steps to reproduce it. Screenshots are helpful; remove personal content before sharing them.
 
-See [the roadmap](../FEATURE-ROADMAP.md) for implemented capabilities and proposed additions. NotchNook and Vorssaint are feature references; their assets and implementations are not bundled.
+See [the roadmap](roadmap.md) for implemented capabilities and proposed additions. NotchNook and Vorssaint are feature references; their assets and implementations are not bundled.
 
 ## License
 
 NabyScape is available under the [MIT License](../LICENSE). Copyright (c) 2026 BillyNabil.
 
-Dependency notices: [NAudio](../NAudio-LICENSE.txt), [Lucide](../LUCIDE-LICENSE.txt), [.NET](../DOTNET-LICENSE.txt), and [.NET third-party components](../DOTNET-ThirdPartyNotices.txt).
+Dependency notices: [NAudio](../licenses/NAudio-LICENSE.txt), [Lucide](../licenses/LUCIDE-LICENSE.txt), [.NET](../licenses/DOTNET-LICENSE.txt), and [.NET third-party components](../licenses/DOTNET-ThirdPartyNotices.txt).

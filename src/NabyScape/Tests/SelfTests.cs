@@ -14,6 +14,16 @@ internal static class SelfTests
         void Test(string name,Action test)
         {try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
         static void Assert(bool condition,string reason="Assertion failed") {if(!condition)throw new Exception(reason);}
+        Test("App resources retain installer notices, theme and icon after source relocation",()=>
+        {
+            var assembly=typeof(App).Assembly;
+            foreach(string name in new[]{"LICENSE","NAudio-LICENSE.txt","LUCIDE-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
+            {using var notice=assembly.GetManifestResourceStream("NabyScape."+name);Assert(notice is {Length:>0},"Missing embedded notice: "+name);}
+            using var packed=assembly.GetManifestResourceStream("NabyScape.g.resources");Assert(packed!=null,"Missing WPF resource bundle");
+            using var reader=new System.Resources.ResourceReader(packed!);
+            var keys=reader.Cast<System.Collections.DictionaryEntry>().Select(entry=>entry.Key.ToString()).ToArray();
+            Assert(keys.Contains("theme.baml") && keys.Contains("assets/island.ico"),"WPF resource paths changed");
+        });
         InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         WaveformMotionTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         ActivityActionsTests.Run((name,pass)=>Test(name,()=>Assert(pass)));

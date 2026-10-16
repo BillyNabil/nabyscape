@@ -24,10 +24,10 @@
     <PackageReference Include="System.Management" Version="10.0.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <Resource Include="Assets\island.ico" />
-    <EmbeddedResource Include="LICENSE" />
-    <EmbeddedResource Include="NAudio-LICENSE.txt" />
-    <EmbeddedResource Include="LUCIDE-LICENSE.txt" />
-    <EmbeddedResource Include="DOTNET-LICENSE.txt" />
-    <EmbeddedResource Include="DOTNET-ThirdPartyNotices.txt" />
+    <EmbeddedResource Include="..\..\LICENSE" LogicalName="NabyScape.LICENSE" />
+    <EmbeddedResource Include="..\..\licenses\NAudio-LICENSE.txt" LogicalName="NabyScape.NAudio-LICENSE.txt" />
+    <EmbeddedResource Include="..\..\licenses\LUCIDE-LICENSE.txt" LogicalName="NabyScape.LUCIDE-LICENSE.txt" />
+    <EmbeddedResource Include="..\..\licenses\DOTNET-LICENSE.txt" LogicalName="NabyScape.DOTNET-LICENSE.txt" />
+    <EmbeddedResource Include="..\..\licenses\DOTNET-ThirdPartyNotices.txt" LogicalName="NabyScape.DOTNET-ThirdPartyNotices.txt" />
   </ItemGroup>
 </Project>
