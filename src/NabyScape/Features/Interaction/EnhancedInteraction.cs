@@ -65,7 +65,7 @@ public sealed partial class OverlayWindow
         };
         root.PreviewMouseDown+=(_,e)=>{if(e.ChangedButton!=MouseButton.Middle || (expanded && e.GetPosition(this).Y>app.Settings.Height))return;if(app.Settings.MiddleAction=="toggle")_=app.Media.Command("toggle");else if(app.Settings.MiddleAction=="microphone" && !app.Audio.ToggleMicrophoneMute())app.Notify("Could not change microphone",app.Audio.LastError??"Device unavailable.");e.Handled=app.Settings.MiddleAction!="none";};
         PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Tab && Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){if(commandOpen)CloseCommands();CyclePage(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?-1:1);e.Handled=true;}};
-        app.ActivityRaised+=AutomaticActivity;
+
     }
     private void CyclePage(int direction)
     {var keys=compactTabs.Keys.ToArray();if(keys.Length==0)return;int i=Array.IndexOf(keys,activePage);SelectPage(keys[(i+direction+keys.Length)%keys.Length]);}

@@ -17,7 +17,7 @@ internal static class PreferenceReset
         ["Audio"]="ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
         ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
-        ["Application"]=new[]{"AutoCheckUpdates"}
+        ["Application"]="AutoCheckUpdates NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' ')
     };
     internal static string Summary(string? category)
     {
@@ -30,7 +30,7 @@ internal static class PreferenceReset
             "Audio"=>"closed media display, waveform and feedback",
             "System"=>"clock format and monitor readings",
             "Launch"=>"launch appearance and Activities availability",
-            _=>"application preferences"
+            _=>"update checks, notification delivery and download monitoring"
         };
         string detail=category==null?string.Join("; ",Categories.Where(pair=>pair.Value.Length>0).Select(pair=>pair.Key+": "+Detail(pair.Key))):Detail(category);
         return $"Reset {(category??"all preferences")} to defaults ({Keys(category).Length} preferences): {detail}. Startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets are kept. A preference backup is saved first.";
@@ -50,7 +50,7 @@ internal static class PreferenceReset
         string file=Path.Combine(store.DirectoryPath,"preference-backup.json");
         using var json=JsonDocument.Parse(File.ReadAllText(file));
         if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException("The preference backup is invalid.");
-        foreach(string key in Keys(null))if(key!=nameof(Settings.AutoCheckUpdates) && (!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null))throw new InvalidDataException("The preference backup is incomplete: "+key);
+        foreach(string key in Keys(null))if(!Categories["Application"].Contains(key) && (!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null))throw new InvalidDataException("The preference backup is incomplete: "+key);
         var restored=json.RootElement.Deserialize<Settings>()??throw new InvalidDataException("The preference backup is empty.");
         var candidate=Clone(target);
         foreach(string key in Keys(null))Copy(restored,candidate,key);

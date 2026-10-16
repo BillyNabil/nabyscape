@@ -73,6 +73,7 @@ public sealed partial class OverlayWindow
     private void StopHoverTimers(){hoverDelay.Stop();leaveDelay.Stop();detailDelay.Stop();}
     internal void PreviewActivity()
     {
+        if(app.Notifications.Current!=null && !expanded && !peeking && !fileDragActive && !userHidden){OpenNotice();return;}
         if(PeekPages().Length==0 || (!app.Settings.CompactLayout && !tuckPreview && !fileDragActive) || (!app.Settings.HoverPeek && !automaticPreview && !tuckPreview && !fileDragActive) || expanded || peeking || userHidden || (TuckRequested && !tuckPreview && !fileDragActive))return;
         peeking=true;UpdateSatellite();Show();Dimensions();ConfigurePerformance();peekDetailed=!app.Settings.TwoStageHover || automaticPreview;detailDelay.Stop();if(!peekDetailed)detailDelay.Start();
         scroll.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=false;Motion.Fade(compact,0,80);
@@ -83,7 +84,7 @@ public sealed partial class OverlayWindow
     }
     private void UpdatePeek()
     {
-        if(!peeking)return;
+        if(!peeking || noticeShowing)return;
         UpdatePeekDeck();
         bool media=WidgetOn("media") && app.Media.Available;ApplyMediaTypography(peekTitle,media && app.Settings.BoldMediaTitle);
         peekArt.Visibility=media && app.Media.Artwork!=null?Visibility.Visible:Visibility.Collapsed;SwapArtwork(peekArt,media?app.Media.Artwork:null);

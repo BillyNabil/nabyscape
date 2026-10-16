@@ -42,7 +42,7 @@ public sealed partial class OverlayWindow
     private void ApplyEnvironmentTuck(){if(TuckRequested && !userHidden && !expanded && !peeking)SetTucked(true);else if(!TuckRequested)SetTucked(false);}
     private void SetTucked(bool value)
     {
-        bool changed=tucked!=value;tucked=value;
+        bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();
         if(value)
         {
             // Snap the compact silhouette before translating. No render loop remains behind the edge.

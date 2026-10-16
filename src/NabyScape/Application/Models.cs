@@ -20,6 +20,14 @@ public sealed class Shortcut
 }
 public sealed class Settings
 {
+    public string NotificationDelivery {get;set;}="Notch";
+    public bool NotifyTimer {get;set;}=true;
+    public bool NotifyFocus {get;set;}=true;
+    public bool NotifyDownloads {get;set;}=true;
+    public bool NotifyUpdates {get;set;}=true;
+    public bool NotifyFailures {get;set;}=true;
+    public bool DownloadsEnabled {get;set;}
+    public string DownloadsFolder {get;set;}="";
     public string Preset { get; set; } = "Mac";
     public double Width { get; set; } = 228;
     public double Height { get; set; } = 32;
@@ -117,6 +125,8 @@ public sealed class Settings
     public static List<WidgetSetting> Defaults() => Names.Keys.Select(id => new WidgetSetting { Id=id }).ToList();
     public void Normalize()
     {
+        if(NotificationDelivery is not ("Notch" or "Windows" or "Both" or "Off"))NotificationDelivery="Notch";
+        DownloadsFolder??="";
         static double Clamp(double value,double min,double max,double fallback) => double.IsFinite(value) ? Math.Clamp(value,min,max) : fallback;
         TuckEdge=Clamp(TuckEdge,3,12,6);
         if(TuckHotkeyKey==null || TuckHotkeyKey.Length!=1 || TuckHotkeyKey[0]<'A' || TuckHotkeyKey[0]>'Z')TuckHotkeyKey="T";

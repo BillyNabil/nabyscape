@@ -113,7 +113,7 @@ public sealed partial class OverlayWindow
     private void PromotePeek()
     {if(!peeking)return;detailDelay.Stop();peekDetailed=true;automaticPreview=false;activityDismiss.Stop();ApplyPeekGeometry();UpdateToolPeeks();motion.Go(surface,IslandSurface.SurfaceHeightProperty,PeekExpandedHeight,app.Settings.AnimationMs);}
     internal void SelectPeek(string id)
-    {if(!peeking || !PeekPages().Contains(id))return;PromotePeek();var ids=PeekPages();int old=Array.IndexOf(ids,peekId),next=Array.IndexOf(ids,id);double start=(next-old)*PeekWidth;if(Math.Abs(next-old)>1){peekId=id;LayoutPeek(0,false);peekViews[id].Opacity=.65;Motion.Fade(peekViews[id],1,160);UpdatePeekDeck();return;}if(next==old){LayoutPeek(0,true);return;}peekId=id;LayoutPeek(start,false);UpdatePeekDeck();LayoutPeek(0,true);WakeLiveRendering();}
+    {if(noticeShowing || !peeking || !PeekPages().Contains(id))return;PromotePeek();var ids=PeekPages();int old=Array.IndexOf(ids,peekId),next=Array.IndexOf(ids,id);double start=(next-old)*PeekWidth;if(Math.Abs(next-old)>1){peekId=id;LayoutPeek(0,false);peekViews[id].Opacity=.65;Motion.Fade(peekViews[id],1,160);UpdatePeekDeck();return;}if(next==old){LayoutPeek(0,true);return;}peekId=id;LayoutPeek(start,false);UpdatePeekDeck();LayoutPeek(0,true);WakeLiveRendering();}
     internal void NavigatePeek(int direction)
     {var ids=PeekPages();int index=Array.IndexOf(ids,peekId);if(ids.Length>0)SelectPeek(ids[Math.Clamp(index+Math.Sign(direction),0,ids.Length-1)]);}
     private void LayoutPeek(double offset,bool animate)
@@ -134,7 +134,7 @@ public sealed partial class OverlayWindow
     private void EndPeekGesture(){peekDown=null;peekDragging=peekTouching=false;peekOffset=0;peekWheel.Reset();if(peekViewport.IsMouseCaptured)peekViewport.ReleaseMouseCapture();}
     internal bool RoutePeekWheel(int delta,bool horizontal,DependencyObject? source)
     {
-        if(!peeking)return false;
+        if(!peeking || noticeShowing)return false;
         // Only the focused multiline editor keeps its native vertical scrolling.
         if(!VisibilityPolicy.CarouselOwnsWheel(peeking,horizontal,peekNote.IsKeyboardFocusWithin,IsPeekNoteSource(source)))return false;
         int direction=peekWheel.Push(horizontal?delta:-delta,Environment.TickCount64);

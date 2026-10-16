@@ -233,7 +233,7 @@ public sealed partial class SettingsWindow : Window
     private void General()
     {
         var s=app.Settings;
-        UpdatesSection();
+        UpdatesSection();NotificationSettings();
         var startup=new CheckBox{Content="Start automatically when signing in to Windows",IsChecked=s.AutoStart};
         UI.Named(startup,"Start automatically when signing in to Windows");        startup.Click+=(_,_)=>
         {

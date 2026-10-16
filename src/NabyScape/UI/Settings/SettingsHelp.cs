@@ -4,6 +4,8 @@ public sealed partial class SettingsWindow
 {
     private static readonly Dictionary<string,string> SettingDescriptions=new()
     {
+        ["Notification delivery"]="Notch uses a compact indicator. Windows uses a tray notification. Both sends each once; Off suppresses all. A manually hidden island uses Windows fallback.",
+        ["Infer completed arrivals in a download folder"]="Opt-in folder watcher: ignores existing files and waits for a readable final name with stable size for two seconds. It cannot prove browser completion.",
         ["Always tucked"]="Keeps a small top edge visible until you hover; for example keep music out of the way while working.",
         ["Tucked edge height"]="Choose a 3–12 DIP hover target. Default 6 DIP leaves a narrow, reachable edge.",
         ["Enable tuck shortcut"]="Ctrl+Alt+T tucks the island; press again to release the manual latch to automatic rules.",

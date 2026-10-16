@@ -48,6 +48,7 @@ internal static class Diagnostics
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
             if(Environment.GetCommandLineArgs().Contains("--showcase")){await ShowcaseDiagnostics.Run(app,overlay,directory);return;}
+            if(Environment.GetCommandLineArgs().Contains("--stage4-only")){await Task.Delay(500);await Stage4Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage3-only")){await Task.Delay(500);await Stage3Diagnostics.Run(app,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage2-only")){await Task.Delay(500);await Stage2Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage1-only")){await Task.Delay(500);await Stage1Diagnostics.Run(app,overlay,directory,Check);return;}

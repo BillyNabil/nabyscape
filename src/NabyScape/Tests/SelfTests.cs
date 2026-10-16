@@ -34,6 +34,7 @@ internal static class SelfTests
         SettingsUxTests.Run(Test);
         PersistenceTests.Run(Test);
         UpdateTests.Run(Test);
+        NotificationDownloadTests.Run(Test);
         Test("Customization profiles round-trip without personal data or startup changes",()=>
         {
             var original=new Settings{PanelWidth=520,PanelScale=1.1,Background="#182028",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Private",Target="https://private.example"}}};original.HoverViews.Reverse();var encoded=CustomizationProfile.Export(original);Assert(!encoded.Contains("Private") && !encoded.Contains("AutoStart") && !encoded.Contains("ClipboardHistory"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.PanelWidth==520 && target.PanelScale==1.1 && target.Background=="#182028" && target.HoverViews[0].Id=="system" && !target.AutoStart && !target.ClipboardHistory && target.Shortcuts.Count==2);

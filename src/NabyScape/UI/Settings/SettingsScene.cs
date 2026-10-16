@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Shape","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
+    internal static readonly string[] Sections={"Shape","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -151,6 +151,10 @@ internal sealed class SettingsScene : FrameworkElement
                 Keys("Open app",22,30,106);Line(139,45,159,45);Keys("Start Focus",170,30,106);Line(287,45,307,45);Keys("Keep awake",316,30,90);Note(s.ActivitiesEnabled?"Example routine · starts only when you press Start":"Activities hidden; saved routines are kept");break;
             case "Layout profile":
                 Text("Appearance + layout",24,22,16,true);Text("Content order + gestures",24,50,12);Keys("Export / Import",250,27,143);Note("Excludes notes, clipboard items, app targets and startup");break;
+            case "Notifications":
+                Box(36,18,215,34,Brushes.Black,17);Text("Timer finished",53,29,11,true);Keys(s.NotificationDelivery,274,20,110);Note("Notch / Windows / Both / Off · hidden island uses Windows");break;
+            case "Downloads":
+                Box(24,18,42,47);Text("↓",36,25,21);Text("Report.pdf",83,22,14,true);Text("2 arrivals · drag originals",83,49,11,false,muted);Toggle(350,25,s.DownloadsEnabled);Note("Example only · folder arrivals inferred after stable readable size");break;
             case "Updates":
                 Text("Installed "+OfficialUpdates.InstalledVersion,22,15,13,true);Text("Example: newer stable",225,15,12,true);Bar(24,55,365,.6);Text("Check > download 60% > verify > install",24,70,12);Note("Automatic checks "+(s.AutoCheckUpdates?"on":"off")+" - no automatic installation");break;
             case "Reset preferences":
