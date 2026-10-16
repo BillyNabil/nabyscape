@@ -17,7 +17,7 @@ public sealed partial class OverlayWindow : Window
     private readonly SurfaceMotion motion=new();
     private readonly Grid root=new(),visuals=new();
     private readonly Button compact;
-    private readonly TextBlock summary=UI.Text("NabyScape",12),compactClock=UI.Text("",12);
+    private readonly TextBlock summary=UI.Text("",12),compactClock=UI.Text("",12);
     private readonly StackPanel body=new();
     private readonly WrapPanel widgets=new();
     private readonly ScrollViewer scroll;
@@ -107,7 +107,8 @@ public sealed partial class OverlayWindow : Window
     }
     private void ApplySettings()
     {
-        if(ApplyIncrementalSettings(OverlaySettingsState.Capture(app.Settings)))return;
+        var editorState=CaptureEditorState();
+        if(ApplyIncrementalSettings(OverlaySettingsState.Capture(app.Settings))){RestoreEditorState(editorState);return;}
         if(!app.Settings.ActivitiesEnabled){activitiesOpen=false;activityDraft=null;}classicMixerOpen=false;if(activePage=="mixer")activePage="media";
         FlushNotes();ConfigureHotkey();var s=app.Settings;refreshHz=Native.RefreshRate(Native.ChooseScreen(s));Motion.Configure(s);Opacity=s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac";surface.Radius=s.Radius;
         hoverDelay.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDelayMs);detailDelay.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDetailDelayMs);
@@ -117,7 +118,7 @@ public sealed partial class OverlayWindow : Window
         bodySlide.BeginAnimation(TranslateTransform.YProperty,null);bodySlide.Y=expanded?0:-8;
         motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:s.Height);
         motion.Snap(surface,IslandSurface.GlassLiftProperty,expanded?1:0);
-        surface.Refresh();ApplyEnvironmentTuck();Position();Update();ConfigureLiveActivity();
+        surface.Refresh();ApplyEnvironmentTuck();Position();Update();ConfigureLiveActivity();RestoreEditorState(editorState);
     }
     private void BuildBody()
     {bodyInitialized=true;bodyDirty=false;bodyReflow.Clear();pendingCompactPages.Clear();BodyBuilds++;BuildBodyContent();ApplyHeadingTypography(body);}
@@ -242,7 +243,7 @@ public sealed partial class OverlayWindow : Window
         if(!IsVisible || userHidden || IsTucked)return;
         var change=app.CurrentUpdate;if(change is RuntimeChange.Productivity or RuntimeChange.Calendar){if(peeking)UpdatePeek();if(change==RuntimeChange.Calendar)UpdateSatellite();return;}var now=DateTimeOffset.Now;if((change&(RuntimeChange.Media|RuntimeChange.Countdown|RuntimeChange.Settings))!=0)CheckSmartActivities();if((change&(RuntimeChange.Media|RuntimeChange.Settings))!=0)UpdateAlbumTint();ConfigurePerformance();UpdateAudioFeedback();bool On(string id)=>app.Settings.Widgets.Any(w=>w.Id==id && w.Enabled);
         UpdateSatellite();UpdateClosedMediaIcon();Motion.Text(compactClock,now.ToString(app.Settings.Clock24Hour?"HH:mm":"h:mm tt"));UpdateRoadmapStatus(now);
-        Motion.Text(summary,FeedbackVisible?feedbackText:!ShowMediaPrimary && On("focus") && app.Session.Focus.Remaining(now)>0?(app.Session.Focus.Phase=="break"?"Break  ":"Focus  ")+app.Session.Focus.Display(now):!ShowMediaPrimary && On("timer") && app.Session.Timer.Remaining(now)>0?"Timer  "+app.Session.Timer.Display(now):On("media") && app.Media.Available?app.Media.Title:"NabyScape");
+        Motion.Text(summary,FeedbackVisible?feedbackText:!ShowMediaPrimary && On("focus") && app.Session.Focus.Remaining(now)>0?(app.Session.Focus.Phase=="break"?"Break  ":"Focus  ")+app.Session.Focus.Display(now):!ShowMediaPrimary && On("timer") && app.Session.Timer.Remaining(now)>0?"Timer  "+app.Session.Timer.Display(now):On("media") && app.Media.Available?app.Media.Title:"");
         if(!liveRendering && !AudioVisualDemand){var session=ActiveCountdown();activity.Sample(0,1,session?.Progress(now)??0,session!=null,session==app.Session.Focus,false,0);}
         WakeLiveRendering();ApplyTitleTypography(!FeedbackVisible && (ShowMediaPrimary || !(On("focus") && app.Session.Focus.Remaining(now)>0) && !(On("timer") && app.Session.Timer.Remaining(now)>0)) && On("media") && app.Media.Available);UpdatePeek();UpdateMixer();UpdateSystemMonitor();if(!expanded)return;updating=true;
         try{

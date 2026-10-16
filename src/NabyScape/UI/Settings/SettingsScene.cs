@@ -12,7 +12,27 @@ internal sealed class SettingsScene : FrameworkElement
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
-    internal SettingsScene(string kind,Settings settings){this.kind=kind;s=settings;Height=126;ClipToBounds=true;IsHitTestVisible=false;}
+    internal SettingsScene(string kind,Settings settings){this.kind=kind;s=settings;ClipToBounds=true;IsHitTestVisible=false;}
+    internal sealed record WidgetTile(Rect Bounds,FormattedText Label);
+    internal static WidgetTile[] WidgetTiles(Settings settings,double pixelsPerDip=1)
+    {
+        var labels=settings.Widgets.Where(widget=>widget.Enabled).Select(widget=>new FormattedText(Settings.Names[widget.Id],CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),10,UI.Brush("#F3F4F6"),pixelsPerDip){MaxTextWidth=60,Trimming=TextTrimming.None}).ToArray();
+        var result=new WidgetTile[labels.Length];double y=15;
+        for(int row=0;row<labels.Length;row+=5)
+        {
+            double height=Math.Max(28,labels.Skip(row).Take(5).Max(label=>label.Height)+12);
+            for(int column=0;column<5 && row+column<labels.Length;column++)result[row+column]=new(new Rect(16+column*79,y,72,height),labels[row+column]);
+            y+=height+7;
+        }
+        return result;
+    }
+    protected override Size MeasureOverride(Size available)
+    {
+        double height=126;
+        if(kind=="Enabled widgets & order"){var tiles=WidgetTiles(s,VisualTreeHelper.GetDpi(this).PixelsPerDip);height=Math.Max(height,(tiles.LastOrDefault()?.Bounds.Bottom??15)+44);}
+        double width=double.IsInfinity(available.Width)?420:available.Width;
+        return new(width,height*Math.Min(1,width/420));
+    }
     protected override void OnRender(DrawingContext dc)
     {
         if(ActualWidth<=0)return;
@@ -33,7 +53,9 @@ internal sealed class SettingsScene : FrameworkElement
             else {Box(x,y,size,size,UI.Brush("#737D8C"),5);dc.DrawEllipse(null,new Pen(white,1),new Point(x+size/2,y+size/2),size*.27,size*.27);}
         }
         void Note(string message)=>Text(message,14,99,11,false,muted);
-        Box(0,0,420,124,UI.Brush("#181A1F"),10);
+        var widgetTiles=kind=="Enabled widgets & order"?WidgetTiles(s,VisualTreeHelper.GetDpi(this).PixelsPerDip):Array.Empty<WidgetTile>();
+        double widgetBottom=widgetTiles.LastOrDefault()?.Bounds.Bottom??15;
+        Box(0,0,420,kind=="Enabled widgets & order"?Math.Max(124,widgetBottom+42):124,UI.Brush("#181A1F"),10);
         switch(kind)
         {
             case "Shape":
@@ -62,7 +84,7 @@ internal sealed class SettingsScene : FrameworkElement
             case "Hover preview":case "Hover & swipe":
                 Island(20,18,126,27);Line(159,37,199,37);Box(212,12,186,73,Brushes.Black);Text("Song title",226,24,13,true);Bar(226,61,156,.35);Text("Hover",45,63,11);Note(kind=="Hover & swipe"?$"Preview after {s.HoverDelayMs} ms · detail after {s.HoverDetailDelayMs} ms":$"Preview {s.HoverWidth:0} × {s.HoverHeight:0} px");break;
             case "Enabled widgets & order":
-                int wi=0;foreach(var item in s.Widgets.Where(w=>w.Enabled)){double x=16+wi%5*79,y=15+wi/5*35;Box(x,y,72,28);Text(Settings.Names[item.Id],x+6,y+8,10,false,null,60);wi++;}Note("Visible panels, in your chosen order");break;
+                foreach(var tile in widgetTiles){var bounds=tile.Bounds;Box(bounds.X,bounds.Y,bounds.Width,bounds.Height);dc.DrawText(tile.Label,new Point(bounds.X+6,bounds.Y+6));}Text("Visible panels, in your chosen order",14,Math.Max(99,widgetBottom+12),11,false,muted);break;
             case "Individual tools":
                 int ti=0;foreach(var item in s.Tools.Take(7)){double x=16+ti%4*100,y=10+ti/4*40;Text(Settings.ToolNames[item.Id],x,y,10,false,item.Enabled?white:muted,92);Toggle(x,y+18,item.Enabled);ti++;}Note("Disabled tools disappear; their saved data stays");break;
             case "Hover pages":

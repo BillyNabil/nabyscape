@@ -9,7 +9,7 @@ public sealed partial class OverlayWindow
     private readonly StackPanel peekClipboard=new(),peekTasks=new();
     private string clipboardPeekKey="",tasksPeekKey="";
     private FrameworkElement BuildToolPeek(string id)
-    {var page=new StackPanel();page.Children.Add(UI.Heading(id=="clips"?"Clipboard":"Tasks",13));page.Children.Add(id=="clips"?peekClipboard:peekTasks);var open=PlainPeekButton("Open all "+id,()=>{if(id=="tasks")notesMode="tasks";ShowTools(id);});open.Content=id=="clips"?"Open clipboard":"All tasks";open.FontSize=11;open.Margin=new(0,5,0,0);page.Children.Add(open);return page;}
+    {var page=new StackPanel();page.Children.Add(UI.Heading(id=="clips"?"Clipboard":"Tasks",13));page.Children.Add(id=="clips"?peekClipboard:peekTasks);var open=PlainPeekButton("Open all "+id,()=>{ShowTools(id);});open.Content=id=="clips"?"Open clipboard":"All tasks";open.FontSize=11;open.Margin=new(0,5,0,0);page.Children.Add(open);return page;}
     private void UpdateToolPeeks()
     {
         if(!peekInitialized)return;

@@ -25,7 +25,7 @@ public sealed partial class OverlayWindow
         compact.ToolTip=waveform?app.Media.Title+" · click to open · Esc to close":"Click to open · Esc to close";
         if(!app.Media.Playing || app.Audio.MediaMeterMuted || app.Settings.ReduceMotion || !app.Settings.LiveActivity)closedTitleWave.Sample(0,1,0,false,false,false,0);
         closedCover.Visibility=cover?Visibility.Visible:Visibility.Collapsed;
-        activity.Visibility=FeedbackVisible || cover || waveform?Visibility.Collapsed:Visibility.Visible;
+        activity.Visibility=FeedbackVisible || cover || waveform || !(countdown || WidgetOn("media") && app.Media.Available)?Visibility.Collapsed:Visibility.Visible;
         if(cover)SwapArtwork(closedCoverImage,app.Media.Artwork);
     }
 }

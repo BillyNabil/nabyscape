@@ -48,6 +48,7 @@ internal static class Diagnostics
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
             if(Environment.GetCommandLineArgs().Contains("--showcase")){await ShowcaseDiagnostics.Run(app,overlay,directory);return;}
+            if(Environment.GetCommandLineArgs().Contains("--stage1-only")){await Task.Delay(500);await Stage1Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--performance-checks-only")){await PerformanceChecks.Run(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--performance-benchmark")){await PerformanceDiagnostics.Run(app,overlay,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--tools240-only")){await Task.Delay(500);await Tools240Diagnostics.Run(app,overlay,directory,Check);return;}
@@ -188,7 +189,7 @@ internal static class Diagnostics
             Check("File shelf exposes the staged local file",Descendants(overlay).OfType<TextBlock>().Any(t=>t.Text=="shelf-fixture.txt"));CaptureContour("tools-files");
             overlay.ShowTools("notes",false);await Task.Delay(200);var noteBox=Descendants(overlay).OfType<TextBox>().First(t=>AutomationProperties.GetName(t)=="Quick notes");noteBox.Text="Local diagnostic note";
             Check("Notes editor saves through its debounce",await WaitUntil(()=>app.Store.Load<ProductivityData>("productivity").Note=="Local diagnostic note"));app.Productivity.AddTask("Diagnostic task");overlay.ShowTools("notes",false);await Task.Delay(150);CaptureContour("tools-notes");
-            Check("Checklist editor exposes its persisted task",Descendants(overlay).OfType<CheckBox>().Any(c=>c.Content is TextBlock t && t.Text=="Diagnostic task"));
+            Check("Notes editor excludes checklist controls",!Descendants(overlay).OfType<TextBox>().Any(t=>AutomationProperties.GetName(t)=="New task"));
             overlay.ShowTools("files",false);await Task.Delay(200); // The same selector used by file DragEnter; no cross-app drag is performed.
             Check("File drag-in routes directly to shelf content",Descendants(overlay).OfType<TextBlock>().Any(t=>t.Text=="shelf-fixture.txt"));
             Click("All tools");await Task.Delay(350);overlay.UpdateLayout();CaptureContour("tools-home");
@@ -196,12 +197,12 @@ internal static class Diagnostics
             Check("Tool launcher uses six compact rows without marketing copy",new[]{"File shelf","Notes","Clipboard","Calendar","Keep awake","Clean links"}.All(name=>ActionButton(name).ActualWidth>=300 && ActionButton(name).ActualHeight==32) && !Descendants(overlay).OfType<TextBlock>().Any(t=>t.Text.Contains("everyday essentials") || t.Text.Contains("Drop & collect")));
             Check("Launcher exposes all six tools without a dropdown",new[]{"File shelf","Notes","Clipboard","Calendar","Keep awake","Clean links"}.All(name=>Descendants(overlay).OfType<Button>().Any(b=>AutomationProperties.GetName(b)==name)) && !Descendants(overlay).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Choose a tool"));
             Click("Notes");Check("Launcher returns to the writing editor",Entry("Quick notes").IsVisible);
-            Click("Tasks");Check("Tasks view separates the checklist from writing",!Entry("Quick notes").IsVisible && Entry("New task").IsVisible);
-            Entry("New task").Text="Unsubmitted task draft";Click("Write");Click("Tasks");Check("Switching notes segments preserves an unsubmitted task",Entry("New task").Text=="Unsubmitted task draft");
+            overlay.ShowTools("tasks",false);Check("Tasks view separates the checklist from writing",!Descendants(overlay).OfType<TextBox>().Any(t=>AutomationProperties.GetName(t)=="Quick notes") && Entry("New task").IsVisible);
+            Entry("New task").Text="Unsubmitted task draft";overlay.ShowTools("notes",false);overlay.ShowTools("tasks",false);Check("Switching tools preserves an unsubmitted task",Entry("New task").Text=="Unsubmitted task draft");
             var taskCheck=Descendants(overlay).OfType<CheckBox>().Single(c=>AutomationProperties.GetName(c)=="Diagnostic task");taskCheck.IsChecked=true;taskCheck.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
             Check("Completing a task preserves its control and checklist view",app.Productivity.Tasks.Any(t=>t.Text=="Diagnostic task" && t.Done) && Descendants(overlay).Contains(taskCheck) && Entry("New task").IsVisible);
             CaptureContour("tools-tasks");
-            for(int i=0;i<12;i++)app.Productivity.AddTask("Scroll fixture "+i);overlay.ShowTools("notes",false);await Task.Delay(250);overlay.UpdateLayout();var outerScroll=OuterScroll(Entry("New task"));outerScroll.ScrollToEnd();await Task.Delay(100);
+            for(int i=0;i<12;i++)app.Productivity.AddTask("Scroll fixture "+i);overlay.ShowTools("tasks",false);await Task.Delay(250);overlay.UpdateLayout();var outerScroll=OuterScroll(Entry("New task"));outerScroll.ScrollToEnd();await Task.Delay(100);
             Check("Long tools content provides a meaningful scroll-reset fixture",outerScroll.VerticalOffset>0);
             var chrome=outerScroll.Template.FindName("PART_VerticalScrollBar",outerScroll) as System.Windows.Controls.Primitives.ScrollBar;
             Check("Scrollbar has a dedicated gutter outside the content viewport",chrome!=null && chrome.Width==12 && chrome.Maximum>0 && Descendants(chrome).OfType<Border>().Any(b=>b.Name=="Grip" && b.Width==2) && Descendants(outerScroll).OfType<ScrollContentPresenter>().First().ActualWidth<=outerScroll.ActualWidth-13.9);
@@ -380,12 +381,12 @@ internal static class Diagnostics
             var workArea=Native.ChooseScreen(app.Settings).WorkingArea;double workScale=Native.Scale(Native.ChooseScreen(app.Settings));
             Check("Settings window fits its work area",settings.ActualWidth<=workArea.Width/workScale && settings.ActualHeight<=workArea.Height/workScale);
             settings.Width=640;settings.Height=640;await Task.Delay(180);settings.UpdateLayout();Capture(settings,"settings-narrow");
-            var previewAtNarrow=Descendants(settings).OfType<TextBlock>().First(t=>t.Text=="Live preview");
+            var previewAtNarrow=Descendants(settings).OfType<Expander>().Single(e=>AutomationProperties.GetName(e)=="Settings live preview");
             var narrowForm=Descendants(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
-            Check("Narrow Settings stacks preview above its controls",previewAtNarrow.TranslatePoint(new Point(),settings).Y<narrowForm.TranslatePoint(new Point(),settings).Y && narrowForm.ActualWidth>300);
-            settings.Width=480;settings.Height=380;await Task.Delay(220);settings.UpdateLayout();Capture(settings,"settings-short");
+            Check("Narrow Settings collapses preview above its controls",!previewAtNarrow.IsExpanded && narrowForm.ActualWidth>300 && Descendants(settings).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Settings category" && c.IsVisible));
+            settings.Width=480;settings.Height=300;await Task.Delay(220);settings.UpdateLayout();Capture(settings,"settings-short");
             var formViewport=Descendants(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
-            Check("Short Settings preserves a usable form viewport",formViewport.ActualHeight>=119 && formViewport.ActualWidth>=300);
+            Check("Short Settings preserves a usable form viewport",formViewport.ActualHeight>=80 && formViewport.ActualWidth>=300);
             settings.Width=1100;settings.Height=780;
             settings.Close();
             var savedWidgets=app.Settings.Widgets.Select(w=>(w.Id,w.Enabled)).ToArray();

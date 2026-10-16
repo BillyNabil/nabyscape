@@ -14,7 +14,7 @@ public sealed partial class OverlayWindow
 {
     private readonly StackPanel toolsContent=new();
     private string toolsMode="home";
-    private string notesMode="write",taskDraft="";
+    private string taskDraft="";
     private bool utilityMutating;
     private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links") };
     private bool ToolOn(string id)=>WidgetOn("tools") && app.Settings.ToolEnabled(id);
@@ -27,7 +27,7 @@ public sealed partial class OverlayWindow
     }
     private void NavigateTool(string mode)
     {
-        if(mode!="home" && !ToolOn(mode))return;if(mode=="tasks")notesMode="tasks";
+        if(mode!="home" && !ToolOn(mode))return;
         activitiesOpen=false;FlushNotes();bool back=mode=="home";toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();RefreshTools();
         if(Motion.Enabled){var move=new TranslateTransform(back?-14:14,0);toolsContent.RenderTransform=move;toolsContent.Opacity=0;Motion.Fade(toolsContent,1,180);Motion.To(move,TranslateTransform.XProperty,0,280);}
     }
@@ -68,17 +68,18 @@ public sealed partial class OverlayWindow
     }
     private void BuildNotes()
     {
-        if(!ToolOn(notesMode=="tasks"?"tasks":"notes"))notesMode=ToolOn("notes")?"write":"tasks";
         var p=app.Productivity;var heading=UI.Heading(toolsMode=="tasks"?"Tasks":"Notes",19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
-        var tabs=new Grid{Height=32};tabs.ColumnDefinitions.Add(new());tabs.ColumnDefinitions.Add(new());
-        var capsule=new Border{Background=UI.Brush("#34363C"),CornerRadius=new(11),Margin=new(3)};Grid.SetColumnSpan(capsule,2);capsule.HorizontalAlignment=HorizontalAlignment.Left;var slide=new TranslateTransform();capsule.RenderTransform=slide;tabs.Children.Add(capsule);
-        var track=new Border{Background=UI.Brush("#14161A"),CornerRadius=new(13),Margin=new(0,0,0,15),Child=tabs};toolsContent.Children.Add(track);
-        var write=new StackPanel();var tasks=new StackPanel();toolsContent.Children.Add(write);toolsContent.Children.Add(tasks);
-        var note=UI.Input("Quick notes",p.Note);mainNoteEditor=note;note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=136;note.VerticalContentAlignment=VerticalAlignment.Top;note.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;note.MaxLength=50000;note.Padding=new(13);note.Margin=new(0);
-        var editor=new Grid();editor.Children.Add(note);var placeholder=UI.Text("Capture a thought…",13,UI.Muted);placeholder.IsHitTestVisible=false;placeholder.VerticalAlignment=VerticalAlignment.Top;placeholder.Margin=new(14);editor.Children.Add(placeholder);write.Children.Add(editor);
-        var meta=UI.Text("Saved on this device",10,UI.Muted);meta.Margin=new(2,9,0,2);write.Children.Add(meta);
-        void Placeholder()=>placeholder.Visibility=note.Text.Length==0?Visibility.Visible:Visibility.Collapsed;Placeholder();
-        note.TextChanged+=(_,_)=>{if(!syncingNote)p.Note=note.Text;Placeholder();noteSave.Stop();noteSave.Start();};
+        var write=new StackPanel();var tasks=new StackPanel();toolsContent.Children.Add(toolsMode=="notes"?write:tasks);
+        mainNoteEditor=null;
+        if(toolsMode=="notes")
+        {
+            var note=UI.Input("Quick notes",p.Note);mainNoteEditor=note;note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=136;note.VerticalContentAlignment=VerticalAlignment.Top;note.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;note.MaxLength=50000;note.Padding=new(13);note.Margin=new(0);
+            var editor=new Grid();editor.Children.Add(note);var placeholder=UI.Text("Capture a thought…",13,UI.Muted);placeholder.IsHitTestVisible=false;placeholder.VerticalAlignment=VerticalAlignment.Top;placeholder.Margin=new(14);editor.Children.Add(placeholder);write.Children.Add(editor);
+            var meta=UI.Text("Saved on this device",10,UI.Muted);meta.Margin=new(2,9,0,2);write.Children.Add(meta);
+            void Placeholder()=>placeholder.Visibility=note.Text.Length==0?Visibility.Visible:Visibility.Collapsed;Placeholder();
+            note.TextChanged+=(_,_)=>{if(!syncingNote)p.Note=note.Text;Placeholder();noteSave.Stop();noteSave.Start();};
+            return;
+        }
         var addRow=new DockPanel{Margin=new(0,0,0,9)};var input=UI.Input("New task",taskDraft);input.MaxLength=240;input.MinHeight=34;input.Margin=new(0);input.Padding=new(11,8,11,8);input.TextChanged+=(_,_)=>taskDraft=input.Text;
         void Add(){if(string.IsNullOrWhiteSpace(input.Text))return;string text=input.Text;MutateUtility(()=>{if(p.AddTask(text))taskDraft="";else app.Notify("Task limit reached","Remove a task before adding another. Your draft is still here.");});}
         var add=UI.Button("Add task",Add);add.Content="+";add.FontSize=18;add.Width=34;add.Height=34;add.MinHeight=34;add.Padding=new(0);add.Margin=new(7,0,0,0);DockPanel.SetDock(add,Dock.Right);addRow.Children.Add(add);addRow.Children.Add(input);tasks.Children.Add(addRow);
@@ -92,11 +93,6 @@ public sealed partial class OverlayWindow
             check.Click+=(_,_)=>{item.Done=check.IsChecked==true;label.TextDecorations=item.Done?TextDecorations.Strikethrough:null;label.Foreground=item.Done?UI.Muted:Brushes.White;utilityMutating=true;try{p.Save();}finally{utilityMutating=false;}};row.Children.Add(check);tasks.Children.Add(row);
         }
         if(p.Tasks.Count==0){var empty=UI.Text("Make room for what matters.\nAdd your first task above.",12,UI.Muted);empty.Margin=new(2,16,0,18);tasks.Children.Add(empty);}
-        var buttons=new Button[2];
-        void Select(bool animate){write.Visibility=notesMode=="write"?Visibility.Visible:Visibility.Collapsed;tasks.Visibility=notesMode=="tasks"?Visibility.Visible:Visibility.Collapsed;capsule.Width=Math.Max(0,tabs.ActualWidth/2-6);double x=notesMode=="write"?0:tabs.ActualWidth/2;if(animate)Motion.To(slide,TranslateTransform.XProperty,x,240);else slide.X=x;for(int i=0;i<2;i++)buttons[i].Foreground=(notesMode=="write")==(i==0)?Brushes.White:UI.Muted;if(animate)Motion.Enter(notesMode=="write"?write:tasks,5);ResizeToolPanel();}
-        for(int i=0;i<2;i++){int index=i;var button=UI.Button(i==0?"Write":"Tasks",()=>{FlushNotes();notesMode=index==0?"write":"tasks";scroll.ScrollToTop();Select(true);});button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.MinHeight=26;button.Margin=new(0);button.Padding=new(0);button.FontSize=11;Grid.SetColumn(button,i);tabs.Children.Add(button);buttons[i]=button;}
-        buttons[0].IsEnabled=ToolOn("notes");buttons[1].IsEnabled=ToolOn("tasks");
-        tabs.SizeChanged+=(_,_)=>Select(false);Select(false);
     }
 
     private void InitializeUtilities()
@@ -108,14 +104,14 @@ public sealed partial class OverlayWindow
 
     private void ProductivityChanged()
     {
-        SyncNoteEditors();UpdateToolPeeks();if(toolsMode is "notes" or "tasks" && mainNoteEditor?.IsLoaded==true)return;
+        SyncNoteEditors();UpdateToolPeeks();if(toolsMode=="notes" && mainNoteEditor?.IsLoaded==true)return;
         if(utilityMutating || toolsMode is not ("files" or "notes" or "tasks" or "clips") || (toolsMode=="notes" && Keyboard.FocusedElement is TextBox))return;
         RefreshTools();
     }
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(!WidgetOn("tools") || mode!="home" && !ToolOn(mode))return;if(mode=="tasks")notesMode="tasks";if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
+    {if(!WidgetOn("tools") || mode!="home" && !ToolOn(mode))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
     private void RefreshTools()
     {
 

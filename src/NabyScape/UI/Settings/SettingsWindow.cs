@@ -27,15 +27,17 @@ public sealed partial class SettingsWindow : Window
     private readonly TextBlock hotkeyState=UI.Text("",11,UI.Muted);
     public SettingsWindow(App app)
     {
-        this.app=app;Title="NabyScape · Settings";Width=1100;Height=780;MinWidth=480;MinHeight=380;WindowStartupLocation=WindowStartupLocation.CenterScreen;
+        this.app=app;Title="NabyScape · Settings";Width=1100;Height=780;MinWidth=480;MinHeight=300;WindowStartupLocation=WindowStartupLocation.Manual;
         Background=UI.Brush("#111214");Foreground=UI.Brush("#F3F4F6");FontFamily=new FontFamily("Segoe UI Variable, Segoe UI");FontSize=13;
         Icon=System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Assets/island.ico"));
         Resources[typeof(CheckBox)]=FindResource("SettingsSwitch");
-        SourceInitialized+=(_,_)=>{Native.DarkTitleBar(this);var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);MinWidth=Math.Min(MinWidth,Math.Max(280,screen.WorkingArea.Width/scale-32));MinHeight=Math.Min(MinHeight,Math.Max(260,screen.WorkingArea.Height/scale-32));Width=Math.Min(Width,screen.WorkingArea.Width/scale-32);Height=Math.Min(Height,screen.WorkingArea.Height/scale-32);};
+        InitializeSettingsBounds();
         var root=new Grid();root.RowDefinitions.Add(new(){Height=GridLength.Auto});root.RowDefinitions.Add(new());root.ColumnDefinitions.Add(new(){Width=new GridLength(168)});root.ColumnDefinitions.Add(new());
-        var navigation=new WrapPanel{Orientation=Orientation.Vertical,Margin=new(14,26,12,18)};var brand=UI.Text("NabyScape",21);brand.FontWeight=FontWeights.SemiBold;brand.Margin=new(12,0,0,28);navigation.Children.Add(brand);
+        var navigation=new StackPanel{Orientation=Orientation.Vertical,Margin=new(14,26,12,18)};var brand=UI.Text("NabyScape",21);brand.FontWeight=FontWeights.SemiBold;brand.Margin=new(12,0,0,28);navigation.Children.Add(brand);
         foreach(var name in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"}){var button=UI.Button(name,()=>Navigate(name));button.HorizontalContentAlignment=HorizontalAlignment.Left;button.Padding=new(12,9,12,9);button.Margin=new(0,2,0,2);button.Tag=new CornerRadius(8);button.FontSize=12;navigationButtons[name]=button;navigation.Children.Add(button);}
         var navBorder=new Border{Background=UI.Brush("#17181B"),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,0,1,0),Child=navigation};root.Children.Add(navBorder);
+        var categories=new ComboBox{Margin=new(16,7,16,7),ItemsSource=navigationButtons.Keys,SelectedItem=current,Visibility=Visibility.Collapsed};UI.Named(categories,"Settings category");
+        categories.SelectionChanged+=(_,_)=>{if(categories.SelectedItem is string name && name!=current)Navigate(name);};Grid.SetColumnSpan(categories,2);root.Children.Add(categories);
         var main=new Grid();Grid.SetColumn(main,1);Grid.SetRowSpan(main,2);Grid.SetRowSpan(navBorder,2);root.Children.Add(main);main.RowDefinitions.Add(new(){Height=new GridLength(1,GridUnitType.Star)});main.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var workspace=new Grid();workspace.RowDefinitions.Add(new(){Height=GridLength.Auto});workspace.RowDefinitions.Add(new(){Height=GridLength.Auto});workspace.RowDefinitions.Add(new());workspace.ColumnDefinitions.Add(new());workspace.ColumnDefinitions.Add(new(){Width=new GridLength(300)});main.Children.Add(workspace);
         var scroll=UI.Scroll(page);scroll.Padding=new(0,0,8,0);workspace.Children.Add(scroll);Grid.SetRow(scroll,2);settingsScroll=scroll;Grid.SetRow(sectionIndexHost,1);workspace.Children.Add(sectionIndexHost);
@@ -44,28 +46,30 @@ public sealed partial class SettingsWindow : Window
         var modes=new Grid{Margin=new(0,14,0,12)};for(int i=0;i<3;i++)modes.ColumnDefinitions.Add(new());int column=0;foreach(string mode in new[]{"Closed","Hover","Panel"}){var button=UI.Button(mode,()=>{previewMode=mode;RefreshPreview();});button.FontSize=10;button.Padding=new(3,7,3,7);button.Margin=new(0,0,4,0);button.Tag=new CornerRadius(7);UI.Named(button,"Preview "+mode);Grid.SetColumn(button,column++);modes.Children.Add(button);previewModeButtons[mode]=button;}previewColumn.Children.Add(modes);
         previewStage=new Border{Height=238,Background=UI.Brush("#202226"),CornerRadius=new(10),ClipToBounds=true,Child=new System.Windows.Controls.Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=preview,VerticalAlignment=VerticalAlignment.Top}};previewColumn.Children.Add(previewStage);
         previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Text("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard","Control colors","Typography","Panel navigation","Visibility","Tasks","Startup"})examples.Items.Add(item);examples.SelectedIndex=0;UI.Named(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=UI.Text("Changes apply automatically. The preview uses your current shape, size and colors.",11,UI.Muted);hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
-        var rail=new Border{BorderBrush=UI.Brush("#24262B"),BorderThickness=new(1,0,0,0),Child=UI.Scroll(previewColumn)};Grid.SetColumn(rail,1);Grid.SetRowSpan(rail,3);workspace.Children.Add(rail);
+        var previewExpander=new Expander{Header=UI.Text("Live preview",12,UI.Muted),Foreground=UI.Muted,Margin=new(8,0,0,0),Content=UI.Scroll(previewColumn),IsExpanded=true};
+        var rail=new Border{BorderBrush=UI.Brush("#24262B"),BorderThickness=new(1,0,0,0),Child=previewExpander};Grid.SetColumn(rail,1);Grid.SetRowSpan(rail,3);workspace.Children.Add(rail);
+        bool? previousNarrow=null;
+        bool? previousShort=null;
         void Responsive()
         {
-            bool narrow=ActualWidth<980,compactNav=ActualWidth<720;
+            bool narrow=ActualWidth<1100,compactNav=ActualWidth<760,shortScreen=ActualHeight<600;
             root.ColumnDefinitions[0].Width=compactNav?new GridLength(0):new GridLength(152);
-            Grid.SetColumn(navBorder,0);Grid.SetColumnSpan(navBorder,compactNav?2:1);Grid.SetRowSpan(navBorder,compactNav?1:2);Grid.SetRow(main,compactNav?1:0);Grid.SetRowSpan(main,compactNav?1:2);Grid.SetColumn(main,compactNav?0:1);Grid.SetColumnSpan(main,compactNav?2:1);
-            navigation.Orientation=compactNav?Orientation.Horizontal:Orientation.Vertical;navigation.Margin=compactNav?new Thickness(10):new Thickness(10,22,10,18);brand.Visibility=compactNav?Visibility.Collapsed:Visibility.Visible;
-            foreach(var button in navigationButtons.Values){button.FontSize=compactNav?11:12;button.Padding=compactNav?new Thickness(8,7,8,7):new Thickness(12,9,12,9);}
+            navBorder.Visibility=compactNav?Visibility.Collapsed:Visibility.Visible;categories.Visibility=compactNav?Visibility.Visible:Visibility.Collapsed;
+            if(categories.SelectedItem?.ToString()!=current)categories.SelectedItem=current;
+            Grid.SetRow(main,compactNav?1:0);Grid.SetRowSpan(main,compactNav?1:2);Grid.SetColumn(main,compactNav?0:1);Grid.SetColumnSpan(main,compactNav?2:1);
             workspace.ColumnDefinitions[1].Width=narrow?new GridLength(0):new GridLength(284);Grid.SetColumn(rail,narrow?0:1);Grid.SetRowSpan(rail,narrow?1:3);
-            // Reserve a usable scrolling form before spending height on the stacked preview.
-            // workspace.SizeChanged reruns this after navigation/footer have been measured.
-            double previewHeight=narrow?Math.Clamp(workspace.ActualHeight-sectionIndexHost.ActualHeight-sectionIndexHost.Margin.Top-sectionIndexHost.Margin.Bottom-120,0,210):double.NaN;
-            bool showPreview=!narrow || previewHeight>=110;
-            rail.Visibility=showPreview?Visibility.Visible:Visibility.Collapsed;
-            rail.Height=narrow?previewHeight:double.NaN;
-            modes.Visibility=narrow && previewHeight<190?Visibility.Collapsed:Visibility.Visible;
-            previewStage.Height=narrow?Math.Max(40,previewHeight-(previewHeight<190?48:116)):238;
-            previewColumn.Margin=narrow?new Thickness(18,10,18,8):new Thickness(18,26,18,18);hint.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;previewDimensions.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;sample.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;examples.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
+            if(previousNarrow!=narrow || previousShort!=shortScreen){previewExpander.IsExpanded=!narrow && !shortScreen;previousNarrow=narrow;previousShort=shortScreen;}
+            previewTitle.Visibility=Visibility.Collapsed;
+            double previewHeight=Math.Clamp(workspace.ActualHeight-sectionIndexHost.ActualHeight-100,50,210);
+            previewExpander.MaxHeight=narrow?previewHeight:double.PositiveInfinity;
+            rail.Height=double.NaN;
+            modes.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
+            previewStage.Height=narrow?Math.Max(40,previewHeight-65):238;
+            previewColumn.Margin=narrow?new Thickness(18,6,18,8):new Thickness(18,18,18,18);hint.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;previewDimensions.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;sample.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;examples.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
             sectionIndexHost.Margin=narrow?new Thickness(20,8,20,4):new Thickness(28,14,28,4);
             page.Margin=narrow?new Thickness(20,18,20,24):new Thickness(28,20,28,28);
         }
-        UI.Named(scroll,"Settings form viewport");UI.Named(rail,"Settings preview rail");UI.Named(navBorder,"Settings navigation");
+        UI.Named(previewExpander,"Settings live preview");UI.Named(scroll,"Settings form viewport");UI.Named(rail,"Settings preview rail");UI.Named(navBorder,"Settings navigation");
         SizeChanged+=(_,_)=>Responsive();workspace.SizeChanged+=(_,_)=>Responsive();Loaded+=(_,_)=>Responsive();
         page.MaxWidth=660;page.HorizontalAlignment=HorizontalAlignment.Stretch;
         var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);

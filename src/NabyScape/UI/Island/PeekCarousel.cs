@@ -170,7 +170,7 @@ public sealed partial class OverlayWindow
         {bool narrow=safe.Width<260;controls.ColumnDefinitions[0].Width=new(narrow?0:34);controls.ColumnDefinitions[1].Width=new(narrow?0:34);peekTrackPrevious.Visibility=peekTrackNext.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;}
     }
     private void OpenPeekPage()
-    {if(peekId is "notes" or "calendar" or "files" or "clips" or "tasks"){if(peekId is "notes" or "tasks")notesMode=peekId=="tasks"?"tasks":"write";ShowTools(peekId);}else{Reveal();SelectPage(peekId=="system"?"status":peekId=="media"?"media":"focus");}}
+    {if(peekId is "notes" or "calendar" or "files" or "clips" or "tasks"){ShowTools(peekId);}else{Reveal();SelectPage(peekId=="system"?"status":peekId=="media"?"media":"focus");}}
     private void AddPeekClock(string id)
     {
         var page=new Grid();page.RowDefinitions.Add(new(){Height=new GridLength(24)});page.RowDefinitions.Add(new(){Height=new GridLength(48)});page.RowDefinitions.Add(new(){Height=new GridLength(12)});page.RowDefinitions.Add(new(){Height=new GridLength(32)});
@@ -196,7 +196,7 @@ public sealed partial class OverlayWindow
     {
         var page=new StackPanel();var label=UI.Text("Quick note",11,UI.Muted);label.Margin=new(0,3,0,10);page.Children.Add(label);
         peekNote=UI.Input("Preview note draft",app.Productivity.Note);peekNote.TextChanged+=(_,_)=>{if(syncingNote)return;app.Productivity.Note=peekNote.Text;noteSave.Stop();noteSave.Start();};peekNote.Height=53;peekNote.MaxLength=50000;peekNote.Padding=new(9,7,9,7);peekNote.Margin=new(0);peekNote.AcceptsReturn=true;peekNote.TextWrapping=TextWrapping.Wrap;peekNote.VerticalContentAlignment=VerticalAlignment.Top;peekNote.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;peekNote.PreviewMouseLeftButtonDown+=(_,_)=>{Activate();PromotePeek();};page.Children.Add(peekNote);
-        var actions=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,9,0,0)};var save=PlainPeekButton("Save preview note",SavePeekNote);save.Content="Save note";save.FontSize=12;actions.Children.Add(save);var open=PlainPeekButton("Open all notes",()=>{notesMode="write";ShowTools("notes");});open.Content="All notes";open.Foreground=UI.Muted;open.FontSize=12;open.Margin=new(20,0,0,0);actions.Children.Add(open);page.Children.Add(actions);return page;
+        var actions=new StackPanel{Orientation=Orientation.Horizontal,Margin=new(0,9,0,0)};var save=PlainPeekButton("Save preview note",SavePeekNote);save.Content="Save note";save.FontSize=12;actions.Children.Add(save);var open=PlainPeekButton("Open all notes",()=>{ShowTools("notes");});open.Content="All notes";open.Foreground=UI.Muted;open.FontSize=12;open.Margin=new(20,0,0,0);actions.Children.Add(open);page.Children.Add(actions);return page;
     }
     private void SavePeekNote()
     {

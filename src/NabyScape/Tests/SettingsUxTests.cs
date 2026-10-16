@@ -9,6 +9,26 @@ internal static class SettingsUxTests
     internal static void Run(Action<string,Action> test)
     {
         void Assert(bool value){if(!value)throw new Exception("Settings UX invariant failed");}
+        test("Settings bounds fit small, detached and scaled work areas",()=>
+        {
+            foreach(double scale in new[]{1d,1.5,2})
+            foreach(var area in new[]{new System.Windows.Rect(0,0,480*scale,300*scale),new System.Windows.Rect(-1920,80,1280,720)})
+            {
+                var result=SettingsWindow.FitWorkingArea(new System.Windows.Rect(2800,-800,1700,1200),area,scale);
+                Assert(area.Contains(result) && result.Width>=Math.Min(480*scale,area.Width) && result.Height>=Math.Min(300*scale,area.Height));
+            }
+        });
+        test("Widget labels and caption have separate measured tile space",()=>
+        {
+            var settings=new Settings();foreach(var widget in settings.Widgets)widget.Enabled=true;
+            foreach(double dpi in new[]{1d,1.5,2})
+            {
+                var tiles=SettingsScene.WidgetTiles(settings,dpi);Assert(tiles.Length==settings.Widgets.Count);
+                foreach(var tile in tiles)Assert(tile.Label.Width<=tile.Bounds.Width-12+.01 && tile.Label.Height<=tile.Bounds.Height-12+.01);
+                Assert(tiles.Any(tile=>tile.Bounds.Height>28));
+                var scene=new SettingsScene("Enabled widgets & order",settings);scene.Measure(new System.Windows.Size(420,double.PositiveInfinity));Assert(scene.DesiredSize.Height>=tiles.Last().Bounds.Bottom+42);
+            }
+        });
         test("Tool preferences migrate without deleting old data or enabling new hover pages",()=>
         {
             var s=new Settings{Tools=new(){new(){Id="files",Enabled=false},new(){Id="files"},new(){Id="bad"}}};s.Normalize();

@@ -21,6 +21,40 @@ internal readonly record struct OverlaySettingsState(int Content,int Reflow,int 
 
 public sealed partial class OverlayWindow
 {
+    private int editorRestoreRevision;
+    private sealed record EditorState(string Name,string Text,int Start,int Length,double Offset,bool Focused);
+    private (EditorState[] Editors,double Scroll) CaptureEditorState()
+    {
+        var editors=EditorTree(body).OfType<TextBox>().Select(editor=>new EditorState(System.Windows.Automation.AutomationProperties.GetName(editor),editor.Text,editor.SelectionStart,editor.SelectionLength,editor.VerticalOffset,editor.IsKeyboardFocusWithin)).Where(editor=>editor.Name.Length>0).ToArray();
+        return(editors,scroll.VerticalOffset);
+    }
+    private static System.Collections.Generic.IEnumerable<DependencyObject> EditorTree(DependencyObject node)
+    {
+        foreach(var child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>()){yield return child;foreach(var item in EditorTree(child))yield return item;}
+    }
+    private void RestoreEditorState((EditorState[] Editors,double Scroll) state)
+    {
+        body.UpdateLayout();
+        foreach(var editor in EditorTree(body).OfType<TextBox>())
+        {
+            var saved=state.Editors.FirstOrDefault(item=>item.Name==System.Windows.Automation.AutomationProperties.GetName(editor));if(saved==null)continue;
+            if(editor.Text!=saved.Text)editor.Text=saved.Text;
+            editor.Select(Math.Min(saved.Start,editor.Text.Length),Math.Min(saved.Length,Math.Max(0,editor.Text.Length-saved.Start)));editor.ScrollToVerticalOffset(saved.Offset);if(saved.Focused)editor.Focus();
+        }
+        void RestoreScroll()
+        {
+            body.UpdateLayout();
+            foreach(var editor in EditorTree(body).OfType<TextBox>())
+            {
+                var saved=state.Editors.FirstOrDefault(item=>item.Name==System.Windows.Automation.AutomationProperties.GetName(editor));
+                if(saved!=null)editor.ScrollToVerticalOffset(saved.Offset);
+            }
+            scroll.ScrollToVerticalOffset(state.Scroll);
+        }
+        RestoreScroll();int revision=++editorRestoreRevision;
+        // WPF queues caret visibility during focus/layout; restore the user's viewport after that work.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,()=>{if(revision==editorRestoreRevision)RestoreScroll();});
+    }
     private OverlaySettingsState? appliedSettings;
     private bool bodyInitialized,bodyDirty=true;
     private readonly System.Collections.Generic.List<Action> bodyReflow=new();
