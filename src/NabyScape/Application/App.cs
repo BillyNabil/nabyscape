@@ -31,14 +31,21 @@ public sealed class App : Application
             PostNotice(new("downloads",paths.Length==1?"Download ready":$"{paths.Length} downloads ready","Folder arrival inferred · drag originals or add to shelf",paths));
         });
     }
+    private void DownloadFailed(string error)
+    {
+        int epoch=downloadEpoch;Dispatcher.BeginInvoke(()=>
+        {
+            if(epoch==downloadEpoch && Settings.DownloadsEnabled)Notify("Downloads unavailable",error);
+        });
+    }
     internal void OpenNotifications()=>overlay?.OpenNotice(true);
     private void ConfigureDownloads()
     {
         if(diagnosticMode)return;
         string key=Settings.DownloadsEnabled+"|"+Settings.DownloadsFolder;if(key==downloadConfiguration)return;downloadConfiguration=key;
+        Downloads?.Configure(false,"");downloadEpoch++;
         try{Downloads?.Configure(Settings.DownloadsEnabled,Settings.DownloadsEnabled?(Settings.DownloadsFolder.Length==0?DownloadArrivals.KnownFolder():Settings.DownloadsFolder):"");}
         catch(Exception ex){Notify("Downloads unavailable",ex.Message);}
-        finally{downloadEpoch++;}
     }
     internal void PostNotice(InternalNotice notice)
     {
@@ -118,7 +125,7 @@ public sealed class App : Application
         overlay=new OverlayWindow(this);MainWindow=overlay;StartupTrace.Attach(overlay,e.Args,Store.Log);overlay.Show();Previews=new(this,overlay.OpenFeaturePage);
         Notifications.Changed+=()=>overlay.RefreshNotice();
         Updates.UpdateAvailable+=release=>Dispatcher.BeginInvoke(()=>PostNotice(new("updates","Update available",release.Version+" · Open Settings > Application to review.")));
-        Downloads=new(DownloadReady,error=>Dispatcher.BeginInvoke(()=>{if(Settings.DownloadsEnabled)Notify("Downloads unavailable",error);}));
+        Downloads=new(DownloadReady,DownloadFailed);
         ConfigureDownloads();
         Media.Changed+=()=>PublishUpdate(RuntimeChange.Media);
         Audio.Changed+=()=>PublishUpdate(RuntimeChange.Audio);

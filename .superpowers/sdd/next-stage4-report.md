@@ -46,3 +46,46 @@ Folder arrival inference cannot prove browser completion, including pauses longe
 DONE. No failing final checks or implementation blockers. Self-review covered queue bounds, callback recursion, stale watcher callbacks, baseline handling, final rename deduplication, worker cancellation/join and actual contour padding. The two visual defects were corrected, and the two later fixture failures were traced and fixed with stronger geometry and state checks. All final checks pass.
 
 Owned commit subject: `Add internal notifications and opt-in download arrivals` (commit hash returned in the task completion response). Only the 21 owned source paths and this report are included. Pending social banner changes remain outside the commit. Parent controls daily app stop/restart; no further diagnostic launches, push, installation or release are planned.
+
+## Post-review fixes (base aed436e, 2026-10-17)
+
+Addressed both Important findings and the Minor callback finding from `next-stage4-review.md`:
+
+- Each queued notice now records whether it has been displayed. `OpenNotice` freezes its manager entry before creating controls. Further arrivals cannot merge into that entry, including while an outgoing OLE drag owns its snapshot. They enqueue separately and may group with other undisplayed arrivals. Dismissing A removes A only, leaving B discoverable. A merge that would exceed forty distinct files now starts a new entry rather than truncating the merged paths. Existing ten-entry queue bound and timeout policy remain.
+- Incoming shelf drag saves whether a notice was open, hides that presentation, and mounts the normal Files preview before the shelf target. Cancel restores the pending notice and actions; accept leaves Files visible and retains the notice in the queue. Expanded editor preservation and existing frame/motion policy remain. Acceptance presentation is handled in the same finish path used by the real Drop event and fixture.
+- Failure delivery captures the configuration epoch before dispatch. Reconfiguration stops and joins the previous worker before advancing the epoch and starting the next configuration. This rejects queued old-folder failures and disabled callbacks while allowing a synchronous startup failure for the new configuration to be delivered.
+- Added `NotificationDownloadTests` assertions for displayed A, later B+C, interaction timeout protection, sequential dismissal/handoff semantics, another displayed group, and forty-plus-one grouping. Added nine desktop regression checks for outgoing-drag arrivals, A/B handoff, external drag entry/cancel/accept, and stale/current/disabled failures. All file content is fixture content under a diagnostic or temporary directory; no real Downloads folder, clipboard or network is used. Modal external OLE delivery is represented by setting the same active-drag boundary and invoking the actual shared begin/preview/finish methods; no external drop application is launched.
+
+### Commands and results
+
+Working directory for every command below: `C:/Users/billy/Documents/Codex/2026-10-14/ra/work/nabyscape`.
+
+1. `../tools/dotnet/dotnet.exe build src/NabyScape/NabyScape.csproj -c Release --nologo` succeeded three times during implementation/fixture refinement: **0 warnings, 0 errors** each time.
+2. SDK self-test command:
+
+```powershell
+New-Item -ItemType Directory -Force artifacts-stage4-fix-sdk | Out-Null
+$stage4Self=Start-Process -FilePath (Join-Path $PWD '../tools/dotnet/dotnet.exe') -ArgumentList @(('"'+(Join-Path $PWD 'src/NabyScape/bin/Release/net10.0-windows10.0.19041.0/NabyScape.dll')+'"'),'--self-test','--report',('"'+(Join-Path $PWD 'artifacts-stage4-fix-sdk/unit-report.txt')+'"')) -WindowStyle Hidden -PassThru -Wait
+```
+
+Exit **1; 315 passed, 1 failed**. The new notification regression test passed. The existing `Updates inspect actual published x64 file version and reject mismatch without executing it` test failed because `Environment.ProcessPath` is the SDK dotnet host when launched this way, whose version differs from the app release. That cross-stage test was left intact; the final single-file test result below is authoritative for the shipped executable.
+
+3. After the parent granted each desktop slot and gracefully stopped the daily app, ran:
+
+```powershell
+$stage4Fixture=Start-Process -FilePath (Join-Path $PWD '../tools/dotnet/dotnet.exe') -ArgumentList @(('"'+(Join-Path $PWD 'src/NabyScape/bin/Release/net10.0-windows10.0.19041.0/NabyScape.dll')+'"'),'--diagnostics',('"'+(Join-Path $PWD 'artifacts-stage4-fix-sdk/diagnostics')+'"'),'--stage4-only') -WindowStyle Hidden -PassThru -Wait
+```
+
+First run exited **1; 30 checks passed, 1 failed**. All nine new regression checks passed. The original combined assertion `hover opens compact completion view without full panel or activation` failed. Because that assertion combined state and foreground identity, this run did not establish which component failed, and its exact cause is unproven. Card actions, geometry and all remaining checks passed.
+
+The simulated hover now explicitly holds `DiagnosticPointerPresent=true` while its card is displayed, matching the existing tucked-hover fixture. Split the combined assertion into settled state and synchronous activation checks. The activation check records actual foreground handles immediately before/after `OpenNotice`, rejects the island handle, and checks `ShowActivated=false`; this avoids attributing unrelated foreground changes across an asynchronous animation wait to the open action. No product activation policy changed.
+
+Rebuilt with command 1, then repeated command 3 with output directory `artifacts-stage4-fix-sdk/diagnostics-confirmed`. Exit **0; 32 checks passed, 0 failures**. Observed settled hover: `peeking=True`, `expanded=False`, elapsed `678ms`. Observed synchronous focus: `before=E08C2`, `after=E08C2`, `island=27A0CB2`, `ShowActivated=False`. The original compact-arrival/no-focus check remains and passed. Each diagnostic exit was signalled immediately to the parent, who restored the daily app; no other desktop launches were made. Inspected the final minimum-width screenshot: title/detail, trimmed filename and all actions remain contained with notch shoulder padding.
+
+4. Final delivery command: `./build.ps1 -Dotnet ../tools/dotnet/dotnet.exe -OutputDirectory artifacts-stage4-fix-delivery`.
+
+Exit **0; Release single-file publish succeeded; 47/47 actual Settings section titles registered; 316 self-tests passed, 0 failed**. The published-x64 version test and new displayed-group test both passed. Package: `artifacts-stage4-fix-delivery/NabyScape.exe`; setup copy was generated but never installed. No build warnings or errors were reported. `git diff --check` passed.
+
+### Remaining limits
+
+Native balloon visibility, real external OLE acceptance/cancellation and Explorer launch remain unexercised against external applications. Fixtures verify the shared drag state transitions, immutable displayed snapshot, original fixture paths, actual shelf operations and rendered target visibility. Existing inference, queue-capacity and watcher bounds documented above remain. No push, release, install, dependency changes, browser settings changes or real user content access occurred. The pending social-banner paths remain untouched and excluded from this fix commit. Re-review is still required after this fix.

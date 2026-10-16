@@ -35,6 +35,7 @@ public sealed partial class OverlayWindow
         if(notice==null || userHidden || expanded || fileDragActive || PeekInteractionActive || FeedbackVisible)return;
         if(peeking && !noticeShowing)return;
         if(noticeCard!=null)visuals.Children.Remove(noticeCard);
+        app.Notifications.MarkDisplayed();
         StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;peekPanel.Visibility=Visibility.Collapsed;
         var content=new StackPanel();content.Children.Add(UI.Text(notice.Title,16));content.Children.Add(UI.Text(notice.Detail,11,UI.Muted));
         string[] paths=(notice.Files??Array.Empty<string>()).Where(File.Exists).Take(40).ToArray();

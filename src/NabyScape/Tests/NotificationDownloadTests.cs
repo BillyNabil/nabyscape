@@ -27,6 +27,20 @@ internal static class NotificationDownloadTests
             s.NotificationDelivery="Both";manager.Post(s,new("failure","failure","delivery"),false,_=>throw new IOException(),now);Assert(manager.Count==3);
             s.DownloadsFolder=@"C:\private-fixture";Assert(!CustomizationProfile.Export(s).Contains("private-fixture") && !CustomizationProfile.Export(s).Contains("DownloadsEnabled"));
         });
+        test("Displayed download groups freeze through drag, dismiss and subsequent bursts",()=>
+        {
+            var manager=new InternalNotifications();var settings=new Settings();var now=DateTimeOffset.UtcNow;
+            void Post(string[] files,int seconds)=>manager.Post(settings,new("downloads","Download ready","inferred",files),false,_=>{},now.AddSeconds(seconds));
+            Post(new[]{"a"},0);manager.MarkDisplayed();var displayed=manager.Current;
+            // The displayed snapshot is also the outgoing drag payload; queued arrivals cannot replace it.
+            Post(new[]{"b"},1);Post(new[]{"c"},2);
+            Assert(manager.Count==2 && ReferenceEquals(displayed,manager.Current) && displayed!.Files!.SequenceEqual(new[]{"a"}));
+            manager.Tick(now.AddMinutes(1),true);Assert(ReferenceEquals(displayed,manager.Current));
+            manager.Dismiss();Assert(manager.Count==1 && manager.Current!.Files!.SequenceEqual(new[]{"b","c"}));
+            manager.MarkDisplayed();Post(new[]{"d"},3);manager.Dismiss();Assert(manager.Current!.Files!.SequenceEqual(new[]{"d"}));
+            manager.Clear();Post(Enumerable.Range(0,40).Select(i=>"file-"+i).ToArray(),0);Post(new[]{"overflow"},1);
+            Assert(manager.Count==2 && manager.Current!.Files!.Length==40);manager.Dismiss();Assert(manager.Current!.Files!.Single()=="overflow");
+        });
         test("Downloads temp folder baseline, partial rename, growing size, locks, races, burst, missing, folder change and disable cleanup",()=>
         {
             string root=Path.Combine(Path.GetTempPath(),"NabyScape-arrivals-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);string other=Path.Combine(root,"other");Directory.CreateDirectory(other);

@@ -17,7 +17,7 @@ public sealed partial class OverlayWindow
     private Border? shelfDropPreview;
     private string dropSignature="";
     private bool shelfDropBrowsing;
-    private bool fileDragActive,dragWasExpanded,dragWasPeeking;
+    private bool fileDragActive,dragWasExpanded,dragWasPeeking,dragWasNotice;
     private string dragPreviousPeek="media";
     private void InitializeFileDrop()
     {
@@ -39,7 +39,7 @@ public sealed partial class OverlayWindow
             if(e.Data.GetData(DataFormats.FileDrop) is string[] paths)
             {
                 utilityMutating=true;try{app.Productivity.AddFiles(paths);}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not stage files",ex.Message);}finally{utilityMutating=false;}
-                FinishFileDrop(true);if(peeking){SelectPeek("files");UpdatePeekDeck();}else ShowTools("files");
+                FinishFileDrop(true);
             }
             e.Handled=true;
         };
@@ -48,7 +48,9 @@ public sealed partial class OverlayWindow
     {
         if(userHidden || fileDragActive)return;
         fileDragActive=true;dragWasExpanded=expanded;dragWasPeeking=peeking;dragPreviousPeek=peekId;
+        dragWasNotice=noticeShowing;
         StopHoverTimers();EndPeekGesture();
+        if(dragWasNotice){HideNotice();peeking=false;}
         // An expanded page stays mounted, including command/calendar editor state.
         if(!expanded){if(IsTucked)RevealTuckedPreview();if(!peeking)PreviewActivity();SelectPeek("files");PromotePeek();}
     }
@@ -76,7 +78,8 @@ public sealed partial class OverlayWindow
     {
         RemoveShelfDropPreview();dropSignature="";
         if(!fileDragActive)return;fileDragActive=false;
-        if(accepted){shelfDropBrowsing=true;return;}
+        if(accepted){dragWasNotice=false;shelfDropBrowsing=true;if(peeking){SelectPeek("files");UpdatePeekDeck();}else ShowTools("files");return;}
+        if(dragWasNotice){dragWasNotice=false;Collapse();OpenNotice();return;}
         if(dragWasExpanded)return;
         else if(dragWasPeeking){SelectPeek(dragPreviousPeek);}
         else Collapse();
