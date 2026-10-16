@@ -24,7 +24,7 @@ internal static class CustomizationProfile
         var incoming=JsonSerializer.Deserialize<Settings>(values.GetRawText())??throw new InvalidDataException("Layout is empty.");
         var candidate=JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(target))!;
         foreach(string key in keys){var property=typeof(Settings).GetProperty(key)!;property.SetValue(candidate,property.GetValue(incoming));}
-        if(values.TryGetProperty("Monitor",out _) && !values.TryGetProperty("DisplayMode",out _))candidate.DisplayMode=incoming.Monitor.Length>0?"Selected":"Primary";
+        if(values.TryGetProperty("Monitor",out _) && !values.TryGetProperty("DisplayMode",out _))candidate.DisplayMode=string.IsNullOrEmpty(incoming.Monitor)?"Primary":"Selected";
         candidate.Normalize();
         foreach(string key in allKeys){var property=typeof(Settings).GetProperty(key)!;property.SetValue(target,property.GetValue(candidate));}
     }

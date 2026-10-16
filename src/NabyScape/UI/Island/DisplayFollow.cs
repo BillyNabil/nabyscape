@@ -68,6 +68,7 @@ public sealed partial class OverlayWindow
     {
         // Reflow existing controls: relocating never navigates or rebuilds an editor.
         Dimensions();foreach(var reflow in bodyReflow)reflow();Dimensions();
+        if(peeking)ApplyPeekGeometry();
         Width=Math.Max(expandedWidth,app.Settings.Width);Height=Math.Max(HostHeight,app.Settings.Height);
         refreshHz=Native.RefreshRate(IslandScreen);
         surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(app.Settings.HoverWidth,expandedWidth):app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}

@@ -22,6 +22,7 @@ internal static class Stage5Tests
         var primary=new Settings();primary.Normalize();test("legacy empty monitor maps Primary",primary.DisplayMode=="Primary");
         CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"Monitor\":\"screen-C\"}}",primary);test("old visual profile maps Selected without a new default override",primary.DisplayMode=="Selected" && primary.Monitor=="screen-C");
         legacy.DisplayMode="Follow";CustomizationProfile.Import(CustomizationProfile.Export(legacy),primary);test("visual profile preserves Follow mode",primary.DisplayMode=="Follow");
+        CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"Monitor\":null}}",primary);test("legacy null monitor profile normalizes to Primary",primary.DisplayMode=="Primary" && primary.Monitor=="");
         test("mixed negative landscape and portrait identities resolve without coordinate assumptions",MonitorFollowPolicy.Target(new[]{"left-negative","portrait-high-DPI"},"left-negative","Follow","left-negative","portrait-high-DPI")=="portrait-high-DPI");
         test("hotplug falls back to primary without mutating stored selection",MonitorFollowPolicy.Target(new[]{"A"},"A","Selected","B",null)=="A" && MonitorFollowPolicy.Target(new[]{"A"},"A","Follow","B","C")=="A");
         test("reconnected selected monitor is resolved again",MonitorFollowPolicy.Target(new[]{"A","B"},"A","Selected","B",null)=="B");
@@ -38,8 +39,7 @@ internal static class Stage5Tests
         test("follow waits through 249 ms",policy.Observe("A","B",1249,false,false)==null);
         test("follow moves at 250 ms",policy.Observe("A","B",1250,false,false)=="B");
         policy.Observe("A","B",2000,false,false);policy.Observe("A","C",2200,false,false);test("monitor identity change restarts hysteresis",policy.Observe("A","C",2449,false,false)==null && policy.Observe("A","C",2450,false,false)=="C");
-        foreach(string interaction in new[]{"drag","editor","slider","menu","popup","capture","island pointer"})
-        {policy.Observe("A","B",3000,false,false);test(interaction+" blocks follow and resets pending target",policy.Observe("A","B",3400,true,false)==null && policy.Observe("A","B",3500,false,false)==null && policy.Observe("A","B",3750,false,false)=="B");}
+        policy.Observe("A","B",3000,false,false);test("blocked interaction policy resets pending target",policy.Observe("A","B",3400,true,false)==null && policy.Observe("A","B",3500,false,false)==null && policy.Observe("A","B",3750,false,false)=="B");
         policy.Observe("A","B",4000,false,false);test("manual hide cancels pending movement",policy.Observe("A","B",4500,false,true)==null);test("show resolves pointer immediately",policy.Observe("A","B",4600,false,false,true)=="B");
         policy.Observe("A","B",5000,false,false);test("return to source cancels pending movement",policy.Observe("A","A",5300,false,false)==null && policy.Observe("A","B",5400,false,false)==null);
         test("blocked show waits until interaction ends",policy.Observe("A","B",6000,true,false,true)==null);
