@@ -15,12 +15,14 @@ using System.Windows.Media.Imaging;
 namespace NabyScape;
 internal static class Stage3Diagnostics
 {
-    internal sealed class Network:HttpMessageHandler
+    internal sealed class Network(Version? installed=null):HttpMessageHandler
     {
         internal int Calls;
+        internal static Version NextVersion(Version installed)=>new(installed.Major,installed.Minor,checked(installed.Build+1));
+        internal Version Version {get;}=NextVersion(installed??OfficialUpdates.InstalledVersion);
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
         {
-            Calls++;string tag="v2.4.3",url=OfficialUpdates.Repository;
+            Calls++;string tag="v"+Version,url=OfficialUpdates.Repository;
             string json=JsonSerializer.Serialize(new{tag_name=tag,html_url=url+"/releases/tag/"+tag,draft=false,prerelease=false,assets=new[]{new{name="NabyScape-win-x64-Setup.exe",browser_download_url=url+"/releases/download/"+tag+"/NabyScape-win-x64-Setup.exe",size=4},new{name="SHA256SUMS",browser_download_url=url+"/releases/download/"+tag+"/SHA256SUMS",size=100}}});
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(request.RequestUri==OfficialUpdates.Endpoint?json:"invalid fixture checksum")});
         }
@@ -39,7 +41,7 @@ internal static class Stage3Diagnostics
             foreach(string name in new[]{"Check for updates","Release notes","Download update","Cancel update","Install and restart"})check("Stage3 keyboard action exposed: "+name,Button(name).Focusable && Button(name).IsTabStop);
             check("Stage3 static distinct download example",Diagnostics.Descendants(window).OfType<SettingsScene>().Count(p=>p.Section=="Updates")==1);
             Button("Check for updates").Focus();check("Stage3 check can receive keyboard focus",Button("Check for updates").IsKeyboardFocused);Button("Check for updates").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(100);
-            check("Stage3 fake newer release enables download but not portable install",app.Updates.Available?.Version==new Version(2,4,3) && Button("Download update").IsEnabled && !Button("Install and restart").IsEnabled);
+            check("Stage3 fake newer release enables download but not portable install",app.Updates.Available?.Version==Network.NextVersion(OfficialUpdates.InstalledVersion) && Button("Download update").IsEnabled && !Button("Install and restart").IsEnabled);
             Capture("stage3-updates-wide");
             window.Width=580;window.Height=680;await Task.Delay(100);var status=Diagnostics.Descendants(window).OfType<TextBlock>().Single(t=>AutomationProperties.GetName(t)=="Update status");status.BringIntoView();await Task.Delay(100);
             Point origin=status.TransformToAncestor(window).Transform(new Point());check("Stage3 narrow update status contained",origin.X>=0 && origin.X+status.ActualWidth<=window.ActualWidth+1 && status.ActualHeight>0);

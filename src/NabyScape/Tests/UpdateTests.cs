@@ -11,14 +11,24 @@ internal static class UpdateTests
 {
     private sealed class Fake(Func<HttpRequestMessage,CancellationToken,Task<HttpResponseMessage>> send):HttpMessageHandler
     {protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)=>send(request,token);}
-    private static string Release(string version="2.4.3",string host="https://github.com/BillyNabil/nabyscape",string name="NabyScape-win-x64-Setup.exe")=>JsonSerializer.Serialize(new{tag_name="v"+version,html_url=host+"/releases/tag/v"+version,draft=false,prerelease=false,assets=new[]{new{name, browser_download_url=host+"/releases/download/v"+version+"/"+name,size=4},new{name="SHA256SUMS",browser_download_url=host+"/releases/download/v"+version+"/SHA256SUMS",size=100}}});
+    private static string Release(string? version=null,string host="https://github.com/BillyNabil/nabyscape",string name="NabyScape-win-x64-Setup.exe"){version??=Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion).ToString(3);return JsonSerializer.Serialize(new{tag_name="v"+version,html_url=host+"/releases/tag/v"+version,draft=false,prerelease=false,assets=new[]{new{name, browser_download_url=host+"/releases/download/v"+version+"/"+name,size=4},new{name="SHA256SUMS",browser_download_url=host+"/releases/download/v"+version+"/SHA256SUMS",size=100}}});}
     internal static void Run(Action<string,Action> test)
     {
         static void Assert(bool pass){if(!pass)throw new Exception("Update fixture failed");}
         static void Reject(Action action){try{action();}catch(Exception ex) when(ex is System.Text.Json.JsonException or InvalidDataException or InvalidOperationException or UriFormatException or System.Collections.Generic.KeyNotFoundException){return;}throw new Exception("Invalid input accepted");}
-        test("Updates accept newer stable and ignore equal/older releases",()=>{Assert(OfficialUpdates.Parse(Release(),new(2,4,2))?.Version==new Version(2,4,3));Assert(OfficialUpdates.Parse(Release(),new(2,4,3))==null && OfficialUpdates.Parse(Release(),new(3,0,0))==null);});
+        test("Updates accept newer stable and ignore equal/older releases",()=>{Assert(OfficialUpdates.Parse(Release("2.4.3"),new(2,4,2))?.Version==new Version(2,4,3));Assert(OfficialUpdates.Parse(Release("2.4.3"),new(2,4,3))==null && OfficialUpdates.Parse(Release("2.4.3"),new(3,0,0))==null);});
         test("Updates reject malformed host schema prerelease and wrong architecture assets",()=>
         {Reject(()=>OfficialUpdates.Parse("{}",new(2,4,2)));Reject(()=>OfficialUpdates.Parse(Release(host:"http://github.com/BillyNabil/nabyscape"),new(2,4,2)));Reject(()=>OfficialUpdates.Parse(Release(host:"https://github.com.evil/BillyNabil/nabyscape"),new(2,4,2)));Reject(()=>OfficialUpdates.Parse(Release(name:"NabyScape-win-arm64-Setup.exe"),new(2,4,2)));Reject(()=>OfficialUpdates.Parse(Release().Replace("\"prerelease\":false","\"prerelease\":true"),new(2,4,2)));Reject(()=>OfficialUpdates.Parse(Release("2.4.3-beta"),new(2,4,2)));});
+        test("Update diagnostic fixtures stay newer after release version bumps",()=>
+        {
+            foreach(var installed in new[]{new Version(2,4,3),new Version(2,5,0),new Version(3,0,0),OfficialUpdates.InstalledVersion})
+            {
+                using var network=new Stage3Diagnostics.Network(installed);using var client=new HttpClient(network);
+                var release=OfficialUpdates.Parse(client.GetStringAsync(OfficialUpdates.Endpoint).GetAwaiter().GetResult(),installed);
+                Assert(release!=null && release.Version==network.Version && release.Version>installed);
+                string tag="v"+network.Version;Assert(release!.Tag==tag && release.Notes.AbsoluteUri==OfficialUpdates.Repository+"/releases/tag/"+tag && release.Setup.AbsoluteUri==OfficialUpdates.Repository+"/releases/download/"+tag+"/NabyScape-win-x64-Setup.exe" && release.Checksums.AbsoluteUri==OfficialUpdates.Repository+"/releases/download/"+tag+"/SHA256SUMS");
+            }
+        });
         test("Pre-update preference backups restore with default update preference",()=>
         {
             string root=Path.Combine(Path.GetTempPath(),"NabyScape-old-backup-"+Guid.NewGuid().ToString("N"));try{var store=new Store(root);string json=JsonSerializer.Serialize(new Settings{Width=333});var node=System.Text.Json.Nodes.JsonNode.Parse(json)!;node.AsObject().Remove("AutoCheckUpdates");File.WriteAllText(Path.Combine(root,"preference-backup.json"),node.ToJsonString());var settings=new Settings{AutoCheckUpdates=false};PreferenceReset.Restore(store,settings);Assert(settings.Width==333 && settings.AutoCheckUpdates);}finally{Directory.Delete(root,true);}
@@ -43,7 +53,7 @@ internal static class UpdateTests
         {
             foreach(bool truncated in new[]{false,true})
             {
-                using var updates=new OfficialUpdates(store,new Fake((r,t)=>Task.FromResult(Ok(r.RequestUri==OfficialUpdates.Endpoint?Release():r.RequestUri!.AbsolutePath.EndsWith("SHA256SUMS")?new string('A',64)+"  NabyScape-win-x64-Setup.exe":truncated?"abc":"abcd"))));updates.Check(true).GetAwaiter().GetResult();updates.Download().GetAwaiter().GetResult();Assert(updates.VerifiedSetup==null && updates.Status.Contains("failed") && !File.Exists(Path.Combine(store.DirectoryPath,"updates","NabyScape-Setup.exe.partial")));
+                using var updates=new OfficialUpdates(store,new Fake((r,t)=>Task.FromResult(Ok(r.RequestUri==OfficialUpdates.Endpoint?Release():r.RequestUri!.AbsolutePath.EndsWith("SHA256SUMS")?new string('A',64)+"  NabyScape-win-x64-Setup.exe":truncated?"abc":"abcd"))));updates.Check(true).GetAwaiter().GetResult();Assert(updates.Available?.Version==Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion));updates.Download().GetAwaiter().GetResult();Assert(updates.VerifiedSetup==null && updates.Status.Contains("failed") && !File.Exists(Path.Combine(store.DirectoryPath,"updates","NabyScape-Setup.exe.partial")));
             }
         });
         Fixture("Updates successful fake download checksum verification and duplicate download exclusion",store=>
@@ -54,8 +64,8 @@ internal static class UpdateTests
                 if(r.RequestUri==OfficialUpdates.Endpoint)return Task.FromResult(Ok(Release()));
                 if(r.RequestUri!.AbsolutePath.EndsWith("SHA256SUMS"))return Task.FromResult(Ok(hash+"  NabyScape-win-x64-Setup.exe"));
                 setupCalls++;return pending.Task;
-            }),(path,version)=>{inspections++;Assert(version==new Version(2,4,3));});
-            updates.Check(true).GetAwaiter().GetResult();var first=updates.Download();updates.Download().GetAwaiter().GetResult();Assert(setupCalls==1);pending.SetResult(Ok("abcd"));first.GetAwaiter().GetResult();Assert(inspections==1 && updates.VerifiedHash==hash && File.ReadAllText(updates.VerifiedSetup!)=="abcd");
+            }),(path,version)=>{inspections++;Assert(version==Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion));});
+            updates.Check(true).GetAwaiter().GetResult();Assert(updates.Available?.Version==Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion));var first=updates.Download();updates.Download().GetAwaiter().GetResult();Assert(setupCalls==1);pending.SetResult(Ok("abcd"));first.GetAwaiter().GetResult();Assert(inspections==1 && updates.VerifiedHash==hash && File.ReadAllText(updates.VerifiedSetup!)=="abcd");
         });
         test("Update helper fake installer waits verifies and surfaces failure without executing on timeout",()=>
         {

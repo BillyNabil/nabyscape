@@ -46,3 +46,31 @@ Fake logic fixtures cover offline, timeout, 429/backoff, hostile redirect/host/s
 - WinGet schemas validate locally; no external submission/install or repository PR happened. Regenerate hashes after signing the final binary.
 - SignPath acceptance, MFA/role/build-origin policy setup and publisher/signature enforcement rollout require human approval and external acceptance. No signing claim or identity was fabricated. SHA-256 from the same release is integrity only.
 - Parent owns daily stop/restore and verified the daily preference hash. This worker never stopped daily, wrote its storage or invoked an actual installer. Stage3 screenshot branding predates the final NoWrap correction; final correction compiled and logic checks passed.
+
+## Stage3 review fix — future release fixture versions (2026-10-16)
+
+Review base: d0c3f97280e23671e3df7984176eb271c5d17e32. Addressed the Important finding in next-stage3-review.md. Service release payloads now default to the running assembly version plus one patch. The diagnostic fake transport uses the same stable newer-version generator, and its UI expectation derives from InstalledVersion. Explicit 2.4.3 constants remain in pure parser tests with explicit installed versions. Download tests require an available newer release before exercising checksum/truncation/success/duplicate-download behavior; the expected inspected version is dynamic. Regression coverage parses diagnostic payloads against installed versions 2.4.3, 2.5.0, 3.0.0 and the current assembly, checking that the release is strictly newer and its tag, notes, setup and checksum URLs match that version.
+
+Commands below ran from C:/Users/billy/Documents/Codex/2026-10-14/ra/work/nabyscape:
+
+1. `& ./build.ps1 -Dotnet ../tools/dotnet/dotnet.exe -OutputDirectory artifacts-stage3-review-fix`
+   - Exit 0. Output: `PASS all 45 actual Settings section titles have registered render branches`; Release publish completed with no reported warnings/errors; `Completed: C:\Users\billy\Documents\Codex\2026-10-14\ra\work\nabyscape\artifacts-stage3-review-fix`.
+   - `Get-Content artifacts-stage3-review-fix/unit-report.txt -Tail 3` ended with `RESULT: 313 passed, 0 failed`.
+2. `& ../tools/dotnet/dotnet.exe publish src/NabyScape/NabyScape.csproj -c Release -r win-x64 --self-contained true -p:Version=2.5.0 -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -o artifacts-stage3-review-fix-v250 --nologo`
+   - Exit 0. Output: `NabyScape -> C:\Users\billy\Documents\Codex\2026-10-14\ra\work\nabyscape\artifacts-stage3-review-fix-v250\`; no reported warnings/errors. Isolated output; no source project version change and no installer invocation.
+3. Published 2.5.0 binary verification and self-tests:
+
+   ```powershell
+   $fixtureExe = Join-Path (Get-Location) 'artifacts-stage3-review-fix-v250/NabyScape.exe'
+   $fixtureReport = Join-Path (Get-Location) 'artifacts-stage3-review-fix-v250/unit-report.txt'
+   (Get-Item -LiteralPath $fixtureExe).VersionInfo | Select-Object FileVersion,ProductVersion
+   $fixtureProcess = Start-Process -FilePath $fixtureExe -ArgumentList @('--self-test','--report',('"'+$fixtureReport+'"')) -WindowStyle Hidden -PassThru -Wait
+   Write-Output "Self-test exit: $($fixtureProcess.ExitCode)"
+   Get-Content -LiteralPath $fixtureReport -Tail 3
+   if ($fixtureProcess.ExitCode -ne 0) { throw 'Version 2.5.0 self-tests failed.' }
+   ```
+
+   - Exit 0. Output: FileVersion `2.5.0.0`, ProductVersion `2.5.0+d0c3f97280e23671e3df7984176eb271c5d17e32`; `Self-test exit: 0`; `RESULT: 313 passed, 0 failed`.
+4. `git diff --check`: exit 0, no whitespace failures (Git CRLF-to-LF informational notices only).
+
+Final verification counts: normal Release **313 passed, 0 failed**; published overridden Version 2.5.0 **313 passed, 0 failed**. The additional regression is included in both counts. No desktop diagnostics launched, daily app stopped, installer executed, public release changed, or social-banner files edited. Parent re-review remains required; UI diagnostics were not rerun for this fixture-only fix pending parent singleton coordination.
