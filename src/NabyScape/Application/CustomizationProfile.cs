@@ -7,7 +7,7 @@ namespace NabyScape;
 
 internal static class CustomizationProfile
 {
-    internal static readonly string[] CustomizationKeys={"AlwaysTucked","TuckEdge","Preset","Width","Height","Radius","Top","Horizontal","Monitor","Background","Accent","Opacity","GlassStyle","GlassStrength","AlbumAccent","PanelWidth","PanelMaxHeight","PanelPadding","PanelScale","SectionGap","HoverWidth","HoverHeight","HoverDelayMs","HoverDetailDelayMs","SwipeDistance","HoverViews","Widgets","CompactLayout","HoverPeek","TwoStageHover","AnimationMs","ReduceMotion","LiveActivity","ClosedMediaIcon","ClosedMediaContent","Performance","WheelAction","MiddleAction","VolumeStep","Clock24Hour","ClockSeconds","ShowDate","MonitorNetwork","MonitorStorage","MonitorProcesses","CategoryStyle","LaunchStyle","BoldMediaTitle","BoldHeadings","WaveformIdleMotion","VolumeFeedback","BrightnessFeedback"};
+    internal static readonly string[] CustomizationKeys={"AlwaysTucked","TuckEdge","Preset","Width","Height","Radius","Top","Horizontal","Monitor","DisplayMode","Background","Accent","Opacity","GlassStyle","GlassStrength","AlbumAccent","PanelWidth","PanelMaxHeight","PanelPadding","PanelScale","SectionGap","HoverWidth","HoverHeight","HoverDelayMs","HoverDetailDelayMs","SwipeDistance","HoverViews","Widgets","CompactLayout","HoverPeek","TwoStageHover","AnimationMs","ReduceMotion","LiveActivity","ClosedMediaIcon","ClosedMediaContent","Performance","WheelAction","MiddleAction","VolumeStep","Clock24Hour","ClockSeconds","ShowDate","MonitorNetwork","MonitorStorage","MonitorProcesses","CategoryStyle","LaunchStyle","BoldMediaTitle","BoldHeadings","WaveformIdleMotion","VolumeFeedback","BrightnessFeedback"};
     internal static string Export(Settings settings)
     {
         var values=CustomizationKeys.Concat(new[]{"DropReveal","DetachablePreviews","CoverGestures","ActivitySatellite","SatelliteSource","ControlFill","ControlBorder","SelectionFill","PanelSwipe","Tools","ActivitiesEnabled"}).ToDictionary(key=>key,key=>typeof(Settings).GetProperty(key)!.GetValue(settings));
@@ -24,6 +24,7 @@ internal static class CustomizationProfile
         var incoming=JsonSerializer.Deserialize<Settings>(values.GetRawText())??throw new InvalidDataException("Layout is empty.");
         var candidate=JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(target))!;
         foreach(string key in keys){var property=typeof(Settings).GetProperty(key)!;property.SetValue(candidate,property.GetValue(incoming));}
+        if(values.TryGetProperty("Monitor",out _) && !values.TryGetProperty("DisplayMode",out _))candidate.DisplayMode=incoming.Monitor.Length>0?"Selected":"Primary";
         candidate.Normalize();
         foreach(string key in allKeys){var property=typeof(Settings).GetProperty(key)!;property.SetValue(target,property.GetValue(candidate));}
     }

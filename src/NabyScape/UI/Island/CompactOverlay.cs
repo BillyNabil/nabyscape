@@ -39,7 +39,7 @@ public sealed partial class OverlayWindow
     }
     internal bool IsPeeking=>peeking;
     internal string ActivePage=>activePage;
-    private static string PageFor(string widget)=>widget switch{"media" or "volume"=>"media","timer" or "focus"=>"focus","shortcuts"=>"access","tools"=>"tools",_=>"status"};
+    private static string PageFor(string widget)=>widget switch{"media" or "volume"=>"media","timer" or "focus" or "stopwatch"=>"focus","shortcuts"=>"access","tools"=>"tools",_=>"status"};
     private static string PageName(string page)=>page switch{"media"=>"Media","focus"=>"Focus","status"=>"Status","tools"=>"Tools",_=>"Launch"};
     private bool WidgetOn(string id)=>app.Settings.Widgets.Any(w=>w.Enabled && w.Id==id);
     private void InitializeCompactInteraction()
@@ -174,9 +174,10 @@ public sealed partial class OverlayWindow
         }
         if(page=="focus")
         {
-            var row=new Grid();bool stacked=bodyWidth<310;int count=app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
+            var row=new Grid();bool stacked=bodyWidth<310 || app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus")>2;int count=app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
             foreach(var widget in app.Settings.Widgets.Where(w=>w.Enabled && PageFor(w.Id)=="focus"))
             {
+                if(widget.Id=="stopwatch"){var watchModule=new Border{Child=new StopwatchView(app),Margin=new(0,12,0,4)};if(stacked)Grid.SetRow(watchModule,column++);else Grid.SetColumn(watchModule,column++);row.Children.Add(watchModule);continue;}
                 bool timer=widget.Id=="timer";var contents=new StackPanel();var heading=UI.Heading(timer?"Timer":"Focus",13);heading.FontWeight=FontWeights.SemiBold;contents.Children.Add(heading);
                 var number=timer?timerTime:focusTime;number.Margin=new(0,10,0,8);contents.Children.Add(number);
                 if(timer)
@@ -197,7 +198,7 @@ public sealed partial class OverlayWindow
             }
             bodyReflow.Add(()=>
             {
-                bool vertical=bodyWidth<310;row.RowDefinitions.Clear();row.ColumnDefinitions.Clear();int index=0;
+                bool vertical=bodyWidth<310 || count>2;row.RowDefinitions.Clear();row.ColumnDefinitions.Clear();int index=0;
                 foreach(Border module in row.Children){if(vertical)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());Grid.SetRow(module,vertical?index:0);Grid.SetColumn(module,vertical?0:index);module.BorderThickness=vertical?new Thickness(0,index==0?0:1,0,0):new Thickness(index==0?0:1,0,0,0);module.Padding=vertical?new Thickness(0,index==0?4:16,0,4):new Thickness(index==0?0:8,4,0,4);module.Margin=vertical?new Thickness(0,index==0?0:16,0,0):new Thickness(index==0?0:8,0,0,0);index++;}
             });
             return row;

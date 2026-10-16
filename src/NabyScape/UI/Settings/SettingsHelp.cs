@@ -4,6 +4,8 @@ public sealed partial class SettingsWindow
 {
     private static readonly Dictionary<string,string> SettingDescriptions=new()
     {
+        ["Stopwatch"]="Tracks elapsed time in Focus with Start, Pause, Resume and Reset. Sleep is counted; the same saved session appears in hover and detached previews.",
+        ["Display mode"]="Primary stays on the main display. Selected uses your saved display. Follow cursor waits 250 ms on another display and defers during island interaction.",
         ["Notification delivery"]="Notch uses a compact indicator. Windows uses a tray notification. Both sends each once; Off suppresses all. A manually hidden island uses Windows fallback.",
         ["Infer completed arrivals in a download folder"]="Opt-in folder watcher: ignores existing files and waits for a readable final name with stable size for two seconds. It cannot prove browser completion.",
         ["Always tucked"]="Keeps a small top edge visible until you hover; for example keep music out of the way while working.",

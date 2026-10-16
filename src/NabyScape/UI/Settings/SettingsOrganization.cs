@@ -58,7 +58,7 @@ public sealed partial class SettingsWindow
             var title=(FrameworkElement)content.Children[0];content.Children.RemoveAt(0);
             var head=new DockPanel{Margin=new(0,0,0,12)};
             var previewButton=UI.Button("Preview "+section.Tag,()=>{ConfigurePreviewForSection((string)section.Tag);RefreshPreview();});
-            previewButton.Content="Try preview";previewButton.FontSize=10;previewButton.ToolTip="Explore "+section.Tag;previewButton.MinHeight=26;previewButton.Padding=new(8,4,8,4);previewButton.Margin=new(8,0,0,0);previewButton.Background=Brushes.Transparent;DockPanel.SetDock(previewButton,Dock.Right);if(new[]{"Enabled widgets & order","Text and navigation","Hover pages","Hover & swipe","Hover preview","Individual tools","Clipboard history","Focus sessions","Automatic tucking","Hide or show the island","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Shortcuts","Launch display","Activity actions","Clock","Monitor details","Controls & outlines","Typography","Panel navigation","Open panel","Closed media display","Live signal","Waveform source","Live feedback"}.Contains((string)section.Tag))head.Children.Add(previewButton);title.Margin=new(0);head.Children.Add(title);content.Children.Insert(0,head);
+            previewButton.Content="Try preview";previewButton.FontSize=10;previewButton.ToolTip="Explore "+section.Tag;previewButton.MinHeight=26;previewButton.Padding=new(8,4,8,4);previewButton.Margin=new(8,0,0,0);previewButton.Background=Brushes.Transparent;DockPanel.SetDock(previewButton,Dock.Right);if(new[]{"Enabled widgets & order","Text and navigation","Hover pages","Hover & swipe","Hover preview","Individual tools","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Hide or show the island","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Shortcuts","Launch display","Activity actions","Clock","Monitor details","Controls & outlines","Typography","Panel navigation","Open panel","Closed media display","Live signal","Waveform source","Live feedback"}.Contains((string)section.Tag))head.Children.Add(previewButton);title.Margin=new(0);head.Children.Add(title);content.Children.Insert(0,head);
         }
     }
     private void ConfigurePreviewForSection(string title)
@@ -71,6 +71,7 @@ public sealed partial class SettingsWindow
             "Individual tools" =>("Panel","Tools"),
             "Clipboard history" =>("Panel","Smart clipboard"),
             "Focus sessions" =>("Panel","Focus"),
+            "Stopwatch" =>("Panel","Stopwatch"),
             "Automatic tucking" or "Hide or show the island" =>("Panel","Visibility"),
             "Drag to Island" =>("Hover","Drop zone"),
             "Detachable previews" =>("Hover","Detached preview"),

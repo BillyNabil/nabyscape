@@ -194,7 +194,7 @@ public sealed partial class OverlayWindow
     private bool PointerInside()
     {
         if(DiagnosticRun)return DiagnosticPointerPresent;
-        if(!IsVisible || !Native.GetCursorPos(out var point))return false;
+        if(!IsVisible || !Native.CursorPoint(out var point))return false;
         return VisiblePoint(PointFromScreen(new Point(point.X,point.Y)));
     }
 }

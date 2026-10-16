@@ -24,6 +24,7 @@ internal static class SelfTests
             var keys=reader.Cast<System.Collections.DictionaryEntry>().Select(entry=>entry.Key.ToString()).ToArray();
             Assert(keys.Contains("theme.baml") && keys.Contains("assets/island.ico"),"WPF resource paths changed");
         });
+        Stage5Tests.Run((name,pass)=>Test("Stage5: "+name,()=>Assert(pass)));
         InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         WaveformMotionTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         ActivityActionsTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
@@ -44,7 +45,7 @@ internal static class SelfTests
         Test("Invalid customization profile does not mutate current preferences",()=>
         {var target=new Settings{Width=331};bool failed=false;try{CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{}}",target);}catch{failed=true;}Assert(failed && target.Width==331);});
         Test("Layout settings repair non-finite geometry and preserve unique hover order",()=>
-        {var s=new Settings{PanelWidth=double.NaN,PanelScale=9,HoverHeight=-1,SwipeDistance=0,HoverDelayMs=0,HoverViews=new(){new(){Id="notes",Enabled=false},new(){Id="notes"},new(){Id="unknown"}}};s.Normalize();Assert(s.PanelWidth==384 && s.PanelScale==1.25 && s.HoverHeight==184 && s.SwipeDistance==24 && s.HoverDelayMs==80 && s.HoverViews.Count==9 && s.HoverViews[0].Id=="notes" && !s.HoverViews[0].Enabled);});
+        {var s=new Settings{PanelWidth=double.NaN,PanelScale=9,HoverHeight=-1,SwipeDistance=0,HoverDelayMs=0,HoverViews=new(){new(){Id="notes",Enabled=false},new(){Id="notes"},new(){Id="unknown"}}};s.Normalize();Assert(s.PanelWidth==384 && s.PanelScale==1.25 && s.HoverHeight==184 && s.SwipeDistance==24 && s.HoverDelayMs==80 && s.HoverViews.Count==10 && s.HoverViews[0].Id=="notes" && !s.HoverViews[0].Enabled);});
         Test("Mixer includes paused sessions and rejects expired sessions",()=>Assert(AudioMixer.IsControllableSession(0) && AudioMixer.IsControllableSession(1) && !AudioMixer.IsControllableSession(2) && !AudioMixer.IsControllableSession(-1)));
         var now=new DateTimeOffset(2026,10,14,0,0,0,TimeSpan.Zero);
         Test("Timer keeps its absolute deadline while UI is closed",()=> {var c=new Countdown();c.Start(120,now);Assert(c.Remaining(now.AddSeconds(70))==50);});

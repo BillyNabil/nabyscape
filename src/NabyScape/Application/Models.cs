@@ -80,6 +80,7 @@ public sealed class Settings
     public double Horizontal { get; set; } = 50;
     public double Top { get; set; } = 0;
     public string Monitor { get; set; } = "";
+    public string DisplayMode {get;set;}="";
     public string Background { get; set; } = "#000000";
     public string Accent { get; set; } = "#FFFFFF";
     public string ControlFill { get; set; } = "#16171B";
@@ -119,10 +120,10 @@ public sealed class Settings
     };
     public static readonly Dictionary<string,string> Names = new()
     {
-        ["media"]="Media", ["volume"]="Volume", ["timer"]="Timer", ["focus"]="Focus mode",
+        ["media"]="Media", ["volume"]="Volume", ["timer"]="Timer", ["stopwatch"]="Stopwatch", ["focus"]="Focus mode",
         ["clock"]="Clock & date", ["system"]="System monitor", ["battery"]="Battery", ["shortcuts"]="Shortcuts",["tools"]="Everyday tools"
     };
-    public static List<WidgetSetting> Defaults() => Names.Keys.Select(id => new WidgetSetting { Id=id }).ToList();
+    public static List<WidgetSetting> Defaults() => Names.Keys.Select(id => new WidgetSetting { Id=id,Enabled=id!="stopwatch" }).ToList();
     public void Normalize()
     {
         if(NotificationDelivery is not ("Notch" or "Windows" or "Both" or "Off"))NotificationDelivery="Notch";
@@ -136,7 +137,7 @@ public sealed class Settings
         AnimationMs=Clamp(AnimationMs,0,600,420);
         PanelWidth=Clamp(PanelWidth,340,640,384);PanelMaxHeight=Clamp(PanelMaxHeight,320,760,408);PanelPadding=Clamp(PanelPadding,16,40,32);PanelScale=Clamp(PanelScale,.85,1.25,1);SectionGap=Clamp(SectionGap,8,28,18);
         HoverWidth=Clamp(HoverWidth,300,500,350);HoverHeight=Clamp(HoverHeight,184,280,192);HoverDelayMs=Math.Clamp(HoverDelayMs,80,900);HoverDetailDelayMs=Math.Clamp(HoverDetailDelayMs,200,1200);SwipeDistance=Clamp(SwipeDistance,24,100,48);GlassStrength=Clamp(GlassStrength,0,1,1);
-        var hoverIds=new[]{"media","timer","focus","calendar","notes","files","system","clips","tasks"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id is not ("system" or "clips" or "tasks")});
+        var hoverIds=new[]{"media","timer","focus","calendar","notes","files","system","clips","tasks","stopwatch"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id is not ("system" or "clips" or "tasks" or "stopwatch")});
         Tools=(Tools??new()).Where(t=>t!=null && ToolNames.ContainsKey(t.Id)).DistinctBy(t=>t.Id).ToList();foreach(var id in ToolNames.Keys)if(!Tools.Any(t=>t.Id==id))Tools.Add(new(){Id=id});
         if(Performance is not ("Auto" or "Hemat" or "Maksimal"))Performance="Auto";
         if(WheelAction is not ("volume" or "pages" or "none"))WheelAction="volume";
@@ -160,9 +161,10 @@ public sealed class Settings
         if(!ValidColor(ControlBorder))ControlBorder="#303238";
         if(!ValidColor(SelectionFill))SelectionFill="#34373E";
         Widgets=(Widgets ?? new()).Where(w=>w!=null && Names.ContainsKey(w.Id)).DistinctBy(w=>w.Id).ToList();
-        foreach(var id in Names.Keys) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id});
+        foreach(var id in Names.Keys) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id!="stopwatch"});
         Shortcuts=(Shortcuts ?? new()).Where(s=>s!=null && !string.IsNullOrWhiteSpace(s.Name) && !string.IsNullOrWhiteSpace(s.Target)).Take(40).ToList();
         Monitor ??= "";
+        if(DisplayMode is not ("Primary" or "Selected" or "Follow"))DisplayMode=Monitor.Length>0?"Selected":"Primary";
     }
     public static bool ValidColor(string? value) => value!=null && System.Text.RegularExpressions.Regex.IsMatch(value,"^#[0-9a-fA-F]{6}$");
 }
@@ -191,6 +193,7 @@ public sealed class Countdown
 }
 public sealed class SessionState
 {
+    public StopwatchState Stopwatch {get;set;}=new();
     public Countdown Timer { get; set; } = new();
     public Countdown Focus { get; set; } = new();
 }

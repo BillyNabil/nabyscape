@@ -39,7 +39,7 @@ internal sealed class DetachedPreviewView : IDisposable
     {
         this.app=app;this.kind=kind;this.openMain=openMain;
         Content=new ScrollViewer{Content=panel,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
-        switch(kind){case "media":BuildMusic();break;case "timer":case "focus":BuildClock();break;case "notes":BuildNotes();break;case "files":BuildShelf();break;case "calendar":BuildCalendar();break;case "system":BuildSystem();break;}
+        switch(kind){case "stopwatch":Add(new StopwatchView(app));break;case "media":BuildMusic();break;case "timer":case "focus":BuildClock();break;case "notes":BuildNotes();break;case "files":BuildShelf();break;case "calendar":BuildCalendar();break;case "system":BuildSystem();break;}
         var open=UI.Button("Open "+DetachedPreviewWindow.NameFor(kind),openMain);open.Margin=new(0,12,0,0);panel.Children.Add(open);
         noteSave.Tick+=(_,_)=>Flush();
     }

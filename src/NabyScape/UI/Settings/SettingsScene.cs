@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Shape","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
+    internal static readonly string[] Sections={"Shape","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -77,7 +77,8 @@ internal sealed class SettingsScene : FrameworkElement
             case "Animation performance":
                 Text("Eco",24,16,12,true);Text("Auto",24,42,12,true);Text("Maximum",24,68,12,true);for(int row=0;row<3;row++)for(int i=0;i<(row+1)*8;i++)Box(120+i*10,20+row*26,3,12,white,1);Note("Illustrative update cadence · your display sets the visible limit");break;
             case "Display":
-                dc.DrawRoundedRectangle(null,line,new Rect(24,17,166,67),5,5);dc.DrawRoundedRectangle(null,line,new Rect(220,17,166,67),5,5);Box(70,18,76,12,white,3);Text("Primary display",50,58,11);Text("Other display",250,58,11);Note(string.IsNullOrEmpty(s.Monitor)?"Follows your primary display":"Selected display: "+s.Monitor);break;
+                dc.DrawRoundedRectangle(null,line,new Rect(24,17,166,67),5,5);dc.DrawRoundedRectangle(null,line,new Rect(220,17,166,67),5,5);Box(s.DisplayMode is "Follow" or "Selected"?266:70,18,76,12,white,3);if(s.DisplayMode=="Follow"){Line(318,39,332,48);Line(318,39,321,54);Text("250 ms",242,39,10);}
+                Text("Primary display",50,66,11);Text("Other display",250,66,11);Note(s.DisplayMode=="Follow"?"Follow cursor · move after 250 ms · waits during interaction":s.DisplayMode=="Selected"?"Selected display: "+s.Monitor:"Primary display");break;
             case "Closed island":
                 Island(90,18,240,34);Line(90,69,330,69);Line(90,63,90,75);Line(330,63,330,75);Text($"{s.Width:0} × {s.Height:0} px · radius {s.Radius:0} px",115,77,11);Note($"Horizontal position {s.Horizontal:0}% · top offset {s.Top:0} px");break;
             case "Open panel":
@@ -107,6 +108,8 @@ internal sealed class SettingsScene : FrameworkElement
                 }Note("Example content · first pages in your current hover order");break;
             case "Clipboard history":
                 Text("Text",22,20,12,true);Text("Copied thought",22,42,11,false,muted);Text("Link",158,20,12,true);Text("example.com",158,42,11,false,muted);Box(296,18,40,40);dc.DrawEllipse(muted,null,new Point(324,28),3,3);Line(301,50,312,35);Line(312,35,331,52);Text("Image",346,30,11);Toggle(22,74,s.ClipboardHistory);Text(s.ClipboardHistory?"History enabled":"History off",64,74,11);Note("Example items · turning history off deletes saved items");break;
+            case "Stopwatch":
+                Text("Stopwatch",28,13,12,true);Text("00:00",28,33,28,true);Keys("Start",205,29,78);Keys("Reset",292,29,78);Note("Start → Pause → Resume · Reset clears elapsed time");break;
             case "Focus sessions":
                 Text(s.FocusMinutes+":00",28,20,28,true);Text("Focus",30,59,12,false,muted);Line(170,25,170,77);Text(s.BreakMinutes+":00",224,20,28,true);Text("Break",226,59,12,false,muted);Note("Used when the next session starts");break;
             case "Automatic tucking":

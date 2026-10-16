@@ -57,9 +57,17 @@ internal static class Native
         GlobalMemoryStatusEx(ref mem);
         return(cpu,(mem.TotalPhysical-mem.AvailablePhysical)/1073741824.0,mem.TotalPhysical/1073741824.0);
     }
+    internal static string? FollowMonitor;
+    private static long pointerStamp=long.MinValue;
+    private static Point cachedPointer;
+    private static bool pointerValid;
+    internal static bool CursorPoint(out Point point)
+    {long now=Environment.TickCount64;if(pointerStamp==long.MinValue || now-pointerStamp>=50){pointerValid=GetCursorPos(out cachedPointer);pointerStamp=now;}point=cachedPointer;return pointerValid;}
     public static Forms.Screen ChooseScreen(Settings settings)
     {
-        foreach(var s in Forms.Screen.AllScreens) if(s.DeviceName==settings.Monitor) return s;
+        var screens=Forms.Screen.AllScreens;string primary=(Forms.Screen.PrimaryScreen??screens[0]).DeviceName;
+        string target=MonitorFollowPolicy.Target(System.Array.ConvertAll(screens,s=>s.DeviceName),primary,settings.DisplayMode,settings.Monitor,FollowMonitor);
+        foreach(var s in Forms.Screen.AllScreens) if(s.DeviceName==target) return s;
         return Forms.Screen.PrimaryScreen ?? Forms.Screen.AllScreens[0];
     }
     public static double Scale(Forms.Screen screen)
