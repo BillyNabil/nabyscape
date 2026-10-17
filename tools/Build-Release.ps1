@@ -1,7 +1,10 @@
-param([Parameter(Mandatory)][string]$Tag,[string]$Dotnet='dotnet',[string]$OutputDirectory=(Join-Path $PSScriptRoot '..\release-output'))
+param([Parameter(Mandatory)][string]$Tag,[string]$Dotnet='dotnet',[string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 if ($Tag -notmatch '^v\d+\.\d+\.\d+$') { throw 'Expected tag vMAJOR.MINOR.PATCH.' }
 $repo=Split-Path $PSScriptRoot -Parent
+if ([string]::IsNullOrEmpty($OutputDirectory)) {
+    $OutputDirectory = Join-Path $repo 'release-output'
+}
 [xml]$project=Get-Content -LiteralPath (Join-Path $repo 'src\NabyScape\NabyScape.csproj')
 if ($Tag.Substring(1) -ne $project.Project.PropertyGroup.Version) { throw 'Tag must match project version.' }
 $output=[IO.Path]::GetFullPath($OutputDirectory)
@@ -12,6 +15,7 @@ $publish=Join-Path $output 'publish'
 if ($LASTEXITCODE -ne 0) { throw 'Clean failed.' }
 & (Join-Path $repo 'build.ps1') -Dotnet $Dotnet -OutputDirectory $publish
 if ($LASTEXITCODE -ne 0) { throw 'Build checks failed.' }
+Start-Sleep -Seconds 2
 $setup=Join-Path $output 'NabyScape-win-x64-Setup.exe'
 Copy-Item -LiteralPath (Join-Path $publish 'NabyScape-Setup.exe') -Destination $setup
 $portable=Join-Path $output 'NabyScape-win-x64-Portable.zip'
