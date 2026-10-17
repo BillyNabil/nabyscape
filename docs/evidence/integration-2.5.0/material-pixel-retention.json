@@ -1,0 +1,330 @@
+[
+  {
+    "file": "native-acrylic-repeat-wgc.jpg",
+    "sha256": "7b1ab05ddb4ff7443cbba6b95839afb53a3fb95898f0e091969c90ec19e4c5a0",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 248,
+      "songLabel": 189,
+      "glassLabel": 107,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "native-acrylic-wgc.jpg",
+    "sha256": "7c16fbba698eb84b2780afba9549d2cdd1e65c16c4d60a60491fa8872d9c6f5f",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 248,
+      "songLabel": 189,
+      "glassLabel": 107,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "native-mica-repeat-wgc.jpg",
+    "sha256": "41edf4930e007a56af9c0fd7e5abcb306370035293c05b595b8f6d1d4b1f1aa5",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 248,
+      "songLabel": 189,
+      "glassLabel": 107,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "native-mica-wgc.jpg",
+    "sha256": "54e99910146d2107abe7a68ae59ae1401ffc60c1727c0ff500aba46afbdffede",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 248,
+      "songLabel": 189,
+      "glassLabel": 107,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "simulated-glass-repeat-wgc.jpg",
+    "sha256": "ff20f47a39853936ede4a609ffb6f06e0c0a1a090c2db921c0e06d2e0c147c66",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 248,
+      "songLabel": 189,
+      "glassLabel": 107,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "simulated-glass-wgc.jpg",
+    "sha256": "b56481bee3bd1016b4cd36cab2ea64e76fdf3fa06d2ee69a4640b26b72e49cce",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 198,
+      "songLabel": 164,
+      "glassLabel": 81,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "solid-repeat-wgc.jpg",
+    "sha256": "9b7019b4b053ea8e60db1bc4e117c7deba02dcabaf9a9940ebe99cfdc8047897",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 248,
+      "songLabel": 189,
+      "glassLabel": 107,
+      "swatch": 1079
+    }
+  },
+  {
+    "file": "solid-wgc.jpg",
+    "sha256": "7419526be3a281c660457b1b8888f4c02df9176cd54aadd7d1d6181791a48b76",
+    "size": [
+      1100,
+      780
+    ],
+    "minRgbThresholdExclusive": 210,
+    "roiBounds": {
+      "settingsLabel": [
+        212,
+        166,
+        330,
+        185
+      ],
+      "songLabel": [
+        260,
+        492,
+        350,
+        511
+      ],
+      "glassLabel": [
+        260,
+        516,
+        340,
+        531
+      ],
+      "swatch": [
+        216,
+        490,
+        250,
+        525
+      ]
+    },
+    "brightPixels": {
+      "settingsLabel": 198,
+      "songLabel": 164,
+      "glassLabel": 81,
+      "swatch": 1079
+    }
+  }
+]

@@ -49,6 +49,8 @@ internal static class Diagnostics
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
             if(Environment.GetCommandLineArgs().Contains("--showcase")){await ShowcaseDiagnostics.Run(app,overlay,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage6-only")){await Task.Delay(500);await Stage6Diagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--integration-settings-only")){await IntegrationSettingsDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--integration-regressions-only")){await IntegrationRegressionDiagnostics.Run(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage5-only")){await Task.Delay(500);await Stage5Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage4-only")){await Task.Delay(500);await Stage4Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage3-only")){await Task.Delay(500);await Stage3Diagnostics.Run(app,directory,Check);return;}
@@ -263,9 +265,9 @@ internal static class Diagnostics
             {
                 app.Settings.Shortcuts.Add(longCommand);app.Settings.PanelWidth=340;app.Settings.PanelScale=1.25;app.ChangeSettings();await WaitUntil(()=>!overlay.IsAnimating);
                 Check("Long command details remain bounded at narrow width and large content scale",CommandsFit());CaptureContour("command-bar-narrow");
-                var commandScroll=OuterScroll(Entry("Search commands"));commandScroll.ScrollToEnd();await Task.Delay(100);
-                var lastCommand=ActionButton(longCommand.Name);var lastBounds=lastCommand.TransformToAncestor(commandScroll).TransformBounds(new Rect(lastCommand.RenderSize));
-                Check("Last command can scroll fully into view",lastBounds.Top>=-0.5 && lastBounds.Bottom<=commandScroll.ActualHeight+0.5);
+                var commandScroll=OuterScroll(Entry("Search commands"));commandScroll.ScrollToEnd();
+                var lastCommand=ActionButton(longCommand.Name);
+                Check("Last command can scroll fully into view",await WaitUntil(()=>{overlay.UpdateLayout();var lastBounds=lastCommand.TransformToAncestor(commandScroll).TransformBounds(new Rect(lastCommand.RenderSize));return lastBounds.Top>=-.5 && lastBounds.Bottom<=commandScroll.ActualHeight+.5;}));
                 app.Settings.PanelWidth=640;app.Settings.PanelScale=1.25;app.ChangeSettings();await WaitUntil(()=>!overlay.IsAnimating);Check("Wide enlarged command controls retain scrollbar clearance",CommandsFit());CaptureContour("command-bar-wide-scaled");
             }
             finally{app.Settings.Shortcuts.Remove(longCommand);app.Settings.PanelWidth=commandWidth;app.Settings.PanelScale=commandScale;app.ChangeSettings();}
@@ -319,12 +321,12 @@ internal static class Diagnostics
             Check("Sleep beyond work and break completes focus",!app.Session.Focus.Running && app.Session.Focus.Phase=="");
             app.Session.Focus.Start(1,DateTimeOffset.UtcNow.AddSeconds(-2),"break");app.CheckCountdowns();
             Check("Break completion returns to ready state",!app.Session.Focus.Running && app.Session.Focus.Phase=="");
-            app.Settings.Monitor="nonexistent-monitor";app.ChangeSettings();
+            app.Settings.DisplayMode="Selected";app.Settings.Monitor="nonexistent-monitor";app.ChangeSettings();
             Check("Missing monitor falls back to primary",Native.ChooseScreen(app.Settings).Primary);
             app.Settings.Preset="Mac";app.Settings.Top=0;app.ChangeSettings();await Task.Delay(250);Capture(overlay,"island-mac");
             Native.GetWindowRect(new WindowInteropHelper(overlay).Handle,out var bounds);
             Check("Mac notch attaches to top edge",Math.Abs(bounds.Top-Native.ChooseScreen(app.Settings).Bounds.Top)<=1);
-            app.Settings.Preset="iPhone";app.Settings.Top=12;app.Settings.Monitor="";app.ChangeSettings();
+            app.Settings.Preset="iPhone";app.Settings.Top=12;app.Settings.Monitor="";app.Settings.DisplayMode="Primary";app.ChangeSettings();
             app.ShowSettings();await Task.Delay(400);
             var settings=Application.Current.Windows.OfType<SettingsWindow>().Single();Capture(settings,"settings-appearance");
             var settingsNav=Descendants(settings).Single(node=>AutomationProperties.GetName(node)=="Settings navigation");
@@ -341,8 +343,8 @@ internal static class Diagnostics
             Check("Settings navigation is English",settings.Title=="NabyScape · Settings" && new[]{"Appearance","Content","Controls","Launch","Application"}.All(label=>Descendants(settings).OfType<Button>().Any(b=>b.Content?.ToString()==label)));
             Descendants(settings).OfType<Button>().Single(b=>AutomationProperties.GetName(b)=="Island color color picker").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));settings.UpdateLayout();
             foreach(var expander in Descendants(settings).OfType<Expander>().Where(e=>e.Header?.ToString()=="Color values · HEX / RGB").ToArray())expander.IsExpanded=true;settings.UpdateLayout();
-            var islandHex=Descendants(settings).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Island color hex");islandHex.Text="#182028";await Task.Delay(300);
-            Check("Integrated color picker persists a valid hex color",app.Store.Load<Settings>("settings").Background=="#182028");islandHex.Text="#000000";await Task.Delay(300);Capture(settings,"settings-color-picker");
+            var islandHex=Descendants(settings).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Island color hex");islandHex.Focus();islandHex.Text="#182028";
+            Check("Integrated color picker persists a valid hex color",await WaitUntil(()=>app.Store.Load<Settings>("settings").Background=="#182028"));islandHex.Text="#000000";await Task.Delay(300);Capture(settings,"settings-color-picker");
             Check("Color picker exposes hue and keyboard RGB controls",Descendants(settings).OfType<Slider>().Any(t=>AutomationProperties.GetName(t)=="Island color hue") && Descendants(settings).OfType<TextBox>().Any(t=>AutomationProperties.GetName(t)=="Island color red"));
             var profile=Descendants(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Performance profile");
             Check("Performance choices show English labels with the saved Auto selection",profile.Items.Cast<string>().SequenceEqual(new[]{"Auto","Eco","Maximum"}) && profile.SelectedIndex==0);
@@ -512,11 +514,11 @@ internal static class Diagnostics
             full.Close();await Task.Delay(150);overlay.CheckEnvironment();Check("Overlay returns after fullscreen",overlay.IsVisible);
             foreach(var monitor in System.Windows.Forms.Screen.AllScreens)
             {
-                app.Settings.Monitor=monitor.DeviceName;app.ChangeSettings();await Task.Delay(300);
+                app.Settings.DisplayMode="Selected";app.Settings.Monitor=monitor.DeviceName;app.ChangeSettings();await Task.Delay(300);
                 Native.GetWindowRect(new WindowInteropHelper(overlay).Handle,out var monitorRect);
                 Check("Overlay remains inside selected monitor "+monitor.DeviceName,monitorRect.Left>=monitor.Bounds.Left && monitorRect.Right<=monitor.Bounds.Right && monitorRect.Top>=monitor.Bounds.Top && monitorRect.Bottom<=monitor.Bounds.Bottom);
             }
-            app.Settings.Monitor="";app.ChangeSettings();
+            app.Settings.Monitor="";app.Settings.DisplayMode="Primary";app.ChangeSettings();
             await MediaFixture.Verify(app,directory,Check,line=>report.Add(line),async()=>
             {
                 string originalIcon=app.Settings.ClosedMediaIcon,originalContent=app.Settings.ClosedMediaContent;var originalTimer=app.Session.Timer;var originalFocus=app.Session.Focus;var selected=app.Media.Selected;

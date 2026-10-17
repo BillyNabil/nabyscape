@@ -30,10 +30,18 @@ internal static class Stage6Diagnostics
             bool capture=Environment.GetCommandLineArgs().Contains("--stage6-capture");
             for(int cycle=0;cycle<2;cycle++)foreach(string material in SettingsBackdrop.Choices)
             {
+                if(cycle==1 && material==SettingsBackdrop.Choices[0])
+                {
+                    foreach(string category in new[]{"Layout","Appearance"})Diagnostics.Descendants(window).OfType<Button>().Single(b=>System.Windows.Automation.AutomationProperties.GetName(b)==category).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    choice=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings material");
+                    index=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings section index");
+                    index.SelectedItem=index.Items.OfType<ComboBoxItem>().Single(item=>item.Content?.ToString()=="Settings material");await Task.Delay(300);
+                    check("Stage6 repeated cycle follows Appearance re-entry",choice.SelectedItem?.ToString()==SettingsBackdrop.Requested(app.Settings));
+                }
                 choice.SelectedItem=material;await Task.Delay(800);window.UpdateLayout();var result=window.MaterialResult;
                 string tag=material.Replace(' ','-').ToLowerInvariant()+(cycle==0?"":"-repeat");
                 check("Stage6 "+tag+" "+result.Status,result.Requested==material && result.Actual.Length>0 && choice.SelectedItem?.ToString()==material && SettingsBackdrop.Requested(app.Settings)==material);
-                check("Stage6 client and frame follow actual material "+material,result.Native?window.Background==Brushes.Transparent && HwndSource.FromHwnd(new WindowInteropHelper(window).Handle)?.CompositionTarget.BackgroundColor==Colors.Transparent && WindowChrome.GetWindowChrome(window).GlassFrameThickness.Left==-1:window.Background!=Brushes.Transparent && WindowChrome.GetWindowChrome(window).GlassFrameThickness.Left==0);
+                check("Stage6 client and frame follow actual material "+material,result.Native?window.Background is SolidColorBrush tint && tint.Color.A==176 && HwndSource.FromHwnd(new WindowInteropHelper(window).Handle)?.CompositionTarget.BackgroundColor==Colors.Transparent && WindowChrome.GetWindowChrome(window).GlassFrameThickness.Left==-1:window.Background!=Brushes.Transparent && WindowChrome.GetWindowChrome(window).GlassFrameThickness.Left==0);
                 check("Stage6 Settings stays ordinary HWND and island stays layered "+material,!window.AllowsTransparency && island.AllowsTransparency);
                 if(capture)
                 {
@@ -52,7 +60,10 @@ internal static class Stage6Diagnostics
                     var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using(var file=File.Create(Path.Combine(directory,tag+"-"+(scene.Section=="Settings material"?"material":"island")+"-scene-wpf.png")))encoder.Save(file);
                     var pixels=new byte[width*height*4];bitmap.CopyPixels(pixels,width*4,0);double scale=Math.Min(1,scene.ActualWidth/420);int ink=0;
                     var area=scene.Section=="Settings material"?new Rect(34,31,124,18):new Rect(82,34,120,18);
-                    for(int y=(int)(area.Top*scale);y<Math.Min(height,(int)(area.Bottom*scale));y++)for(int x=(int)(area.Left*scale);x<Math.Min(width,(int)(area.Right*scale));x++){int at=(y*width+x)*4;if(pixels[at]>160 && pixels[at+1]>160 && pixels[at+2]>160)ink++;}
+                    // RenderTargetBitmap.Render retains this live visual's layout offset.
+                    // Probe its painted label, rather than the transparent space above it.
+                    var offset=VisualTreeHelper.GetOffset(scene);
+                    for(int y=Math.Max(0,(int)(offset.Y+area.Top*scale));y<Math.Min(height,(int)(offset.Y+area.Bottom*scale));y++)for(int x=Math.Max(0,(int)(offset.X+area.Left*scale));x<Math.Min(width,(int)(offset.X+area.Right*scale));x++){int at=(y*width+x)*4;if(pixels[at]>160 && pixels[at+1]>160 && pixels[at+2]>160)ink++;}
                     check("Stage6 WPF scene static label survives "+tag+" / "+scene.Section+" (ink "+ink+")",ink>20);
                 }
             }
@@ -64,7 +75,7 @@ internal static class Stage6Diagnostics
             var imported=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(app.Settings),imported);check("Stage6 layout round-trips Settings material",imported.SettingsMaterial==app.Settings.SettingsMaterial);
             CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"GlassStyle\":false}}",imported);check("Stage6 legacy layout imports without replacing independent Settings material",!imported.GlassStyle && imported.SettingsMaterial==app.Settings.SettingsMaterial);
             PreferenceReset.Reset(app.Store,app.Settings,"Appearance");app.ChangeSettings();check("Stage6 Appearance reset restores legacy solid Settings and island glass",window.MaterialResult.Actual=="Solid" && app.Settings.GlassStyle);
-            File.WriteAllText(Path.Combine(directory,"native-environment.txt"),$"OS {Environment.OSVersion}\nConditions {SettingsBackdrop.ReadConditions()}\nNative visibility requires composed capture; these assertions only verify policy, API and client setup.\nIsland native backdrop not shipped: layered custom contour; notch transparency, hit testing, animated resize, DPI and performance gates are unproven.\n");
+            File.WriteAllText(Path.Combine(directory,"native-environment.txt"),$"OS {Environment.OSVersion}\nConditions {SettingsBackdrop.ReadConditions()}. Native Settings use DWM with a dark translucent client foundation.\nIsland native backdrop not shipped: layered custom contour; notch transparency, hit testing, animated resize, DPI and performance gates are unproven.\n");
         }
         finally{window.Close();}
     }

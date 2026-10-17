@@ -1,0 +1,5 @@
+PASS all three release asset SHA-256 hashes independently recomputed
+PASS NabyScape-win-x64-Portable.zip contents and all five notices
+PASS NabyScape-Notices.zip contents and all five notices
+PASS WinGet fixture uses the real setup hash
+Manifest validation succeeded.

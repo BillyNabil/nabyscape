@@ -1,0 +1,40 @@
+{
+  "version": "2.5.0",
+  "cores": 16,
+  "renderTier": 2,
+  "fixture": "Deterministic amplitude and metadata; no native audio writes. GPU unavailable. WPF callbacks are not GPU presentation.",
+  "results": [
+    {
+      "ResponsiveCalls": 0,
+      "WorkspaceChanges": 0,
+      "PreviewBuilds": 0,
+      "SceneRenders": 0,
+      "LayoutUpdates": 0,
+      "AppUpdates": 5,
+      "scenario": "settings-static",
+      "run": 1,
+      "frameLimit": 60,
+      "systemCpu": 0,
+      "monitor": "\\\\.\\DISPLAY2",
+      "refreshHzStart": 180,
+      "refreshHzEnd": 180,
+      "dpiScale": 1,
+      "seconds": 5.0421573,
+      "cpuPercent": 1.433228292976897,
+      "privateMiB": 118.3984375,
+      "privateGrowthMiB": -21.7109375,
+      "workingSetMiB": 177.62109375,
+      "allocatedBytesPerSecond": 16830337.284400072,
+      "gen0": 5,
+      "gen1": 0,
+      "gen2": 0,
+      "handles": 773,
+      "handleGrowth": 0,
+      "meterReads": 0,
+      "renderCallbacks": 0,
+      "p95Ms": null,
+      "p99Ms": null,
+      "gpuPercent": null
+    }
+  ]
+}

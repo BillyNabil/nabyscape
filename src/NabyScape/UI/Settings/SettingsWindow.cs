@@ -49,11 +49,14 @@ public sealed partial class SettingsWindow : Window
         previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Text("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Stopwatch","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard","Control colors","Typography","Panel navigation","Visibility","Tasks","Startup"})examples.Items.Add(item);examples.SelectedIndex=0;UI.Named(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=UI.Text("Changes apply automatically. The preview uses your current shape, size and colors.",11,UI.Muted);hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
         var previewExpander=new Expander{Header=UI.Text("Live preview",12,UI.Muted),Foreground=UI.Muted,Margin=new(8,0,0,0),Content=UI.Scroll(previewColumn),IsExpanded=true};
         var rail=new Border{BorderBrush=UI.Brush("#24262B"),BorderThickness=new(1,0,0,0),Child=previewExpander};Grid.SetColumn(rail,1);Grid.SetRowSpan(rail,3);workspace.Children.Add(rail);
+        var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};
         bool? previousNarrow=null;
         bool? previousShort=null;
         void Responsive()
         {
-            bool narrow=ActualWidth<1100,compactNav=ActualWidth<760,shortScreen=ActualHeight<600;
+            bool narrow=ActualWidth<1100,compactNav=ActualWidth<760,shortScreen=ActualHeight<600,veryShort=ActualHeight<340;
+            categories.Margin=new Thickness(16,veryShort?3:7,16,veryShort?3:7);
+            footer.Padding=veryShort?new Thickness(20,4,20,6):new Thickness(26,12,26,14);
             root.ColumnDefinitions[0].Width=compactNav?new GridLength(0):new GridLength(152);
             navBorder.Visibility=compactNav?Visibility.Collapsed:Visibility.Visible;categories.Visibility=compactNav?Visibility.Visible:Visibility.Collapsed;
             if(categories.SelectedItem?.ToString()!=current)categories.SelectedItem=current;
@@ -67,13 +70,13 @@ public sealed partial class SettingsWindow : Window
             modes.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
             previewStage.Height=narrow?Math.Max(40,previewHeight-65):238;
             previewColumn.Margin=narrow?new Thickness(18,6,18,8):new Thickness(18,18,18,18);hint.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;previewDimensions.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;sample.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;examples.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
-            sectionIndexHost.Margin=narrow?new Thickness(20,8,20,4):new Thickness(28,14,28,4);
-            page.Margin=narrow?new Thickness(20,18,20,24):new Thickness(28,20,28,28);
+            sectionIndexHost.Margin=narrow?(veryShort?new Thickness(20,3,20,2):new Thickness(20,8,20,4)):new Thickness(28,14,28,4);
+            page.Margin=narrow?new Thickness(20,veryShort?8:18,20,24):new Thickness(28,20,28,28);
         }
         UI.Named(previewExpander,"Settings live preview");UI.Named(scroll,"Settings form viewport");UI.Named(rail,"Settings preview rail");UI.Named(navBorder,"Settings navigation");
         SizeChanged+=(_,_)=>Responsive();workspace.SizeChanged+=(_,_)=>Responsive();Loaded+=(_,_)=>Responsive();
         page.MaxWidth=660;page.HorizontalAlignment=HorizontalAlignment.Stretch;
-        var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Child=status};Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);
+        Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);
         saveTimer.Tick+=(_,_)=>{saveTimer.Stop();try{applyingSettings=true;app.ChangeSettings();status.Text="Saved on this device";}catch(Exception ex){status.Text="Could not save changes. Try again.";app.Store.Log(ex);}finally{applyingSettings=false;}};
         app.Updates.Changed+=UpdateControls;
         app.SettingsChanged+=SettingsApplied;app.Updated+=UpdateFrameStatus;

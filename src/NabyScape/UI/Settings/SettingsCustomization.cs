@@ -92,13 +92,13 @@ public sealed partial class SettingsWindow
         if(previewTemplateKey==template && previewLayout!=null && previewMaterial!=null)
         {previewLayout.Margin=inset;previewMaterial.Visibility=s.GlassStyle?Visibility.Visible:Visibility.Collapsed;previewMaterial.Background=IslandSurface.Material(s.Background);previewMaterial.Opacity=(closed?.45:1)*s.GlassStrength;return;}
         previewTemplateKey=template;previewFrames.Clear();previewRealtimeFrames.Clear();hasPreviewWave=false;
-        var content=new StackPanel{Margin=inset};previewLayout=content;var header=new DockPanel{Height=closed?height:23};var time=UI.Text(DateTime.Now.ToString(s.Clock24Hour?"HH:mm":"h:mm tt"),11);time.FontWeight=FontWeights.Bold;DockPanel.SetDock(time,Dock.Right);header.Children.Add(time);previewFrames.Add(_=>time.Text=DateTime.Now.ToString(s.Clock24Hour?"HH:mm":"h:mm tt"));var appName=UI.Text(closed?"NabyScape":previewContent,11);appName.TextWrapping=TextWrapping.NoWrap;appName.TextTrimming=TextTrimming.CharacterEllipsis;appName.FontWeight=s.BoldHeadings?FontWeights.SemiBold:FontWeights.Normal;header.Children.Add(appName);if(closed || hover)content.Children.Add(header);
-        if(closed && previewContent=="Music")
+        var content=new StackPanel{Margin=inset};previewLayout=content;var header=new DockPanel{Height=closed?height:23};var time=UI.Text(DateTime.Now.ToString(s.Clock24Hour?"HH:mm":"h:mm tt"),11);time.FontWeight=FontWeights.Bold;DockPanel.SetDock(time,Dock.Right);header.Children.Add(time);previewFrames.Add(_=>time.Text=DateTime.Now.ToString(s.Clock24Hour?"HH:mm":"h:mm tt"));var appName=UI.Text(closed && previewContent=="Music"?(app.Media.Available?app.Media.Title:""):previewContent,11);appName.TextWrapping=TextWrapping.NoWrap;appName.TextTrimming=TextTrimming.CharacterEllipsis;appName.FontWeight=s.BoldHeadings?FontWeights.SemiBold:FontWeights.Normal;header.Children.Add(appName);if(closed || hover)content.Children.Add(header);
+        if(closed && previewContent=="Music" && app.Media.Available)
         {
             FrameworkElement? icon=s.ClosedMediaIcon=="Artwork" && app.Media.Artwork!=null?new Border{Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,8,0),VerticalAlignment=VerticalAlignment.Center,Child=new Image{Source=app.Media.Artwork,Stretch=Stretch.UniformToFill}}:s.LiveActivity && s.ClosedMediaContent!="Waveform"?PreviewWave():null;
             if(icon!=null){DockPanel.SetDock(icon,Dock.Left);header.Children.Insert(0,icon);}
         }
-        if(closed && previewContent=="Music" && s.ClosedMediaContent=="Waveform")
+        if(closed && previewContent=="Music" && app.Media.Available && s.ClosedMediaContent=="Waveform")
         {
             appName.Visibility=Visibility.Collapsed;var waveform=PreviewWave(true);waveform.Width=double.NaN;waveform.MaxWidth=72;waveform.Margin=new(0,0,8,0);waveform.HorizontalAlignment=HorizontalAlignment.Stretch;header.Children.Add(waveform);
         }

@@ -1,0 +1,13 @@
+PASS  Focused command scroll: row 5.75,305.75,250.5,67.5; viewport 382; offset 1108/1108
+PASS  Focused valid HEX persists: live #182028, saved #182028
+PASS  Focused selected-monitor containment \\.\DISPLAY2 mode Selected
+PASS  Focused selected-monitor containment \\.\DISPLAY1 mode Selected
+PASS  Focused Start controls exist at 514
+PASS  Focused Start text fits at 514: Start width 103, required 33.39
+PASS  Focused Start text fits at 514: Start, pause or resume stopwatch width 42, required 40.36
+PASS  Focused Start text fits at 514: Start focus width 103, required 33.39
+PASS  Focused Start controls exist at 340
+PASS  Focused Start text fits at 340: Start width 103, required 33.39
+PASS  Focused Start text fits at 340: Start, pause or resume stopwatch width 42, required 40.36
+PASS  Focused Start text fits at 340: Start focus width 103, required 33.39
+RESULT: 0 failures

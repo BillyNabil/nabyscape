@@ -1,0 +1,127 @@
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_ProviderOptions()
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_ProviderOptions()
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_ProviderOptions()
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_BoundingRectangle()
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_ProviderOptions()
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_ProviderOptions()
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.Navigate(NavigateDirection direction)
+
+   at System.Windows.Threading.Dispatcher.InvokeAsyncImpl(DispatcherOperation operation, CancellationToken cancellationToken)
+   at System.Windows.Threading.Dispatcher.InvokeImpl(DispatcherOperation operation, CancellationToken cancellationToken, TimeSpan timeout)
+   at MS.Internal.Automation.ElementUtil.Invoke(AutomationPeer peer, DispatcherOperationCallback work, Object arg)
+   at MS.Internal.Automation.ElementProxy.get_ProviderOptions()

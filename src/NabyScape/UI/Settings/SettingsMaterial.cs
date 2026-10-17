@@ -29,7 +29,8 @@ public sealed partial class SettingsWindow
         // surface needlessly discards retained WPF client resources.
         var chrome=WindowChrome.GetWindowChrome(this);chrome.GlassFrameThickness=MaterialResult.Native?new Thickness(-1):new Thickness(0);
         var source=HwndSource.FromHwnd(hwnd);if(source?.CompositionTarget!=null)source.CompositionTarget.BackgroundColor=MaterialResult.Native?Colors.Transparent:Color.FromRgb(17,18,20);
-        Background=MaterialResult.Native?Brushes.Transparent:MaterialResult.Actual=="Simulated glass"?IslandSurface.Material("#111214"):UI.Brush("#111214");
+        // Retain native blur beneath a dark client tint so secondary text stays readable.
+        Background=MaterialResult.Native?UI.Brush("#B0111214"):MaterialResult.Actual=="Simulated glass"?IslandSurface.Material("#111214"):UI.Brush("#111214");
         materialStatus.Text=MaterialResult.Status+" Native materials apply to Settings only. The island preview keeps its existing material.";
         // Repaint retained examples once after the HWND composition change settles;
         // do not rebuild controls or attach a continuous rendering callback.

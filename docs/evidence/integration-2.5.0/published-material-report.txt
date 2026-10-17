@@ -1,0 +1,51 @@
+PASS  Stage6 legacy Settings surface stays solid and island glass remains enabled
+PASS  Stage6 distinct Settings material scene
+PASS  Stage6 Appearance re-entry retains the material selector
+PASS  Stage6 solid Requested: Solid. Actual: Solid. Settings only; island material is independent.
+PASS  Stage6 client and frame follow actual material Solid
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Solid
+PASS  Stage6 WPF scene static label survives solid / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives solid / Color & material (ink 203)
+PASS  Stage6 simulated-glass Requested: Simulated glass. Actual: Simulated glass. Settings only; island material is independent.
+PASS  Stage6 client and frame follow actual material Simulated glass
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Simulated glass
+PASS  Stage6 WPF scene static label survives simulated-glass / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives simulated-glass / Color & material (ink 203)
+PASS  Stage6 native-mica Requested: Native Mica. Actual: Native Mica. DWM enabled; Windows controls the final appearance.
+PASS  Stage6 client and frame follow actual material Native Mica
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Native Mica
+PASS  Stage6 WPF scene static label survives native-mica / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives native-mica / Color & material (ink 203)
+PASS  Stage6 native-acrylic Requested: Native Acrylic. Actual: Native Acrylic. DWM enabled; Windows controls the final appearance.
+PASS  Stage6 client and frame follow actual material Native Acrylic
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Native Acrylic
+PASS  Stage6 WPF scene static label survives native-acrylic / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives native-acrylic / Color & material (ink 203)
+PASS  Stage6 repeated cycle follows Appearance re-entry
+PASS  Stage6 solid-repeat Requested: Solid. Actual: Solid. Settings only; island material is independent.
+PASS  Stage6 client and frame follow actual material Solid
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Solid
+PASS  Stage6 WPF scene static label survives solid-repeat / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives solid-repeat / Color & material (ink 203)
+PASS  Stage6 simulated-glass-repeat Requested: Simulated glass. Actual: Simulated glass. Settings only; island material is independent.
+PASS  Stage6 client and frame follow actual material Simulated glass
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Simulated glass
+PASS  Stage6 WPF scene static label survives simulated-glass-repeat / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives simulated-glass-repeat / Color & material (ink 203)
+PASS  Stage6 native-mica-repeat Requested: Native Mica. Actual: Native Mica. DWM enabled; Windows controls the final appearance.
+PASS  Stage6 client and frame follow actual material Native Mica
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Native Mica
+PASS  Stage6 WPF scene static label survives native-mica-repeat / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives native-mica-repeat / Color & material (ink 203)
+PASS  Stage6 native-acrylic-repeat Requested: Native Acrylic. Actual: Native Acrylic. DWM enabled; Windows controls the final appearance.
+PASS  Stage6 client and frame follow actual material Native Acrylic
+PASS  Stage6 Settings stays ordinary HWND and island stays layered Native Acrylic
+PASS  Stage6 WPF scene static label survives native-acrylic-repeat / Settings material (ink 299)
+PASS  Stage6 WPF scene static label survives native-acrylic-repeat / Color & material (ink 203)
+PASS  Stage6 caption controls and material selector survive resize 480
+PASS  Stage6 caption controls and material selector survive resize 760
+PASS  Stage6 caption controls and material selector survive resize 1100
+PASS  Stage6 layout round-trips Settings material
+PASS  Stage6 legacy layout imports without replacing independent Settings material
+PASS  Stage6 Appearance reset restores legacy solid Settings and island glass
+RESULT: 0 failures

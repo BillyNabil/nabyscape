@@ -1,0 +1,725 @@
+PASS  Overlay starts without taking focus
+PASS  Collapsed painted contour matches configured dimensions
+INFO  Selected monitor refresh rate reported by Windows: 180 Hz. No display setting was changed.
+PASS  Live text updates never reset opacity or translate the header
+PASS  Output envelope responds to amplitude and decays smoothly
+PASS  Reduced motion immediately silences the waveform
+PASS  CoreAudio output meter returns a bounded sample
+PASS  Black glass remains dark, opaque, with transparent outside corners
+PASS  First hover stage shows a light preview
+PASS  Roomier hover stays at 350 x 192 DIP without stealing focus
+PASS  Hover activity renders at compositor cadence above 30 FPS
+INFO  Hover render callbacks: 71.4/s over 0.70s; WPF tier: 2. This is callback cadence, not a GPU present trace.
+PASS  Repeated hover does not restart the preview fade
+PASS  Hover keeps the same native backing surface
+PASS  Dragging left advances to Timer while keeping the hover compact
+PASS  A short swipe settles back on the same page
+PASS  Keyboard navigation excludes off-screen hover views
+PASS  Preview starts a five-minute timer
+PASS  Extending a paused preview timer adds five minutes without resuming
+PASS  Preview timer reset clears its saved deadline
+PASS  Preview arrow advances to Focus
+PASS  Preview focus uses the configured work duration
+PASS  Calendar preview shows the upcoming local event and meeting action
+PASS  Swipe recognition leaves buttons, sliders and writing fields to native controls
+PASS  Swiping away from quick capture preserves its draft
+PASS  Shared preview notes save locally without clearing the document
+PASS  Empty shelf preview provides a drop target and full-shelf action
+PASS  Swiping beyond the last preview stays within the deck
+PASS  Swiping beyond the first preview stays within the deck
+PASS  Preview media exposes volume, output, and transport controls
+PASS  Wheel browses without opening over header
+PASS  One wheel burst advances only once over header
+PASS  Wheel browses without opening over footer
+PASS  One wheel burst advances only once over footer
+PASS  Wheel browses without opening over slider
+PASS  One wheel burst advances only once over slider
+PASS  Wheel browses without opening over button
+PASS  One wheel burst advances only once over button
+PASS  Hover bounds media at 300/184/1.25
+PASS  Hover bounds timer at 300/184/1.25
+PASS  Hover bounds focus at 300/184/1.25
+PASS  Hover bounds calendar at 300/184/1.25
+PASS  Hover bounds notes at 300/184/1.25
+PASS  Hover bounds files at 300/184/1.25
+PASS  Hover bounds media at 350/192/1
+PASS  Hover bounds timer at 350/192/1
+PASS  Hover bounds focus at 350/192/1
+PASS  Hover bounds calendar at 350/192/1
+PASS  Hover bounds notes at 350/192/1
+PASS  Hover bounds files at 350/192/1
+PASS  Hover bounds media at 300/280/0.85
+PASS  Hover bounds timer at 300/280/0.85
+PASS  Hover bounds focus at 300/280/0.85
+PASS  Hover bounds calendar at 300/280/0.85
+PASS  Hover bounds notes at 300/280/0.85
+PASS  Hover bounds files at 300/280/0.85
+PASS  Pill hover bounds with long content: media
+PASS  Pill hover bounds with long content: timer
+PASS  Pill hover bounds with long content: focus
+PASS  Pill hover bounds with long content: calendar
+PASS  Pill hover bounds with long content: notes
+PASS  Pill hover bounds with long content: files
+PASS  Reduce Motion switches preview pages without animated translations
+PASS  Morph progresses inside a fixed native host
+PASS  Morph settles and releases its frame subscription
+INFO  Morph rendering intervals: median 5.6ms, p95 16.7ms, 104 samples.
+PASS  Expanded panel remains within 384 x 408 DIP
+PASS  Playback controls have at least 18 DIP breathing room
+PASS  Music content fits without clipping the volume row
+PASS  Timer and media controls remain available on their selected pages
+PASS  Compact tab remains bounded: focus
+PASS  Compact tab remains bounded: status
+PASS  Compact tab remains bounded: access
+PASS  Compact tab remains bounded: media
+PASS  Rapid open-close reversals settle without resizing the native surface
+PASS  Mixed hover/open/close stress settles without opacity loss
+PASS  Reduce Motion uses immediate final geometry
+PASS  Reduce Motion stops continuous activity sampling
+PASS  Glass can be disabled to restore solid pure black
+PASS  File shelf exposes the staged local file
+PASS  Notes editor saves through its debounce
+PASS  Notes editor excludes checklist controls
+PASS  File drag-in routes directly to shelf content
+INFO  Launcher content 291.0 DIP; viewport 297.0 DIP.
+PASS  All launcher tiles fit without scrolling
+PASS  Tool launcher uses six compact rows without marketing copy
+PASS  Launcher exposes all six tools without a dropdown
+PASS  Launcher returns to the writing editor
+PASS  Tasks view separates the checklist from writing
+PASS  Switching tools preserves an unsubmitted task
+PASS  Completing a task preserves its control and checklist view
+PASS  Long tools content provides a meaningful scroll-reset fixture
+PASS  Scrollbar has a dedicated gutter outside the content viewport
+PASS  Clipboard remains opt-in with an explicit enable action
+PASS  Switching tools returns the outer viewport to the top
+PASS  Calendar refresh fixture emits a real productivity change
+PASS  Calendar draft controls and all entered values survive productivity changes
+PASS  Clean-link refresh fixture emits a real productivity change
+PASS  Clean-link live input, result, status and copy choice survive productivity changes
+PASS  Duplicate clean-link fixture exercises Touch and emits Changed
+PASS  Clean-link live preview also survives duplicate clipboard changes
+PASS  Keep-awake refresh fixture emits a real productivity change
+PASS  Keep-awake live duration and display choices survive productivity changes
+PASS  Clips refresh fixture emits a real productivity change
+PASS  Clips page still refreshes to show newly ingested text
+PASS  Refresh regressions leave clipboard history off and fixtures cleared
+PASS  Opening commands resets a long tool's scroll offset
+PASS  Command bar filters existing actions inside compact bounds
+PASS  Unfiltered command controls leave a scrollbar gutter
+PASS  Long command details remain bounded at narrow width and large content scale
+FAIL  Last command can scroll fully into view
+PASS  Wide enlarged command controls retain scrollbar clearance
+PASS  Enabled saved shortcuts remain searchable
+PASS  Disabled shortcuts omit saved launch commands
+PASS  Disabled tools omit their commands
+PASS  Settings remains searchable with shortcuts and tools disabled
+PASS  Command selection opens the requested tool
+PASS  Clean links previews preserved functional query and fragment without copying
+PASS  Clean-link copy action fits the compact viewport
+PASS  Clean-link input viewport fits its rendered text height
+INFO  Clean-link text viewport 28.00 DIP; formatted text 17.29 DIP.
+PASS  Clean-link invalid state recalculates the compact copy viewport
+INFO  Clean-link invalid: Copy bottom 346.00, contour 370.97, scroll offset 0.00 DIP.
+PASS  Clean-link empty state recalculates the compact copy viewport
+INFO  Clean-link empty: Copy bottom 331.00, contour 356.02, scroll offset 0.00 DIP.
+PASS  Clean-link unchanged state recalculates the compact copy viewport
+INFO  Clean-link unchanged: Copy bottom 331.00, contour 356.00, scroll offset 0.00 DIP.
+PASS  Calendar exposes a local event action and remains compact
+PASS  Month grid reveals dates within the same compact panel
+PASS  Calendar editor persists a local event and exposes a manual meeting action
+PASS  Calendar delete persists without retaining the fixture
+PASS  Calendar accepts UI date boundary and retains manual delete: 9999-12-30
+PASS  Calendar boundary month grid renders without overflow: 9999-12-30
+PASS  Last supported calendar day renders its overlapping agenda
+PASS  Calendar accepts UI date boundary and retains manual delete: 0001-01-01
+PASS  Calendar boundary month grid renders without overflow: 0001-01-01
+PASS  Calendar boundary fixtures are deleted and Today restores current month
+PASS  Keep awake is off until explicitly started
+PASS  Native keep-awake request succeeds and provides a stop action
+PASS  Keep-awake expiry releases the request and restores Start
+PASS  Automatic activity preview does not take focus
+PASS  Automatic activities do not replace an open panel
+PASS  Economy profile caps interactive animation at 60
+PASS  Global hotkey registers or reports a conflict
+PASS  Timer completes with panel closed
+PASS  Work automatically enters remaining break
+PASS  Sleep beyond work and break completes focus
+PASS  Break completion returns to ready state
+PASS  Missing monitor falls back to primary
+PASS  Mac notch attaches to top edge
+PASS  Settings status labels safely reattach on repeated Appearance and Controls visits
+PASS  Appearance switches have visible concrete explanations
+PASS  Settings shape and color controls stay inside their reserved viewport
+PASS  Settings navigation is English
+FAIL  Integrated color picker persists a valid hex color
+PASS  Color picker exposes hue and keyboard RGB controls
+PASS  Performance choices show English labels with the saved Auto selection
+PASS  English Eco choice preserves the existing saved profile ID
+PASS  Hover page toggles and reorder controls remain inside Settings
+PASS  Hover visibility switches leave space before reorder actions
+PASS  All widget switches are available
+PASS  Installed-app picker searches injected entries without launching
+PASS  Installed picker returns the selected persistent app identity
+PASS  Native application icons load as frozen bitmaps
+INFO  Read-only installed app discovery: 524 entries. No apps launched.
+PASS  Native installed catalog has safe distinct identities
+PASS  Widget reorder is persisted
+PASS  Settings provides editable numeric values beside layout sliders
+PASS  Panel width and content scale are persisted
+PASS  Custom panel size reaches the native overlay
+PASS  Category presentation remains accessible: IconsLabels
+PASS  Launch presentation respects its label style: IconsLabels
+PASS  Category presentation remains accessible: Icons
+PASS  Launch presentation respects its label style: Icons
+PASS  Category presentation remains accessible: Text
+PASS  Launch presentation respects its label style: Text
+PASS  Bold heading option affects tool titles independently
+PASS  Monitor and clock options are available
+PASS  Settings has a direct mixer action
+PASS  Settings window fits its work area
+PASS  Narrow Settings collapses preview above its controls
+PASS  Short Settings preserves a usable form viewport
+PASS  Compact to classic mixer attaches a visible mixer without changing widget preferences
+PASS  Classic mixer honors custom panel geometry
+PASS  Mixer Back returns to classic scrolling widgets
+PASS  Classic widgets remain scrollable at a custom height
+PASS  Collapsing the mixer restores classic content on reopen
+PASS  Applying settings clears the transient classic mixer
+PASS  A fresh classic overlay opens its attached mixer
+PASS  A fresh classic mixer returns to widgets
+PASS  Mixer opening animation settles before capture
+PASS  Mixer renders app rows when native sessions are available
+PASS  Mixer output animation settles before capture
+PASS  Mixer renders output rows when native endpoints are available
+PASS  Mixer omits bulk step controls
+PASS  Mixer opens without a live audio write
+PASS  Audio popup uses the custom dark border without a native gutter
+PASS  System monitor asynchronously produces real successive samples
+PASS  Detailed monitor exposes memory and uptime
+PASS  Monitor detail tabs stay outside the scrolling rows
+PASS  Status starts a worker for the quick-return lifecycle check
+PASS  Commands immediately invalidate detailed Status polling
+PASS  Returning to Status keeps one worker and a fresh baseline
+PASS  Quick return rejects the previous generation result
+PASS  Status resumes with fresh successive samples after commands
+PASS  Command bar immediately clears detailed polling and its baseline
+PASS  Command bar drains the previous worker
+PASS  Command bar starts no hidden reads or renders
+PASS  Back from commands resumes detailed Status
+PASS  Classic layout immediately clears detailed polling and its baseline
+PASS  Classic layout drains the previous worker
+PASS  Classic layout starts no hidden reads or renders
+PASS  Classic layout retains its lightweight CPU and RAM card
+PASS  Returning to compact Status resumes successive samples
+PASS  Collapsed panel immediately clears detailed polling and its baseline
+PASS  Collapsed panel drains the previous worker
+PASS  Collapsed panel starts no hidden reads or renders
+PASS  Reopening Status resumes successive samples
+PASS  Hidden window immediately clears detailed polling and its baseline
+PASS  Hidden window drains the previous worker
+PASS  Hidden window starts no hidden reads or renders
+PASS  Showing Status resumes successive samples
+PASS  Minimum-width closed feedback preserves full percentage with a 12-hour clock
+PASS  Ordinary status updates do not squeeze minimum-width mute feedback
+PASS  Closed feedback expires and restores configured clock
+PASS  Closed volume feedback does not open a panel
+PASS  Repeated volume updates renew one closed indicator
+PASS  Brightness feedback uses injected real-value path without device writes
+PASS  Manual hiding suppresses closed feedback
+PASS  Visibility shortcut registers or reports a conflict
+PASS  Custom hover ordering is used by navigation
+PASS  External fullscreen fixture starts
+PASS  Automatic hide detects external fullscreen on its display
+PASS  Disabled automatic rules leave external fullscreen visible
+PASS  Injected external fullscreen tucks the island at the edge
+PASS  Tucked edge reveals a hover without opening the panel fullscreen
+PASS  Collapsing the automatic preview re-tucks fullscreen
+PASS  Manual hide fully removes a tucked island fullscreen
+PASS  Manual show overrides the current external fullscreen
+PASS  External fullscreen does not hide another display
+PASS  External maximized fixture starts
+PASS  Automatic hide detects external maximized on its display
+PASS  Disabled automatic rules leave external maximized visible
+PASS  Injected external maximized tucks the island at the edge
+PASS  Tucked edge reveals a hover without opening the panel maximized
+PASS  Collapsing the automatic preview re-tucks maximized
+PASS  Manual hide fully removes a tucked island maximized
+PASS  Manual show overrides the current external maximized
+PASS  External maximized does not hide another display
+PASS  Fullscreen rules exclude NabyScape process windows
+MANUAL  Fullscreen auto-hide UI: fixture could not acquire foreground; detection was checked directly.
+PASS  Overlay returns after fullscreen
+PASS  Overlay remains inside selected monitor \\.\DISPLAY2
+FAIL  Overlay remains inside selected monitor \\.\DISPLAY1
+PASS  Media metadata is read from a real Windows session
+PASS  Repeated metadata refresh reuses the decoded artwork
+PASS  Media play/pause pauses the isolated publisher
+PASS  Playback status updates preserve artwork identity
+PASS  Media play/pause resumes the isolated publisher
+PASS  Seek changes the isolated player's actual position
+PASS  Next skips to another item in the isolated playlist
+PASS  Previous returns to the original playlist item
+PASS  Closed island shows native session artwork without opening
+PASS  Compact waveform replaces the title while keeping album artwork
+PASS  Closed title waveform stays usable at minimum width with a long clock
+PASS  Large closed islands do not stretch the compact waveform
+PASS  Reduced motion keeps the selected waveform at a quiet baseline
+PASS  Volume feedback temporarily replaces album artwork
+PASS  Album artwork and title waveform return after feedback expires
+PASS  Concurrent timer keeps music in the main island
+PASS  Song title and waveform icon remain selectable independently
+PASS  Missing media falls back without a stale cover
+PASS  Session selector switches back to the prior media app
+INFO  Media commands tested against a muted silent fixture; user playback was not changed.
+INFO  Windows media sessions detected: 2; playback not altered.
+INFO  Audio endpoint: Speakers (dbE Kumo GS1X Pro); volume=55%, mute=False
+PASS  Review regression: Activities to detached notes route mounts normal Tools body
+PASS  Review regression: Activities to detached calendar route mounts normal Tools body
+PASS  Review regression: Activities to detached files route mounts normal Tools body
+PASS  Review regression: DropReveal independent of HoverPeek and shelf hover toggle, layout True
+PASS  Review regression: Drop target renders three thumbnails and four-item count, layout True
+PASS  Review regression: Cancelled closed drag restores closed island, layout True
+PASS  Review regression: DropReveal independent of HoverPeek and shelf hover toggle, layout False
+PASS  Review regression: Drop target renders three thumbnails and four-item count, layout False
+PASS  Review regression: Cancelled closed drag restores closed island, layout False
+PASS  Review regression: File drag preserves manual hide
+PASS  Review regression: Cancelled expanded drag retains command editor and selection
+PASS  Review regression: Cancelled drag retains Activities body
+PASS  Review regression: Cancelled drag retains calendar form instances, draft and caret
+PASS  Review regression: Satellite fixture has room and a visible click target
+PASS  Review regression: Satellite withdraws while own hover preview opens
+PASS  Review regression: Satellite hover preserves foreground and uses non-activating window
+PASS  Review regression: Satellite-to-preview crossing keeps preview open
+PASS  Review regression: Leaving satellite and preview dismisses orphan preview
+PASS  Review regression: Satellite click after hover opens countdown panel
+PASS  Review regression: Auto companion visible without countdown
+PASS  Review regression: Auto companion requests system sampling only for CPU/RAM
+PASS  Review regression: Auto companion opens system preview even if omitted from carousel
+PASS  Review regression: Auto companion text fits
+PASS  Review regression: Auto companion click opens status
+PASS  Review regression: CPU companion visible without countdown
+PASS  Review regression: CPU companion requests system sampling only for CPU/RAM
+PASS  Review regression: CPU companion opens system preview even if omitted from carousel
+PASS  Review regression: CPU companion text fits
+PASS  Review regression: CPU companion click opens status
+PASS  Review regression: RAM companion visible without countdown
+PASS  Review regression: RAM companion requests system sampling only for CPU/RAM
+PASS  Review regression: RAM companion opens system preview even if omitted from carousel
+PASS  Review regression: RAM companion text fits
+PASS  Review regression: RAM companion click opens status
+PASS  Review regression: Clock companion visible without countdown
+PASS  Review regression: Clock companion requests system sampling only for CPU/RAM
+PASS  Review regression: Clock companion opens system preview even if omitted from carousel
+PASS  Review regression: Clock companion text fits
+PASS  Review regression: Clock companion click opens status
+PASS  Review regression: Companion aligns height and top at Mac/28
+PASS  Review regression: Companion visible body gap stays 8px at Mac/28
+PASS  Review regression: Companion inherits contour and material at Mac/28
+PASS  Review regression: Companion text fits contour safe insets at Mac/28
+PASS  Review regression: Companion aligns height and top at Mac/39
+PASS  Review regression: Companion visible body gap stays 8px at Mac/39
+PASS  Review regression: Companion inherits contour and material at Mac/39
+PASS  Review regression: Companion text fits contour safe insets at Mac/39
+PASS  Review regression: Companion aligns height and top at Mac/72
+PASS  Review regression: Companion visible body gap stays 8px at Mac/72
+PASS  Review regression: Companion inherits contour and material at Mac/72
+PASS  Review regression: Companion text fits contour safe insets at Mac/72
+PASS  Review regression: Companion aligns height and top at iPhone/28
+PASS  Review regression: Companion visible body gap stays 8px at iPhone/28
+PASS  Review regression: Companion inherits contour and material at iPhone/28
+PASS  Review regression: Companion text fits contour safe insets at iPhone/28
+PASS  Review regression: Companion aligns height and top at iPhone/39
+PASS  Review regression: Companion visible body gap stays 8px at iPhone/39
+PASS  Review regression: Companion inherits contour and material at iPhone/39
+PASS  Review regression: Companion text fits contour safe insets at iPhone/39
+PASS  Review regression: Companion aligns height and top at iPhone/72
+PASS  Review regression: Companion visible body gap stays 8px at iPhone/72
+PASS  Review regression: Companion inherits contour and material at iPhone/72
+PASS  Review regression: Companion text fits contour safe insets at iPhone/72
+PASS  Review regression: Calendar companion omitted without nearby events
+PASS  Review regression: Calendar companion shows next local event
+PASS  Review regression: Calendar companion hover opens calendar
+PASS  Review regression: Calendar companion click opens calendar tools
+PASS  Review regression: Classic Quick launch exposes Activities
+PASS  Review regression: Classic visible system card requests shared samples
+PASS  Review regression: Classic commands exclude hidden system summary
+PASS  Review regression: Classic Activities exclude hidden system summary
+PASS  Review regression: Classic Tools route restores actual system card visibility
+PASS  Review regression: Collapsed island with companion off stops system-summary sample demand
+PASS  Interactions: clipboard fixture cannot touch the system clipboard
+PASS  Interactions: media opens a visible native resizable window
+PASS  Interactions: media starts with Always on top off
+PASS  Interactions: media default geometry respects minimum dimensions
+PASS  Interactions: media default controls clear the scrolling viewport
+PASS  Interactions: media minimum resize preserves window bounds
+PASS  Interactions: media minimum controls clear the scrolling viewport
+PASS  Interactions: media repeated Open reuses the same window
+PASS  Interactions: timer opens a visible native resizable window
+PASS  Interactions: timer starts with Always on top off
+PASS  Interactions: timer default geometry respects minimum dimensions
+PASS  Interactions: timer default controls clear the scrolling viewport
+PASS  Interactions: timer minimum resize preserves window bounds
+PASS  Interactions: timer minimum controls clear the scrolling viewport
+PASS  Interactions: timer repeated Open reuses the same window
+PASS  Interactions: focus opens a visible native resizable window
+PASS  Interactions: focus starts with Always on top off
+PASS  Interactions: focus default geometry respects minimum dimensions
+PASS  Interactions: focus default controls clear the scrolling viewport
+PASS  Interactions: focus minimum resize preserves window bounds
+PASS  Interactions: focus minimum controls clear the scrolling viewport
+PASS  Interactions: focus repeated Open reuses the same window
+PASS  Interactions: calendar opens a visible native resizable window
+PASS  Interactions: calendar starts with Always on top off
+PASS  Interactions: calendar default geometry respects minimum dimensions
+PASS  Interactions: calendar default controls clear the scrolling viewport
+PASS  Interactions: calendar minimum resize preserves window bounds
+PASS  Interactions: calendar minimum controls clear the scrolling viewport
+PASS  Interactions: calendar repeated Open reuses the same window
+PASS  Interactions: notes opens a visible native resizable window
+PASS  Interactions: notes starts with Always on top off
+PASS  Interactions: notes default geometry respects minimum dimensions
+PASS  Interactions: notes default controls clear the scrolling viewport
+PASS  Interactions: notes minimum resize preserves window bounds
+PASS  Interactions: notes minimum controls clear the scrolling viewport
+PASS  Interactions: notes repeated Open reuses the same window
+PASS  Interactions: files opens a visible native resizable window
+PASS  Interactions: files starts with Always on top off
+PASS  Interactions: files default geometry respects minimum dimensions
+PASS  Interactions: files default controls clear the scrolling viewport
+PASS  Interactions: files minimum resize preserves window bounds
+PASS  Interactions: files minimum controls clear the scrolling viewport
+PASS  Interactions: files repeated Open reuses the same window
+PASS  Interactions: system opens a visible native resizable window
+PASS  Interactions: system starts with Always on top off
+PASS  Interactions: system default geometry respects minimum dimensions
+PASS  Interactions: system default controls clear the scrolling viewport
+PASS  Interactions: system minimum resize preserves window bounds
+PASS  Interactions: system minimum controls clear the scrolling viewport
+PASS  Interactions: system repeated Open reuses the same window
+PASS  Interactions: Next month activation 1 keeps keyboard focus on replacement button
+PASS  Interactions: Next month activation 2 keeps keyboard focus on replacement button
+PASS  Interactions: Previous month activation 1 keeps keyboard focus on replacement button
+PASS  Interactions: Previous month activation 2 keeps keyboard focus on replacement button
+PASS  Interactions: date activation retains keyboard focus on selected replacement day
+PASS  Interactions: arrow after date activation crosses month and focuses new selected day
+PASS  Interactions: repeated selected-date activation retains current keyboard focus
+PASS  Interactions: arrow to existing selection redraws prior month and focuses target 2026-10-31
+PASS  Interactions: month navigation stays aligned after same-selection arrow 2026-10-31
+PASS  Interactions: arrow to existing selection redraws prior month and focuses target 2024-02-29
+PASS  Interactions: month navigation stays aligned after same-selection arrow 2024-02-29
+PASS  Interactions: all seven visible previews have one Updated subscription each
+PASS  Interactions: manual hide before explicit Reveal releases preview subscriptions
+PASS  Interactions: explicit Reveal restores all seven open previews and subscriptions
+PASS  Interactions: manual overlay hide hides all seven previews
+PASS  Interactions: hidden previews have no Updated subscriptions
+PASS  Interactions: manual show restores all previously open previews
+PASS  Interactions: minimized preview releases its Updated subscription
+PASS  Interactions: reopening minimized preview restores its subscription
+PASS  Interactions: manual show does not reopen a closed preview
+PASS  Interactions: closing countdown preview leaves shared countdown running
+PASS  Interactions: disabling a widget closes its preview
+PASS  Interactions: main note edits synchronize hover and detached document
+PASS  Interactions: main edits preserve detached note selection
+PASS  Interactions: detached note edits synchronize main without destroying its caret
+PASS  Interactions: detached edits preserve hover note selection
+PASS  Interactions: hover note edits synchronize main and detached document
+PASS  Interactions: simulated 100% WPF layout stays finite
+PASS  Interactions: simulated 150% WPF layout stays finite
+PASS  Interactions: simulated 200% WPF layout stays finite
+PASS  Interactions: local focus-only activity definition saves
+PASS  Interactions: activity Start starts shared Focus and reports its step
+PASS  Interactions: activity Stop releases its owned Focus
+PASS  Interactions: native-free clipboard fixtures classify Text Link Image Color
+PASS  Interactions: clipboard Text exposes contextual details
+PASS  Interactions: cleaned link is previewed before any copy action
+PASS  Interactions: clipboard Link exposes contextual details
+PASS  Interactions: clipboard Image exposes contextual details
+PASS  Interactions: color details expose canonical HEX and RGB
+PASS  Interactions: clipboard Color exposes contextual details
+PASS  Interactions: disabling clipboard clears open content and selected detail
+PASS  Interactions: closed previews release all Updated subscriptions
+PASS  Refinement 2.3.4: injected CPU companion is visible when closed
+PASS  Refinement 2.3.4: reduced motion removes CPU companion as preview opens
+PASS  Refinement 2.3.4: CPU companion returns after closing preview
+PASS  Refinement 2.3.4: animated preview starts companion withdrawal
+PASS  Refinement 2.3.4: CPU companion opacity decreases during withdrawal
+PASS  Refinement 2.3.4: CPU companion is hidden after its fade
+PASS  Refinement 2.3.4: animated close returns CPU companion
+PASS  Refinement 2.3.4: rapid preview close and reopen does not strand CPU companion
+PASS  Refinement 2.3.4: rapid transition remains reversible
+PASS  Refinement 2.3.4: expanded non-system panel leaves no stagnant CPU companion
+PASS  Refinement 2.3.4: normal wheel on fitting panel changes page
+PASS  Refinement 2.3.4: horizontal trackpad deltas accumulate into one page change
+PASS  Refinement 2.3.4: focused text editor keeps its vertical wheel
+PASS  Refinement 2.3.4: long list preserves native vertical scrolling
+PASS  Refinement 2.3.4: horizontal gesture can leave a long list
+PASS  Refinement 2.3.4: PanelSwipe off leaves wheel unhandled
+PASS  Refinement 2.3.4: file drag tile and descendant block panel drag
+PASS  Refinement 2.3.4: shelf uses TaskToggle and selecting updates shared selection
+PASS  Refinement 2.3.4: rendered shelf drag surface blocks panel drag
+PASS  Refinement 2.3.4: shelf rows fit their horizontal viewport
+PASS  Refinement 2.3.4: clipboard capture uses SettingsSwitch
+PASS  Refinement 2.3.4: pause switch prevents fixture ingestion
+PASS  Refinement 2.3.4: pause switch resumes capture
+PASS  Refinement 2.3.4: clipboard has text link color and image rows
+PASS  Refinement 2.3.4: clipboard rows fit their horizontal viewport
+PASS  Refinement 2.3.4: image detail exposes save without touching native clipboard
+PASS  Refinement 2.3.4: notes OpenAt uses accessible custom resizable chrome
+PASS  Refinement 2.3.4: notes OpenAt stays near supplied anchor within monitor work area
+PASS  Refinement 2.3.4: notes default controls fit scroll viewport
+PASS  Refinement 2.3.4: notes minimum controls fit scroll viewport
+PASS  Refinement 2.3.4: notes edge anchor is clamped onscreen
+PASS  Refinement 2.3.4: system OpenAt uses accessible custom resizable chrome
+PASS  Refinement 2.3.4: system OpenAt stays near supplied anchor within monitor work area
+PASS  Refinement 2.3.4: system default controls fit scroll viewport
+PASS  Refinement 2.3.4: system minimum controls fit scroll viewport
+PASS  Refinement 2.3.4: system edge anchor is clamped onscreen
+PASS  Refinement 2.3.4: Appearance controls fit their scrolling form
+PASS  Refinement 2.3.4: Settings preview selects and renders Control colors
+PASS  Refinement 2.3.4: Settings Control colors controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Typography
+PASS  Refinement 2.3.4: Settings Typography controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Panel navigation
+PASS  Refinement 2.3.4: Settings Panel navigation controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Drop zone
+PASS  Refinement 2.3.4: Settings Drop zone controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Detached preview
+PASS  Refinement 2.3.4: Settings Detached preview controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Cover gestures
+PASS  Refinement 2.3.4: Settings Cover gestures controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Two activities
+PASS  Refinement 2.3.4: Settings Two activities controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Activities
+PASS  Refinement 2.3.4: Settings Activities controls fit horizontal viewport
+PASS  Refinement 2.3.4: Settings preview selects and renders Smart clipboard
+PASS  Refinement 2.3.4: Settings Smart clipboard controls fit horizontal viewport
+PASS  Settings 2.4.1: closed and Status clocks use bold numerals
+PASS  Settings 2.4.1: media controls fit at width 514
+PASS  Settings 2.4.1: focus controls fit at width 514
+FAIL  Settings 2.4.1: Start labels stay readable at width 514
+PASS  Settings 2.4.1: monitor hides scrollbar at width 514
+PASS  Settings 2.4.1: media controls fit at width 340
+PASS  Settings 2.4.1: focus controls fit at width 340
+FAIL  Settings 2.4.1: Start labels stay readable at width 340
+PASS  Settings 2.4.1: monitor hides scrollbar at width 340
+PASS  Settings 2.4.1: Settings uses custom resizable chrome
+PASS  Settings 2.4.1: Appearance has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Appearance form controls fit at width 1100
+PASS  Settings 2.4.1: Appearance section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Appearance section picker remains visible at width 1100
+PASS  Settings 2.4.1: Appearance can jump repeatedly
+PASS  Settings 2.4.1: Appearance applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Appearance slider updates preserve scroll
+PASS  Settings 2.4.1: Appearance jump aligns Shape
+PASS  Settings 2.4.1: Appearance jump aligns Settings material
+PASS  Settings 2.4.1: Appearance jump aligns Color & material
+PASS  Settings 2.4.1: Appearance jump aligns Controls & outlines
+PASS  Settings 2.4.1: Appearance jump aligns Surface
+PASS  Settings 2.4.1: Appearance jump aligns Text and navigation
+PASS  Settings 2.4.1: Appearance jump aligns Typography
+PASS  Settings 2.4.1: Appearance jump aligns Motion
+PASS  Settings 2.4.1: Appearance jump aligns Animation performance
+PASS  Settings 2.4.1: Layout has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Layout form controls fit at width 1100
+PASS  Settings 2.4.1: Layout section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Layout section picker remains visible at width 1100
+PASS  Settings 2.4.1: Layout can jump repeatedly
+PASS  Settings 2.4.1: Layout applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Layout slider updates preserve scroll
+PASS  Settings 2.4.1: Layout jump aligns Display
+PASS  Settings 2.4.1: Layout jump aligns Closed island
+PASS  Settings 2.4.1: Layout jump aligns Open panel
+PASS  Settings 2.4.1: Layout jump aligns Hover preview
+PASS  Settings 2.4.1: Layout jump aligns Layout profile
+PASS  Settings 2.4.1: Content has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Content form controls fit at width 1100
+PASS  Settings 2.4.1: Content section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Content section picker remains visible at width 1100
+PASS  Settings 2.4.1: Content can jump repeatedly
+PASS  Settings 2.4.1: Content applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: reordering Content preserves scroll at width 1100
+PASS  Settings 2.4.1: Content slider updates preserve scroll
+PASS  Settings 2.4.1: Content jump aligns Enabled widgets & order
+PASS  Settings 2.4.1: Content jump aligns Individual tools
+PASS  Settings 2.4.1: Content jump aligns Focus sessions
+PASS  Settings 2.4.1: Content jump aligns Stopwatch
+PASS  Settings 2.4.1: Content jump aligns Hover pages
+PASS  Settings 2.4.1: Content jump aligns Clipboard history
+PASS  Settings 2.4.1: Controls has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Controls form controls fit at width 1100
+PASS  Settings 2.4.1: Controls section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Controls section picker remains visible at width 1100
+PASS  Settings 2.4.1: Controls can jump repeatedly
+PASS  Settings 2.4.1: Controls applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Controls slider updates preserve scroll
+PASS  Settings 2.4.1: Controls jump aligns Hover & swipe
+PASS  Settings 2.4.1: Controls jump aligns Automatic tucking
+PASS  Settings 2.4.1: Controls jump aligns Panel navigation
+PASS  Settings 2.4.1: Controls jump aligns Drag to Island
+PASS  Settings 2.4.1: Controls jump aligns Detachable previews
+PASS  Settings 2.4.1: Controls jump aligns Closed cover gestures
+PASS  Settings 2.4.1: Controls jump aligns Two live activities
+PASS  Settings 2.4.1: Controls jump aligns Automatic activity
+PASS  Settings 2.4.1: Controls jump aligns Notch gestures
+PASS  Settings 2.4.1: Controls jump aligns Global hotkey
+PASS  Settings 2.4.1: Controls jump aligns Hide or show the island
+PASS  Settings 2.4.1: Controls jump aligns Manual tuck shortcut
+PASS  Settings 2.4.1: Audio has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Audio form controls fit at width 1100
+PASS  Settings 2.4.1: Audio section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Audio section picker remains visible at width 1100
+PASS  Settings 2.4.1: Audio can jump repeatedly
+PASS  Settings 2.4.1: Audio applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Audio jump aligns Closed media display
+PASS  Settings 2.4.1: Audio jump aligns Live feedback
+PASS  Settings 2.4.1: Audio jump aligns Volume mixer
+PASS  Settings 2.4.1: Audio jump aligns Live signal
+PASS  Settings 2.4.1: Audio jump aligns Audio behavior
+PASS  Settings 2.4.1: System has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: System form controls fit at width 1100
+PASS  Settings 2.4.1: System section picker navigates the form at width 1100
+PASS  Settings 2.4.1: System section picker remains visible at width 1100
+PASS  Settings 2.4.1: System can jump repeatedly
+PASS  Settings 2.4.1: System applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: System jump aligns Monitor details
+PASS  Settings 2.4.1: System jump aligns Clock
+PASS  Settings 2.4.1: Launch has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Launch form controls fit at width 1100
+PASS  Settings 2.4.1: Launch section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Launch section picker remains visible at width 1100
+PASS  Settings 2.4.1: Launch can jump repeatedly
+PASS  Settings 2.4.1: Launch applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: saving preserves shortcut draft, caret and focus at width 1100
+PASS  Settings 2.4.1: Launch jump aligns Launch display
+PASS  Settings 2.4.1: Launch jump aligns Activity actions
+PASS  Settings 2.4.1: Launch jump aligns Shortcuts
+PASS  Settings 2.4.1: Application has a section index and contextual illustrations at width 1100
+PASS  Settings 2.4.1: Application form controls fit at width 1100
+PASS  Settings 2.4.1: Application section picker navigates the form at width 1100
+PASS  Settings 2.4.1: Application section picker remains visible at width 1100
+PASS  Settings 2.4.1: Application can jump repeatedly
+PASS  Settings 2.4.1: Application applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Application jump aligns Updates
+PASS  Settings 2.4.1: Application jump aligns Notifications
+PASS  Settings 2.4.1: Application jump aligns Downloads
+PASS  Settings 2.4.1: Application jump aligns Behavior
+PASS  Settings 2.4.1: Application jump aligns Local storage
+PASS  Settings 2.4.1: Application jump aligns Reset preferences
+PASS  Settings 2.4.1: Application jump aligns About NabyScape
+PASS  Settings 2.4.1: Appearance has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Appearance form controls fit at width 640
+PASS  Settings 2.4.1: Appearance section picker navigates the form at width 640
+PASS  Settings 2.4.1: Appearance section picker remains visible at width 640
+PASS  Settings 2.4.1: Appearance can jump repeatedly
+PASS  Settings 2.4.1: Appearance applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Appearance slider updates preserve scroll
+PASS  Settings 2.4.1: Layout has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Layout form controls fit at width 640
+PASS  Settings 2.4.1: Layout section picker navigates the form at width 640
+PASS  Settings 2.4.1: Layout section picker remains visible at width 640
+PASS  Settings 2.4.1: Layout can jump repeatedly
+PASS  Settings 2.4.1: Layout applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Layout slider updates preserve scroll
+PASS  Settings 2.4.1: Content has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Content form controls fit at width 640
+PASS  Settings 2.4.1: Content section picker navigates the form at width 640
+PASS  Settings 2.4.1: Content section picker remains visible at width 640
+PASS  Settings 2.4.1: Content can jump repeatedly
+PASS  Settings 2.4.1: Content applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: reordering Content preserves scroll at width 640
+PASS  Settings 2.4.1: Content slider updates preserve scroll
+PASS  Settings 2.4.1: Controls has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Controls form controls fit at width 640
+PASS  Settings 2.4.1: Controls section picker navigates the form at width 640
+PASS  Settings 2.4.1: Controls section picker remains visible at width 640
+PASS  Settings 2.4.1: Controls can jump repeatedly
+PASS  Settings 2.4.1: Controls applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Controls slider updates preserve scroll
+PASS  Settings 2.4.1: Audio has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Audio form controls fit at width 640
+PASS  Settings 2.4.1: Audio section picker navigates the form at width 640
+PASS  Settings 2.4.1: Audio section picker remains visible at width 640
+PASS  Settings 2.4.1: Audio can jump repeatedly
+PASS  Settings 2.4.1: Audio applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: System has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: System form controls fit at width 640
+PASS  Settings 2.4.1: System section picker navigates the form at width 640
+PASS  Settings 2.4.1: System section picker remains visible at width 640
+PASS  Settings 2.4.1: System can jump repeatedly
+PASS  Settings 2.4.1: System applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Launch has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Launch form controls fit at width 640
+PASS  Settings 2.4.1: Launch section picker navigates the form at width 640
+PASS  Settings 2.4.1: Launch section picker remains visible at width 640
+PASS  Settings 2.4.1: Launch can jump repeatedly
+PASS  Settings 2.4.1: Launch applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: saving preserves shortcut draft, caret and focus at width 640
+PASS  Settings 2.4.1: Application has a section index and contextual illustrations at width 640
+PASS  Settings 2.4.1: Application form controls fit at width 640
+PASS  Settings 2.4.1: Application section picker navigates the form at width 640
+PASS  Settings 2.4.1: Application section picker remains visible at width 640
+PASS  Settings 2.4.1: Application can jump repeatedly
+PASS  Settings 2.4.1: Application applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Appearance has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Appearance form controls fit at width 480
+PASS  Settings 2.4.1: Appearance section picker navigates the form at width 480
+PASS  Settings 2.4.1: Appearance section picker remains visible at width 480
+PASS  Settings 2.4.1: Appearance can jump repeatedly
+PASS  Settings 2.4.1: Appearance applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Appearance slider updates preserve scroll
+PASS  Settings 2.4.1: Layout has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Layout form controls fit at width 480
+PASS  Settings 2.4.1: Layout section picker navigates the form at width 480
+PASS  Settings 2.4.1: Layout section picker remains visible at width 480
+PASS  Settings 2.4.1: Layout can jump repeatedly
+PASS  Settings 2.4.1: Layout applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Layout slider updates preserve scroll
+PASS  Settings 2.4.1: Content has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Content form controls fit at width 480
+PASS  Settings 2.4.1: Content section picker navigates the form at width 480
+PASS  Settings 2.4.1: Content section picker remains visible at width 480
+PASS  Settings 2.4.1: Content can jump repeatedly
+PASS  Settings 2.4.1: Content applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: reordering Content preserves scroll at width 480
+PASS  Settings 2.4.1: Content slider updates preserve scroll
+PASS  Settings 2.4.1: Controls has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Controls form controls fit at width 480
+PASS  Settings 2.4.1: Controls section picker navigates the form at width 480
+PASS  Settings 2.4.1: Controls section picker remains visible at width 480
+PASS  Settings 2.4.1: Controls can jump repeatedly
+PASS  Settings 2.4.1: Controls applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Controls slider updates preserve scroll
+PASS  Settings 2.4.1: Audio has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Audio form controls fit at width 480
+PASS  Settings 2.4.1: Audio section picker navigates the form at width 480
+PASS  Settings 2.4.1: Audio section picker remains visible at width 480
+PASS  Settings 2.4.1: Audio can jump repeatedly
+PASS  Settings 2.4.1: Audio applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: System has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: System form controls fit at width 480
+PASS  Settings 2.4.1: System section picker navigates the form at width 480
+PASS  Settings 2.4.1: System section picker remains visible at width 480
+PASS  Settings 2.4.1: System can jump repeatedly
+PASS  Settings 2.4.1: System applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Launch has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Launch form controls fit at width 480
+PASS  Settings 2.4.1: Launch section picker navigates the form at width 480
+PASS  Settings 2.4.1: Launch section picker remains visible at width 480
+PASS  Settings 2.4.1: Launch can jump repeatedly
+PASS  Settings 2.4.1: Launch applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: saving preserves shortcut draft, caret and focus at width 480
+PASS  Settings 2.4.1: Application has a section index and contextual illustrations at width 480
+PASS  Settings 2.4.1: Application form controls fit at width 480
+PASS  Settings 2.4.1: Application section picker navigates the form at width 480
+PASS  Settings 2.4.1: Application section picker remains visible at width 480
+PASS  Settings 2.4.1: Application can jump repeatedly
+PASS  Settings 2.4.1: Application applying a toggle preserves scroll and controls
+PASS  Settings 2.4.1: Settings maximizes and keeps a restore action
+INFO  Monitors attached: 2
+MANUAL  Physical monitor disconnect, alternate DPI, battery charging, and audio device hot-plug require hardware checks.
+INFO  Idle CPU over 12.0s: 0.06% of total machine; working set: 326.3 MiB.
+PASS  Idle CPU below 2% of total machine
+PASS  Hidden overlay stops its activity timer
+INFO  Hidden CPU over 6.0s: 0.00% of total machine.
+RESULT: 5 failures

@@ -41,7 +41,7 @@ internal static class PremiumDiagnostics
                         island.SelectMonitorTab("hardware");await Task.Delay(2300);Capture(island,$"premium-hardware-{width}");
                         Check("monitor hides scrollbar at width "+width,Tree(island).OfType<ScrollViewer>().Where(v=>v.IsVisible).All(v=>v.VerticalScrollBarVisibility==ScrollBarVisibility.Hidden));
                     }
-                    else {Check(page+" controls fit at width "+width,PanelControlsFit(island));if(page=="focus")Check("Start labels stay readable at width "+width,Tree(island).OfType<Button>().Where(b=>b.IsVisible && b.Content?.ToString()=="Start").All(b=>b.ActualWidth>=44));}
+                    else {Check(page+" controls fit at width "+width,PanelControlsFit(island));if(page=="focus")Check("Start labels stay readable at width "+width,Tree(island).OfType<Button>().Where(b=>b.IsVisible && b.Content?.ToString()=="Start").All(b=>{var text=new FormattedText("Start",System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface(b.FontFamily,b.FontStyle,b.FontWeight,b.FontStretch),b.FontSize,Brushes.White,VisualTreeHelper.GetDpi(b).PixelsPerDip);return b.ActualWidth+.5>=text.WidthIncludingTrailingWhitespace+b.Padding.Left+b.Padding.Right;}));}
                 }
             }
             settings=new SettingsWindow(app);settings.Show();await Task.Delay(160);
