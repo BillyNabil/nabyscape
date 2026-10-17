@@ -39,11 +39,12 @@ internal static class Stage6Diagnostics
                 {
                     File.WriteAllText(Path.Combine(directory,"capture-ready.txt"),tag+Environment.NewLine+result.Status);
                     string proceed=Path.Combine(directory,"continue-"+tag);var deadline=DateTime.UtcNow.AddSeconds(150);
-                    string artifact=Path.Combine(directory,tag+"-wgc.png");
+                    string artifact=Path.Combine(directory,tag+"-wgc.jpg");
                     while((!File.Exists(proceed) || !File.Exists(artifact)) && DateTime.UtcNow<deadline)await Task.Delay(200);
                     check("Stage6 composed capture acknowledged "+material,File.Exists(proceed) && File.Exists(artifact) && new FileInfo(artifact).Length>0);
                 }
-                // These are labeled WPF-only scene checks, performed after WGC
+                if(capture)continue; // Capture production transitions without intrusive bitmap rendering between them.
+                // These are separate WPF-only checks, excluded from composed capture.
                 // acknowledgment so rendering them cannot mask a composed defect.
                 foreach(var scene in Diagnostics.Descendants(window).OfType<SettingsScene>().Where(s=>s.Section is "Settings material" or "Color & material"))
                 {
