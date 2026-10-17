@@ -212,8 +212,12 @@ public sealed partial class Store
         if(path==null)Warning=warning;
         Directory.CreateDirectory(DirectoryPath);
     }
-    internal Store(string legacyRoot,string newRoot,bool migrate)
-    { DirectoryPath=ResolveMigration(legacyRoot,newRoot,out var warning);Warning=warning;Directory.CreateDirectory(DirectoryPath); }
+    // Explicit migration entry for isolated roots; Store(path) only opens that path.
+    internal static Store Migrate(string legacyRoot,string newRoot)
+    {
+        string path=ResolveMigration(legacyRoot,newRoot,out var warning);
+        return new Store(path){Warning=warning};
+    }
     public T Load<T>(string name) where T:new()
     {
         var file=Path.Combine(DirectoryPath,name+".json");

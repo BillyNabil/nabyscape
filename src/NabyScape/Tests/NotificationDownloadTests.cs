@@ -41,6 +41,40 @@ internal static class NotificationDownloadTests
             manager.Clear();Post(Enumerable.Range(0,40).Select(i=>"file-"+i).ToArray(),0);Post(new[]{"overflow"},1);
             Assert(manager.Count==2 && manager.Current!.Files!.Length==40);manager.Dismiss();Assert(manager.Current!.Files!.Single()=="overflow");
         });
+        foreach(int size in new[]{41,128})test($"Single {size}-file arrival retains every original across delivery and dismissal",()=>
+        {
+            string root=Path.Combine(Path.GetTempPath(),"NabyScape-notice-batch-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);
+            try
+            {
+                var originals=Enumerable.Range(0,size).Select(i=>Path.Combine(root,$"arrival-{i:D3}.txt")).ToArray();
+                foreach(string path in originals)File.WriteAllText(path,"completed download");
+                foreach(string mode in new[]{"Notch","Windows","Both"})
+                {
+                    var manager=new InternalNotifications();var settings=new Settings{NotificationDelivery=mode};var windows=new System.Collections.Generic.List<InternalNotice>();
+                    // Same single incoming notice boundary used by App.DownloadReady/PostNotice.
+                    manager.Post(settings,new("downloads",$"{size} downloads ready","Folder arrival inferred; drag originals or add to shelf",originals),false,windows.Add,DateTimeOffset.UtcNow);
+                    var expected=originals.Chunk(40).ToArray();
+                    void Check(InternalNotice notice,string[] files)
+                    {
+                        Assert(notice.Files!.SequenceEqual(files) && notice.Files!.All(File.Exists));
+                        Assert(notice.Title==(files.Length==1?"Download ready":$"{files.Length} downloads ready"));
+                    }
+                    Assert(windows.Count==(mode=="Notch"?0:expected.Length));
+                    for(int i=0;i<windows.Count;i++)Check(windows[i],expected[i]);
+                    Assert(manager.Count==(mode=="Windows"?0:expected.Length));
+                    if(mode=="Windows")continue;
+                    var accessible=new System.Collections.Generic.List<string>();
+                    foreach(var files in expected)
+                    {
+                        manager.MarkDisplayed();var displayed=manager.Current!;Check(displayed,files);
+                        // Overlay drag and shelf actions consume this same displayed Files snapshot.
+                        accessible.AddRange(displayed.Files!);manager.Dismiss();
+                    }
+                    Assert(manager.Count==0 && accessible.SequenceEqual(originals) && accessible.Distinct(StringComparer.OrdinalIgnoreCase).Count()==size);
+                }
+            }
+            finally{Directory.Delete(root,true);}
+        });
         test("Downloads temp folder baseline, partial rename, growing size, locks, races, burst, missing, folder change and disable cleanup",()=>
         {
             string root=Path.Combine(Path.GetTempPath(),"NabyScape-arrivals-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);string other=Path.Combine(root,"other");Directory.CreateDirectory(other);

@@ -21,6 +21,14 @@ internal sealed class InternalNotifications
     internal void Post(Settings settings,InternalNotice notice,bool hidden,Action<InternalNotice> windows,DateTimeOffset now)
     {
         if(!Enabled(settings,notice.Kind))return;
+        // Watcher iterations can deliver up to 128 arrivals. Bound each payload before
+        // either delivery route, so every original remains accessible after dismissal.
+        if(notice.Kind=="downloads" && notice.Files is {Length:>40} arrivals)
+        {
+            foreach(var files in arrivals.Distinct(StringComparer.OrdinalIgnoreCase).Chunk(40))
+                Post(settings,new("downloads",files.Length==1?"Download ready":$"{files.Length} downloads ready",notice.Detail,files),hidden,windows,now);
+            return;
+        }
         var route=Route(settings.NotificationDelivery,hidden);
         if(route.Windows)try{windows(notice);}catch{/* Do not recurse on delivery failures. */}
         if(!route.Notch)return;

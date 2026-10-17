@@ -182,6 +182,8 @@ PASS  Update helper rejects downgrade malformed version and arbitrary executable
 PASS  Update handoff exact PID start time path portable guard and backup failure
 PASS  Notification defaults, routing, toggles, cap, grouping, delivery failure and timeout
 PASS  Displayed download groups freeze through drag, dismiss and subsequent bursts
+PASS  Single 41-file arrival retains every original across delivery and dismissal
+PASS  Single 128-file arrival retains every original across delivery and dismissal
 PASS  Downloads temp folder baseline, partial rename, growing size, locks, races, burst, missing, folder change and disable cleanup
 PASS  Customization profiles round-trip without personal data or startup changes
 PASS  Partial customization profiles preserve omitted values and normalize supplied geometry
@@ -371,4 +373,4 @@ PASS  Running and paused timers survive process restart
 PASS  Malformed settings are backed up before recovery
 PASS  Broken shortcut produces actionable failure
 PASS  Unsupported shortcut URI is rejected
-RESULT: 373 passed, 0 failed
+RESULT: 375 passed, 0 failed

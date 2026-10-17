@@ -22,7 +22,7 @@ internal static class PersistenceTests
             old.Save("settings",new Settings{Width=311,AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="External",Target=image}}});
             old.Save("productivity",new ProductivityData{Note="private",Tasks=new(){new(){Text="keep"}},Shelf=new(){new(){Path=image}},Clips=new(){new(){Kind="image",ImagePath=image},new(){Kind="image",ImagePath=Path.Combine(root,"outside.png")}}});
             old.Save("activities",new ActivityActionsData{Activities=new(){new(){Name="Keep",Steps=new(){new(){Target=new(){Name="Keep",Target=image}}}}}});
-            var migrated=new Store(legacy,next,true);var data=migrated.Load<ProductivityData>("productivity");var settings=migrated.Load<Settings>("settings");
+            var migrated=Store.Migrate(legacy,next);var data=migrated.Load<ProductivityData>("productivity");var settings=migrated.Load<Settings>("settings");
             Assert(migrated.DirectoryPath==next && Directory.Exists(legacy) && File.Exists(image) && settings.Width==311 && settings.AutoStart && settings.ClipboardHistory);
             Assert(data.Clips[0].ImagePath==Path.Combine(next,"clipboard-images","test.png") && data.Clips[1].ImagePath==Path.Combine(root,"outside.png") && data.Shelf[0].Path==image && settings.Shortcuts[0].Target==image && data.Note=="private" && data.Tasks.Count==1);
             Assert(File.ReadAllText(Path.Combine(next,"activities.json"))==File.ReadAllText(Path.Combine(legacy,"activities.json")));
@@ -30,15 +30,15 @@ internal static class PersistenceTests
         Fixture("Migration ignores interrupted staging and never merges existing destination",root=>
         {
             string legacy=Path.Combine(root,"legacy"),next=Path.Combine(root,"next");new Store(legacy).Save("settings",new Settings{Width=301});Directory.CreateDirectory(next+".migration-interrupted");File.WriteAllText(Path.Combine(next+".migration-interrupted","settings.json"),"{broken");
-            var migrated=new Store(legacy,next,true);Assert(migrated.Load<Settings>("settings").Width==301);
-            new Store(next).Save("settings",new Settings{Width=322});var existing=new Store(legacy,next,true);Assert(existing.Load<Settings>("settings").Width==322 && existing.Warning!.Contains("Both"));
+            var migrated=Store.Migrate(legacy,next);Assert(migrated.Load<Settings>("settings").Width==301);
+            new Store(next).Save("settings",new Settings{Width=322});var existing=Store.Migrate(legacy,next);Assert(existing.Load<Settings>("settings").Width==322 && existing.Warning!.Contains("Both"));
         });
         Fixture("Migration invalid JSON or blocked destination falls back with warning",root=>
         {
             string legacy=Path.Combine(root,"legacy"),next=Path.Combine(root,"next");var old=new Store(legacy);old.Save("settings",new Settings{Width=301});File.WriteAllText(Path.Combine(legacy,"broken.json"),"{broken");
-            var failed=new Store(legacy,next,true);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && !Directory.Exists(next) && failed.Load<Settings>("settings").Width==301);
-            File.Delete(Path.Combine(legacy,"broken.json"));File.WriteAllText(Path.Combine(legacy,"productivity.json"),"{\"Tasks\":\"invalid\"}");failed=new Store(legacy,next,true);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && !Directory.Exists(next));File.Delete(Path.Combine(legacy,"productivity.json"));File.SetAttributes(Path.Combine(legacy,"settings.json"),FileAttributes.ReadOnly);failed=new Store(legacy,next,true);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && !Directory.Exists(next));File.SetAttributes(Path.Combine(legacy,"settings.json"),FileAttributes.Normal);File.WriteAllText(next,"blocked");File.SetAttributes(next,FileAttributes.ReadOnly);
-            failed=new Store(legacy,next,true);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && failed.Load<Settings>("settings").Width==301);
+            var failed=Store.Migrate(legacy,next);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && !Directory.Exists(next) && failed.Load<Settings>("settings").Width==301);
+            File.Delete(Path.Combine(legacy,"broken.json"));File.WriteAllText(Path.Combine(legacy,"productivity.json"),"{\"Tasks\":\"invalid\"}");failed=Store.Migrate(legacy,next);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && !Directory.Exists(next));File.Delete(Path.Combine(legacy,"productivity.json"));File.SetAttributes(Path.Combine(legacy,"settings.json"),FileAttributes.ReadOnly);failed=Store.Migrate(legacy,next);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && !Directory.Exists(next));File.SetAttributes(Path.Combine(legacy,"settings.json"),FileAttributes.Normal);File.WriteAllText(next,"blocked");File.SetAttributes(next,FileAttributes.ReadOnly);
+            failed=Store.Migrate(legacy,next);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && failed.Load<Settings>("settings").Width==301);
         });
         Fixture("Explicit Store path does not migrate sibling legacy data",root=>
         {string legacy=Path.Combine(root,"LumaIsland"),next=Path.Combine(root,"NabyScape");new Store(legacy).Save("settings",new Settings{Width=301});var isolated=new Store(next);Assert(isolated.Load<Settings>("settings").Width==228 && !File.Exists(Path.Combine(next,"settings.json")));});

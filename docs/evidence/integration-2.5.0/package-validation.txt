@@ -3,3 +3,5 @@ PASS NabyScape-win-x64-Portable.zip contents and all five notices
 PASS NabyScape-Notices.zip contents and all five notices
 PASS WinGet fixture uses the real setup hash
 Manifest validation succeeded.
+PASS portable executable, setup copy and final published executable are byte-identical
+Published executable SHA256: 7aee747c3f75a809d1407c4ed6b2a0e4e87156447d6464029a0d1d7eb1d4ed01

@@ -1,0 +1,15 @@
+PASS  Notification defaults, routing, toggles, cap, grouping, delivery failure and timeout
+PASS  Displayed download groups freeze through drag, dismiss and subsequent bursts
+PASS  Single 41-file arrival retains every original across delivery and dismissal
+PASS  Single 128-file arrival retains every original across delivery and dismissal
+PASS  Downloads temp folder baseline, partial rename, growing size, locks, races, burst, missing, folder change and disable cleanup
+PASS  Migration fresh copy rebases only internal clipboard images and retains legacy
+PASS  Migration ignores interrupted staging and never merges existing destination
+PASS  Migration invalid JSON or blocked destination falls back with warning
+PASS  Explicit Store path does not migrate sibling legacy data
+PASS  Reset category all and restore preserve capture startup shortcuts and personal files
+PASS  Pre-material preference backups restore the original solid Settings surface
+PASS  Backup save errors abort reset and invalid restore leaves settings intact
+PASS  Reset category map covers all resettable preferences exactly once
+PASS  Tuck defaults bounds profile and all shortcut conflicts
+14 passed, 0 failed

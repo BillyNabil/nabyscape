@@ -37,7 +37,7 @@ public sealed partial class OverlayWindow
                 var toggle=new CheckBox{Content=label,Tag=task,IsChecked=task.Done,Style=(Style)FindResource("TaskToggle"),Height=28,Margin=new(0)};UI.Named(toggle,"Preview task "+task.Id);
                 toggle.Click+=(_,_)=>{task.Done=toggle.IsChecked==true;p.Save();};peekTasks.Children.Add(toggle);
             }
-            if(p.Tasks.Count==0)peekTasks.Children.Add(UI.Text("No tasks yet. Add one in Notes → Tasks.",11,UI.Muted));
+            if(p.Tasks.Count==0)peekTasks.Children.Add(UI.Text("No tasks yet. Add one in Tools → Tasks.",11,UI.Muted));
         }
         foreach(var toggle in peekTasks.Children.OfType<CheckBox>())if(toggle.Tag is TaskItem task){toggle.IsChecked=task.Done;((TextBlock)toggle.Content).TextDecorations=task.Done?TextDecorations.Strikethrough:null;}
         foreach(var list in new[]{peekTasks,peekClipboard})for(int i=0;i<list.Children.Count;i++)list.Children[i].Visibility=i==0 || peekDetailed?Visibility.Visible:Visibility.Collapsed;
