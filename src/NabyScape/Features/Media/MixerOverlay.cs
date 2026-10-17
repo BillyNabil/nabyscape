@@ -31,7 +31,7 @@ public sealed partial class OverlayWindow
     private void CloseMixer()
     {
         if(!classicMixerOpen && activePage!="mixer")return;
-        if(classicMixerOpen){classicMixerOpen=false;activePage="media";BuildBody();ResizeToolPanel();}
+        if(classicMixerOpen){classicMixerOpen=false;activePage=hoverPanelWidget==null?"media":PageFor(hoverPanelWidget);BuildBody();ResizeToolPanel();}
         else if(activePage=="mixer")SelectPage(compactTabs.ContainsKey("media")?"media":compactTabs.Keys.FirstOrDefault()??"media");
         scroll.ScrollToTop();
     }

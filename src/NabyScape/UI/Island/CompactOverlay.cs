@@ -48,7 +48,8 @@ public sealed partial class OverlayWindow
     {
         string page=PageFor(widget);
         bool hidden=!app.Settings.Widgets.Any(w=>w.Enabled && w.Id==widget);
-        if(hoverPanelWidget!=(hidden?widget:null))
+        bool leavingMixer=classicMixerOpen;classicMixerOpen=false;
+        if(leavingMixer || hoverPanelWidget!=(hidden?widget:null))
         {FlushNotes();hoverPanelWidget=hidden?widget:null;activePage=page;BuildBody();}
         Reveal(activate);
         if(app.Settings.CompactLayout)SelectPage(page,false);

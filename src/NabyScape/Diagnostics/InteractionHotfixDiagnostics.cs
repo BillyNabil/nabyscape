@@ -14,6 +14,27 @@ namespace NabyScape;
 
 internal static class InteractionHotfixDiagnostics
 {
+    internal static async Task RunClassicMixer(App app,OverlayWindow island,Action<string,bool> check)
+    {
+        var s=app.Settings;s.CompactLayout=false;s.ReduceMotion=true;s.SmartActivities=false;s.ActivitySatellite=false;s.HideFullscreen=s.HideMaximized=false;
+        foreach(var widget in s.Widgets)widget.Enabled=widget.Id=="volume";
+        s.HoverViews.Single(v=>v.Id=="media").Enabled=true;s.HoverViews.Single(v=>v.Id=="timer").Enabled=true;app.ChangeSettings();island.Collapse();
+        bool Visible(string name)=>Diagnostics.Descendants(island).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)==name);
+        bool MixerClosed()=>!(bool)typeof(OverlayWindow).GetField("classicMixerOpen",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(island)!;
+        island.OpenFeaturePage("media");await Task.Delay(60);
+        check("Interaction hotfix: classic hidden media opens independently of enabled volume widget",island.ActivePage=="media" && Visible("Play or pause"));
+        island.OpenMixer();await Task.Delay(80);
+        check("Interaction hotfix: classic mixer takes precedence over hidden media route",island.ActivePage=="mixer" && Visible("Back to widgets") && !Visible("Play or pause"));
+        Diagnostics.Descendants(island).OfType<Button>().Single(b=>b.IsVisible && AutomationProperties.GetName(b)=="Back to widgets").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(60);
+        check("Interaction hotfix: classic mixer Back restores the hidden media route",MixerClosed() && island.ActivePage=="media" && Visible("Play or pause"));
+        island.OpenMixer();island.OpenFeaturePage("media");await Task.Delay(60);
+        check("Interaction hotfix: reopening the same hidden target exits classic mixer",MixerClosed() && island.ActivePage=="media" && Visible("Play or pause") && !Visible("Back to widgets"));
+        island.OpenMixer();island.OpenFeaturePage("timer");await Task.Delay(60);
+        check("Interaction hotfix: a different hidden target exits classic mixer",MixerClosed() && island.ActivePage=="focus" && Diagnostics.Descendants(island).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text=="Timer") && !Visible("Back to widgets"));
+        island.OpenMixer();Diagnostics.Descendants(island).OfType<Button>().Single(b=>b.IsVisible && AutomationProperties.GetName(b)=="Back to widgets").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(60);
+        check("Interaction hotfix: classic mixer Back retains the selected timer route",MixerClosed() && island.ActivePage=="focus" && Diagnostics.Descendants(island).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text=="Timer"));
+        island.Collapse();
+    }
     internal static async Task RunTuckHide(App app,OverlayWindow island,Action<string,bool> check)
     {
         var s=app.Settings;s.ReduceMotion=true;s.AlwaysTucked=false;s.HideFullscreen=s.HideMaximized=false;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=false;s.AnimationMs=700;
@@ -44,6 +65,7 @@ internal static class InteractionHotfixDiagnostics
             _=>typeof(OverlayWindow).GetField("toolsMode",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)!.GetValue(island)?.ToString()==id
         }));
         await RunTuckHide(app,island,check);
+        await RunClassicMixer(app,island,check);
         var s=app.Settings;s.ReduceMotion=true;s.AnimationMs=700;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=false;s.HideFullscreen=s.HideMaximized=false;s.CompactLayout=true;
         foreach(var widget in s.Widgets)widget.Enabled=false;foreach(var view in s.HoverViews)view.Enabled=true;foreach(var tool in s.Tools)tool.Enabled=true;
         app.ChangeSettings();island.Collapse();

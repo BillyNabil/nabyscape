@@ -125,14 +125,14 @@ public sealed partial class OverlayWindow : Window
     private void BuildBodyContent()
     {
         InvalidateSystemMonitor();
-        foreach(var control in new FrameworkElement[]{title,artist,clock,date,timerTime,focusTime,focusPhase,cpu,ram,battery,volumeText,artwork,sessions,volume,cpuBar,ramBar})
+        foreach(var control in new FrameworkElement[]{title,artist,clock,date,timerTime,focusTime,focusPhase,cpu,ram,battery,volumeText,artwork,sessions,volume,cpuBar,ramBar,timelinePanel})
         {if(control.Parent is Panel p)p.Children.Remove(control);else if(control.Parent is Decorator d)d.Child=null;else if(control.Parent is ContentControl c)c.Content=null;}
         body.Children.Clear();widgets.Children.Clear();compactPages.Clear();compactTabs.Clear();compactPageHost.Children.Clear();batteryCard=null;play=null!;timerPause=null!;focusPause=null!;mute=null!;
         if(activitiesOpen){body.Children.Add(BuildActivitiesPage());return;}
         if(commandOpen){body.Children.Add(BuildCommandPage());return;}
         if(app.Settings.CompactLayout){BuildCompactBody();return;}
-        if(hoverPanelWidget!=null){body.Children.Add(BuildCompactPage(PageFor(hoverPanelWidget)));return;}
         if(classicMixerOpen){var mixer=BuildMixerPage();body.Children.Add(mixer);return;}
+        if(hoverPanelWidget!=null){body.Children.Add(BuildCompactPage(PageFor(hoverPanelWidget)));return;}
         var heading=new DockPanel{Margin=new(2,0,4,12)};var settings=Icons.Button("settings","Settings",app.ShowSettings,false,32);settings.Margin=new(0);settings.Background=UI.Brush("#1C1C1E");
         DockPanel.SetDock(settings,Dock.Right);heading.Children.Add(settings);var name=UI.Heading("Activity",18);name.FontWeight=FontWeights.SemiBold;heading.Children.Add(name);body.Children.Add(heading);body.Children.Add(widgets);
         double full=bodyWidth,half=(full-10)/2;widgets.Width=full+10;
