@@ -44,12 +44,19 @@ internal static class PersistenceTests
         {string legacy=Path.Combine(root,"LumaIsland"),next=Path.Combine(root,"NabyScape");new Store(legacy).Save("settings",new Settings{Width=301});var isolated=new Store(next);Assert(isolated.Load<Settings>("settings").Width==228 && !File.Exists(Path.Combine(next,"settings.json")));});
         Fixture("Reset category all and restore preserve capture startup shortcuts and personal files",root=>
         {
-            var store=new Store(root);var settings=new Settings{Width=333,Accent="#112233",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Keep",Target="external"}}};
+            var store=new Store(root);var settings=new Settings{Width=333,Accent="#112233",SettingsMaterial="Native Mica",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Keep",Target="external"}}};
             store.Save("productivity",new ProductivityData{Note="keep",Tasks=new(){new(){Text="keep"}},Clips=new(){new(){Text="keep"}}});string before=File.ReadAllText(Path.Combine(root,"productivity.json"));
-            PreferenceReset.Reset(store,settings,"Appearance");Assert(settings.Width==333 && settings.Accent=="#FFFFFF" && settings.AutoStart && settings.ClipboardHistory && settings.Shortcuts[0].Target=="external");
-            PreferenceReset.Restore(store,settings);Assert(settings.Accent=="#112233" && settings.Width==333);
+            PreferenceReset.Reset(store,settings,"Appearance");Assert(settings.Width==333 && settings.Accent=="#FFFFFF" && SettingsBackdrop.Requested(settings)=="Solid" && settings.AutoStart && settings.ClipboardHistory && settings.Shortcuts[0].Target=="external");
+            PreferenceReset.Restore(store,settings);Assert(settings.Accent=="#112233" && settings.Width==333 && settings.SettingsMaterial=="Native Mica");
             PreferenceReset.Reset(store,settings,null);Assert(settings.Width==228 && settings.Accent=="#FFFFFF" && settings.AutoStart && settings.ClipboardHistory && settings.Shortcuts[0].Target=="external" && before==File.ReadAllText(Path.Combine(root,"productivity.json")));
             settings.ClipboardHistory=false;settings.AutoStart=false;PreferenceReset.Restore(store,settings);Assert(settings.Width==333 && !settings.ClipboardHistory && !settings.AutoStart);
+        });
+        Fixture("Pre-material preference backups restore the original solid Settings surface",root=>
+        {
+            var store=new Store(root);var old=System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(new Settings{Width=333}))!;
+            old.AsObject().Remove("SettingsMaterial");File.WriteAllText(Path.Combine(root,"preference-backup.json"),old.ToJsonString());
+            var settings=new Settings{SettingsMaterial="Native Acrylic"};PreferenceReset.Restore(store,settings);
+            Assert(settings.Width==333 && SettingsBackdrop.Requested(settings)=="Solid");
         });
         Fixture("Backup save errors abort reset and invalid restore leaves settings intact",root=>
         {

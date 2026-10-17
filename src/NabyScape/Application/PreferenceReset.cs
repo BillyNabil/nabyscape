@@ -10,7 +10,7 @@ internal static class PreferenceReset
 {
     internal static readonly Dictionary<string,string[]> Categories=new()
     {
-        ["Appearance"]="Preset Radius Background Accent Opacity GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings AnimationMs ReduceMotion LiveActivity Performance RecentColors".Split(' '),
+        ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings AnimationMs ReduceMotion LiveActivity Performance RecentColors".Split(' '),
         ["Layout"]="Width Height Horizontal Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
         ["Content"]="Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
         ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource SmartActivities WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers HideFullscreen HideMaximized VisibilityHotkeyEnabled VisibilityHotkeyKey VisibilityHotkeyModifiers AlwaysTucked TuckEdge TuckHotkeyEnabled TuckHotkeyKey TuckHotkeyModifiers".Split(' '),
@@ -50,7 +50,7 @@ internal static class PreferenceReset
         string file=Path.Combine(store.DirectoryPath,"preference-backup.json");
         using var json=JsonDocument.Parse(File.ReadAllText(file));
         if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException("The preference backup is invalid.");
-        foreach(string key in Keys(null))if(key!="DisplayMode" && !Categories["Application"].Contains(key) && (!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null))throw new InvalidDataException("The preference backup is incomplete: "+key);
+        foreach(string key in Keys(null))if(key!="DisplayMode" && key!="SettingsMaterial" && !Categories["Application"].Contains(key) && (!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null))throw new InvalidDataException("The preference backup is incomplete: "+key);
         var restored=json.RootElement.Deserialize<Settings>()??throw new InvalidDataException("The preference backup is empty.");
         var candidate=Clone(target);
         foreach(string key in Keys(null))Copy(restored,candidate,key);

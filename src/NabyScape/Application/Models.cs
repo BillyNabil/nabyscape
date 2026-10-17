@@ -40,6 +40,7 @@ public sealed class Settings
     public bool ActivitySatellite { get; set; } = true;
     public string SatelliteSource { get; set; } = "Auto";
     public bool GlassStyle { get; set; } = true;
+    public string SettingsMaterial { get; set; } = "";
     public bool LiveActivity { get; set; } = true;
     public string ClosedMediaIcon { get; set; }="Waveform";
     public string ClosedMediaContent { get; set; }="Title";
@@ -126,6 +127,7 @@ public sealed class Settings
     public static List<WidgetSetting> Defaults() => Names.Keys.Select(id => new WidgetSetting { Id=id,Enabled=id!="stopwatch" }).ToList();
     public void Normalize()
     {
+        if(Array.IndexOf(SettingsBackdrop.Choices,SettingsMaterial)<0)SettingsMaterial="";
         if(NotificationDelivery is not ("Notch" or "Windows" or "Both" or "Off"))NotificationDelivery="Notch";
         DownloadsFolder??="";
         static double Clamp(double value,double min,double max,double fallback) => double.IsFinite(value) ? Math.Clamp(value,min,max) : fallback;

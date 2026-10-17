@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Shape","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
+    internal static readonly string[] Sections={"Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -61,6 +61,8 @@ internal sealed class SettingsScene : FrameworkElement
         {
             case "Shape":
                 Box(28,22,160,36,Brushes.Black,6);Box(228,22,160,36,Brushes.Black,18);Text("Notch · attached to edge",30,69,11);Text("Pill · floating",230,69,11);Note("Current: "+(s.Preset=="Mac"?"Notch":"Pill"));break;
+            case "Settings material":
+                Box(22,18,168,65,IslandSurface.GlassMaterial);Text("Settings window",34,31,13,true);Text(SettingsBackdrop.Requested(s),34,55,11);Text("Island stays independent",210,32,11);Note("Schematic only - actual status appears below");break;
             case "Color & material":
                 Box(22,19,216,68,UI.Brush(s.Background));Box(36,33,34,34,UI.Brush(s.Accent));Text("Song title",82,34,14,true,UI.ContrastText(s.Background));Text(s.GlassStyle?"Black glass":"Solid surface",82,57,11,false,UI.ContrastText(s.Background));Text($"Opacity {s.Opacity*100:0}%",256,28);Text($"Glass {s.GlassStrength*100:0}%",256,52);Note("Your island color and material");break;
             case "Surface":

@@ -9,6 +9,35 @@ internal static class SettingsUxTests
     internal static void Run(Action<string,Action> test)
     {
         void Assert(bool value){if(!value)throw new Exception("Settings UX invariant failed");}
+        test("Settings backdrop gates and native errors are explicit and fail closed",()=>
+        {
+            var ready=new SettingsBackdrop.Conditions(true,false,true,false,false);int calls=0;
+            int Apply(int type){calls++;return 0;}
+            foreach(var blocked in new[]{ready with{Supported=false},ready with{HighContrast=true},ready with{Transparency=false},ready with{EnergySaver=true},ready with{Remote=true}})
+            {var result=SettingsBackdrop.Resolve("Native Acrylic",blocked,Apply);Assert(!result.Native && result.Actual=="Solid" && result.Reason.Length>0);}
+            Assert(calls==0);
+            foreach(string name in new[]{"Native Mica","Native Acrylic"})
+            {
+                int seen=0;var ok=SettingsBackdrop.Resolve(name,ready,type=>{seen=type;return 0;});Assert(ok.Native && seen==(name=="Native Mica"?2:3));
+                var failure=SettingsBackdrop.Resolve(name,ready,_=>unchecked((int)0x80070057));Assert(!failure.Native && failure.Actual=="Solid" && failure.Status.Contains("80070057"));
+            }
+            Assert(SettingsBackdrop.Resolve("Solid",ready,Apply).Actual=="Solid" && calls==0);
+            Assert(SettingsBackdrop.Resolve("Simulated glass",ready,Apply).Actual=="Simulated glass" && calls==0);
+            Assert(SettingsBackdrop.Requested(new Settings())=="Solid" && SettingsBackdrop.Requested(new Settings{GlassStyle=false})=="Solid");
+            Assert(SettingsBackdrop.Resolve("unknown",ready,Apply).Actual=="Solid" && calls==0);
+            Assert(CustomizationProfile.CustomizationKeys.Contains("SettingsMaterial") && PreferenceReset.Categories["Appearance"].Contains("SettingsMaterial"));
+        });
+        test("Settings material persists independently and old layouts preserve the selection",()=>
+        {
+            var settings=new Settings{SettingsMaterial="Native Acrylic",GlassStyle=false};
+            var restored=System.Text.Json.JsonSerializer.Deserialize<Settings>(System.Text.Json.JsonSerializer.Serialize(settings))!;
+            restored.Normalize();Assert(restored.SettingsMaterial=="Native Acrylic" && !restored.GlassStyle);
+            var imported=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(settings),imported);
+            Assert(imported.SettingsMaterial=="Native Acrylic" && !imported.GlassStyle);
+            CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"GlassStyle\":true}}",imported);
+            Assert(imported.SettingsMaterial=="Native Acrylic" && imported.GlassStyle);
+            imported.SettingsMaterial="invalid";imported.Normalize();Assert(SettingsBackdrop.Requested(imported)=="Solid");
+        });
         test("Every registered Settings example is unique and renders without a running app",()=>
         {
             Assert(SettingsScene.Sections.Contains("Updates") && SettingsScene.Sections.Contains("Reset preferences") && SettingsScene.Sections.Distinct().Count()==SettingsScene.Sections.Length);

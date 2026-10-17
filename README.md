@@ -106,6 +106,8 @@ The open media panel leaves out the compact header, so the same track is not sho
 
 Choose a **notch** or a **floating pill**. Tune the dimensions, spacing, colors, opacity, glass, typography and motion. Keep the tools you use; turn the others off. The right preview follows the setting you are exploring, while changes preserve your place in the form.
 
+The local development build also adds optional **Settings material** choices: Solid, Simulated glass, Native Mica and Native Acrylic. Native materials apply to Settings only, require Windows 11 build 22621 or later, and fall back to Solid with a visible reason when unavailable. The island retains its existing shaped glass surface. These additions are not part of the published 2.4.2 downloads or the screenshots above. See the [development feature guide](docs/guide.md#local-development-additions).
+
 | Settings category | What belongs there |
 | --- | --- |
 | **Appearance** | Shape, surface colors, controls and outlines, bold titles, navigation labels, motion and frame policy. |

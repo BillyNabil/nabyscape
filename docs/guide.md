@@ -12,6 +12,18 @@ Each release includes **SHA256SUMS.txt** for verifying the downloads. For develo
 
 Open Settings from the island or tray. Changes save automatically. Starting with Windows is optional and off by default; closing Settings keeps the app running. Choose **Quit** from the tray to exit.
 
+## Local development additions
+
+The following describes the current source build, awaiting final integration verification and release. Public downloads and the existing showcase remain version 2.4.2.
+
+- Settings keeps its custom caption and resize controls, section index, responsive category navigation, schematic examples and independent island preview. Appearance offers **Settings material**: Solid (the original default), Simulated glass (a WPF gradient), Native Mica or Native Acrylic. Mica is an opaque wallpaper/theme-based foundation; Acrylic is a translucent system blur. Native support requires Windows 11 build 22621 or later. High contrast, disabled Windows transparency, energy saver, remote sessions, unsupported APIs or a failed DWM call produce a Solid fallback with requested/actual status. Windows controls the final native appearance. The scene is schematic; examine the Settings window itself for the material. The layered island contour keeps its existing simulated glass; native island hit testing, shaped transparency, animated resize, physical DPI and performance remain unverified. Layout exports and Appearance reset include the independent Settings material; older `luma.layout.v1` profiles still import.
+- Preference reset and local-data migration follow the preservation rules below. Automatic tuck has an adjustable edge, an Always tucked option and a separate manual latch. Manual Hide takes priority over previews and tucking.
+- **Application → Updates** checks official stable releases, verifies compatible downloads and offers a separate explicit install/restart action. See [release and signing limits](RELEASING.md); these source changes do not publish a release or remove SmartScreen warnings.
+- **Application → Notifications** routes NabyScape's own Timer, Focus, Downloads, Updates and failure notices to Notch, Windows, Both or Off. Notices expire without a saved history. This does not read other apps' Windows notifications. **Downloads** is off by default and infers arrivals from readable files with stable size in one selected folder; it cannot guarantee that a browser has finished. Originals stay in place; folder paths are excluded from layout exports.
+- **Focus → Stopwatch** provides Start, Pause, Resume and Reset, shares its persisted session with hover and detached views, and counts elapsed sleep time. **Layout → Display** offers Primary, Selected or Follow cursor; Follow waits 250 ms on another display and defers during island interaction or manual hide. Detached previews remain where placed. Physical mixed-DPI relocation, hotplug and hardware sleep require device testing.
+
+The targeted native fixture checks API/client setup and captures the composed Settings HWND using Windows.Graphics.Capture. WPF-only scene renders cannot prove a native backdrop, and API success alone does not measure blur strength, GPU-present FPS or physical-DPI behavior.
+
 ## Shortcuts that stay out of the way
 
 | Shortcut | Action |
