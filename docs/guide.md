@@ -1,5 +1,9 @@
 # NabyScape user and developer guide
 
+[Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable user guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Interactive island preview](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience)
+
+**Version availability:** the public stable release is **v2.4.2**. The **v2.5.0 source is on `main`**, without a published v2.5 release. Source additions and migration/reset behavior below are labeled accordingly.
+
 ## Get NabyScape
 
 1. Open the [latest release](https://github.com/BillyNabil/nabyscape/releases/latest). No GitHub account is needed to download.
@@ -14,7 +18,7 @@ Open Settings from the island or tray. Changes save automatically. Starting with
 
 ## Local development additions
 
-The following describes the local 2.5.0 source candidate, awaiting final integration verification and release. Public downloads and the existing showcase remain version 2.4.2. The [local integration report](verification-2.5.0.md) records eight composed material captures with quantitative label and swatch retention checks. Local packages are verified; installer execution, signing and publication remain untested.
+The following describes the v2.5.0 source on `main`. No public v2.5 release has been published; public downloads and the original showcase remain version 2.4.2. The [local integration report](verification-2.5.0.md) records eight composed material captures with quantitative label and swatch retention checks. Local packages are verified; installer execution, signing and publication remain untested.
 
 - Settings keeps its custom caption and resize controls, section index, responsive category navigation, schematic examples and independent island preview. Appearance offers **Settings material**: Solid (the original default), Simulated glass (a WPF gradient), Native Mica or Native Acrylic. Mica is an opaque wallpaper/theme-based foundation; Acrylic is a translucent system blur. Native support requires Windows 11 build 22621 or later. High contrast, disabled Windows transparency, energy saver, remote sessions, unsupported APIs or a failed DWM call produce a Solid fallback with requested/actual status. Windows controls the final native appearance. The scene is schematic; examine the Settings window itself for the material. The layered island contour keeps its existing simulated glass; native island hit testing, shaped transparency, animated resize, physical DPI and performance remain unverified. Layout exports and Appearance reset include the independent Settings material; older `luma.layout.v1` profiles still import.
 - Preference reset and local-data migration follow the preservation rules below. Automatic tuck has an adjustable edge, an Always tucked option and a separate manual latch. Manual Hide takes priority over previews and tucking.
@@ -74,22 +78,22 @@ Mixer rows control individual Windows audio sessions; multiple sessions for one 
 
 No account or cloud service is required. Preferences, timers, notes, tasks, shortcuts, and calendar events stay on this device. Clipboard history is opt-in; disabling it clears stored clipboard history and images. File shelf entries refer to the originals.
 
-Local data uses the NabyScape folder. Existing installations retain their install path and internal identifiers for compatibility:
+Public stable **v2.4.2** stores local content and preferences in `%LOCALAPPDATA%\LumaIsland`. The **v2.5 source preview** migrates local data to the NabyScape folder, as described below. Existing installations retain their install path and internal identifiers for compatibility:
 
 ```text
-%LOCALAPPDATA%\NabyScape\              Local preferences and content
-%LOCALAPPDATA%\LumaIsland\             Preserved legacy backup, if present
+%LOCALAPPDATA%\NabyScape\              v2.5 source local preferences and content
+%LOCALAPPDATA%\LumaIsland\             v2.4.2 data; preserved legacy copy after v2.5 migration
 %LOCALAPPDATA%\Programs\LumaIsland\    Per-user installation
 luma.layout.v1                         Existing layout-profile format
 ```
 
 The executable, Start Menu shortcut, app display name, and enabled startup entry use **NabyScape**. Updates recognize previous app names and preserve settings, local content, and startup state. Internal single-instance and uninstall registration identifiers remain compatible.
 
-On first launch, migration copies legacy data into a sibling staging folder, validates JSON and clipboard-image references, then activates the complete copy with a directory rename. External shelf, shortcut and activity targets stay unchanged. If both data folders exist, NabyScape uses its own folder and warns you to review the legacy copy. If migration fails, it uses the legacy folder with a warning; fix the reported permissions or invalid file and restart to retry. Failed staging folders are kept for review and are never loaded as active data.
+**v2.5 source preview:** on first launch, migration copies legacy data into a sibling staging folder, validates JSON and clipboard-image references, then activates the complete copy with a directory rename. External shelf, shortcut and activity targets stay unchanged. If both data folders exist, NabyScape uses its own folder and warns you to review the legacy copy. If migration fails, it uses the legacy folder with a warning; fix the reported permissions or invalid file and restart to retry. Failed staging folders are kept for review and are never loaded as active data.
 
-**Application → Reset preferences** offers a category chooser, Reset this category, Reset all preferences and Restore last preference backup. A confirmation describes the affected values. Reset writes a preference backup before changing settings; backup failures abort the reset. Reset and restore preserve startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets. Restore applies preference categories only, so it cannot re-enable clipboard capture or startup from an old backup.
+**v2.5 source preview — Application → Reset preferences** offers a category chooser, Reset this category, Reset all preferences and Restore last preference backup. A confirmation describes the affected values. Reset writes a preference backup before changing settings; backup failures abort the reset. Reset and restore preserve startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets. Restore applies preference categories only, so it cannot re-enable clipboard capture or startup from an old backup.
 
-**Controls → Automatic tucking** offers Always tucked and an edge height from 3 to 12 DIP (default 6 DIP). Fullscreen and maximized rules keep their previous defaults. The configurable `Ctrl+Alt+T` shortcut, tray action and command action toggle a manual tuck latch; the second toggle releases it to automatic rules. Hover reveals a preview without taking focus. Manual Hide stays fully hidden, including when the tuck shortcut is used. Settings reports conflicts between the panel, visibility and tuck shortcuts and failures to register a shortcut already used by another app.
+**v2.5 source preview — Controls → Automatic tucking** offers Always tucked and an edge height from 3 to 12 DIP (default 6 DIP). Fullscreen and maximized rules keep their previous defaults. The configurable `Ctrl+Alt+T` shortcut, tray action and command action toggle a manual tuck latch; the second toggle releases it to automatic rules. Hover reveals a preview without taking focus. Manual Hide stays fully hidden, including when the tuck shortcut is used. Settings reports conflicts between the panel, visibility and tuck shortcuts and failures to register a shortcut already used by another app.
 
 Uninstall through **Windows Settings → Apps → Installed apps → NabyScape**. Personal content is retained. The current installer is unsigned.
 

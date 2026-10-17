@@ -1,0 +1,168 @@
+{
+  "values": {
+    "Preset": "Mac",
+    "Width": 324,
+    "Height": 38,
+    "Radius": 17,
+    "Top": 0,
+    "Horizontal": 50,
+    "Background": "#000000",
+    "Accent": "#FFFFFF",
+    "Opacity": 1,
+    "GlassStyle": false,
+    "GlassStrength": 1,
+    "AlbumAccent": true,
+    "PanelWidth": 546,
+    "PanelMaxHeight": 504,
+    "PanelPadding": 40,
+    "PanelScale": 1,
+    "SectionGap": 18,
+    "HoverWidth": 500,
+    "HoverHeight": 202,
+    "HoverDelayMs": 410,
+    "HoverDetailDelayMs": 670,
+    "SwipeDistance": 48,
+    "HoverViews": [
+      {
+        "Id": "media",
+        "Enabled": true
+      },
+      {
+        "Id": "timer",
+        "Enabled": true
+      },
+      {
+        "Id": "focus",
+        "Enabled": true
+      },
+      {
+        "Id": "calendar",
+        "Enabled": true
+      },
+      {
+        "Id": "notes",
+        "Enabled": true
+      },
+      {
+        "Id": "files",
+        "Enabled": true
+      },
+      {
+        "Id": "system",
+        "Enabled": true
+      },
+      {
+        "Id": "clips",
+        "Enabled": false
+      },
+      {
+        "Id": "tasks",
+        "Enabled": false
+      }
+    ],
+    "Widgets": [
+      {
+        "Id": "media",
+        "Enabled": true
+      },
+      {
+        "Id": "volume",
+        "Enabled": true
+      },
+      {
+        "Id": "timer",
+        "Enabled": true
+      },
+      {
+        "Id": "focus",
+        "Enabled": true
+      },
+      {
+        "Id": "clock",
+        "Enabled": true
+      },
+      {
+        "Id": "battery",
+        "Enabled": true
+      },
+      {
+        "Id": "system",
+        "Enabled": true
+      },
+      {
+        "Id": "shortcuts",
+        "Enabled": true
+      },
+      {
+        "Id": "tools",
+        "Enabled": true
+      }
+    ],
+    "CompactLayout": true,
+    "HoverPeek": true,
+    "TwoStageHover": true,
+    "AnimationMs": 420,
+    "ReduceMotion": false,
+    "LiveActivity": true,
+    "ClosedMediaIcon": "Artwork",
+    "ClosedMediaContent": "Waveform",
+    "Performance": "Maksimal",
+    "WheelAction": "pages",
+    "MiddleAction": "toggle",
+    "VolumeStep": 3,
+    "Clock24Hour": true,
+    "ClockSeconds": false,
+    "ShowDate": true,
+    "MonitorNetwork": true,
+    "MonitorStorage": true,
+    "MonitorProcesses": true,
+    "CategoryStyle": "Icons",
+    "LaunchStyle": "IconsLabels",
+    "BoldMediaTitle": true,
+    "BoldHeadings": true,
+    "WaveformIdleMotion": true,
+    "VolumeFeedback": true,
+    "BrightnessFeedback": true,
+    "DropReveal": true,
+    "DetachablePreviews": true,
+    "CoverGestures": true,
+    "ActivitySatellite": false,
+    "SatelliteSource": "CPU",
+    "ControlFill": "#16171B",
+    "ControlBorder": "#303238",
+    "SelectionFill": "#34373E",
+    "PanelSwipe": true,
+    "Tools": [
+      {
+        "Id": "files",
+        "Enabled": true
+      },
+      {
+        "Id": "notes",
+        "Enabled": true
+      },
+      {
+        "Id": "tasks",
+        "Enabled": true
+      },
+      {
+        "Id": "clips",
+        "Enabled": true
+      },
+      {
+        "Id": "calendar",
+        "Enabled": true
+      },
+      {
+        "Id": "awake",
+        "Enabled": true
+      },
+      {
+        "Id": "links",
+        "Enabled": true
+      }
+    ],
+    "ActivitiesEnabled": true
+  },
+  "format": "luma.layout.v1"
+}

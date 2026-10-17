@@ -1,8 +1,12 @@
 # NabyScape · the visual tour
 
-[← README](../README.md) · [Download](https://github.com/BillyNabil/nabyscape/releases/latest) · [Midnight Notch preset](presets/midnight-notch.json)
+[← README](../README.md) · [Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Download](https://github.com/BillyNabil/nabyscape/releases/latest) · [Midnight Notch preset](presets/midnight-notch.json)
 
-![NabyScape with the Midnight Notch layout](../Assets/showcase/hero.png)
+![NabyScape with the Midnight Notch layout: actual v2.4.2 interface in a new desktop composition](../Assets/showcase/marketing-hero.png)
+
+The original gallery and film below show **public v2.4.2** with the Midnight Notch layout. The [interactive website](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience) reuses these actual state captures; its browser controls simulate switching views and do not connect to Windows or play audio. New dark hero, social image and video poster are presentation compositions, not new app captures.
+
+**v2.5 source preview:** [actual composed Settings evidence](verification-2.5.0.md) is separate from this stable gallery. Native Mica/Acrylic, updates, download activity, stopwatch, follow-cursor placement and migration/reset are not in the public v2.4.2 download.
 
 ## The moving preview
 
@@ -157,3 +161,7 @@ The opt-in `--showcase` branch works inside diagnostics, using its separate `tes
 `frames/` contains the 780 PNG capture frames. `chapters.json` records scene timing. The render script adds original backgrounds/captions and writes PNG posters, the GIF and silent H.264 MP4 to `Assets/showcase/`. The script uses Segoe UI from Windows; FFmpeg and Pillow are documentation tools, not application dependencies. The `settings-live.png` asset is a separate capture of the running daily Settings window; the reproducible gallery uses the isolated session.
 
 For profiling, use the separate [performance workloads and report](performance-2.4.2.md). Recording and image encoding are excluded from those measurements.
+
+## Recreate the marketing assets
+
+`python tools/render_marketing.py` composes `marketing-hero.png`, `marketing-social.png` and `marketing-video-poster.jpg` from the committed actual WPF cuts and original app icon. No app is launched. Pass a static-site output folder to copy the necessary captures and film, create optimized WebP gallery crops and include the separately labeled v2.5 Settings evidence. Pillow is required. The historical showcase assets and the existing `render_showcase.py --social-only` workflow remain available.

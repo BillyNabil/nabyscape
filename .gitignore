@@ -9,3 +9,4 @@ test-profile/
 *.user
 *.suo
 /release-output/
+__pycache__/
