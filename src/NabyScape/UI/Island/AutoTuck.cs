@@ -47,6 +47,8 @@ public sealed partial class OverlayWindow
     {
         bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();
         double destination=value?AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge):0;
+        // Manual hide must cancel an in-flight reveal even when its destination is already zero.
+        if(userHidden){tuckDestination=destination;tuckMotion.Dispose();tuckSlide.Y=destination;return;}
         if(!changed && Math.Abs(destination-tuckDestination)<.001 && (Motion.Enabled || !tuckMotion.Active))return;
         tuckDestination=destination;
         if(value && changed)
@@ -59,7 +61,7 @@ public sealed partial class OverlayWindow
             compact.BeginAnimation(OpacityProperty,null);compact.Opacity=1;compact.IsHitTestVisible=true;
             InvalidateSystemMonitor();StopLiveRendering();liveTick.Stop();ClearFeedback();
         }
-        if(userHidden || !Motion.Enabled){tuckMotion.Dispose();tuckSlide.Y=destination;}
+        if(!Motion.Enabled){tuckMotion.Dispose();tuckSlide.Y=destination;}
         else tuckMotion.Go(tuckSlide,TranslateTransform.YProperty,destination,app.Settings.AnimationMs);
         if(changed && !value)ConfigureLiveActivity();
     }

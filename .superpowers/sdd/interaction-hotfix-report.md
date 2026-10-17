@@ -26,6 +26,14 @@ Base: `d99fc6c` (main). Version remains 2.5.0. No install, release, push, websit
 
 ## Limits / handoff
 
-Parent will perform fresh review and final self-contained packaging checks. No full-app performance sweep, browser automation, live volume writes, clipboard capture, installer execution, release metadata bump or daily profile mutation was added. Native screenshots cover synthetic row data at 193.6 and 302 DIP; they do not claim every device DPI or protected process exposes an extractable app icon. Existing cache handling rejects web/UNC paths. Clips and Tasks retain the existing lack of detachable windows.
+Parent performs fresh review. No full-app performance sweep, browser automation, live volume writes, clipboard capture, installer execution, release metadata bump or daily profile mutation was added. Native screenshots cover synthetic row data at 193.6 and 302 DIP; they do not claim every device DPI or protected process exposes an extractable app icon. Existing cache handling rejects web/UNC paths. Clips and Tasks retain the existing lack of detachable windows.
 
 Unrelated pending `tools/render_showcase.py` and `Assets/showcase/social-preview.png` are preserved and excluded from this commit.
+
+## Review correction
+
+Fresh review found one lifecycle gap: during animated downward reveal, the unchanged-zero-destination optimization returned before manual hide could dispose tuck motion. `AutoTuck.cs` now handles manual hide before that optimization. Added shared regression checks to the full fixture and focused `--interaction-tuck-hide-only` diagnostic path, with isolated media.
+
+- Correction SDK build: PASS, 0 warnings/errors. `git diff --check`: PASS.
+- Parent granted a second isolated slot and owned daily exit/restore. Command: `$env:DOTNET_ROOT=(Resolve-Path ../tools/dotnet).Path; & ../tools/dotnet/dotnet.exe artifacts-interaction-hotfix-sdk/NabyScape.dll --diagnostics C:/Users/billy/Documents/Codex/2026-10-14/ra/work/nabyscape/artifacts-interaction-tuck-hide-fixture --interaction-tuck-hide-only --background`. PASS, exit 0, **3 checks / 0 failures**, in 1.9 seconds. Verified the starting state is an active downward animation, manual hide immediately cancels its unchanged destination, and hidden state retains no callback. Report: `artifacts-interaction-tuck-hide-fixture/integration-report.txt`.
+- Before this correction, authorized `./build.ps1 -Dotnet ../tools/dotnet/dotnet.exe -OutputDirectory artifacts-interaction-hotfix-final` passed all 49 scene registrations and **379 published apphost self-tests / 0 failures**, file version 2.5.0.0. This earlier binary is superseded; the same final packaging command is being rerun after correction. Neither setup copy is executed.
