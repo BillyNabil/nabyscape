@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-252c36?style=flat-square" alt="MIT license"></a>
 </p>
 
-**Public stable: v2.4.2.** The v2.5.0 source is on `main`; no public v2.5 release is published. The stable links below serve v2.4.2. [See what is in the source preview →](#in-the-v25-source-preview)
+**Latest release: v2.5.0.** Independent hover pages, smooth tuck transitions, clearer mixer icons, and the new local tools are included. [What changed →](docs/releases/v2.5.0.md)
 
 ## Glance. Hover. Open.
 
@@ -59,7 +59,7 @@ Captured from actual WPF controls using **Midnight Notch**. Artwork, notes, task
 
 **System.** CPU, RAM, GPU and uptime in Overview; Hardware, Network, Storage and Processes have their own tabs. Missing readings stay labeled unavailable. [See compatibility details](docs/guide.md#compatibility-and-privacy).
 
-**Notes and tasks.** One local document shared by the island and its detached view. A Tasks tab for the next small thing.
+**Notes and tasks.** One local document shared by the island and its detached view. Separate Notes and Tasks pages keep writing and checklists one click away.
 
 **File shelf.** Stage up to 40 file/folder references, select several and drag them out together. Originals stay in place.
 
@@ -70,6 +70,10 @@ Captured from actual WPF controls using **Midnight Notch**. Artwork, notes, task
 [Explore the gallery on the website →](https://nabyscape.sigma-bw-0740.chatgpt.site/#feature-title) · [Usage guide](docs/guide.md)
 
 ## Make it feel like your desktop
+
+<p align="center"><img src="docs/evidence/integration-2.5.0/native-mica-wgc.jpg" alt="Actual v2.5 Settings window with Native Mica selected, custom window controls and contextual previews" width="100%"></p>
+
+Actual v2.5 Settings capture. The original gallery and silent film below retain their v2.4.2 labels; they illustrate the shared design, not every new feature.
 
 <img src="Assets/showcase/settings.png" alt="Actual v2.4.2 Appearance settings with categories, visual examples and a live island preview" width="100%">
 
@@ -83,9 +87,9 @@ The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel
 
 **Windows 11 x64.** The self-contained builds include .NET; no SDK is needed to run the app.
 
-- **[Download the v2.4.2 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-Setup.exe)** — install for your Windows user.
-- **[Download the v2.4.2 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-windows-x64-portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
-- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/SHA256SUMS.txt) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.4.2) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+- **[Download the v2.5.0 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.0/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
+- **[Download the v2.5.0 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.0/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
+- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.0/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.5.0) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
 
 The installer is currently unsigned. Download from the official repository and review the version and checksums before running. Portable mode still stores data in your Windows user profile. Starting with Windows is optional and off by default. Closing Settings keeps NabyScape running; choose **Quit** from the tray to exit.
 
@@ -93,6 +97,7 @@ The installer is currently unsigned. Download from the official repository and r
 | --- | --- |
 | `Ctrl+Alt+I` | Open or close the island panel. |
 | `Ctrl+Alt+H` | Hide or show the entire island. |
+| `Ctrl+Alt+T` | Toggle manual tuck; hover the top edge to reveal. |
 | `Ctrl+K` | Search commands while the island is focused. |
 | `Escape` | Go back or close. |
 
@@ -102,21 +107,23 @@ Global shortcuts are configurable. With cover gestures enabled, click closed art
 
 No NabyScape account, cloud sync or AI service. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. The app does not record through the microphone or automatically fetch link previews.
 
-Public **v2.4.2** stores local data in `%LOCALAPPDATA%\LumaIsland`. The **v2.5 source** migrates to `%LOCALAPPDATA%\NabyScape`, preserving the legacy folder. The per-user install path and `luma.layout.v1` layout format remain compatible. [Privacy, migration and reset preservation rules →](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#privacy)
+**v2.5.0** stores local data in `%LOCALAPPDATA%\NabyScape`. Upgrades copy and validate legacy data from `%LOCALAPPDATA%\LumaIsland`, preserving the original folder. The per-user install path and `luma.layout.v1` layout format remain compatible. [Privacy, migration and reset preservation rules →](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#privacy)
 
 Version 2.4.2 reduces background work by sharing audio sampling, updating the views that need it and stopping static surfaces from rendering. [Read the local measurements, methodology and limits](docs/performance-2.4.2.md); results from the capture machine are not a promise for every PC. GPU use was not measured.
 
-## In the v2.5 source preview
+## New in v2.5.0
 
-These additions are on `main`, **not in the public v2.4.2 downloads**:
+Included in the installer and portable downloads above:
 
+- **Hover and tuck:** enabled hover pages work independently of main-panel visibility. Tucking animates from its current position, respects Reduce Motion, and stops immediately when hidden.
+- **Audio mixer:** local app icons with a compact initials fallback; clearer mute controls and corrected Music → mixer → Back navigation.
 - **Settings material:** Solid, Simulated glass, Native Mica and Native Acrylic. Native options apply to Settings only, require Windows 11 build 22621 or later, and fall back to Solid with a visible reason when unsupported. The island keeps its existing shaped simulated glass.
 - **Updates and notices:** checks for official stable releases with a separate explicit install/restart action; routing for NabyScape's own notices. This does not read other apps' notifications.
 - **Download activity:** off by default; infers arrivals from stable readable files in one folder. It cannot guarantee a browser has finished.
 - **Stopwatch and placement:** a shared persisted stopwatch; Primary, Selected or Follow cursor display placement.
 - **Preference care:** backed-up category/all reset, legacy-data migration, a manual tuck latch and an adjustable tucked edge.
 
-[Availability and practical limits](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#source-preview) · [Actual composed Settings captures and verification](docs/verification-2.5.0.md) · [Release/signing workflow](docs/RELEASING.md)
+[Features and practical limits](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#source-preview) · [Actual composed Settings captures and verification](docs/verification-2.5.0.md) · [Release/signing workflow](docs/RELEASING.md)
 
 ## Build it yourself
 

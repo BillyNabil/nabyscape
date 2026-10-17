@@ -2,31 +2,33 @@
 
 [Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable user guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Interactive island preview](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience)
 
-**Version availability:** the public stable release is **v2.4.2**. The **v2.5.0 source is on `main`**, without a published v2.5 release. Source additions and migration/reset behavior below are labeled accordingly.
+**Current release: v2.5.0.** [Download and release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.5.0). The original showcase film remains labeled v2.4.2.
 
 ## Get NabyScape
 
 1. Open the [latest release](https://github.com/BillyNabil/nabyscape/releases/latest). No GitHub account is needed to download.
-2. Download **NabyScape-Setup.exe** and run it to install for your Windows user.
-3. Prefer portable use? Download the **windows-x64-portable.zip**, extract it, and run **NabyScape.exe**.
+2. Download **NabyScape-win-x64-Setup.exe** and run it to install for your Windows user.
+3. Prefer portable use? Download the **NabyScape-win-x64-Portable.zip**, extract it, and run **NabyScape.exe**.
 
-Each release includes **SHA256SUMS.txt** for verifying the downloads. For development builds, use the [Windows build workflow](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml); downloading its artifacts requires a GitHub account.
+Each release includes **SHA256SUMS** for verifying the downloads. For development builds, use the [Windows build workflow](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml); downloading its artifacts requires a GitHub account.
 
 **Windows 11 x64 is required.** The self-contained build includes the .NET runtime; you do not need an SDK to run it. The current installer is unsigned. Portable use still stores preferences in your Windows user profile.
 
 Open Settings from the island or tray. Changes save automatically. Starting with Windows is optional and off by default; closing Settings keeps the app running. Choose **Quit** from the tray to exit.
 
-## Local development additions
+## New in v2.5.0
 
-The following describes the v2.5.0 source on `main`. No public v2.5 release has been published; public downloads and the original showcase remain version 2.4.2. The [local integration report](verification-2.5.0.md) records eight composed material captures with quantitative label and swatch retention checks. Local packages are verified; installer execution, signing and publication remain untested.
+The release includes the features below. [Release notes](releases/v2.5.0.md) describe the interaction fixes and verification limits. The [integration report](verification-2.5.0.md) preserves the original test record; the installer remains unsigned.
 
 - Settings keeps its custom caption and resize controls, section index, responsive category navigation, schematic examples and independent island preview. Appearance offers **Settings material**: Solid (the original default), Simulated glass (a WPF gradient), Native Mica or Native Acrylic. Mica is an opaque wallpaper/theme-based foundation; Acrylic is a translucent system blur. Native support requires Windows 11 build 22621 or later. High contrast, disabled Windows transparency, energy saver, remote sessions, unsupported APIs or a failed DWM call produce a Solid fallback with requested/actual status. Windows controls the final native appearance. The scene is schematic; examine the Settings window itself for the material. The layered island contour keeps its existing simulated glass; native island hit testing, shaped transparency, animated resize, physical DPI and performance remain unverified. Layout exports and Appearance reset include the independent Settings material; older `luma.layout.v1` profiles still import.
 - Preference reset and local-data migration follow the preservation rules below. Automatic tuck has an adjustable edge, an Always tucked option and a separate manual latch. Manual Hide takes priority over previews and tucking.
-- **Application → Updates** checks official stable releases, verifies compatible downloads and offers a separate explicit install/restart action. See [release and signing limits](RELEASING.md); these source changes do not publish a release or remove SmartScreen warnings.
+- **Application → Updates** checks official stable releases, verifies compatible downloads and offers a separate explicit install/restart action. See [release and signing limits](RELEASING.md); publishing a release does not remove SmartScreen warnings.
 - **Application → Notifications** routes NabyScape's own Timer, Focus, Downloads, Updates and failure notices to Notch, Windows, Both or Off. Notices expire without a saved history. This does not read other apps' Windows notifications. **Downloads** is off by default and infers arrivals from readable files with stable size in one selected folder; it cannot guarantee that a browser has finished. Originals stay in place; folder paths are excluded from layout exports.
 - **Focus → Stopwatch** provides Start, Pause, Resume and Reset, shares its persisted session with hover and detached views, and counts elapsed sleep time. **Layout → Display** offers Primary, Selected or Follow cursor; Follow waits 250 ms on another display and defers during island interaction or manual hide. Detached previews remain where placed. Physical mixed-DPI relocation, hotplug and hardware sleep require device testing.
 
 The targeted native fixture checks API/client setup and captures the composed Settings HWND using Windows.Graphics.Capture. WPF-only scene renders cannot prove a native backdrop, and API success alone does not measure blur strength, GPU-present FPS or physical-DPI behavior.
+
+Hover pages are selected in **Settings → Content** independently of which main panels are visible. Tool-specific pages still require their tool switch. There is no four-slide limit. Clicking a preview opens its target without changing your saved panel order. Clipboard capture remains a separate opt-in preference.
 
 ## Shortcuts that stay out of the way
 
@@ -34,12 +36,13 @@ The targeted native fixture checks API/client setup and captures the composed Se
 | --- | --- |
 | `Ctrl+Alt+I` | Open or close the panel. |
 | `Ctrl+Alt+H` | Hide or show the entire island. |
+| `Ctrl+Alt+T` | Toggle manual tuck. |
 | `Ctrl+K` | Search commands while the panel is focused. |
 | `Ctrl+Space` | Play/pause when the island header is focused and cover gestures are enabled. |
 | `Ctrl+M` | Choose a media session from the focused island header when cover gestures are enabled. |
 | `Escape` | Go back or close. |
 
-The two global shortcuts are configurable. Buttons retain their click actions; wheel input on hover previews switches pages. After clicking open a panel, content scrolls normally.
+The panel, visibility and tuck global shortcuts are configurable. Buttons retain their click actions; wheel input on hover previews switches pages. After clicking open a panel, content scrolls normally.
 
 ## Compatibility and privacy
 
@@ -78,10 +81,10 @@ Mixer rows control individual Windows audio sessions; multiple sessions for one 
 
 No account or cloud service is required. Preferences, timers, notes, tasks, shortcuts, and calendar events stay on this device. Clipboard history is opt-in; disabling it clears stored clipboard history and images. File shelf entries refer to the originals.
 
-Public stable **v2.4.2** stores local content and preferences in `%LOCALAPPDATA%\LumaIsland`. The **v2.5 source preview** migrates local data to the NabyScape folder, as described below. Existing installations retain their install path and internal identifiers for compatibility:
+**v2.5.0** stores local content and preferences in `%LOCALAPPDATA%\NabyScape`, migrating legacy LumaIsland data as described below. Existing installations retain their install path and internal identifiers for compatibility:
 
 ```text
-%LOCALAPPDATA%\NabyScape\              v2.5 source local preferences and content
+%LOCALAPPDATA%\NabyScape\              v2.5 local preferences and content
 %LOCALAPPDATA%\LumaIsland\             v2.4.2 data; preserved legacy copy after v2.5 migration
 %LOCALAPPDATA%\Programs\LumaIsland\    Per-user installation
 luma.layout.v1                         Existing layout-profile format
@@ -89,11 +92,11 @@ luma.layout.v1                         Existing layout-profile format
 
 The executable, Start Menu shortcut, app display name, and enabled startup entry use **NabyScape**. Updates recognize previous app names and preserve settings, local content, and startup state. Internal single-instance and uninstall registration identifiers remain compatible.
 
-**v2.5 source preview:** on first launch, migration copies legacy data into a sibling staging folder, validates JSON and clipboard-image references, then activates the complete copy with a directory rename. External shelf, shortcut and activity targets stay unchanged. If both data folders exist, NabyScape uses its own folder and warns you to review the legacy copy. If migration fails, it uses the legacy folder with a warning; fix the reported permissions or invalid file and restart to retry. Failed staging folders are kept for review and are never loaded as active data.
+**v2.5.0:** on first launch, migration copies legacy data into a sibling staging folder, validates JSON and clipboard-image references, then activates the complete copy with a directory rename. External shelf, shortcut and activity targets stay unchanged. If both data folders exist, NabyScape uses its own folder and warns you to review the legacy copy. If migration fails, it uses the legacy folder with a warning; fix the reported permissions or invalid file and restart to retry. Failed staging folders are kept for review and are never loaded as active data.
 
-**v2.5 source preview — Application → Reset preferences** offers a category chooser, Reset this category, Reset all preferences and Restore last preference backup. A confirmation describes the affected values. Reset writes a preference backup before changing settings; backup failures abort the reset. Reset and restore preserve startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets. Restore applies preference categories only, so it cannot re-enable clipboard capture or startup from an old backup.
+**v2.5.0 — Application → Reset preferences** offers a category chooser, Reset this category, Reset all preferences and Restore last preference backup. A confirmation describes the affected values. Reset writes a preference backup before changing settings; backup failures abort the reset. Reset and restore preserve startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets. Restore applies preference categories only, so it cannot re-enable clipboard capture or startup from an old backup.
 
-**v2.5 source preview — Controls → Automatic tucking** offers Always tucked and an edge height from 3 to 12 DIP (default 6 DIP). Fullscreen and maximized rules keep their previous defaults. The configurable `Ctrl+Alt+T` shortcut, tray action and command action toggle a manual tuck latch; the second toggle releases it to automatic rules. Hover reveals a preview without taking focus. Manual Hide stays fully hidden, including when the tuck shortcut is used. Settings reports conflicts between the panel, visibility and tuck shortcuts and failures to register a shortcut already used by another app.
+**v2.5.0 — Controls → Automatic tucking** offers Always tucked and an edge height from 3 to 12 DIP (default 6 DIP). Fullscreen and maximized rules keep their previous defaults. The configurable `Ctrl+Alt+T` shortcut, tray action and command action toggle a manual tuck latch; the second toggle releases it to automatic rules. Hover reveals a preview without taking focus. Manual Hide stays fully hidden, including when the tuck shortcut is used. Settings reports conflicts between the panel, visibility and tuck shortcuts and failures to register a shortcut already used by another app.
 
 Uninstall through **Windows Settings → Apps → Installed apps → NabyScape**. Personal content is retained. The current installer is unsigned.
 
