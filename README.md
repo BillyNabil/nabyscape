@@ -73,7 +73,7 @@ Captured from actual WPF controls using **Midnight Notch**. Artwork, notes, task
 
 <p align="center"><img src="docs/evidence/integration-2.5.0/native-mica-wgc.jpg" alt="Actual v2.5 Settings window with Native Mica selected, custom window controls and contextual previews" width="100%"></p>
 
-Actual v2.5 Settings capture. The original gallery and silent film below retain their v2.4.2 labels; they illustrate the shared design, not every new feature.
+Actual v2.5 Settings capture. The original gallery and silent film retain their v2.4.2 labels; they illustrate the shared design, not every new feature.
 
 <img src="Assets/showcase/settings.png" alt="Actual v2.4.2 Appearance settings with categories, visual examples and a live island preview" width="100%">
 

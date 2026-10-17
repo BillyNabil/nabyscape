@@ -1,6 +1,6 @@
 # Local 2.5.0 integration verification
 
-This verifies the local Windows source candidate and packages. Public downloads and showcase assets remain 2.4.2. Nothing was installed, pushed, signed or published. No daily app was running when the final isolated fixtures started, and the installed app and daily profile were not launched.
+This historical record verifies the local Windows source candidate and packages before release. At the time of these runs, downloads and showcase assets remained 2.4.2; nothing had been installed, pushed, signed or published. For the subsequent released hotfix and packaged checks, see the [v2.5.0 release record](releases/v2.5.0.md). No daily app was running when the final isolated fixtures started, and the installed app and daily profile were not launched.
 
 Integration adds denser chrome below 340 DIP height so the 512 by 252 DIP Settings case retains a usable form viewport. The Closed/Music live preview follows actual media availability instead of showing a brand fallback when idle. Native Settings use a dark translucent client foundation for secondary-text readability; the island keeps its existing material and frame policy.
 

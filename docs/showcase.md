@@ -6,7 +6,7 @@
 
 The original gallery and film below show **public v2.4.2** with the Midnight Notch layout. The [interactive website](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience) reuses these actual state captures; its browser controls simulate switching views and do not connect to Windows or play audio. New dark hero, social image and video poster are presentation compositions, not new app captures.
 
-**v2.5 source preview:** [actual composed Settings evidence](verification-2.5.0.md) is separate from this stable gallery. Native Mica/Acrylic, updates, download activity, stopwatch, follow-cursor placement and migration/reset are not in the public v2.4.2 download.
+**Current release: v2.5.0.** [Download and release notes](releases/v2.5.0.md). Native Settings materials, updates, download activity, stopwatch, follow-cursor placement, migration/reset and the interaction hotfixes are included. [Actual v2.5 Settings evidence](verification-2.5.0.md) is separate from the original v2.4.2 gallery below.
 
 ## The moving preview
 
