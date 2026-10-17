@@ -92,9 +92,9 @@ internal sealed class SettingsScene : FrameworkElement
             case "Individual tools":
                 int ti=0;foreach(var item in s.Tools.Take(7)){double x=16+ti%4*100,y=10+ti/4*40;Text(Settings.ToolNames[item.Id],x,y,10,false,item.Enabled?white:muted,92);Toggle(x,y+18,item.Enabled);ti++;}Note("Disabled tools disappear; their saved data stays");break;
             case "Hover pages":
-                var enabled=s.HoverViews.Where(v=>v.Enabled).Take(4).ToArray();for(int i=0;i<enabled.Length;i++)
+                var available=HoverPagePolicy.Pages(s);var enabled=available.Take(4).ToArray();for(int i=0;i<enabled.Length;i++)
                 {
-                    double x=18+i*99;string id=enabled[i].Id;Box(x,12,88,72,Brushes.Black);
+                    double x=18+i*99;string id=enabled[i];Box(x,12,88,72,Brushes.Black);
                     Text(id switch{"media"=>"Music","files"=>"Shelf","notes"=>"Notes","clips"=>"Clipboard",_=>CultureInfo.InvariantCulture.TextInfo.ToTitleCase(id)},x+8,20,10,true,null,72);
                     switch(id)
                     {
@@ -107,7 +107,7 @@ internal sealed class SettingsScene : FrameworkElement
                         case "system":Text("CPU   RAM",x+9,42,9);Bar(x+9,59,69,.3);Bar(x+9,70,69,.6);break;
                         default:Bar(x+10,45,65,.9);Bar(x+10,56,65,.6);Bar(x+10,67,65,.75);break;
                     }
-                }Note("Example content · first pages in your current hover order");break;
+                }Note($"{available.Length} available pages · first {enabled.Length} shown in this example");break;
             case "Clipboard history":
                 Text("Text",22,20,12,true);Text("Copied thought",22,42,11,false,muted);Text("Link",158,20,12,true);Text("example.com",158,42,11,false,muted);Box(296,18,40,40);dc.DrawEllipse(muted,null,new Point(324,28),3,3);Line(301,50,312,35);Line(312,35,331,52);Text("Image",346,30,11);Toggle(22,74,s.ClipboardHistory);Text(s.ClipboardHistory?"History enabled":"History off",64,74,11);Note("Example items · turning history off deletes saved items");break;
             case "Stopwatch":

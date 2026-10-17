@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
 using NAudio.CoreAudioApi;
 
 namespace NabyScape;
@@ -18,6 +20,20 @@ internal sealed record MixerResult(int Changed,int Failed,IReadOnlyList<string> 
 
 internal sealed class AudioMixer
 {
+    private readonly Dictionary<string,string?> processPaths=new();
+    internal static string? LocalProcessImage(uint pid)
+    {
+        if(pid==0)return null;
+        try
+        {
+            using var process=OpenProcess(0x1000,false,pid); // Query limited information; works across bitness without module access.
+            var path=new StringBuilder(32768);int length=path.Capacity;
+            return !process.IsInvalid && QueryFullProcessImageName(process,0,path,ref length)?path.ToString():null;
+        }
+        catch{return null;}
+    }
+    [DllImport("kernel32.dll",SetLastError=true)]private static extern SafeProcessHandle OpenProcess(uint access,bool inherit,uint pid);
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]private static extern bool QueryFullProcessImageName(SafeProcessHandle process,uint flags,StringBuilder name,ref int size);
     internal static bool IsControllableSession(int state)=>state is 0 or 1;
     public static double BoundedVolume(double value)=>double.IsFinite(value)?Math.Clamp(value,0,1):throw new ArgumentException("Volume must be finite.");
 
@@ -54,8 +70,13 @@ internal sealed class AudioMixer
                                     try{using var process=Process.GetProcessById((int)pid);display=process.ProcessName;}
                                     catch{display="App (PID "+pid+")";}
                                 }
-                                string? processPath=null;
-                                if(pid>0)try{using var owner=Process.GetProcessById((int)pid);processPath=owner.MainModule?.FileName;}catch{}
+                                string pathKey=pid+"|"+instance;
+                                if(!processPaths.TryGetValue(pathKey,out string? processPath))
+                                {
+                                    processPath=LocalProcessImage(pid);
+                                    if(processPaths.Count>=256)processPaths.Clear();
+                                    processPaths[pathKey]=processPath;
+                                }
                                 Check(volume.GetMasterVolume(out float level));Check(volume.GetMute(out bool mute));
                                 apps.Add(new(new(MixerScope.Apps,id,instance),display,name,level,mute,processPath));
                             }

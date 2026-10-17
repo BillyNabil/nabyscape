@@ -131,6 +131,7 @@ public sealed partial class OverlayWindow : Window
         if(activitiesOpen){body.Children.Add(BuildActivitiesPage());return;}
         if(commandOpen){body.Children.Add(BuildCommandPage());return;}
         if(app.Settings.CompactLayout){BuildCompactBody();return;}
+        if(hoverPanelWidget!=null){body.Children.Add(BuildCompactPage(PageFor(hoverPanelWidget)));return;}
         if(classicMixerOpen){var mixer=BuildMixerPage();body.Children.Add(mixer);return;}
         var heading=new DockPanel{Margin=new(2,0,4,12)};var settings=Icons.Button("settings","Settings",app.ShowSettings,false,32);settings.Margin=new(0);settings.Background=UI.Brush("#1C1C1E");
         DockPanel.SetDock(settings,Dock.Right);heading.Children.Add(settings);var name=UI.Heading("Activity",18);name.FontWeight=FontWeights.SemiBold;heading.Children.Add(name);body.Children.Add(heading);body.Children.Add(widgets);
@@ -188,6 +189,7 @@ public sealed partial class OverlayWindow : Window
     public void Collapse()
     {
         shelfDropBrowsing=false;
+        if(hoverPanelWidget!=null){hoverPanelWidget=null;bodyDirty=true;}
         InvalidateSystemMonitor();
         HideNotice();EndPeekGesture();StopHoverTimers();FlushNotes();automaticPreview=false;activityDismiss.Stop();previewKind=activityTitle=activityDetail="";foreach(var label in marqueeLabels.Values)label.Reset();if(!expanded && !peeking){ApplyEnvironmentTuck();return;}expanded=false;peeking=false;UpdateClosedMediaIcon();outside?.Dispose();outside=null;peekPanel.IsHitTestVisible=false;Motion.Fade(peekPanel,0,90);compact.IsHitTestVisible=true;Motion.Fade(compact,1,120);scroll.IsHitTestVisible=false;Motion.Fade(scroll,0,100);Motion.To(bodySlide,TranslateTransform.YProperty,-8,150);
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,app.Settings.Width,Math.Max(160,app.Settings.AnimationMs*.78));motion.Go(surface,IslandSurface.SurfaceHeightProperty,app.Settings.Height,Math.Max(160,app.Settings.AnimationMs*.78));
@@ -264,5 +266,5 @@ public sealed partial class OverlayWindow : Window
             UpdateTimeline();
         }finally{updating=false;}
     }
-    public void Cleanup(){pointerCheck.Stop();app.SettingsChanged-=ConfigureDisplayFollow;shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
+    public void Cleanup(){pointerCheck.Stop();app.SettingsChanged-=ConfigureDisplayFollow;shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();tuckMotion.Dispose();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
 }

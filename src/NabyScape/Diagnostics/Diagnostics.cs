@@ -47,6 +47,7 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--interaction-hotfix-only")){await InteractionHotfixDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--showcase")){await ShowcaseDiagnostics.Run(app,overlay,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--stage6-only")){await Task.Delay(500);await Stage6Diagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--integration-settings-only")){await IntegrationSettingsDiagnostics.Run(app,overlay,directory,Check);return;}

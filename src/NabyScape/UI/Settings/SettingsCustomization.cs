@@ -64,6 +64,9 @@ public sealed partial class SettingsWindow
     private void HoverPageSettings()
     {
         var s=app.Settings;
+        var availability=UI.Text("",11,UI.Muted);
+        void CountPages()=>availability.Text=$"{HoverPagePolicy.Pages(s).Length} available pages · independent of main-panel widgets. Disabled individual tools are excluded. Clipboard capture has its own switch.";
+        CountPages();
         var views=new StackPanel{MaxWidth=600,HorizontalAlignment=HorizontalAlignment.Stretch};
         for(int i=0;i<s.HoverViews.Count;i++)
         {
@@ -71,12 +74,13 @@ public sealed partial class SettingsWindow
             var row=new Grid{Margin=new(0,3,0,3)};row.ColumnDefinitions.Add(new(){Width=new GridLength(26)});row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(56)});row.ColumnDefinitions.Add(new(){Width=new GridLength(64)});
             row.Children.Add(UI.Text((i+1).ToString(),11,UI.Muted));
             var show=UI.Button(title,()=>{previewMode="Hover";previewContent=title=="Clipboard"?"Smart clipboard":title;RefreshPreview();});show.Content=title;show.Background=Brushes.Transparent;show.HorizontalContentAlignment=HorizontalAlignment.Stretch;show.Padding=new(4,6,4,6);show.Margin=new(0);show.MinHeight=32;show.FontSize=12;show.ToolTip="Preview "+title;Grid.SetColumn(show,1);row.Children.Add(show);
-            var enabled=new CheckBox{IsChecked=item.Enabled,VerticalAlignment=VerticalAlignment.Center,MinHeight=32,Height=32,Margin=new(0,0,10,0)};UI.Named(enabled,"Show "+title+" in hover previews");enabled.ToolTip="Show "+title;enabled.Click+=(_,_)=>{item.Enabled=enabled.IsChecked==true;Save();};Grid.SetColumn(enabled,2);row.Children.Add(enabled);
+            if(!HoverPagePolicy.Available(s,item.Id)){show.Content=title+" · tool off";show.ToolTip="Enable "+Settings.ToolNames[item.Id]+" in Individual tools to use this hover page.";}
+            var enabled=new CheckBox{IsChecked=item.Enabled,VerticalAlignment=VerticalAlignment.Center,MinHeight=32,Height=32,Margin=new(0,0,10,0)};UI.Named(enabled,"Show "+title+" in hover previews");enabled.ToolTip="Show "+title;enabled.Click+=(_,_)=>{item.Enabled=enabled.IsChecked==true;Save();CountPages();};Grid.SetColumn(enabled,2);row.Children.Add(enabled);
             var controls=UI.Row(UI.Button("Move up "+title,()=>Move(s.HoverViews,index,-1)),UI.Button("Move down "+title,()=>Move(s.HoverViews,index,1)));controls.VerticalAlignment=VerticalAlignment.Center;
             for(int k=0;k<2;k++){var button=(Button)controls.Children[k];var icon=Icons.Create("chevron",10);icon.RenderTransformOrigin=new(.5,.5);icon.RenderTransform=new RotateTransform(k==0?180:0);button.Content=icon;button.Width=28;button.MinHeight=28;button.Padding=new(0);button.Margin=new(2,0,0,0);button.Tag=new CornerRadius(7);button.ToolTip=k==0?"Earlier in the swipe order":"Later in the swipe order";}
             ((Button)controls.Children[0]).IsEnabled=i>0;((Button)controls.Children[1]).IsEnabled=i<s.HoverViews.Count-1;Grid.SetColumn(controls,3);row.Children.Add(controls);views.Children.Add(row);
         }
-        page.Children.Add(Section("Hover pages",UI.Text("Scroll through these pages in this order. Click a name to preview it; use the arrows to reorder. Switch off pages you do not need.",11,UI.Muted),views));
+        page.Children.Add(Section("Hover pages",UI.Text("Scroll through these pages in this order. Click a name to preview it; use the arrows to reorder. Switch off pages you do not need.",11,UI.Muted),availability,views));
 
     }
     private void RenderSettingsPreview()

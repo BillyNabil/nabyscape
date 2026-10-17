@@ -15,6 +15,9 @@ internal static class AutoTuckPolicy
 public sealed partial class OverlayWindow
 {
     private readonly TranslateTransform tuckSlide=new();
+    private readonly SurfaceMotion tuckMotion=new();
+    private double tuckDestination;
+    internal bool TuckMoving=>tuckMotion.Active;
     private bool tucked,tuckPreview,manualTuck;
     private bool TuckRequested=>manualTuck || app.Settings.AlwaysTucked || environmentHidden;
     internal bool ManualTuck=>manualTuck;
@@ -43,15 +46,21 @@ public sealed partial class OverlayWindow
     private void SetTucked(bool value)
     {
         bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();
-        if(value)
+        double destination=value?AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge):0;
+        if(!changed && Math.Abs(destination-tuckDestination)<.001 && (Motion.Enabled || !tuckMotion.Active))return;
+        tuckDestination=destination;
+        if(value && changed)
         {
-            // Snap the compact silhouette before translating. No render loop remains behind the edge.
-            motion.Dispose();motion.Snap(surface,IslandSurface.SurfaceWidthProperty,app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,app.Settings.Height);motion.Snap(surface,IslandSurface.GlassLiftProperty,0);
+            // Contract and translate from the current display state, including a rapid reversal.
+            motion.Go(surface,IslandSurface.SurfaceWidthProperty,app.Settings.Width,app.Settings.AnimationMs);
+            motion.Go(surface,IslandSurface.SurfaceHeightProperty,app.Settings.Height,app.Settings.AnimationMs);
+            motion.Go(surface,IslandSurface.GlassLiftProperty,0,app.Settings.AnimationMs);
             scroll.Visibility=peekPanel.Visibility=Visibility.Collapsed;
             compact.BeginAnimation(OpacityProperty,null);compact.Opacity=1;compact.IsHitTestVisible=true;
             InvalidateSystemMonitor();StopLiveRendering();liveTick.Stop();ClearFeedback();
         }
-        tuckSlide.Y=value?AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge):0;
+        if(userHidden || !Motion.Enabled){tuckMotion.Dispose();tuckSlide.Y=destination;}
+        else tuckMotion.Go(tuckSlide,TranslateTransform.YProperty,destination,app.Settings.AnimationMs);
         if(changed && !value)ConfigureLiveActivity();
     }
     internal void RevealTuckedPreview()

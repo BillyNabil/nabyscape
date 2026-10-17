@@ -33,6 +33,7 @@ internal static class SelfTests
         PerformanceTests.Run(Test);
         LauncherTests.Run(Test);
         SettingsUxTests.Run(Test);
+        InteractionHotfixTests.Run(Test);
         PersistenceTests.Run(Test);
         UpdateTests.Run(Test);
         NotificationDownloadTests.Run(Test);

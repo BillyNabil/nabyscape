@@ -13,8 +13,11 @@ internal static class MixerRowLayoutTests
         const string longName="An exceptionally long application name that cannot fit inside the mixer header";
         var item=new MixerItem(new(MixerScope.Apps,"output","layout-only-session"),longName,"A long headphone output name",1,false);
         // Exercise the same stacked row at narrow and default widths, including repeated resizing.
-        var mute=new Button{Content=Icons.Create("volume",14),MinHeight=28,Padding=new Thickness(3)};
+        var mute=new Button{Content=Icons.Create("volume",16),MinHeight=28,Padding=new Thickness(3)};
         var (row,slider,percent)=OverlayWindow.CreateMixerRowLayout(item,mute);
+        check("Mixer uses an app monogram and a legible 16 DIP mute glyph",row.Children[0] is MixerAppIcon && mute.Content is FrameworkElement glyph && glyph.Width==16 && glyph.Height==16);
+        var (outputRow,_,_)=OverlayWindow.CreateMixerRowLayout(item with{Target=new(MixerScope.Outputs,"output")},new Button());
+        check("Mixer output identity uses a speaker rather than an app fallback",outputRow.Children[0] is not MixerAppIcon);
         foreach(double width in new[]{193.6,302d,193.6})
         {
             row.Measure(new Size(width,double.PositiveInfinity));

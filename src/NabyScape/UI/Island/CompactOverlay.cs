@@ -41,7 +41,19 @@ public sealed partial class OverlayWindow
     internal string ActivePage=>activePage;
     private static string PageFor(string widget)=>widget switch{"media" or "volume"=>"media","timer" or "focus" or "stopwatch"=>"focus","shortcuts"=>"access","tools"=>"tools",_=>"status"};
     private static string PageName(string page)=>page switch{"media"=>"Media","focus"=>"Focus","status"=>"Status","tools"=>"Tools",_=>"Launch"};
-    private bool WidgetOn(string id)=>app.Settings.Widgets.Any(w=>w.Enabled && w.Id==id);
+    private string? hoverPanelWidget;
+    private bool WidgetOn(string id)=>id==hoverPanelWidget || app.Settings.Widgets.Any(w=>w.Enabled && w.Id==id);
+    private IEnumerable<WidgetSetting> PanelWidgets=>app.Settings.Widgets.Where(w=>w.Enabled || w.Id==hoverPanelWidget);
+    private void OpenHoverPanel(string widget,bool activate=true)
+    {
+        string page=PageFor(widget);
+        bool hidden=!app.Settings.Widgets.Any(w=>w.Enabled && w.Id==widget);
+        if(hoverPanelWidget!=(hidden?widget:null))
+        {FlushNotes();hoverPanelWidget=hidden?widget:null;activePage=page;BuildBody();}
+        Reveal(activate);
+        if(app.Settings.CompactLayout)SelectPage(page,false);
+        scroll.ScrollToTop();UpdateSystemMonitor();
+    }
     private void InitializeCompactInteraction()
     {
         root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;EnsurePeekDeck();if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !TuckRequested)hoverDelay.Start();};
@@ -86,7 +98,7 @@ public sealed partial class OverlayWindow
     {
         if(!peeking || noticeShowing)return;
         UpdatePeekDeck();
-        bool media=WidgetOn("media") && app.Media.Available;ApplyMediaTypography(peekTitle,media && app.Settings.BoldMediaTitle);
+        bool media=app.Media.Available;ApplyMediaTypography(peekTitle,media && app.Settings.BoldMediaTitle);
         peekArt.Visibility=media && app.Media.Artwork!=null?Visibility.Visible:Visibility.Collapsed;SwapArtwork(peekArt,media?app.Media.Artwork:null);
         peekFallback.Visibility=peekArt.Visibility==Visibility.Visible?Visibility.Collapsed:Visibility.Visible;
         var now=DateTimeOffset.Now;
@@ -115,14 +127,14 @@ public sealed partial class OverlayWindow
         navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});navigation.ColumnDefinitions.Add(new());navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
         var settings=Icons.Button("settings","Settings",app.ShowSettings,false,28);settings.Margin=new(0);settings.Background=Brushes.Transparent;Grid.SetColumn(settings,2);navigation.Children.Add(settings);
         if(bodyWidth<250){navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});Grid.SetRow(settings,0);}
-        int categoryCount=Math.Max(1,app.Settings.Widgets.Where(w=>w.Enabled).Select(w=>PageFor(w.Id)).Distinct().Count());
+        int categoryCount=Math.Max(1,PanelWidgets.Select(w=>PageFor(w.Id)).Distinct().Count());
         var tabRow=new System.Windows.Controls.Primitives.UniformGrid{Columns=categoryCount,Rows=1,Width=Math.Min(bodyWidth-(bodyWidth<250?0:56),categoryCount*(app.Settings.CategoryStyle=="Icons"?40:48)),HorizontalAlignment=HorizontalAlignment.Center};Grid.SetColumn(tabRow,bodyWidth<250?0:1);if(bodyWidth<250){Grid.SetColumnSpan(tabRow,3);Grid.SetRow(tabRow,1);}KeyboardNavigation.SetDirectionalNavigation(tabRow,KeyboardNavigationMode.Cycle);navigation.Children.Add(tabRow);body.Children.Add(navigation);body.Children.Add(compactPageHost);
         bodyReflow.Add(()=>
         {
             bool narrow=bodyWidth<250;navigation.Margin=new(0,0,0,app.Settings.SectionGap);navigation.RowDefinitions.Clear();if(narrow){navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});}
             Grid.SetRow(settings,0);Grid.SetColumn(tabRow,narrow?0:1);Grid.SetColumnSpan(tabRow,narrow?3:1);Grid.SetRow(tabRow,narrow?1:0);tabRow.Width=Math.Min(bodyWidth-(narrow?0:56),categoryCount*(app.Settings.CategoryStyle=="Icons"?40:48));
         });
-        foreach(string page in app.Settings.Widgets.Where(w=>w.Enabled).Select(w=>PageFor(w.Id)).Distinct())
+        foreach(string page in PanelWidgets.Select(w=>PageFor(w.Id)).Distinct())
         {
             FrameworkElement view;if(page==activePage)view=BuildCompactPage(page);else{view=new Border();pendingCompactPages.Add(page);}view.Visibility=Visibility.Collapsed;compactPages[page]=view;compactPageHost.Children.Add(view);
             var tab=UI.Button(PageName(page),()=>SelectPage(page));tab.Padding=new(8,6,8,6);tab.FontSize=10.5;tab.MinHeight=30;tab.Margin=new(0,0,4,0);tab.Tag=new CornerRadius(15);StyleCategory(tab,page);compactTabs[page]=tab;tabRow.Children.Add(tab);
@@ -174,8 +186,8 @@ public sealed partial class OverlayWindow
         }
         if(page=="focus")
         {
-            var row=new Grid();bool stacked=bodyWidth<310 || app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus")>2;int count=app.Settings.Widgets.Count(w=>w.Enabled && PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
-            foreach(var widget in app.Settings.Widgets.Where(w=>w.Enabled && PageFor(w.Id)=="focus"))
+            var row=new Grid();bool stacked=bodyWidth<310 || PanelWidgets.Count(w=>PageFor(w.Id)=="focus")>2;int count=PanelWidgets.Count(w=>PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
+            foreach(var widget in PanelWidgets.Where(w=>PageFor(w.Id)=="focus"))
             {
                 if(widget.Id=="stopwatch"){var watchModule=new Border{Child=new StopwatchView(app),Margin=new(0,12,0,4)};if(stacked)Grid.SetRow(watchModule,column++);else Grid.SetColumn(watchModule,column++);row.Children.Add(watchModule);continue;}
                 bool timer=widget.Id=="timer";var contents=new StackPanel();var heading=UI.Heading(timer?"Timer":"Focus",13);heading.FontWeight=FontWeights.SemiBold;contents.Children.Add(heading);
@@ -205,7 +217,7 @@ public sealed partial class OverlayWindow
         }
         if(page=="status")
         {
-            var panel=new StackPanel();foreach(var widget in app.Settings.Widgets.Where(w=>w.Enabled && PageFor(w.Id)=="status"))
+            var panel=new StackPanel();foreach(var widget in PanelWidgets.Where(w=>PageFor(w.Id)=="status"))
             {
                 switch(widget.Id)
                 {

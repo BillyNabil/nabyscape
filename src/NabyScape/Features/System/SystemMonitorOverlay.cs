@@ -60,7 +60,7 @@ public sealed partial class OverlayWindow
         Grid.SetRow(monitorDetailScroll,1);panel.Children.Add(monitorDetailScroll);SelectMonitorTab(monitorTabs.ContainsKey(monitorTab)?monitorTab:"overview");return panel;
     }
 
-    private bool SystemMonitorVisible=>!monitorClosed && expanded && app.Settings.CompactLayout && !commandOpen && activePage=="status" && WidgetOn("system") && IsVisible && monitorRows.IsVisible && monitorRows.IsDescendantOf(body);
+    private bool SystemMonitorVisible=>!monitorClosed && expanded && (app.Settings.CompactLayout || hoverPanelWidget=="system") && !commandOpen && activePage=="status" && WidgetOn("system") && IsVisible && monitorRows.IsVisible && monitorRows.IsDescendantOf(body);
 
     private void InvalidateSystemMonitor()
     {

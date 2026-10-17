@@ -106,9 +106,9 @@ public sealed partial class OverlayWindow
         mute=MixerButton(muted?"\uE74F":"\uE767",()=>
         {
             if(!ApplyMixer(item.Target,null,!muted))return;
-            muted=!muted;mute!.Content=Icons.Create(muted?"muted":"volume",14);UI.Named(mute,accessible+" "+(muted?"unmute":"mute"));
+            muted=!muted;Motion.Icon(mute!,muted?"muted":"volume",16);UI.Named(mute!,accessible+" "+(muted?"unmute":"mute"));
         });UI.Named(mute,accessible+" "+(muted?"unmute":"mute"));
-        mute.Content=Icons.Create(muted?"muted":"volume",14);mute.FontSize=13;mute.Padding=new(3);mute.ToolTip=accessible+" mute / unmute";
+        Motion.Icon(mute,muted?"muted":"volume",16);mute.FontSize=13;mute.Padding=new(3);mute.ToolTip=accessible+" mute / unmute";
         var (panel,slider,percent)=CreateMixerRowLayout(item,mute);
         bool pending=false,refreshing=false;
         slider.ValueChanged+=(_,_)=>{percent.Text=Math.Round(slider.Value)+"%";if(!refreshing)pending=true;};
@@ -118,7 +118,7 @@ public sealed partial class OverlayWindow
         slider.LostKeyboardFocus+=(_,_)=>Commit();
         return (panel,latest=>
         {
-            muted=latest.Muted;mute.Content=Icons.Create(muted?"muted":"volume",14);UI.Named(mute,accessible+" "+(muted?"unmute":"mute"));
+            muted=latest.Muted;Motion.Icon(mute,muted?"muted":"volume",16);UI.Named(mute,accessible+" "+(muted?"unmute":"mute"));
             refreshing=true;try{slider.Value=latest.Volume*100;}finally{refreshing=false;}
         });
     }
@@ -136,7 +136,7 @@ public sealed partial class OverlayWindow
         {
             var output=UI.Text(item.OutputName,10,UI.Muted);output.TextTrimming=TextTrimming.CharacterEllipsis;output.TextWrapping=TextWrapping.NoWrap;output.ToolTip=item.OutputName;header.Children.Add(output);
         }
-        FrameworkElement icon=item.Target.Scope==MixerScope.Apps && !string.IsNullOrWhiteSpace(item.ProcessPath)?new ShortcutIcon(new Shortcut{Name=item.Name,Target=item.ProcessPath}):Icons.Create(item.Target.Scope==MixerScope.Apps?"nav-launch":"volume",16,UI.Muted);
+        FrameworkElement icon=item.Target.Scope==MixerScope.Apps?new MixerAppIcon(item):Icons.Create("volume",20,UI.Muted);
         icon.Width=20;icon.Height=20;icon.VerticalAlignment=VerticalAlignment.Center;icon.Margin=new(0,0,8,0);
         var percent=UI.Text(Math.Round(item.Volume*100)+"%",11,UI.Muted);percent.Width=38;percent.TextAlignment=TextAlignment.Right;percent.VerticalAlignment=VerticalAlignment.Center;
         var slider=new Slider{Minimum=0,Maximum=100,Value=item.Volume*100,SmallChange=1,LargeChange=5,TickFrequency=1,IsSnapToTickEnabled=true,IsMoveToPointEnabled=true,Height=24,VerticalAlignment=VerticalAlignment.Center};UI.Named(slider,accessible+" volume percent");slider.ToolTip=accessible+" volume";

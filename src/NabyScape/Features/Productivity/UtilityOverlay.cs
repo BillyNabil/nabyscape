@@ -17,7 +17,7 @@ public sealed partial class OverlayWindow
     private string taskDraft="";
     private bool utilityMutating;
     private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links") };
-    private bool ToolOn(string id)=>WidgetOn("tools") && app.Settings.ToolEnabled(id);
+    private bool ToolOn(string id)=>app.Settings.ToolEnabled(id);
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private ContextMenu? audioMenu;
     private FrameworkElement BuildToolsPage()
@@ -111,7 +111,7 @@ public sealed partial class OverlayWindow
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(!WidgetOn("tools") || mode!="home" && !ToolOn(mode))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();Reveal(activate);if(app.Settings.CompactLayout)SelectPage("tools");RefreshTools();}
+    {if(mode!="home" && !ToolOn(mode))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();OpenHoverPanel("tools",activate);RefreshTools();}
     private void RefreshTools()
     {
 

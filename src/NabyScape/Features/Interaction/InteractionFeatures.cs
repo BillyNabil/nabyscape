@@ -99,7 +99,7 @@ public sealed partial class OverlayWindow
         if(menu.Items.Count==0)menu.Items.Add(new MenuItem{Header="No media sessions",IsEnabled=false});
         menu.Closed+=(_,_)=>{if(audioMenu==menu)audioMenu=null;};menu.IsOpen=true;
     }
-    internal bool SystemSummaryVisible=>IsVisible && (peeking && satellitePreview && satelliteKind=="clock" && peekId=="system" || WidgetOn("system") && (SatelliteNeedsSystemSamples || peeking && peekId=="system" || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen)));
+    internal bool SystemSummaryVisible=>IsVisible && (peeking && peekId=="system" || WidgetOn("system") && (SatelliteNeedsSystemSamples || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen)));
     private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && !peeking && surface.SurfaceHeight<=app.Settings.Height+.5 && surface.SurfaceWidth<=app.Settings.Width+.5 && !FeedbackVisible && !TuckRequested && !userHidden && IsVisible;
     private CalendarEvent? SatelliteEvent=>app.Calendar.Events.Where(e=>e.End>DateTimeOffset.UtcNow && e.Start<=DateTimeOffset.UtcNow.AddHours(24)).OrderBy(e=>e.Start).FirstOrDefault();
     private string? SelectedSatellite=>SecondaryActivity.SelectSource(app.Settings.SatelliteSource,SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")),SatelliteEvent!=null,WidgetOn("system"),WidgetOn("tools"),WidgetOn("clock"));
@@ -183,7 +183,7 @@ public sealed partial class OverlayWindow
     internal void OpenFeaturePage(string kind)
     {
         if(kind is "notes" or "calendar" or "files")ShowTools(kind);
-        else{Reveal();SelectPage(kind=="system"?"status":kind is "timer" or "focus"?"focus":"media");}
+        else OpenHoverPanel(kind);
     }
     private void CleanupInteractionFeatures(){satelliteDismiss.Stop();CancelCoverGesture();satelliteWindow?.Close();satelliteWindow=null;}
 }

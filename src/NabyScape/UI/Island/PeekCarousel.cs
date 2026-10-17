@@ -43,7 +43,7 @@ public sealed partial class OverlayWindow
     internal string[] HoverDeckIds=>PeekPages();
     internal bool PeekTabSafe=>peekViews.Where(pair=>pair.Key!=peekId).All(pair=>KeyboardNavigation.GetTabNavigation(pair.Value)==KeyboardNavigationMode.None);
     internal bool PeekMoving=>peekMoves.Values.Any(move=>move.HasAnimatedProperties);
-    private string[] PeekPages()=>app.Settings.HoverViews.Where(view=>(view.Enabled || satellitePreview && view.Id==SatellitePeekKind || view.Id=="files" && (fileDragActive || shelfDropBrowsing)) && (view.Id=="system" && satellitePreview && satelliteKind=="clock" || (view.Id=="media"?(WidgetOn("media") || WidgetOn("volume")):WidgetOn(view.Id is "calendar" or "notes" or "files" or "clips" or "tasks"?"tools":view.Id))) && (!(view.Id is "calendar" or "notes" or "files" or "clips" or "tasks") || ToolOn(view.Id))).Select(view=>view.Id).ToArray();
+    private string[] PeekPages()=>app.Settings.HoverViews.Where(view=>(view.Enabled || satellitePreview && view.Id==SatellitePeekKind || view.Id=="files" && (fileDragActive || shelfDropBrowsing)) && HoverPagePolicy.Available(app.Settings,view.Id)).Select(view=>view.Id).ToArray();
     private static string PeekName(string id)=>id switch{"media"=>"Music","timer"=>"Timer","stopwatch"=>"Stopwatch","focus"=>"Focus","calendar"=>"Calendar","notes"=>"Note","system"=>"System","clips"=>"Clipboard","tasks"=>"Tasks",_=>"Shelf"};
     private bool peekInitialized;
     private void EnsurePeekDeck(){if(peekInitialized)return;peekInitialized=true;InitializePeekDeck();}
@@ -169,8 +169,12 @@ public sealed partial class OverlayWindow
         if(peekViews["media"] is Grid media && media.Children.OfType<Grid>().LastOrDefault() is Grid controls)
         {bool narrow=safe.Width<260;controls.ColumnDefinitions[0].Width=new(narrow?0:34);controls.ColumnDefinitions[1].Width=new(narrow?0:34);peekTrackPrevious.Visibility=peekTrackNext.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;}
     }
-    private void OpenPeekPage()
-    {if(peekId is "notes" or "calendar" or "files" or "clips" or "tasks"){ShowTools(peekId);}else{Reveal();SelectPage(peekId=="system"?"status":peekId=="media"?"media":"focus");}}
+    internal void OpenPeekPage()
+    {
+        if(!HoverPagePolicy.Available(app.Settings,peekId))return;
+        if(HoverPagePolicy.IsTool(peekId)){ShowTools(peekId);return;}
+        OpenHoverPanel(peekId);
+    }
     private void AddPeekClock(string id)
     {
         var page=new Grid();page.RowDefinitions.Add(new(){Height=new GridLength(24)});page.RowDefinitions.Add(new(){Height=new GridLength(48)});page.RowDefinitions.Add(new(){Height=new GridLength(12)});page.RowDefinitions.Add(new(){Height=new GridLength(32)});
