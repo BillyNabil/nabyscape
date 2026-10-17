@@ -48,3 +48,15 @@ The first focused rerun passed route and mixer visibility, then failed with a sh
 - Parent coordinated both short slots and preserved the daily settings hash. Final command uses the same SDK DLL with `--diagnostics C:/Users/billy/Documents/Codex/2026-10-14/ra/work/nabyscape/artifacts-interaction-classic-mixer-fixture-final --interaction-classic-mixer-only --background`. PASS, exit 0, **6 checks / 0 failures**, in 3.11 seconds. Report: `artifacts-interaction-classic-mixer-fixture-final/integration-report.txt`.
 - Checks: classic hidden Media with Volume enabled; visible mixer; Back restores Media; reopening the same hidden Media target exits mixer; another hidden Timer target exits mixer; Timer → mixer → Back retains Timer.
 - Same six checks are shared with the full interaction fixture. No unrelated suite/fixture repetition. The immediately preceding self-contained build passed, but is superseded again by this source correction; final package rebuild follows this commit.
+
+## Final verified package
+
+Combined implementation and review corrections through `3aa3402ced0a7a68b221aff846c7d5824e11e1ed` were approved by fresh review. Final authorized `./build.ps1 -Dotnet ../tools/dotnet/dotnet.exe -OutputDirectory artifacts-interaction-hotfix-final` completed exit 0: **49 registered scene sections; 379 published apphost self-tests passed / 0 failed**. No installer execution or installed-file swap by implementer.
+
+- Executable: `artifacts-interaction-hotfix-final/NabyScape.exe`, 82,613,173 bytes, file version **2.5.0.0**.
+- SHA256: `D1A49ACCDB11653FF97BB126960E43DD089C511DECC43BFE15D31C9AD5B9D998`.
+- Executable LastWriteTimeUtc: **2026-10-17 23:38:35**.
+- Fresh `artifacts-interaction-hotfix-final/unit-report.txt` LastWriteTimeUtc: **2026-10-17 23:39:04**, `RESULT: 379 passed, 0 failed`.
+- Parent confirmed the daily settings hash unchanged after each coordinated fixture and restored the process it stopped. Parent owns any subsequent local EXE swap and rollback backup.
+
+This final record is documentation only; no implementation changed after the verified package build.
