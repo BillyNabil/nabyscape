@@ -59,7 +59,28 @@ internal static class AssistantCharacterDiagnostics
                 // WPF supports frame metadata but not GIF global metadata. Add the
                 // standard loop extension after its logical screen/global palette.
                 bytes[4]=(byte)'9';using var looped=new MemoryStream();looped.Write(bytes,0,header);
-                looped.Write(new byte[]{0x21,0xff,0x0b});looped.Write(System.Text.Encoding.ASCII.GetBytes("NETSCAPE2.0"));looped.Write(new byte[]{3,1,0,0,0});looped.Write(bytes,header,bytes.Length-header);
+                looped.Write(new byte[]{0x21,0xff,0x0b});looped.Write(System.Text.Encoding.ASCII.GetBytes("NETSCAPE2.0"));looped.Write(new byte[]{3,1,0,0,0});
+                int SkipBlocks(int offset){while(true){if(offset>=bytes.Length)throw new InvalidDataException("Truncated GIF block.");int length=bytes[offset++];if(length==0)return offset;offset+=length;if(offset>bytes.Length)throw new InvalidDataException("Truncated GIF payload.");}}
+                // WIC can drop frame delay metadata. Emit an explicit 40ms control
+                // extension for each full opaque frame, preserving its image data.
+                for(int offset=header;offset<bytes.Length;)
+                {
+                    int start=offset;
+                    if(bytes[offset]==0x3b){looped.WriteByte(0x3b);break;}
+                    if(bytes[offset]==0x21)
+                    {
+                        bool control=bytes[offset+1]==0xf9;offset=SkipBlocks(offset+2);
+                        if(!control)looped.Write(bytes,start,offset-start);
+                    }
+                    else if(bytes[offset]==0x2c)
+                    {
+                        int packed=bytes[offset+9];offset+=10;
+                        if((packed&128)!=0)offset+=3*(1<<((packed&7)+1));
+                        offset=SkipBlocks(offset+1);
+                        looped.Write(new byte[]{0x21,0xf9,4,8,4,0,0,0});looped.Write(bytes,start,offset-start);
+                    }
+                    else throw new InvalidDataException("Unexpected GIF block.");
+                }
                 File.WriteAllBytes(Path.Combine(directory,"character-motion.gif"),looped.ToArray());
             }
             var sheetImage=new RenderTargetBitmap(960,436,96,96,PixelFormats.Pbgra32);sheetImage.Render(sheet);Write(sheetImage,Path.Combine(directory,"character-expressions.png"));
