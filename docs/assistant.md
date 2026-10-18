@@ -37,7 +37,7 @@ Expand **Live voice configuration** in Providers. Choose **OpenAIRealtime** or *
 
 Press **Start voice** when ready. The microphone starts only after the provider acknowledges the connection. The character responds to listening, thinking, speaking and action review. Interrupting a reply clears pending playback. Audio uses the Windows default input and output devices.
 
-**Back to island** collapses the chat while keeping live voice running; the closed character shows a microphone indicator. New replies can emerge briefly in the island without taking keyboard focus. **Stop**, **End voice**, **Escape** in AI chat, manually hiding NabyScape, or quitting ends the session and turns microphone, sharing and computer control off. A tucked active session can be reached by hovering the top edge. Reduce Motion disables continuous character motion; inactive or invisible characters have no continuous render callback.
+**Back to island** collapses the chat while keeping live voice running; the closed character shows a microphone indicator. New replies can emerge briefly in the island without taking keyboard focus. **Stop**, **End voice**, **Escape** in AI chat, manually hiding NabyScape, Alt+F4 or quitting ends the session and turns microphone, sharing and computer control off. A tucked active session can be reached by hovering the top edge. Reduce Motion disables continuous character motion; inactive or invisible characters have no continuous render callback.
 
 ## Share a display
 
