@@ -1,8 +1,8 @@
-# AI companion · v2.6.3 candidate
+# AI companion · v2.6.3
 
 An optional companion inside NabyScape: text chat, live voice, a reactive character, selected-display context, and actions you review before they run. The island, audio controls and local tools continue to work without AI.
 
-This is a local development candidate. The public installer remains v2.5.1 until the candidate is released. No API key or AI subscription is bundled.
+Included in the public v2.6.3 release. No API key or AI subscription is bundled.
 
 ## Get started
 

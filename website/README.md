@@ -47,6 +47,6 @@ See `docs/showcase.md` and `docs/verification-2.5.0.md` for capture and verifica
 
 ## Version truth
 
-Public stable is **v2.4.2**. Its installer, portable ZIP, checksums and release notes use verified GitHub release paths. **v2.5.0 source is on main; no public v2.5 release is published.** Native Settings materials, updates/notices, download activity, stopwatch, follow-cursor placement and preference reset/migration are labeled source-preview features. Public v2.4.2 data uses `%LOCALAPPDATA%\LumaIsland`; v2.5 source migrates to `%LOCALAPPDATA%\NabyScape`. This website does not publish an application release.
+Public stable is **v2.6.3**. Its installer, portable ZIP, checksums and release notes are published in the [GitHub release](https://github.com/BillyNabil/nabyscape/releases/tag/v2.6.3). The optional AI companion has no bundled provider key; users provide their own, stored per Windows user in Credential Manager. The site itself does not store or handle API keys.
 
 Hosting identity, credentials and publishing state are managed separately and are not included in this source snapshot. Public hosted URL: https://nabyscape.sigma-bw-0740.chatgpt.site/.

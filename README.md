@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-252c36?style=flat-square" alt="MIT license"></a>
 </p>
 
-**Latest release: v2.5.1.** Independent hover pages, smooth tuck transitions, clearer mixer icons, and the new local tools are included. [What changed →](docs/releases/v2.5.1.md)
+**Latest release: v2.6.3.** Adds the optional AI companion to the island, with a reactive character, chat, configurable providers and live voice. API keys are not bundled; you provide your own and NabyScape stores them in Windows Credential Manager. [Release notes →](https://github.com/BillyNabil/nabyscape/releases/tag/v2.6.3)
 
 ## Glance. Hover. Open.
 
@@ -89,9 +89,9 @@ The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel
 
 **Windows 11 x64.** The self-contained builds include .NET; no SDK is needed to run the app.
 
-- **[Download the v2.5.1 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.1/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
-- **[Download the v2.5.1 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.1/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
-- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.1/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.5.1) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+- **[Download the v2.6.3 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.6.3/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
+- **[Download the v2.6.3 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.6.3/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
+- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.6.3/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.6.3) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
 
 The installer is currently unsigned. Download from the official repository and review the version and checksums before running. Portable mode still stores data in your Windows user profile. Starting with Windows is optional and off by default. Closing Settings keeps NabyScape running; choose **Quit** from the tray to exit.
 
@@ -107,9 +107,9 @@ Global shortcuts are configurable. With cover gestures enabled, click closed art
 
 ## Local by design
 
-No NabyScape account or cloud sync is required. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. The app does not automatically fetch link previews.
+No NabyScape account or cloud sync is required. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. The AI companion is optional and uses a provider you configure. API keys are not bundled; Windows Credential Manager stores them for your Windows user. The app does not automatically fetch link previews.
 
-**Development preview · AI companion (v2.6.3 candidate):** a character in the top island, with hover greetings, inline chat, live voice, selected-display context and reviewed app/desktop actions using your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Initial provider verification →](docs/verification-assistant-2.6.0.md) · [Interactive character preview →](docs/verification-assistant-character-2.6.2.md) · [Settings and chat layout →](docs/verification-ai-settings-2.6.3.md). The public downloads above remain v2.5.1.
+**AI companion · v2.6.3:** a character in the top island, with hover greetings, inline chat, live voice, selected-display context and reviewed app/desktop actions using your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Initial provider verification →](docs/verification-assistant-2.6.0.md) · [Interactive character preview →](docs/verification-assistant-character-2.6.2.md) · [Settings and chat layout →](docs/verification-ai-settings-2.6.3.md). API keys are not bundled; they are stored in Windows Credential Manager on your PC.
 
 **v2.5.0** stores local data in `%LOCALAPPDATA%\NabyScape`. Upgrades copy and validate legacy data from `%LOCALAPPDATA%\LumaIsland`, preserving the original folder. The per-user install path and `luma.layout.v1` layout format remain compatible. [Privacy, migration and reset preservation rules →](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#privacy)
 
