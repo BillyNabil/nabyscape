@@ -15,6 +15,8 @@ internal static class AssistantVoiceTests
         internal readonly Channel<string?> Incoming = Channel.CreateUnbounded<string?>();
         internal readonly List<string> Sent = new();
         internal bool Ack = true, Aborted, Disposed, HoldConnect, HoldSend;
+        internal int SendDelayMs, EnteredSends;
+        internal TaskCompletionSource? SendGate;
         internal Uri? Endpoint;
         internal string? Key;
         internal bool Gemini;
@@ -22,7 +24,10 @@ internal static class AssistantVoiceTests
         { Endpoint = endpoint; Key = key; Gemini = gemini; if (HoldConnect) await Task.Delay(Timeout.Infinite, token); }
         public async Task Send(string json, CancellationToken token)
         {
+            Interlocked.Increment(ref EnteredSends);
             if (HoldSend) await Task.Delay(Timeout.Infinite, token);
+            if (SendGate != null) await SendGate.Task.WaitAsync(token);
+            if (SendDelayMs > 0) await Task.Delay(SendDelayMs, token);
             token.ThrowIfCancellationRequested(); lock (Sent) Sent.Add(json);
             if (Ack && (json.Contains("\"session.update\"") || json.Contains("\"setup\""))) Push(Gemini ? "{\"setupComplete\":{}}" : "{\"type\":\"session.updated\"}");
         }
@@ -53,6 +58,20 @@ internal static class AssistantVoiceTests
     private static void Reject<T>(Action action) where T : Exception
     { try { action(); } catch (T) { return; } throw new Exception("Expected voice rejection: " + typeof(T).Name); }
     private static Task Start(AssistantVoiceSession voice, AssistantProvider? provider = null, CancellationToken token = default) => voice.Start(provider ?? Provider(), "fixture-key", "Speak Indonesian", new[] { Tool }, new[] { new AssistantMessage("user", "hello"), new AssistantMessage("assistant", "hi") }, token);
+    private static async Task<AssistantCall> ReceiveCall(AssistantVoiceSession voice, Socket socket, string id)
+    {
+        var ready = new TaskCompletionSource<AssistantCall>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void GotCall(AssistantCall call) { if (call.Id == id) ready.TrySetResult(call); }
+        voice.ToolCall += GotCall;
+        try
+        {
+            socket.Push(socket.Gemini ? "{\"toolCall\":{\"functionCalls\":[{\"id\":\"" + id + "\",\"name\":\"inspect_app\",\"args\":{}}]}}"
+                : "{\"type\":\"response.function_call_arguments.done\",\"call_id\":\"" + id + "\",\"name\":\"inspect_app\",\"arguments\":\"{}\"}");
+            if (!socket.Gemini) socket.Push("{\"type\":\"response.done\",\"response\":{\"status\":\"completed\"}}");
+            return await ready.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        }
+        finally { voice.ToolCall -= GotCall; }
+    }
     internal static void Run(Action<string, Action> test)
     {
         void RunAsync(string name, Func<Task> action) => test(name, () => action().GetAwaiter().GetResult());
@@ -143,11 +162,22 @@ internal static class AssistantVoiceTests
                 await Until(() => audio.Disposed); Assert(!voice.Connected && !status.Contains("fixture-key") && !status.Contains("provider body"));
             }
         });
-        RunAsync("Voice output overflow ends session and unknown tool is never emitted", async () =>
+        RunAsync("Voice output overflow truncates one reply and keeps the session usable", async () =>
         {
-            var socket = new Socket(); var audio = new Audio { Overflow = true }; await using var voice = new AssistantVoiceSession(() => socket, () => audio);
-            int tools = 0; voice.ToolCall += _ => tools++;
-            await Start(voice); socket.Push("{\"type\":\"response.output_audio.delta\",\"delta\":\"AAAAAA==\"}"); await Until(() => audio.Disposed); Assert(!voice.Connected && tools == 0 && audio.Added == 4);
+            foreach (string protocol in AssistantVoiceSession.Protocols)
+            {
+                var socket = new Socket(); var audio = new Audio { Overflow = true }; await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                string status = ""; voice.Status += text => status = text;
+                await Start(voice, Provider(protocol));
+                if (protocol == "OpenAIRealtime") socket.Push("{\"type\":\"response.created\"}");
+                socket.Push(protocol == "GeminiLive" ? "{\"serverContent\":{\"modelTurn\":{\"parts\":[{\"inlineData\":{\"mimeType\":\"audio/pcm;rate=24000\",\"data\":\"AAAAAA==\"}}]}}}" : "{\"type\":\"response.output_audio.delta\",\"item_id\":\"audio-1\",\"delta\":\"AAAAAA==\"}");
+                await Until(() => status.Contains("playback limit")); Assert(voice.Connected && !audio.Disposed && audio.Added == 4 && audio.Cleared == 1);
+                if (protocol == "OpenAIRealtime") await Until(() => socket.Payloads().Any(p => p.Contains("conversation.item.truncate")));
+                audio.Overflow = false;
+                socket.Push(protocol == "GeminiLive" ? "{\"serverContent\":{\"turnComplete\":true}}" : "{\"type\":\"response.created\"}");
+                socket.Push(protocol == "GeminiLive" ? "{\"serverContent\":{\"modelTurn\":{\"parts\":[{\"inlineData\":{\"mimeType\":\"audio/pcm;rate=24000\",\"data\":\"AAAAAA==\"}}]}}}" : "{\"type\":\"response.output_audio.delta\",\"delta\":\"AAAAAA==\"}");
+                await Until(() => audio.Added == 8); Assert(voice.Connected); await voice.Stop();
+            }
         });
         RunAsync("Voice stop cancels connection before microphone creation", async () =>
         {
@@ -162,6 +192,18 @@ internal static class AssistantVoiceTests
             await Start(voice); socket.HoldSend = true;
             for (int i = 0; i < 15; i++) audio.Capture!(new byte[2400]);
             await Until(() => audio.Disposed); Assert(!voice.Connected && socket.Aborted);
+        });
+        RunAsync("Voice native capture cadence stays healthy with 10ms network send latency", async () =>
+        {
+            var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+            await Start(voice); socket.SendDelayMs = 10;
+            // The old send-plus-50ms delay accumulates more than ten queued frames.
+            for (int frame = 0; frame < 72; frame++)
+            {
+                audio.Capture!(new byte[2400]); await Task.Delay(50); Assert(voice.Connected);
+            }
+            await Until(() => socket.Payloads().Count(p => p.Contains("input_audio_buffer.append")) == 72);
+            Assert(!audio.Disposed); await voice.Stop();
         });
         RunAsync("Voice rejects unadvertised tool calls without executing or emitting them", async () =>
         {
@@ -178,9 +220,52 @@ internal static class AssistantVoiceTests
             foreach (var id in new[] { "call-a", "call-b", "call-b" }) socket.Push("{\"type\":\"response.function_call_arguments.done\",\"call_id\":\"" + id + "\",\"name\":\"inspect_app\",\"arguments\":\"{}\"}");
             socket.Push("{\"type\":\"response.done\",\"response\":{\"status\":\"completed\"}}");
             await Until(() => { lock (calls) return calls.Count == 2; });
-            await voice.SendToolResult(calls[0], "first", default); Assert(!socket.Payloads().Any(p => p.Contains("response.create")));
-            await voice.SendToolResult(calls[1], "second", default); Assert(socket.Payloads().Count(p => p.Contains("response.create")) == 1); await voice.Stop();
+            socket.SendDelayMs = 10;
+            await Task.WhenAll(voice.SendToolResult(calls[0], "first", default), voice.SendToolResult(calls[1], "second", default));
+            var sent = socket.Payloads().Where(p => p.Contains("function_call_output") || p.Contains("response.create")).ToArray();
+            Assert(sent.Length == 3 && sent[0].Contains("call-a") && sent[1].Contains("call-b") && sent[2].Contains("response.create")); await voice.Stop();
         });
+        RunAsync("Voice canceled unsent results remain retryable before and after acquiring send lock", async () =>
+        {
+            var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+            await Start(voice); var a = await ReceiveCall(voice, socket, "result-a"); var b = await ReceiveCall(voice, socket, "result-b");
+            var sendingGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); socket.SendGate = sendingGate;
+            int entered = socket.EnteredSends;
+            Task first = voice.SendToolResult(a, "first", default); await Until(() => socket.EnteredSends > entered);
+            using var canceled = new CancellationTokenSource();
+            Task second = voice.SendToolResult(b, "second", canceled.Token); canceled.Cancel();
+            try { await second; throw new Exception("Expected pending-send cancellation"); } catch (OperationCanceledException) { }
+            Assert(!voice.CallToken(b.Id).IsCancellationRequested);
+            sendingGate.TrySetResult(); await first; socket.SendGate = null;
+            Assert(!socket.Payloads().Any(p => p.Contains("response.create")));
+            await voice.SendToolResult(b, "second", default);
+            Assert(socket.Payloads().Count(p => p.Contains("function_call_output")) == 2 && socket.Payloads().Count(p => p.Contains("response.create")) == 1);
+            var c = await ReceiveCall(voice, socket, "result-c");
+            socket.SendGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); entered = socket.EnteredSends;
+            using var afterLock = new CancellationTokenSource(); Task third = voice.SendToolResult(c, "third", afterLock.Token);
+            await Until(() => socket.EnteredSends > entered); afterLock.Cancel();
+            try { await third; throw new Exception("Expected in-send cancellation"); } catch (OperationCanceledException) { }
+            Assert(!voice.CallToken(c.Id).IsCancellationRequested && !socket.Payloads().Any(p => p.Contains("result-c")));
+            socket.SendGate = null; await voice.SendToolResult(c, "third", default); Assert(socket.Payloads().Count(p => p.Contains("result-c")) == 1);
+            await voice.Stop();
+        });
+        foreach (string protocol in AssistantVoiceSession.Protocols)
+            RunAsync("Voice " + protocol + " cancels emitted tool tokens on server interruption new input and Stop", async () =>
+            {
+                var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                Assert(voice.CallToken("missing").IsCancellationRequested); await Start(voice, Provider(protocol));
+                var call = await ReceiveCall(voice, socket, "cancel-call"); CancellationToken token = voice.CallToken(call.Id); Assert(!token.IsCancellationRequested);
+                Task waitingForApproval = Task.Delay(Timeout.Infinite, token);
+                socket.Push(socket.Gemini ? "{\"toolCallCancellation\":{\"ids\":[\"cancel-call\"]}}" : "{\"type\":\"input_audio_buffer.speech_started\"}");
+                await Until(() => token.IsCancellationRequested);
+                try { await waitingForApproval; throw new Exception("Expected approval cancellation"); } catch (OperationCanceledException) { }
+                Assert(voice.CallToken(call.Id).IsCancellationRequested);
+                Reject<InvalidOperationException>(() => voice.SendToolResult(call, "stale", default).GetAwaiter().GetResult());
+                var next = await ReceiveCall(voice, socket, "typed-cancel"); CancellationToken nextToken = voice.CallToken(next.Id);
+                await voice.SendText("new input", default); Assert(nextToken.IsCancellationRequested);
+                var final = await ReceiveCall(voice, socket, "stop-cancel"); CancellationToken finalToken = voice.CallToken(final.Id);
+                await voice.Stop(); Assert(finalToken.IsCancellationRequested && voice.CallToken(final.Id).IsCancellationRequested);
+            });
         RunAsync("Voice stop cancels blocked send synchronously and restart has no stale callbacks", async () =>
         {
             var first = new Socket(); var second = new Socket(); var sockets = new Queue<Socket>(new[] { first, second }); var devices = new List<Audio>();
@@ -193,5 +278,15 @@ internal static class AssistantVoiceTests
         });
         test("Voice PCM meter measures signed samples including negative full scale", () =>
         { Assert(AssistantVoiceAudio.Peak(new byte[] { 0, 0, 0, 128 }, 4) == 1f); Assert(AssistantVoiceAudio.Peak(new byte[20], 20) == 0); });
+        test("Voice playback buffer accepts long response bursts and repeated generation clears", () =>
+        {
+            var buffer = new AssistantVoiceAudio.MeteredPcm(_ => { }); var second = new byte[48000]; second[0] = 32;
+            for (int i = 0; i < 45; i++) Assert(buffer.Append(second));
+            var heard = new byte[48000]; Assert(buffer.Read(heard, 0, heard.Length) == heard.Length && heard[0] == 32);
+            buffer.Clear(); Array.Fill(heard, (byte)255); buffer.Read(heard, 0, heard.Length); Assert(heard.All(value => value == 0));
+            for (int i = 0; i < 120; i++) Assert(buffer.Append(second)); Assert(!buffer.Append(second));
+            buffer.Clear(); Assert(buffer.Append(new byte[] { 64, 0 })); buffer.Read(heard, 0, heard.Length);
+            Assert(heard[0] == 64 && heard.Skip(1).All(value => value == 0));
+        });
     }
 }

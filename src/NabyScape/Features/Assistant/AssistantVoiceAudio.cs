@@ -45,7 +45,10 @@ internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
         lock (gate)
         {
             if (disposed) return;
-            output?.Stop(); pcm?.Clear(); output?.Play();
+            // Keep one playback worker alive. Stop/Play here can race the previous
+            // worker's PlaybackStopped event and leave the replacement silent.
+            // Clear generation-buffered PCM; at most the native 100ms tail remains.
+            pcm?.Clear();
         }
     }
     public void Dispose()
@@ -67,11 +70,14 @@ internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
         for (int i = 0; i + 1 < count; i += 2) max = Math.Max(max, Math.Abs((int)(short)(bytes[i] | bytes[i + 1] << 8)));
         return max / 32768f;
     }
-    private sealed class MeteredPcm(Action<float> level) : IWaveProvider
+    internal sealed class MeteredPcm(Action<float> level) : IWaveProvider
     {
         private readonly object sync = new();
-        private readonly BufferedWaveProvider buffer = new(new WaveFormat(24000, 16, 1)) { BufferDuration = TimeSpan.FromSeconds(4), ReadFully = true, DiscardOnBufferOverflow = false };
+        // Providers commonly stream many seconds of speech faster than playback.
+        // Two minutes of mono PCM16 is bounded to 5.76MB and supports ordinary replies.
+        private readonly BufferedWaveProvider buffer = new(new WaveFormat(24000, 16, 1)) { BufferDuration = TimeSpan.FromSeconds(120), ReadFully = true, DiscardOnBufferOverflow = false };
         private long consumed;
+        private int generation;
         public WaveFormat WaveFormat => buffer.WaveFormat;
         // WaveOut can have 100ms pending in native buffers. Report only conservatively heard audio.
         public int PlayedMilliseconds => Math.Max(0, (int)(Interlocked.Read(ref consumed) / 48) - 100);
@@ -83,19 +89,19 @@ internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
                 buffer.AddSamples(bytes, 0, bytes.Length); return true;
             }
         }
-        public void Clear() { lock (sync) { buffer.ClearBuffer(); Interlocked.Exchange(ref consumed, 0); } }
+        public void Clear() { lock (sync) { generation++; buffer.ClearBuffer(); Interlocked.Exchange(ref consumed, 0); } }
         public int Read(byte[] bytes, int offset, int count)
         {
-            int actual;
+            int actual, epoch;
             lock (sync)
             {
-                actual = Math.Min(count, buffer.BufferedBytes); buffer.Read(bytes, offset, count); Interlocked.Add(ref consumed, actual);
+                epoch = generation; actual = Math.Min(count, buffer.BufferedBytes); buffer.Read(bytes, offset, count); Interlocked.Add(ref consumed, actual);
             }
             // Never invoke app code on WaveOut's playback thread; Stop may join that thread.
             float peak = 0;
             for (int i = offset; i + 1 < offset + actual; i += 2) peak = Math.Max(peak, Math.Abs((int)(short)(bytes[i] | bytes[i + 1] << 8)) / 32768f);
             float value = peak;
-            ThreadPool.QueueUserWorkItem(_ => level(value));
+            ThreadPool.QueueUserWorkItem(_ => { if (Volatile.Read(ref generation) == epoch) level(value); });
             return count;
         }
     }

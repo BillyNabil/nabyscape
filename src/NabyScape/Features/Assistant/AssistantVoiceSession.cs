@@ -53,6 +53,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         internal readonly Channel<byte[]> Input = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(10) { SingleReader = true, SingleWriter = true, FullMode = BoundedChannelFullMode.Wait });
         internal readonly TaskCompletionSource Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal readonly Dictionary<string, AssistantCall> Pending = new(StringComparer.Ordinal);
+        internal readonly Dictionary<string, CancellationTokenSource> Calls = new(StringComparer.Ordinal);
         internal readonly HashSet<string> SeenCalls = new(StringComparer.Ordinal);
         internal readonly Queue<AssistantCall> ReadyCalls = new();
         internal readonly ManualResetEventSlim HardwareStopped = new(false);
@@ -75,6 +76,11 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     public event Action<string>? Status;
     public event Action<AssistantCall>? ToolCall;
     public event Action<float, bool>? Level;
+    public CancellationToken CallToken(string callId)
+    {
+        lock (gate)
+            return current is { Ended: false } s && s.Calls.TryGetValue(callId, out var call) ? call.Token : new CancellationToken(true);
+    }
 
     public async Task Start(AssistantProvider provider, string? apiKey, string instructions, IReadOnlyList<AssistantTool> tools,
         IReadOnlyList<AssistantMessage> history, CancellationToken cancellationToken)
@@ -153,19 +159,40 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         return SendBatch(s, new[] { s.Gemini ? JsonSerializer.Serialize(new { realtimeInput = new { video = new { mimeType = dataUrl[5..dataUrl.IndexOf(';')], data = dataUrl[(comma + 1)..] } } })
             : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "message", role = "user", content = new[] { new { type = "input_image", image_url = dataUrl } } } }) }, cancellationToken);
     }
-    public Task SendToolResult(AssistantCall call, string result, CancellationToken cancellationToken)
+    public async Task SendToolResult(AssistantCall call, string result, CancellationToken cancellationToken)
     {
         CheckText(result); var s = GetSession();
-        bool resume;
+        CancellationToken callToken;
         lock (gate)
         {
-            if (!s.Pending.TryGetValue(call.Id, out var expected) || expected != call) throw new InvalidOperationException("This voice tool request is no longer pending.");
-            s.Pending.Remove(call.Id);
-            resume = !s.ResponseActive && s.Pending.Count == 0;
+            if (!s.Pending.TryGetValue(call.Id, out var expected) || expected != call)
+                throw new InvalidOperationException("This voice tool request is no longer pending.");
+            callToken = s.Calls[call.Id].Token;
         }
-        return SendBatch(s, s.Gemini ? new[] { JsonSerializer.Serialize(new { toolResponse = new { functionResponses = new[] { new { id = call.Id, name = call.Name, response = new { result } } } } }) }
-            : resume ? new[] { JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "function_call_output", call_id = call.Id, output = result } }), "{\"type\":\"response.create\"}" }
-            : new[] { JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "function_call_output", call_id = call.Id, output = result } }) }, cancellationToken);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, s.Cancel.Token, callToken);
+        bool held = false;
+        try
+        {
+            await s.SendLock.WaitAsync(linked.Token).ConfigureAwait(false); held = true;
+            lock (gate)
+                if (!Active(s) || !s.Pending.TryGetValue(call.Id, out var expected) || expected != call)
+                    throw new InvalidOperationException("This voice tool request is no longer pending.");
+            string output = s.Gemini
+                ? JsonSerializer.Serialize(new { toolResponse = new { functionResponses = new[] { new { id = call.Id, name = call.Name, response = new { result } } } } })
+                : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "function_call_output", call_id = call.Id, output = result } });
+            await SendLocked(s, output, linked.Token).ConfigureAwait(false);
+            bool resume;
+            lock (gate)
+            {
+                // Removal follows successful delivery while the send lock still owns ordering.
+                // A caller canceled before delivery may retry the same pending result.
+                bool removed = s.Pending.Remove(call.Id);
+                s.Calls.Remove(call.Id);
+                resume = removed && Active(s) && !s.ResponseActive && s.Pending.Count == 0;
+            }
+            if (!s.Gemini && resume) await SendLocked(s, "{\"type\":\"response.create\"}", linked.Token).ConfigureAwait(false);
+        }
+        finally { if (held) s.SendLock.Release(); }
     }
     // Hardware and callbacks stop before returning the Task, even when callers do not await it.
     public Task Stop()
@@ -184,6 +211,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     private void End(Session s)
     {
         IAssistantVoiceAudio? audio;
+        CancellationTokenSource[] calls;
         bool owner;
         lock (gate)
         {
@@ -193,11 +221,13 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
                 s.Ended = true; s.Connected = false;
                 s.StopThread = Environment.CurrentManagedThreadId;
                 audio = s.Audio; s.Audio = null; s.Pending.Clear();
+                calls = s.Calls.Values.ToArray(); s.Calls.Clear();
             }
-            else audio = null;
+            else { audio = null; calls = Array.Empty<CancellationTokenSource>(); }
         }
         if (!owner) { if (s.StopThread != Environment.CurrentManagedThreadId) s.HardwareStopped.Wait(); return; }
         s.Registration.Unregister();
+        CancelCalls(calls);
         try { audio?.Dispose(); } catch { }
         s.Input.Writer.TryComplete();
         try { s.Cancel.Cancel(); } catch { }
@@ -234,7 +264,8 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
                 string data = Convert.ToBase64String(pcm);
                 await SendBatch(s, new[] { s.Gemini ? JsonSerializer.Serialize(new { realtimeInput = new { audio = new { data, mimeType = "audio/pcm;rate=16000" } } })
                     : JsonSerializer.Serialize(new { type = "input_audio_buffer.append", audio = data }) }, s.Cancel.Token).ConfigureAwait(false);
-                await Task.Delay(TimeSpan.FromSeconds((double)pcm.Length / (s.Gemini ? 32000 : 48000)), s.Cancel.Token).ConfigureAwait(false);
+                // Native capture already supplies one frame every 50ms. Adding that
+                // delay after network sends would make upload permanently lag capture.
             }
         }
         catch (OperationCanceledException) { } catch { Fail(s, "Voice upload failed. Start voice again to reconnect."); }
@@ -248,14 +279,20 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             await s.SendLock.WaitAsync(linked.Token).ConfigureAwait(false); held = true;
             foreach (string payload in payloads)
             {
-                linked.Token.ThrowIfCancellationRequested();
-                using var deadline = CancellationTokenSource.CreateLinkedTokenSource(linked.Token); deadline.CancelAfter(TimeSpan.FromSeconds(10));
-                await s.Socket.Send(payload, deadline.Token).ConfigureAwait(false);
+                await SendLocked(s, payload, linked.Token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (linked.IsCancellationRequested) { throw; }
         catch { Fail(s, "Voice upload failed. Start voice again to reconnect."); throw new InvalidOperationException("Voice upload failed. Start voice again to reconnect."); }
         finally { if (held) s.SendLock.Release(); }
+    }
+    private async Task SendLocked(Session s, string payload, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token); deadline.CancelAfter(TimeSpan.FromSeconds(10));
+        try { await s.Socket.Send(payload, deadline.Token).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+        catch { Fail(s, "Voice upload failed. Start voice again to reconnect."); throw new InvalidOperationException("Voice upload failed. Start voice again to reconnect."); }
     }
     private async Task ReceiveLoop(Session s)
     {
@@ -268,7 +305,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
                 if (json.Length > 4 * 1024 * 1024) throw new InvalidDataException();
                 using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 40 });
                 if (doc.RootElement.ValueKind != JsonValueKind.Object) throw new InvalidDataException();
-                if (s.Gemini) HandleGemini(s, doc.RootElement);
+                if (s.Gemini) await HandleGemini(s, doc.RootElement).ConfigureAwait(false);
                 else await HandleOpenAI(s, doc.RootElement).ConfigureAwait(false);
             }
         }
@@ -276,7 +313,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     }
     private static string Str(JsonElement e, string name) => e.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString()! : "";
     private static bool Flag(JsonElement e, string name) => e.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.True;
-    private void Audio(Session s, string encoded, string item = "", int index = 0)
+    private async Task Audio(Session s, string encoded, string item = "", int index = 0)
     {
         if (encoded.Length > 512 * 1024) throw new InvalidDataException();
         byte[] pcm = Convert.FromBase64String(encoded); if ((pcm.Length & 1) != 0) throw new InvalidDataException();
@@ -284,9 +321,14 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         {
             if (!Active(s) || s.IgnoreAudio || s.Audio == null) return;
             if (item != "" && s.AudioItem != item) { s.AudioItem = item; s.AudioIndex = index; s.AudioStart = s.OutputBytes / 48; }
-            if (!s.Audio.Append(pcm)) throw new InvalidDataException();
-            s.OutputBytes = checked(s.OutputBytes + pcm.Length);
+            if (s.Audio.Append(pcm)) { s.OutputBytes = checked(s.OutputBytes + pcm.Length); return; }
         }
+        // An exceptionally long/fast reply may exhaust the bounded playback queue.
+        // Interrupt only that reply; the microphone and session remain usable.
+        var events = Interrupt(s);
+        lock (gate) s.IgnoreAudio = true;
+        Emit(s, () => Status?.Invoke("Voice reply exceeded the playback limit. Ask for a shorter answer."));
+        if (events.Count > 0) await SendBatch(s, events, s.Cancel.Token).ConfigureAwait(false);
     }
     private async Task HandleOpenAI(Session s, JsonElement e)
     {
@@ -302,10 +344,10 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
                 lock (gate) { ready = s.ReadyCalls.ToArray(); s.ReadyCalls.Clear(); }
                 if (e.TryGetProperty("response", out var finished) && Str(finished, "status") == "completed")
                     foreach (var call in ready) Emit(s, () => ToolCall?.Invoke(call));
-                else lock (gate) foreach (var call in ready) s.Pending.Remove(call.Id);
+                else CancelPending(s, ready.Select(call => call.Id));
                 break;
             case "response.output_audio.delta":
-                Audio(s, Str(e, "delta"), Str(e, "item_id"), e.TryGetProperty("content_index", out var ix) ? ix.GetInt32() : 0); break;
+                await Audio(s, Str(e, "delta"), Str(e, "item_id"), e.TryGetProperty("content_index", out var ix) ? ix.GetInt32() : 0).ConfigureAwait(false); break;
             case "response.output_audio_transcript.done": if (!s.IgnoreAudio) FinalText(s, "assistant", Str(e, "transcript")); break;
             case "response.output_text.done": if (!s.IgnoreAudio) FinalText(s, "assistant", Str(e, "text")); break;
             case "conversation.item.input_audio_transcription.completed": FinalText(s, "user", Str(e, "transcript")); break;
@@ -327,30 +369,31 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             if (!s.Gemini && s.ResponseActive) events.Add("{\"type\":\"response.cancel\"}");
             if (!s.Gemini && s.AudioItem != "") events.Add(JsonSerializer.Serialize(new { type = "conversation.item.truncate", item_id = s.AudioItem, content_index = s.AudioIndex, audio_end_ms = played }));
             s.Audio?.Clear(); s.AudioItem = ""; s.AudioStart = 0; s.OutputBytes = 0; s.IgnoreAudio = !s.Gemini;
-            s.AssistantText.Clear(); s.Pending.Clear(); s.ReadyCalls.Clear(); s.ResponseActive = false;
+            s.AssistantText.Clear(); s.ReadyCalls.Clear(); s.ResponseActive = false;
         }
+        CancelPending(s);
         return events;
     }
-    private void HandleGemini(Session s, JsonElement e)
+    private async Task HandleGemini(Session s, JsonElement e)
     {
         if (e.TryGetProperty("error", out _)) throw new InvalidDataException();
         if (e.TryGetProperty("setupComplete", out _)) s.Ready.TrySetResult();
         if (e.TryGetProperty("goAway", out _)) { Fail(s, "Voice session is ending. Start voice again to reconnect."); return; }
         if (e.TryGetProperty("toolCallCancellation", out var cancelled) && cancelled.TryGetProperty("ids", out var ids))
-            lock (gate) foreach (var id in ids.EnumerateArray()) s.Pending.Remove(id.GetString() ?? "");
+            CancelPending(s, ids.EnumerateArray().Select(id => id.GetString() ?? ""));
         if (e.TryGetProperty("serverContent", out var content))
         {
-            if (Flag(content, "interrupted")) lock (gate) { s.Audio?.Clear(); s.OutputBytes = 0; s.AssistantText.Clear(); }
+            if (Flag(content, "interrupted")) Interrupt(s);
             if (content.TryGetProperty("inputTranscription", out var input)) AppendText(s.UserText, Str(input, "text"));
-            if (content.TryGetProperty("outputTranscription", out var output)) AppendText(s.AssistantText, Str(output, "text"));
+            if (!s.IgnoreAudio && content.TryGetProperty("outputTranscription", out var output)) AppendText(s.AssistantText, Str(output, "text"));
             if (content.TryGetProperty("modelTurn", out var turn) && turn.TryGetProperty("parts", out var parts))
                 foreach (var part in parts.EnumerateArray())
                     if (part.TryGetProperty("inlineData", out var data))
                     {
                         if (Str(data, "mimeType") != "audio/pcm;rate=24000") throw new InvalidDataException();
-                        Audio(s, Str(data, "data"));
+                        await Audio(s, Str(data, "data")).ConfigureAwait(false);
                     }
-            if (Flag(content, "turnComplete")) { Flush(s, "user", s.UserText); Flush(s, "assistant", s.AssistantText); }
+            if (Flag(content, "turnComplete")) { Flush(s, "user", s.UserText); Flush(s, "assistant", s.AssistantText); s.IgnoreAudio = false; }
         }
         if (e.TryGetProperty("toolCall", out var calls) && calls.TryGetProperty("functionCalls", out var functions))
         {
@@ -375,9 +418,26 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             if (!s.SeenCalls.Add(id)) return;
             if (s.SeenCalls.Count > 256 || s.Pending.Count >= 32) throw new InvalidDataException();
             s.Pending.Add(id, call);
+            s.Calls.Add(id, new CancellationTokenSource());
             if (!s.Gemini) { s.ReadyCalls.Enqueue(call); return; }
         }
         Emit(s, () => ToolCall?.Invoke(call));
+    }
+    private void CancelPending(Session s, IEnumerable<string>? ids = null)
+    {
+        var cancelled = new List<CancellationTokenSource>();
+        lock (gate)
+            foreach (string id in ids?.ToArray() ?? s.Calls.Keys.ToArray())
+            {
+                s.Pending.Remove(id);
+                if (s.Calls.Remove(id, out var call)) cancelled.Add(call);
+            }
+        CancelCalls(cancelled);
+    }
+    private static void CancelCalls(IEnumerable<CancellationTokenSource> calls)
+    {
+        // Sources stay undisposed: callers may retain tokens while linked work unwinds.
+        foreach (var call in calls) try { call.Cancel(); } catch { }
     }
     internal static Uri ValidateEndpoint(string value, string model, bool gemini)
     {
