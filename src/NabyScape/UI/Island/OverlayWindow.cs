@@ -59,9 +59,10 @@ public sealed partial class OverlayWindow : Window
         compact=new Button{Content=header,Padding=new(14,0,14,0),Margin=new(0),Background=Brushes.Transparent,BorderThickness=new(0),HorizontalContentAlignment=HorizontalAlignment.Stretch,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top};
         UI.Named(compact,"Open or close island");compact.ToolTip="Click to open · Esc to close";
         Motion.Button(compact);
-        compact.Click+=(_,_)=> {if(app.Notifications.Current!=null && !expanded){OpenNotice();return;}if(expanded)Collapse();else Reveal();};
+        compact.Click+=(_,_)=> {if(app.Notifications.Current!=null && !expanded){OpenNotice();return;}if(expanded)Collapse();else{LeaveAssistantPanel();Reveal();}};
         scroll=UI.Scroll(body);scroll.VerticalAlignment=VerticalAlignment.Top;scroll.HorizontalAlignment=HorizontalAlignment.Center;scroll.Visibility=Visibility.Collapsed;scroll.Opacity=0;scroll.RenderTransform=bodySlide;
         root.RenderTransform=tuckSlide;root.MouseLeftButtonDown+=(_,e)=>{if(TuckRequested && !expanded && e.OriginalSource==surface){Reveal();e.Handled=true;}};root.Children.Add(surface);root.Children.Add(visuals);visuals.Children.Add(compact);visuals.Children.Add(scroll);Content=root;
+        InitializeAssistantIsland(header);
         surface.ContourChanged+=()=>visuals.Clip=surface.Contour;
         foreach(var number in new[]{clock,compactClock,timerTime,focusTime,cpu,ram})Typography.SetNumeralAlignment(number,FontNumeralAlignment.Tabular);
         title.FontWeight=FontWeights.SemiBold;timerTime.FontWeight=focusTime.FontWeight=FontWeights.SemiBold;clock.FontWeight=compactClock.FontWeight=FontWeights.Bold;
@@ -69,7 +70,7 @@ public sealed partial class OverlayWindow : Window
         SourceInitialized+=(_,_)=> {hwnd=new WindowInteropHelper(this).Handle;Native.SetWindowLong(hwnd,-20,Native.GetWindowLong(hwnd,-20)|0x80);HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);ApplySettings();};
         SizeChanged+=(_,_)=>Position();
         IsVisibleChanged+=(_,_)=>{if(!IsVisible)InvalidateSystemMonitor();};
-        PreviewKeyDown+=(_,e)=> {if(e.Key==Key.K && Keyboard.Modifiers==ModifierKeys.Control){ShowCommands();e.Handled=true;}else if(e.Key==Key.Escape){if(commandOpen)CloseCommands();else if(activitiesOpen)CloseActivities();else Collapse();e.Handled=true;}};
+        PreviewKeyDown+=(_,e)=> {if(e.Key==Key.K && Keyboard.Modifiers==ModifierKeys.Control){ShowCommands();e.Handled=true;}else if(e.Key==Key.Escape){if(assistantOpen || assistantPeeking){app.Assistant.StopSession();CloseAssistant();}else if(commandOpen)CloseCommands();else if(activitiesOpen)CloseActivities();else Collapse();e.Handled=true;}};
         Closing+=(_,e)=> {if(!app.Quitting){e.Cancel=true;Collapse();Hide();userHidden=true;app.Previews?.SetHidden(true);}};
         Deactivated+=(_,_)=> {if((expanded || peeking) && !DiagnosticRun && audioMenu?.IsOpen!=true)Collapse();};
         app.SettingsChanged+=ApplySettings;app.Updated+=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged+=DisplayChanged;
@@ -124,6 +125,7 @@ public sealed partial class OverlayWindow : Window
     {bodyInitialized=true;bodyDirty=false;bodyReflow.Clear();pendingCompactPages.Clear();BodyBuilds++;BuildBodyContent();ApplyHeadingTypography(body);}
     private void BuildBodyContent()
     {
+        if(assistantOpen){MountAssistantView();return;}
         InvalidateSystemMonitor();
         foreach(var control in new FrameworkElement[]{title,artist,clock,date,timerTime,focusTime,focusPhase,cpu,ram,battery,volumeText,artwork,sessions,volume,cpuBar,ramBar,timelinePanel})
         {if(control.Parent is Panel p)p.Children.Remove(control);else if(control.Parent is Decorator d)d.Child=null;else if(control.Parent is ContentControl c)c.Content=null;}
@@ -177,6 +179,7 @@ public sealed partial class OverlayWindow : Window
     }
     public void Reveal(bool activate=true)
     {
+        HideAssistantPeek();
         EnsureBody();Dimensions();
         HideNotice();EndPeekGesture();StopHoverTimers();automaticPreview=false;activityDismiss.Stop();previewKind=activityTitle=activityDetail="";userHidden=false;app.Previews?.SetHidden(false);RememberExternalForeground();visibilityOverride=lastExternalForeground;environmentHidden=false;SetTucked(false);Show();Position();if(expanded){if(activate)Activate();return;}expanded=true;peeking=false;peekPanel.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=true;Motion.Fade(compact,1,120);Dimensions();
         // The layered HWND stays fixed across all three states; only its alpha contour changes.
@@ -188,6 +191,7 @@ public sealed partial class OverlayWindow : Window
     }
     public void Collapse()
     {
+        HideAssistantPeek();
         shelfDropBrowsing=false;
         if(hoverPanelWidget!=null){hoverPanelWidget=null;bodyDirty=true;}
         InvalidateSystemMonitor();
@@ -195,8 +199,9 @@ public sealed partial class OverlayWindow : Window
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,app.Settings.Width,Math.Max(160,app.Settings.AnimationMs*.78));motion.Go(surface,IslandSurface.SurfaceHeightProperty,app.Settings.Height,Math.Max(160,app.Settings.AnimationMs*.78));
         motion.Go(surface,IslandSurface.GlassLiftProperty,0,Math.Max(160,app.Settings.AnimationMs*.78));
         CloseMixer();
+        RefreshAssistantCharacter();
         if(TuckRequested){ApplyEnvironmentTuck();return;}
-        motion.OnComplete(()=> {if(expanded || peeking)return;peekPanel.Visibility=Visibility.Collapsed;scroll.Visibility=Visibility.Collapsed;UpdateSatellite();});
+        motion.OnComplete(()=> {if(expanded || peeking)return;peekPanel.Visibility=Visibility.Collapsed;assistantPeek.Visibility=Visibility.Collapsed;scroll.Visibility=Visibility.Collapsed;UpdateSatellite();});
     }
     public void ToggleVisibility()
     {
@@ -266,5 +271,5 @@ public sealed partial class OverlayWindow : Window
             UpdateTimeline();
         }finally{updating=false;}
     }
-    public void Cleanup(){pointerCheck.Stop();app.SettingsChanged-=ConfigureDisplayFollow;shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();tuckMotion.Dispose();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
+    public void Cleanup(){CleanupAssistantIsland();pointerCheck.Stop();app.SettingsChanged-=ConfigureDisplayFollow;shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();tuckMotion.Dispose();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
 }

@@ -109,7 +109,7 @@ Global shortcuts are configurable. With cover gestures enabled, click closed art
 
 No NabyScape account or cloud sync is required. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. The app does not automatically fetch link previews.
 
-**Development preview · AI companion (v2.6.0 candidate):** optional chat, live voice, selected-display context and reviewed app/desktop actions with your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Verification and current limits →](docs/verification-assistant-2.6.0.md). The public downloads above remain v2.5.1.
+**Development preview · AI companion (v2.6.1 candidate):** a character in the top island, with hover greetings, inline chat, live voice, selected-display context and reviewed app/desktop actions using your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Initial provider verification →](docs/verification-assistant-2.6.0.md). The public downloads above remain v2.5.1.
 
 **v2.5.0** stores local data in `%LOCALAPPDATA%\NabyScape`. Upgrades copy and validate legacy data from `%LOCALAPPDATA%\LumaIsland`, preserving the original folder. The per-user install path and `luma.layout.v1` layout format remain compatible. [Privacy, migration and reset preservation rules →](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#privacy)
 

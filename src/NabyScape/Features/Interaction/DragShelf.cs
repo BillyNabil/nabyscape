@@ -18,6 +18,7 @@ public sealed partial class OverlayWindow
     private string dropSignature="";
     private bool shelfDropBrowsing;
     private bool fileDragActive,dragWasExpanded,dragWasPeeking,dragWasNotice;
+    private bool dragWasAssistantPeek;
     private string dragPreviousPeek="media";
     private void InitializeFileDrop()
     {
@@ -48,6 +49,8 @@ public sealed partial class OverlayWindow
     {
         if(userHidden || fileDragActive)return;
         fileDragActive=true;dragWasExpanded=expanded;dragWasPeeking=peeking;dragPreviousPeek=peekId;
+        dragWasAssistantPeek=assistantPeeking;
+        if(assistantPeeking){HideAssistantPeek();assistantPeek.Visibility=Visibility.Collapsed;peeking=false;}
         dragWasNotice=noticeShowing;
         StopHoverTimers();EndPeekGesture();
         if(dragWasNotice){HideNotice();peeking=false;}
@@ -78,9 +81,10 @@ public sealed partial class OverlayWindow
     {
         RemoveShelfDropPreview();dropSignature="";
         if(!fileDragActive)return;fileDragActive=false;
-        if(accepted){dragWasNotice=false;shelfDropBrowsing=true;if(peeking){SelectPeek("files");UpdatePeekDeck();}else ShowTools("files");return;}
+        if(accepted){dragWasAssistantPeek=false;dragWasNotice=false;shelfDropBrowsing=true;if(peeking){SelectPeek("files");UpdatePeekDeck();}else ShowTools("files");return;}
         if(dragWasNotice){dragWasNotice=false;Collapse();OpenNotice();return;}
         if(dragWasExpanded)return;
+        if(dragWasAssistantPeek){dragWasAssistantPeek=false;Collapse();PreviewAssistant();return;}
         else if(dragWasPeeking){SelectPeek(dragPreviousPeek);}
         else Collapse();
     }

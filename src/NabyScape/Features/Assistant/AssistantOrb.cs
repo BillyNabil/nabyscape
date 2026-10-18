@@ -10,11 +10,20 @@ internal sealed class AssistantOrb : FrameworkElement
 {
     private AssistantState state;
     private bool rendering,reduceMotion;
+    private bool live;
+    private readonly TranslateTransform gaze=new();
     private double phase,level,last;
     private readonly FramePacer pacer=new();
     private static readonly Brush body=Frozen(new RadialGradientBrush(Color.FromRgb(250,251,255),Color.FromRgb(118,128,146)){GradientOrigin=new(.35,.25),Center=new(.42,.35),RadiusX=.8,RadiusY=.8});
     private static Brush Frozen(Brush brush){brush.Freeze();return brush;}
-    internal AssistantOrb(){Width=Height=52;Loaded+=(_,_)=>Refresh();Unloaded+=(_,_)=>Detach();IsVisibleChanged+=(_,_)=>Refresh();}
+    internal AssistantOrb(){Width=Height=52;Loaded+=(_,_)=>Refresh();Unloaded+=(_,_)=>{Detach();gaze.BeginAnimation(TranslateTransform.XProperty,null);gaze.BeginAnimation(TranslateTransform.YProperty,null);gaze.X=gaze.Y=0;};IsVisibleChanged+=(_,_)=>Refresh();MouseMove+=(_,e)=>{var p=e.GetPosition(this);LookAt(ActualWidth>0?p.X/ActualWidth*2-1:0,ActualHeight>0?p.Y/ActualHeight*2-1:0);};MouseLeave+=(_,_)=>LookAt(0,0);}
+    internal bool Live {get=>live;set{if(live==value)return;live=value;InvalidateVisual();}}
+    internal void LookAt(double x,double y)
+    {
+        double amount=Math.Min(ActualWidth,ActualHeight)*.035;x=Math.Clamp(x,-1,1)*amount;y=Math.Clamp(y,-1,1)*amount;
+        if(reduceMotion){gaze.BeginAnimation(TranslateTransform.XProperty,null);gaze.BeginAnimation(TranslateTransform.YProperty,null);gaze.X=x;gaze.Y=y;}
+        else{Motion.To(gaze,TranslateTransform.XProperty,x,140);Motion.To(gaze,TranslateTransform.YProperty,y,140);}
+    }
     internal AssistantState State {get=>state;set{state=value;Refresh();}}
     internal bool ReduceMotion {get=>reduceMotion;set{reduceMotion=value;Refresh();}}
     internal double Level {get=>level;set{level=Math.Clamp(double.IsFinite(value)?value:0,0,1);if(!rendering)InvalidateVisual();}}
@@ -50,10 +59,13 @@ internal sealed class AssistantOrb : FrameworkElement
             }
         }
         dc.DrawGeometry(body,null,geometry);
+        dc.PushTransform(gaze);
         var ink=UI.Brush("#161A22");double eye=size*.026;
         dc.DrawEllipse(ink,null,new(cx-size*.085,cy-size*.026),eye,eye);
         dc.DrawEllipse(ink,null,new(cx+size*.085,cy-size*.026),eye,eye);
         if(state==AssistantState.Speaking && energy>.02)dc.DrawRoundedRectangle(ink,null,new(cx-size*.045,cy+size*.075,size*.09,size*(.018+energy*.09)),eye,eye);
         else dc.DrawLine(new Pen(ink,Math.Max(1,size*.022)),new(cx-size*.035,cy+size*.085),new(cx+size*.035,cy+size*.085));
+        dc.Pop();
+        if(live)dc.DrawEllipse(UI.Brush("#F4F5F7"),new Pen(UI.Brush("#0D0E10"),Math.Max(1,size*.02)),new(cx+size*.31,cy+size*.31),size*.075,size*.075);
     }
 }

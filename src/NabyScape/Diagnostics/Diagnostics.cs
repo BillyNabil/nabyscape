@@ -47,6 +47,7 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--assistant-island-only")){await AssistantIslandDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--assistant-only")){await AssistantDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--interaction-classic-mixer-only")){await InteractionHotfixDiagnostics.RunClassicMixer(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--interaction-tuck-hide-only")){await InteractionHotfixDiagnostics.RunTuckHide(app,overlay,Check);return;}

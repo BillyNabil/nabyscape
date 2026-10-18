@@ -21,6 +21,8 @@ internal sealed class AssistantRuntime : IDisposable
     private AssistantState state;
     private readonly AssistantVoiceActivity voiceActivity=new();
     private readonly SemaphoreSlim voiceActions=new(1);
+    private readonly System.Windows.Threading.DispatcherTimer screenTimer=new(){Interval=TimeSpan.FromSeconds(5)};
+    private bool frameBusy;
     internal AssistantOptions Options {get;private set;}
     internal bool ActionsAllowed {get;private set;}
     internal AssistantCall? Pending {get;private set;}
@@ -40,10 +42,13 @@ internal sealed class AssistantRuntime : IDisposable
         Options.Providers=(Options.Providers??new()).Where(p=>p!=null && Guid.TryParseExact(p.Id,"N",out _)).DistinctBy(p=>p.Id).Take(12).ToList();
         Options.Instructions=(Options.Instructions??"")[..Math.Min(8000,(Options.Instructions??"").Length)];
         Conversation=new(transport);Conversation.Added+=_=>Notify();
+        screenTimer.Tick+=async(_,_)=>{if(!VoiceConnected || !Desktop.Sharing){screenTimer.Stop();return;}if(frameBusy)return;frameBusy=true;try{await ShareVoiceFrame();}finally{frameBusy=false;}};
     }
     private void Dispatch(Action action)
     {if(disposed)return;if(app.Dispatcher.CheckAccess())action();else app.Dispatcher.BeginInvoke(()=>{if(!disposed)action();});}
-    private void Notify(){Changed?.Invoke();VisualChanged?.Invoke();}
+    private void Notify(){if(VoiceConnected && Desktop.Sharing){if(!screenTimer.IsEnabled)screenTimer.Start();}else screenTimer.Stop();Changed?.Invoke();VisualChanged?.Invoke();}
+    internal void SetIslandCharacter(bool value)
+    {if(!value)StopSession();Options.IslandCharacter=value;app.Store.Save("assistant",Options);Notify();}
     internal void SaveOptions()
     {StopSession();Conversation.Clear();app.Store.Save("assistant",Options);Status=Options.Enabled?"Ready · choose Chat or start voice.":"AI companion is off.";Notify();}
     internal string SaveProvider(string originalId,AssistantProvider candidate,string replacementKey)
@@ -198,5 +203,5 @@ internal sealed class AssistantRuntime : IDisposable
         var previous=voice;voice=null;if(previous!=null)_=CloseVoice(previous);voiceActivity.Reset();state=AssistantState.Idle;Level=0;Status="Session stopped · microphone, screen and control off.";Notify();
     }
     private static async Task CloseVoice(IAssistantVoice session){try{await session.Stop();await session.DisposeAsync();}catch{/* Closing is idempotent; secrets/provider errors are never logged. */}}
-    public void Dispose(){if(disposed)return;StopSession();disposed=true;Conversation.Dispose();transport.Dispose();lifetime.Dispose();}
+    public void Dispose(){if(disposed)return;StopSession();screenTimer.Stop();disposed=true;Conversation.Dispose();transport.Dispose();lifetime.Dispose();}
 }

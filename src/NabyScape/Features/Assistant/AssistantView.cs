@@ -23,6 +23,7 @@ internal sealed class AssistantView : UserControl
     private readonly ScrollViewer transcript;
     private readonly TextBox input=UI.Input("Message AI companion","");
     private readonly ComboBox provider=new(){MinHeight=32};
+    private readonly TextBlock providerHint=UI.Text("Choose a provider",11,UI.Muted);
     private readonly ComboBox display=new(){MinHeight=30};
     private readonly Button send,voice,share,actions,computer;
     private readonly Button? closeButton;
@@ -37,6 +38,7 @@ internal sealed class AssistantView : UserControl
     private int rendered;
     private AssistantMessage? firstRendered;
     private string providerSignature="",lastFrame="";
+    private string? reviewedId;
     internal TextBox Editor=>input;
     internal AssistantView(App app,bool island=false,Action? close=null)
     {
@@ -49,6 +51,7 @@ internal sealed class AssistantView : UserControl
         heading.Children.Add(orb);var title=new StackPanel{Margin=new(island?8:12,0,0,0),VerticalAlignment=VerticalAlignment.Center};var titleText=UI.Heading("Companion",island?18:20);titleText.TextWrapping=TextWrapping.NoWrap;titleText.TextTrimming=TextTrimming.CharacterEllipsis;title.Children.Add(titleText);title.Children.Add(UI.Text(island?"Right here with you.":"Chat, talk, or work together.",11,UI.Muted));Grid.SetColumn(title,1);heading.Children.Add(title);
         if(island && close!=null){closeButton=Pill("Back to island",close);closeButton.ToolTip="Back to island";closeButton.Margin=new(6,0,0,0);closeButton.VerticalAlignment=VerticalAlignment.Center;closeButton.Padding=new(9,5,9,5);Grid.SetColumn(closeButton,2);heading.Children.Add(closeButton);}page.Children.Add(heading);
         var pick=new Grid{Margin=new(0,island?4:12,0,island?5:8)};pick.ColumnDefinitions.Add(new());pick.ColumnDefinitions.Add(new(){Width=GridLength.Auto});pick.Children.Add(provider);UI.Named(provider,"AI provider");
+        providerHint.Margin=new(12,0,28,0);providerHint.VerticalAlignment=VerticalAlignment.Center;providerHint.IsHitTestVisible=false;pick.Children.Add(providerHint);
         var configure=Pill("Providers",app.ShowAssistantProviders);configure.Margin=new(8,0,0,0);Grid.SetColumn(configure,1);pick.Children.Add(configure);page.Children.Add(pick);
         provider.SelectionChanged+=(_,_)=>{if(!syncing && provider.SelectedItem is AssistantProvider p && p.Id!=ai.Options.SelectedProvider)ai.SelectProvider(p.Id);};
         status.Margin=new(0,0,0,island?5:10);page.Children.Add(status);
@@ -122,7 +125,7 @@ internal sealed class AssistantView : UserControl
         }
         catch(Exception ex){ai.StopSession();status.Text=ex.Message;}
     }
-    private void RefreshOrb(){if(!IsVisible)return;orb.State=ai.State;orb.Level=ai.Level;orb.ReduceMotion=app.Settings.ReduceMotion;}
+    private void RefreshOrb(){if(!IsVisible)return;orb.State=ai.State;orb.Level=ai.Level;orb.Live=ai.VoiceConnected;orb.ReduceMotion=app.Settings.ReduceMotion;}
     private void Refresh()
     {
         syncing=true;
@@ -132,14 +135,14 @@ internal sealed class AssistantView : UserControl
             // Saving profiles can replace their objects. Rebind under the same
             // guard so a stale selected clone cannot trigger a provider change.
             if(signature!=providerSignature || !provider.Items.Cast<AssistantProvider>().SequenceEqual(ai.Options.Providers)){providerSignature=signature;provider.ItemsSource=ai.Options.Providers.ToArray();}
-            provider.SelectedItem=ai.Provider;provider.IsEnabled=!ai.Busy && !ai.VoiceConnected;
+            provider.SelectedItem=ai.Provider;providerHint.Visibility=ai.Provider==null?Visibility.Visible:Visibility.Collapsed;provider.IsEnabled=!ai.Busy && !ai.VoiceConnected;
             status.Text=(ai.Options.Enabled?"":"Companion is off · ")+ai.Status;
             send.IsEnabled=ai.Options.Enabled && !ai.Busy;voice.IsEnabled=ai.Options.Enabled && !ai.Busy;share.IsEnabled=ai.Options.Enabled && (!ai.Busy || ai.Desktop.Sharing);
             voice.Content=ai.VoiceConnected?"End voice":"Start voice";share.Content=ai.Desktop.Sharing?"Stop sharing":"Share screen";actions.Content=ai.ActionsAllowed?"Actions on":"Actions off";computer.Content=ai.Desktop.ControlEnabled?"Computer on":"Computer off";
             screenPreview.Visibility=ai.Desktop.Sharing?Visibility.Visible:Visibility.Collapsed;computer.IsEnabled=ai.Desktop.Sharing;actions.IsEnabled=ai.Options.Enabled;
             display.IsEnabled=!ai.Desktop.Sharing;
             approval.Visibility=ai.Pending!=null?Visibility.Visible:Visibility.Collapsed;
-            if(ai.Pending is { } pending){approvalTitle.Text=pending.Name=="computer"?"Review computer action":"Review NabyScape action";approvalText.Text=pending.Arguments;}
+            if(ai.Pending is { } pending){approvalTitle.Text=pending.Name=="computer"?"Review computer action":"Review NabyScape action";approvalText.Text=pending.Arguments;if(reviewedId!=pending.Id){reviewedId=pending.Id;Dispatcher.BeginInvoke(()=>{if(IsLoaded && IsVisible && ai.Pending?.Id==pending.Id)approval.BringIntoView();});}}else reviewedId=null;
             bool restoring=restoreScroll,bottom=restoring?followLatest:transcript.ScrollableHeight-transcript.VerticalOffset<30;
             var history=ai.Conversation.Messages;
             if(history.Count<rendered || rendered>0 && !ReferenceEquals(firstRendered,history.FirstOrDefault())){messages.Children.Clear();rendered=0;}

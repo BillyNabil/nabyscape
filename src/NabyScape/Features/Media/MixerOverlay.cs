@@ -22,6 +22,7 @@ public sealed partial class OverlayWindow
 
     internal void OpenMixer()
     {
+        LeaveAssistantPanel();
         if(commandOpen)CloseCommands();
         if(app.Settings.CompactLayout)SelectPage("mixer");
         else{FlushNotes();classicMixerOpen=true;activePage="mixer";BuildBody();ResizeToolPanel();UpdateSystemMonitor();}

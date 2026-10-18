@@ -35,7 +35,7 @@ public sealed partial class OverlayWindow
     {body.UpdateLayout();Dimensions(true);if(expanded)motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
     internal void ShowCommands(bool activate=true)
     {
-        activitiesOpen=false;FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
+        LeaveAssistantPanel();activitiesOpen=false;FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
         if(activate)Dispatcher.BeginInvoke(()=>commandInput?.Focus());
     }
     private void CloseCommands()

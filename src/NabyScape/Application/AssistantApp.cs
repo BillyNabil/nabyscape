@@ -7,6 +7,11 @@ public sealed partial class App
     private AssistantProvidersWindow? assistantProviders;
     internal void ShowAssistant()
     {
+        if(overlay!=null){overlay.OpenAssistant();return;}
+        ShowAssistantWindow();
+    }
+    internal void ShowAssistantWindow()
+    {
         if(assistantWindow==null){assistantWindow=new(this);assistantWindow.Closed+=(_,_)=>assistantWindow=null;}
         assistantWindow.Show();if(assistantWindow.WindowState==System.Windows.WindowState.Minimized)assistantWindow.WindowState=System.Windows.WindowState.Normal;assistantWindow.Activate();
     }

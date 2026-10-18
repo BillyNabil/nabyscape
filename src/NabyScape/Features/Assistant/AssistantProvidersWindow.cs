@@ -23,6 +23,9 @@ internal sealed class AssistantProvidersWindow : Window
         var page=new StackPanel{Margin=new(24,20,24,24)};
         var header=new DockPanel();var orb=new AssistantOrb{Width=Height=54,ReduceMotion=app.Settings.ReduceMotion};header.Children.Add(orb);var intro=new StackPanel{Margin=new(12,0,0,0)};intro.Children.Add(UI.Heading("Your AI, your provider",22));intro.Children.Add(UI.Text("Connect an API. Choose what it can see and do.",12,UI.Muted));header.Children.Add(intro);page.Children.Add(header);
         enable=AssistantWindow.Pill("",()=>{ai.Options.Enabled=!ai.Options.Enabled;SaveConfiguration();RefreshEnabled();});enable.Margin=new(0,16,0,12);page.Children.Add(enable);
+        var character=AssistantWindow.Pill(ai.Options.IslandCharacter?"Idle character visible":"Idle character hidden",()=>{});
+        character.Click+=(_,_)=>{try{ai.SetIslandCharacter(!ai.Options.IslandCharacter);character.Content=ai.Options.IslandCharacter?"Idle character visible":"Idle character hidden";}catch{status.Text="Could not save the island character preference.";}};
+        page.Children.Add(character);
         var add=new Grid();add.ColumnDefinitions.Add(new());add.ColumnDefinitions.Add(new(){Width=GridLength.Auto});add.Children.Add(preset);var addButton=AssistantWindow.Pill("Add provider",AddProvider);addButton.Margin=new(8,0,0,0);Grid.SetColumn(addButton,1);add.Children.Add(addButton);page.Children.Add(add);
         Label(page,"Saved providers",list);list.SelectionChanged+=(_,_)=>{if(!syncing)LoadSelected();};
         Label(page,"Name",name);name.MaxLength=60;Label(page,"Chat API protocol",protocol);Label(page,"API base URL",url);url.MaxLength=2048;Label(page,"Chat model ID",model);model.MaxLength=160;

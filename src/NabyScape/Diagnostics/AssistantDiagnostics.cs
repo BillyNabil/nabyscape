@@ -18,7 +18,7 @@ namespace NabyScape;
 // desktop capture, clipboard access or injected mouse/keyboard input.
 internal static class AssistantDiagnostics
 {
-    private sealed class FixtureVoice : IAssistantVoice
+    internal sealed class FixtureVoice : IAssistantVoice
     {
         public bool Connected {get;private set;}=true;
         internal bool Stopped,Disposed;

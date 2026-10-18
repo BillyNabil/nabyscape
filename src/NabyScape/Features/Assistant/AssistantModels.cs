@@ -27,6 +27,7 @@ internal sealed class AssistantProvider
 internal sealed class AssistantOptions
 {
     public bool Enabled {get;set;}
+    public bool IslandCharacter {get;set;}=true;
     public string SelectedProvider {get;set;}="";
     public string SelectedVoiceProvider {get;set;}="";
     public List<AssistantProvider> Providers {get;set;}=new();

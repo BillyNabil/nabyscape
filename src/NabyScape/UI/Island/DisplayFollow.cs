@@ -71,7 +71,7 @@ public sealed partial class OverlayWindow
         if(peeking)ApplyPeekGeometry();
         Width=Math.Max(expandedWidth,app.Settings.Width);Height=Math.Max(HostHeight,app.Settings.Height);
         refreshHz=Native.RefreshRate(IslandScreen);
-        surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(app.Settings.HoverWidth,expandedWidth):app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
+        surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(app.Settings.HoverWidth,expandedWidth):app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
         Position();CheckEnvironment();UpdateSatellite();
     }
 }

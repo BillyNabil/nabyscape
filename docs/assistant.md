@@ -1,4 +1,4 @@
-# AI companion · v2.6.0 candidate
+# AI companion · v2.6.1 candidate
 
 An optional companion inside NabyScape: text chat, live voice, a reactive character, selected-display context, and actions you review before they run. The island, audio controls and local tools continue to work without AI.
 
@@ -6,9 +6,11 @@ This is a local development candidate. The public installer remains v2.5.1 until
 
 ## Get started
 
-1. Open **Settings → Application → AI companion → Manage AI providers**, or **AI companion** from the tray or command bar.
+1. Find the little character on the right of the closed island. **Hover** for its greeting and **Chat here / Talk**; **click** to open chat directly inside the island. Tray and command-bar **AI companion** use the same island panel.
 2. Choose a provider preset and **Add provider**. Enter its model ID and, if required, API key. Save the provider, then enable the companion.
-3. Open **Companion**, choose the chat provider and send a message. **Enter** sends; **Shift+Enter** adds a line. **Escape** or **Stop** cancels the session.
+3. Return to the island, choose the chat provider and send a message. **Enter** sends; **Shift+Enter** adds a line. **Escape** or **Stop** cancels the session. Provider configuration lives under **Providers**, also available in **Settings → Application → AI companion**.
+
+The character is a discoverable launcher before AI is enabled; it does not start a microphone, screen capture or network request. **Idle character visible / hidden** in Providers controls this launcher. An active microphone or screen session retains an indicator. Eye movement follows the pointer while interacting, and listening/thinking/speaking use the same runtime across the small character, hover greeting and inline chat.
 
 **Check configuration** validates the fields locally. It does not test your key, model access or endpoint. The first chat or voice request checks those with your provider.
 
@@ -35,13 +37,13 @@ Expand **Live voice configuration** in Providers. Choose **OpenAIRealtime** or *
 
 Press **Start voice** when ready. The microphone starts only after the provider acknowledges the connection. The character responds to listening, thinking, speaking and action review. Interrupting a reply clears pending playback. Audio uses the Windows default input and output devices.
 
-**Stop**, **End voice**, closing or minimizing Companion, or manually hiding NabyScape ends the live session and turns microphone, sharing and computer control off. Reduce Motion keeps the character static; inactive or invisible characters have no continuous render callback.
+**Back to island** collapses the chat while keeping live voice running; the closed character shows a microphone indicator. New replies can emerge briefly in the island without taking keyboard focus. **Stop**, **End voice**, **Escape** in AI chat, manually hiding NabyScape, or quitting ends the session and turns microphone, sharing and computer control off. A tucked active session can be reached by hovering the top edge. Reduce Motion disables continuous character motion; inactive or invisible characters have no continuous render callback.
 
 ## Share a display
 
 In **Session controls**, select a display, then press **Share screen**. A preview confirms the selected display. The app keeps a scaled JPEG in memory; it does not save screenshots to disk.
 
-The selected display is sent with chat turns and refreshed after reviewed action batches. During live voice it is refreshed about every five seconds. Stop sharing ends the session. The Companion window is excluded from Windows screen capture where the OS supports it; other windows on the selected display can be visible to the provider.
+The selected display is sent with chat turns and refreshed after reviewed action batches. During live voice it is refreshed about every five seconds by one shared timer, including when chat is collapsed. Stop sharing ends the session. The island asks Windows to exclude it from capture while sharing and restores its prior capture policy afterward, where supported; other windows on the selected display can be visible to the provider.
 
 ## Let it help
 

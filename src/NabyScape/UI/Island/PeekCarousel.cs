@@ -84,7 +84,7 @@ public sealed partial class OverlayWindow
         peekViewport.ManipulationDelta+=(_,e)=>{if(peekTouching){DragPeek(e.CumulativeManipulation.Translation.X);e.Handled=true;}};
         peekViewport.ManipulationCompleted+=(_,e)=>{if(peekTouching){peekTouching=false;FinishPeekSwipe(peekOffset);e.Handled=true;}};
         peekViewport.MouseLeftButtonUp+=(_,e)=>{if(peekSuppressClick){peekSuppressClick=false;e.Handled=true;return;}if(!PeekGestureBlocked(e.OriginalSource as DependencyObject)){OpenPeekPage();e.Handled=true;}};
-        PreviewKeyDown+=(_,e)=>{if(!peeking || Keyboard.FocusedElement is TextBox or Slider)return;if(e.Key is Key.Left or Key.Right){NavigatePeek(e.Key==Key.Right?1:-1);e.Handled=true;}};
+        PreviewKeyDown+=(_,e)=>{if(!peeking || assistantPeeking || Keyboard.FocusedElement is TextBox or Slider)return;if(e.Key is Key.Left or Key.Right){NavigatePeek(e.Key==Key.Right?1:-1);e.Handled=true;}};
     }
     internal static bool PeekGestureBlocked(DependencyObject? source)
     {
@@ -111,9 +111,9 @@ public sealed partial class OverlayWindow
         outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>surface.Contour.FillContains(p) || audioMenu?.IsOpen==true);
     }
     private void PromotePeek()
-    {if(!peeking)return;detailDelay.Stop();peekDetailed=true;automaticPreview=false;activityDismiss.Stop();ApplyPeekGeometry();UpdateToolPeeks();motion.Go(surface,IslandSurface.SurfaceHeightProperty,PeekExpandedHeight,app.Settings.AnimationMs);}
+    {if(!peeking || assistantPeeking)return;detailDelay.Stop();peekDetailed=true;automaticPreview=false;activityDismiss.Stop();ApplyPeekGeometry();UpdateToolPeeks();motion.Go(surface,IslandSurface.SurfaceHeightProperty,PeekExpandedHeight,app.Settings.AnimationMs);}
     internal void SelectPeek(string id)
-    {if(noticeShowing || !peeking || !PeekPages().Contains(id))return;PromotePeek();var ids=PeekPages();int old=Array.IndexOf(ids,peekId),next=Array.IndexOf(ids,id);double start=(next-old)*PeekWidth;if(Math.Abs(next-old)>1){peekId=id;LayoutPeek(0,false);peekViews[id].Opacity=.65;Motion.Fade(peekViews[id],1,160);UpdatePeekDeck();return;}if(next==old){LayoutPeek(0,true);return;}peekId=id;LayoutPeek(start,false);UpdatePeekDeck();LayoutPeek(0,true);WakeLiveRendering();}
+    {if(noticeShowing || !peeking || assistantPeeking || !PeekPages().Contains(id))return;PromotePeek();var ids=PeekPages();int old=Array.IndexOf(ids,peekId),next=Array.IndexOf(ids,id);double start=(next-old)*PeekWidth;if(Math.Abs(next-old)>1){peekId=id;LayoutPeek(0,false);peekViews[id].Opacity=.65;Motion.Fade(peekViews[id],1,160);UpdatePeekDeck();return;}if(next==old){LayoutPeek(0,true);return;}peekId=id;LayoutPeek(start,false);UpdatePeekDeck();LayoutPeek(0,true);WakeLiveRendering();}
     internal void NavigatePeek(int direction)
     {var ids=PeekPages();int index=Array.IndexOf(ids,peekId);if(ids.Length>0)SelectPeek(ids[Math.Clamp(index+Math.Sign(direction),0,ids.Length-1)]);}
     private void LayoutPeek(double offset,bool animate)
@@ -134,7 +134,7 @@ public sealed partial class OverlayWindow
     private void EndPeekGesture(){peekDown=null;peekDragging=peekTouching=false;peekOffset=0;peekWheel.Reset();if(peekViewport.IsMouseCaptured)peekViewport.ReleaseMouseCapture();}
     internal bool RoutePeekWheel(int delta,bool horizontal,DependencyObject? source)
     {
-        if(!peeking || noticeShowing)return false;
+        if(!peeking || noticeShowing || assistantPeeking)return false;
         // Only the focused multiline editor keeps its native vertical scrolling.
         if(!VisibilityPolicy.CarouselOwnsWheel(peeking,horizontal,peekNote.IsKeyboardFocusWithin,IsPeekNoteSource(source)))return false;
         int direction=peekWheel.Push(horizontal?delta:-delta,Environment.TickCount64);
@@ -145,6 +145,7 @@ public sealed partial class OverlayWindow
     {for(var node=source;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))if(node==peekNote)return true;return false;}
     private void ApplyPeekGeometry()
     {
+        if(assistantPeeking){LayoutAssistantPeek();return;}
         double height=peekDetailed?PeekExpandedHeight:100;
         var safe=PeekLayout.SafeBounds(Math.Min(app.Settings.HoverWidth,expandedWidth),height,app.Settings.Radius,surface.Notch);
         peekPanel.Width=peekViewport.Width=safe.Width;peekPanel.Height=safe.Height;
@@ -171,6 +172,7 @@ public sealed partial class OverlayWindow
     }
     internal void OpenPeekPage()
     {
+        if(assistantPeeking){OpenAssistant();return;}
         if(!HoverPagePolicy.Available(app.Settings,peekId))return;
         if(HoverPagePolicy.IsTool(peekId)){ShowTools(peekId);return;}
         OpenHoverPanel(peekId);

@@ -46,6 +46,7 @@ public sealed partial class OverlayWindow
     private IEnumerable<WidgetSetting> PanelWidgets=>app.Settings.Widgets.Where(w=>w.Enabled || w.Id==hoverPanelWidget);
     private void OpenHoverPanel(string widget,bool activate=true)
     {
+        LeaveAssistantPanel();
         string page=PageFor(widget);
         bool hidden=!app.Settings.Widgets.Any(w=>w.Enabled && w.Id==widget);
         bool leavingMixer=classicMixerOpen;classicMixerOpen=false;
@@ -59,7 +60,7 @@ public sealed partial class OverlayWindow
     {
         root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;EnsurePeekDeck();if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !TuckRequested)hoverDelay.Start();};
         root.MouseLeave+=(_,_)=>{if(DiagnosticRun)return;hoverDelay.Stop();if(peeking || TuckRequested)leaveDelay.Start();};
-        hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(PointerInside() && !expanded && !userHidden && !TuckRequested)PreviewActivity();};
+        hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(assistantCharacterButton.IsMouseOver){PreviewAssistant();return;}if(PointerInside() && !expanded && !userHidden && !TuckRequested)PreviewActivity();};
         leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || TuckRequested) && !PointerInside() && !SatellitePointerInside && !PeekInteractionActive && !fileDragActive)Collapse();};
         peekMedia.HorizontalAlignment=HorizontalAlignment.Center;peekMedia.VerticalAlignment=VerticalAlignment.Top;peekMedia.Width=286;peekMedia.Height=100;peekMedia.Margin=new(0);
         peekMedia.RowDefinitions.Add(new(){Height=new GridLength(56)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});
@@ -83,7 +84,7 @@ public sealed partial class OverlayWindow
         seekSlider.ValueChanged+=(_,_)=>{if(!updating && (seekSlider.IsMouseCaptureWithin || seekSlider.IsKeyboardFocusWithin)){seekDelay.Stop();seekDelay.Start();}};
         seekDelay.Tick+=async(_,_)=>{seekDelay.Stop();await app.Media.Seek(seekSlider.Value);};
     }
-    private void StopHoverTimers(){hoverDelay.Stop();leaveDelay.Stop();detailDelay.Stop();}
+    private void StopHoverTimers(){hoverDelay.Stop();leaveDelay.Stop();detailDelay.Stop();assistantHover.Stop();}
     internal void PreviewActivity()
     {
         if(app.Notifications.Current!=null && !expanded && !peeking && !fileDragActive && !userHidden){OpenNotice();return;}
@@ -97,7 +98,7 @@ public sealed partial class OverlayWindow
     }
     private void UpdatePeek()
     {
-        if(!peeking || noticeShowing)return;
+        if(!peeking || noticeShowing || assistantPeeking)return;
         UpdatePeekDeck();
         bool media=app.Media.Available;ApplyMediaTypography(peekTitle,media && app.Settings.BoldMediaTitle);
         peekArt.Visibility=media && app.Media.Artwork!=null?Visibility.Visible:Visibility.Collapsed;SwapArtwork(peekArt,media?app.Media.Artwork:null);
@@ -148,6 +149,7 @@ public sealed partial class OverlayWindow
     }
     internal void SelectPage(string page,bool animate=true)
     {
+        LeaveAssistantPanel();
         EnsureBody();
         if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}
         if(!app.Settings.CompactLayout || commandOpen || !compactPages.ContainsKey(page))return;

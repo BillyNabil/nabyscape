@@ -77,16 +77,19 @@ internal sealed class AssistantDesktop : IDisposable
 internal sealed class AssistantDesktopNative : IAssistantDesktopBackend
 {
     private IntPtr owner,targetWindow,hook;
+    private uint previousAffinity;
+    private bool affinityChanged;
     private readonly ForegroundEvent foregroundEvent;
     internal AssistantDesktopNative()=>foregroundEvent=Foreground;
     public IReadOnlyList<AssistantScreenTarget> Targets()=>Forms.Screen.AllScreens.Select((s,i)=>new AssistantScreenTarget(s.DeviceName,$"Display {i+1} · {s.Bounds.Width} × {s.Bounds.Height}",s.Bounds)).ToArray();
     public void Begin(IntPtr owner)
     {
         this.owner=owner;RememberForeground();
+        if(owner!=IntPtr.Zero && GetWindowDisplayAffinity(owner,out previousAffinity))affinityChanged=SetWindowDisplayAffinity(owner,0x11);
         hook=SetWinEventHook(3,3,IntPtr.Zero,foregroundEvent,0,0,0);
         if(hook==IntPtr.Zero)throw new InvalidOperationException("Windows could not observe the active application.");
     }
-    public void End(){if(hook!=IntPtr.Zero)UnhookWinEvent(hook);hook=IntPtr.Zero;owner=targetWindow=IntPtr.Zero;}
+    public void End(){if(hook!=IntPtr.Zero)UnhookWinEvent(hook);if(affinityChanged && IsWindow(owner))SetWindowDisplayAffinity(owner,previousAffinity);affinityChanged=false;previousAffinity=0;hook=IntPtr.Zero;owner=targetWindow=IntPtr.Zero;}
     private void Foreground(IntPtr handle,uint type,IntPtr window,int obj,int child,uint thread,uint time)
     {if(window!=IntPtr.Zero && window!=owner && IsWindow(window))targetWindow=window;}
     private void RememberForeground(){var window=GetForegroundWindow();if(window!=IntPtr.Zero && window!=owner)targetWindow=window;}
@@ -198,6 +201,8 @@ internal sealed class AssistantDesktopNative : IAssistantDesktopBackend
     [DllImport("user32.dll")]private static extern IntPtr WindowFromPoint(Point point);
     [DllImport("user32.dll")]private static extern IntPtr GetAncestor(IntPtr window,uint flags);
     [DllImport("user32.dll")]private static extern bool SetCursorPos(int x,int y);
+    [DllImport("user32.dll")]private static extern bool GetWindowDisplayAffinity(IntPtr window,out uint affinity);
+    [DllImport("user32.dll")]private static extern bool SetWindowDisplayAffinity(IntPtr window,uint affinity);
     [DllImport("user32.dll",SetLastError=true)]private static extern uint SendInput(uint count,Input[] inputs,int size);
     [DllImport("user32.dll")]private static extern IntPtr GetDC(IntPtr window);
     [DllImport("user32.dll")]private static extern int ReleaseDC(IntPtr window,IntPtr dc);

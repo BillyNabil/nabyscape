@@ -83,7 +83,7 @@ public sealed partial class OverlayWindow
             refreshHz=Native.RefreshRate(Native.ChooseScreen(s));compact.Width=Math.Max(120,Math.Min(s.Width,expandedWidth)-(surface.Notch?32:12));compact.Height=s.Height;compact.MinHeight=s.Height;
             Dimensions();foreach(var reflow in bodyReflow)reflow();Dimensions();foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));Width=Math.Max(expandedWidth,s.Width);Height=Math.Max(HostHeight,s.Height);
             surface.BeginUpdate();
-            try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(s.HoverWidth,expandedWidth):s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(peekDetailed?s.HoverHeight:100):s.Height);}
+            try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(s.HoverWidth,expandedWidth):s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?s.HoverHeight:100):s.Height);}
             finally{surface.EndUpdate();}
             if(peeking)PreparePeekDeck();
         }

@@ -40,7 +40,7 @@ public sealed partial class OverlayWindow
     }
     private void RefreshCompactOptionalVisibility()
     {
-        bool feedback=FeedbackVisible;
+        RefreshAssistantCharacter();bool feedback=FeedbackVisible;
         compactClock.Visibility=!feedback && System.Linq.Enumerable.Any(app.Settings.Widgets,w=>w.Id=="clock" && w.Enabled)?Visibility.Visible:Visibility.Collapsed;
         awakeMark.Visibility=!feedback && app.Awake?.Active==true?Visibility.Visible:Visibility.Collapsed;
     }
