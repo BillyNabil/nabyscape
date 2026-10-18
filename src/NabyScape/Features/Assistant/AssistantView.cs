@@ -12,7 +12,7 @@ namespace NabyScape;
 
 // A view has no session lifetime of its own: collapsing the island can keep
 // voice running. The runtime owns the conversation, permissions and capture.
-internal sealed class AssistantView : UserControl
+internal sealed class AssistantView : UserControl,IDisposable
 {
     private readonly App app;
     private readonly AssistantRuntime ai;
@@ -33,7 +33,7 @@ internal sealed class AssistantView : UserControl
     private readonly Image screenImage=new(){MaxHeight=130,Stretch=Stretch.Uniform,HorizontalAlignment=HorizontalAlignment.Left};
     private Window? hostWindow;
     private ScrollViewer? hostViewport;
-    private bool syncing,subscribed,focusRequested,restoreScroll,followLatest;
+    private bool syncing,subscribed,focusRequested,restoreScroll,followLatest,disposed;
     private double savedScrollOffset;
     private int rendered;
     private AssistantMessage? firstRendered;
@@ -80,7 +80,7 @@ internal sealed class AssistantView : UserControl
     }
     private void OnLoaded(object sender,RoutedEventArgs e)
     {
-        if(subscribed)return;
+        if(disposed || subscribed)return;
         subscribed=true;ai.Changed+=Refresh;ai.VisualChanged+=RefreshOrb;app.SettingsChanged+=RefreshOrb;
         hostWindow=Window.GetWindow(this);if(hostWindow!=null)hostWindow.SizeChanged+=HostSizeChanged;
         for(DependencyObject? ancestor=VisualTreeHelper.GetParent(this);ancestor!=null;ancestor=VisualTreeHelper.GetParent(ancestor))
@@ -88,12 +88,19 @@ internal sealed class AssistantView : UserControl
         Refresh();AdjustLayout();if(focusRequested)FocusComposer();
     }
     private void OnUnloaded(object sender,RoutedEventArgs e)
+        =>Detach();
+    private void Detach()
     {
         if(!subscribed)return;
         savedScrollOffset=transcript.VerticalOffset;followLatest=transcript.ScrollableHeight-transcript.VerticalOffset<30;restoreScroll=true;
         subscribed=false;ai.Changed-=Refresh;ai.VisualChanged-=RefreshOrb;app.SettingsChanged-=RefreshOrb;
         if(hostWindow!=null)hostWindow.SizeChanged-=HostSizeChanged;if(hostViewport!=null)hostViewport.SizeChanged-=HostSizeChanged;
         hostWindow=null;hostViewport=null;screenImage.Source=null;lastFrame="";
+    }
+    public void Dispose()
+    {
+        if(disposed)return;
+        disposed=true;focusRequested=false;Detach();Loaded-=OnLoaded;Unloaded-=OnUnloaded;Visibility=Visibility.Collapsed;
     }
     private void HostSizeChanged(object sender,SizeChangedEventArgs e)=>AdjustLayout();
     private void AdjustLayout()

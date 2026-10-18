@@ -240,7 +240,7 @@ public sealed partial class OverlayWindow : Window
         environmentHidden=hide;
         if(TuckRequested)
         {
-            bool engaged=PointerInside() || PeekInteractionActive || IsMouseCaptureWithin || (expanded && IsKeyboardFocusWithin);
+            bool engaged=fileDragActive || PointerInside() || PeekInteractionActive || IsMouseCaptureWithin || (expanded && IsKeyboardFocusWithin);
             if(AutoTuckPolicy.ShouldTuck(TuckRequested,userHidden,expanded,peeking,engaged)){Collapse();ApplyEnvironmentTuck();}
         }
         else SetTucked(false);

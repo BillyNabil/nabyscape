@@ -117,5 +117,5 @@ public sealed partial class OverlayWindow
     private void LeaveAssistantPanel(){if(assistantOpen){assistantOpen=false;bodyDirty=true;}}
     internal void CloseAssistant(){LeaveAssistantPanel();Collapse();}
     private void CleanupAssistantIsland()
-    {assistantHover.Stop();assistantReplyDismiss.Stop();app.Assistant.Changed-=AssistantIslandChanged;app.Assistant.VisualChanged-=RefreshAssistantVisuals;app.SettingsChanged-=RefreshAssistantCharacter;}
+    {assistantHover.Stop();assistantReplyDismiss.Stop();islandAssistantView?.Dispose();app.Assistant.Changed-=AssistantIslandChanged;app.Assistant.VisualChanged-=RefreshAssistantVisuals;app.SettingsChanged-=RefreshAssistantCharacter;}
 }

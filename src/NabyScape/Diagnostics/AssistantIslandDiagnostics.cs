@@ -96,10 +96,10 @@ internal static class AssistantIslandDiagnostics
         check("A reveal during the peek exit fade keeps the new listening peek visible",island.AssistantPeeking && peekOrb.IsVisible && peekOrb.Rendering && Field<Grid>(island,"assistantPeek").Opacity>.99);
         bool motionEnabled=Motion.Enabled;Motion.Enabled=false;island.OpenAssistant(false);
         check("Reduced-motion inline entry collapses the hidden peek immediately",!peekOrb.IsVisible && !peekOrb.Rendering && ai.VoiceConnected);Motion.Enabled=motionEnabled;
-        s.AlwaysTucked=true;app.ChangeSettings();island.Collapse();island.RevealTuckedPreview();await Task.Delay(200);
+        s.AlwaysTucked=true;app.ChangeSettings();island.DiagnosticPointerPresent=true;island.Collapse();island.RevealTuckedPreview();await Task.Delay(200);
         check("A tucked live character reveals AI hover at the top edge",island.AssistantPeeking && !island.IsTucked && ai.VoiceConnected);
-        island.Collapse();await Task.Delay(200);Invoke("BeginFileDrop");Invoke("ShowShelfDropPreview",(object)Array.Empty<string>());await Task.Delay(200);
-        check("A file drag onto a tucked live session reveals the visible files preview and feedback",!island.IsTucked && !island.AssistantPeeking && island.PeekPage=="files" && Field<Border>(island,"shelfDropPreview").IsVisible && ai.VoiceConnected);
+        island.DiagnosticPointerPresent=false;island.Collapse();await Task.Delay(200);Invoke("BeginFileDrop");Invoke("ShowShelfDropPreview",(object)Array.Empty<string>());island.CheckEnvironment();await Task.Delay(200);island.CheckEnvironment();
+        check("A file drag onto a tucked live session retains visible files and feedback across environment checks without a pointer",!island.DiagnosticPointerPresent && !island.IsTucked && !island.AssistantPeeking && island.PeekPage=="files" && Field<Border>(island,"shelfDropPreview").IsVisible && ai.VoiceConnected);
         Invoke("FinishFileDrop",false);await Task.Delay(200);
         check("Canceling a tucked live file drag returns to the tucked edge without stopping voice",island.IsTucked && !island.IsPeeking && !island.AssistantPeeking && ai.VoiceConnected && !live.Stopped);
         Invoke("BeginFileDrop");

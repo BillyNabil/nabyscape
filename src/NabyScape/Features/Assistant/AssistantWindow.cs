@@ -19,7 +19,7 @@ internal sealed class AssistantWindow : Window
         {if(e.Key==Key.Escape){app.Assistant.StopSession();e.Handled=true;}}),true);
         StateChanged+=(_,_)=>{if(WindowState==WindowState.Minimized)app.Assistant.StopSession();};
         IsVisibleChanged+=(_,_)=>{if(!IsVisible)app.Assistant.StopSession();};
-        Closed+=(_,_)=>app.Assistant.StopSession();
+        Closed+=(_,_)=>{view.Dispose();app.Assistant.StopSession();};
     }
 
     // Provider settings retain their existing button styling API.

@@ -88,7 +88,8 @@ internal static class AssistantDiagnostics
         }
         window.Close();check("Assistant closing window releases listeners and orb rendering",Subscribers()==before && !orb.Rendering);
         for(int i=0;i<10;i++){var cycle=new AssistantWindow(app){ShowActivated=false};cycle.Show();cycle.Close();}
-        check("Assistant repeated open/close does not accumulate runtime listeners",Subscribers()==before);
+        bool immediatelyReleased=Subscribers()==before;await Task.Delay(70);
+        check("Assistant repeated open/close does not accumulate runtime listeners",immediatelyReleased && Subscribers()==before);
         var providers=new AssistantProvidersWindow(app){ShowActivated=false};providers.Show();await Task.Delay(70);
         foreach(var size in new[]{(600d,740d),(360d,420d)})
         {
