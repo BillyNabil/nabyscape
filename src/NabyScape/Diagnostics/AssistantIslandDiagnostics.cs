@@ -136,6 +136,12 @@ internal static class AssistantIslandDiagnostics
         {
             settings.Width=width;settings.Height=650;await Task.Delay(150);settings.UpdateLayout();
             check("Embedded AI settings keep connection fields inside the form at "+width,double.IsNaN(providerEditor.Height) && model.ActualWidth>100 && model.ActualWidth<settings.ActualWidth);
+            if(width==600)
+            {
+                var category=Diagnostics.Descendants(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Settings category");
+                typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Application"});bool first=category.SelectedItem?.ToString()=="Application";settings.OpenAiSettings();
+                check("Programmatic AI navigation keeps the compact category picker synchronized",first && category.SelectedItem?.ToString()=="AI");
+            }
             var image=new RenderTargetBitmap((int)settings.ActualWidth,(int)settings.ActualHeight,96,96,PixelFormats.Pbgra32);image.Render(settings);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var file=File.Create(Path.Combine(directory,"settings-ai-"+width+".png"));png.Save(file);
         }
         var password=Diagnostics.Descendants(providerEditor).OfType<PasswordBox>().Single();password.Password="fixture-only-unsaved-key";settings.Close();
