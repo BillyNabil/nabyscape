@@ -41,6 +41,10 @@ public sealed partial class OverlayWindow
         assistantCharacterButton.MouseEnter+=(_,_)=>{hoverDelay.Stop();assistantHover.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDelayMs);assistantHover.Start();};
         assistantCharacterButton.MouseLeave+=(_,_)=>assistantHover.Stop();
         assistantCharacterButton.PreviewMouseLeftButtonDown+=(_,_)=>assistantHover.Stop();
+        assistantCharacterButton.MouseEnter+=(_,_)=>closedAssistant.SetHover(true);
+        assistantCharacterButton.MouseLeave+=(_,_)=>{closedAssistant.SetHover(false);closedAssistant.Press(false);};
+        assistantCharacterButton.PreviewMouseLeftButtonDown+=(_,_)=>closedAssistant.Press(true);
+        assistantCharacterButton.PreviewMouseLeftButtonUp+=(_,_)=>closedAssistant.Press(false);
         assistantCharacterButton.MouseMove+=(_,e)=>{var p=e.GetPosition(assistantCharacterButton);closedAssistant.LookAt(p.X/Math.Max(1,assistantCharacterButton.ActualWidth)*2-1,p.Y/Math.Max(1,assistantCharacterButton.ActualHeight)*2-1);};assistantCharacterButton.MouseLeave+=(_,_)=>closedAssistant.LookAt(0,0);
         assistantCharacterHost.Children.Add(assistantCharacterButton);visuals.Children.Add(assistantCharacterHost);
         assistantPeek.Visibility=Visibility.Collapsed;assistantPeek.Opacity=0;assistantPeek.HorizontalAlignment=HorizontalAlignment.Center;assistantPeek.VerticalAlignment=VerticalAlignment.Top;
@@ -52,6 +56,12 @@ public sealed partial class OverlayWindow
         assistantHover.Tick+=(_,_)=>{assistantHover.Stop();if(assistantCharacterButton.IsMouseOver && !expanded && !userHidden)PreviewAssistant();};
         assistantReplyDismiss.Tick+=(_,_)=>{assistantReplyDismiss.Stop();if(assistantPeeking && !PointerInside())Collapse();};
         app.Assistant.Changed+=AssistantIslandChanged;app.Assistant.VisualChanged+=RefreshAssistantVisuals;app.SettingsChanged+=RefreshAssistantCharacter;
+        PreviewMouseMove+=(_,e)=>
+        {
+            void Track(AssistantOrb orb){if(!orb.IsVisible)return;var p=e.GetPosition(orb);orb.LookAt((p.X-orb.ActualWidth/2)/Math.Max(90,PaintedWidth*.4),(p.Y-orb.ActualHeight/2)/Math.Max(65,PaintedHeight*.45));}
+            Track(closedAssistant);Track(peekAssistant);
+        };
+        MouseLeave+=(_,_)=>{closedAssistant.LookAt(0,0);peekAssistant.LookAt(0,0);};
         RefreshAssistantCharacter();
     }
     private void AssistantIslandChanged()

@@ -67,6 +67,8 @@ internal sealed class AssistantView : UserControl,IDisposable
         screenPreview.Content=screenImage;screenPreview.Margin=new(0,island?0:8,0,0);screenPreview.Expanded+=(_,_)=>RefreshScreen();page.Children.Add(screenPreview);
         Content=page;
         Loaded+=OnLoaded;Unloaded+=OnUnloaded;SizeChanged+=(_,_)=>AdjustLayout();
+        PreviewMouseMove+=(_,e)=>{var p=e.GetPosition(orb);orb.LookAt((p.X-orb.ActualWidth/2)/Math.Max(100,ActualWidth*.45),(p.Y-orb.ActualHeight/2)/Math.Max(90,ActualHeight*.45));};
+        MouseLeave+=(_,_)=>orb.LookAt(0,0);
         IsVisibleChanged+=(_,_)=>{if(IsVisible){RefreshOrb();RefreshScreen();}};
         Refresh();
     }
