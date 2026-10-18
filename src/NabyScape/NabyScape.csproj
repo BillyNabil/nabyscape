@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\island.ico</ApplicationIcon>
     <AssemblyName>NabyScape</AssemblyName>
     <RootNamespace>NabyScape</RootNamespace>
-    <Version>2.5.0</Version>
+    <Version>2.5.1</Version>
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
     <Company>NabyScape</Company>
@@ -24,6 +24,7 @@
     <PackageReference Include="System.Management" Version="10.0.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <Resource Include="Assets\island.ico" />
+    <EmbeddedResource Include="..\..\docs\presets\default-layout.json" LogicalName="NabyScape.DefaultLayout.json" />
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="NabyScape.LICENSE" />
     <EmbeddedResource Include="..\..\licenses\NAudio-LICENSE.txt" LogicalName="NabyScape.NAudio-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\LUCIDE-LICENSE.txt" LogicalName="NabyScape.LUCIDE-LICENSE.txt" />

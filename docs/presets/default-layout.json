@@ -1,0 +1,182 @@
+{
+  "format": "luma.layout.v1",
+  "values": {
+    "AlwaysTucked": false,
+    "TuckEdge": 9,
+    "Preset": "Mac",
+    "Width": 327,
+    "Height": 36,
+    "Radius": 16,
+    "Top": 0,
+    "Horizontal": 50,
+    "DisplayMode": "Primary",
+    "Background": "#000000",
+    "Accent": "#FFFFFF",
+    "Opacity": 1,
+    "SettingsMaterial": "Solid",
+    "GlassStyle": true,
+    "GlassStrength": 0.58,
+    "AlbumAccent": true,
+    "PanelWidth": 526,
+    "PanelMaxHeight": 417,
+    "PanelPadding": 32,
+    "PanelScale": 1.04,
+    "SectionGap": 18,
+    "HoverWidth": 447,
+    "HoverHeight": 207,
+    "HoverDelayMs": 180,
+    "HoverDetailDelayMs": 550,
+    "SwipeDistance": 48,
+    "HoverViews": [
+      {
+        "Id": "media",
+        "Enabled": true
+      },
+      {
+        "Id": "timer",
+        "Enabled": true
+      },
+      {
+        "Id": "focus",
+        "Enabled": true
+      },
+      {
+        "Id": "calendar",
+        "Enabled": true
+      },
+      {
+        "Id": "notes",
+        "Enabled": true
+      },
+      {
+        "Id": "files",
+        "Enabled": true
+      },
+      {
+        "Id": "system",
+        "Enabled": false
+      },
+      {
+        "Id": "clips",
+        "Enabled": false
+      },
+      {
+        "Id": "tasks",
+        "Enabled": false
+      },
+      {
+        "Id": "stopwatch",
+        "Enabled": false
+      }
+    ],
+    "Widgets": [
+      {
+        "Id": "media",
+        "Enabled": true
+      },
+      {
+        "Id": "volume",
+        "Enabled": true
+      },
+      {
+        "Id": "timer",
+        "Enabled": true
+      },
+      {
+        "Id": "focus",
+        "Enabled": true
+      },
+      {
+        "Id": "clock",
+        "Enabled": true
+      },
+      {
+        "Id": "system",
+        "Enabled": true
+      },
+      {
+        "Id": "battery",
+        "Enabled": true
+      },
+      {
+        "Id": "shortcuts",
+        "Enabled": true
+      },
+      {
+        "Id": "stopwatch",
+        "Enabled": true
+      },
+      {
+        "Id": "tools",
+        "Enabled": true
+      }
+    ],
+    "CompactLayout": true,
+    "HoverPeek": true,
+    "TwoStageHover": true,
+    "AnimationMs": 420,
+    "ReduceMotion": false,
+    "LiveActivity": true,
+    "ClosedMediaIcon": "Artwork",
+    "ClosedMediaContent": "Waveform",
+    "Performance": "Maksimal",
+    "WheelAction": "pages",
+    "MiddleAction": "toggle",
+    "VolumeStep": 2,
+    "Clock24Hour": true,
+    "ClockSeconds": false,
+    "ShowDate": true,
+    "MonitorNetwork": true,
+    "MonitorStorage": true,
+    "MonitorProcesses": true,
+    "CategoryStyle": "Icons",
+    "LaunchStyle": "Icons",
+    "BoldMediaTitle": true,
+    "BoldHeadings": true,
+    "WaveformIdleMotion": true,
+    "VolumeFeedback": true,
+    "BrightnessFeedback": true,
+    "DropReveal": true,
+    "DetachablePreviews": false,
+    "CoverGestures": true,
+    "ActivitySatellite": false,
+    "SatelliteSource": "Auto",
+    "ControlFill": "#16171B",
+    "ControlBorder": "#303238",
+    "SelectionFill": "#34373E",
+    "PanelSwipe": true,
+    "Tools": [
+      {
+        "Id": "files",
+        "Enabled": true
+      },
+      {
+        "Id": "notes",
+        "Enabled": true
+      },
+      {
+        "Id": "tasks",
+        "Enabled": true
+      },
+      {
+        "Id": "clips",
+        "Enabled": true
+      },
+      {
+        "Id": "calendar",
+        "Enabled": true
+      },
+      {
+        "Id": "awake",
+        "Enabled": true
+      },
+      {
+        "Id": "links",
+        "Enabled": true
+      }
+    ],
+    "ActivitiesEnabled": false,
+    "HideFullscreen": true,
+    "HideMaximized": true
+  }
+}

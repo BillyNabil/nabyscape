@@ -38,7 +38,7 @@ internal static class PreferenceReset
     private static string[] Keys(string? category)=>category==null?Categories.Values.SelectMany(v=>v).Distinct().ToArray():Categories[category];
     internal static void Reset(Store store,Settings target,string? category)
     {
-        var candidate=Clone(target);var defaults=new Settings();
+        var candidate=Clone(target);var defaults=FactoryDefaults.Create();
         foreach(string key in Keys(category))Copy(defaults,candidate,key);
         candidate.Normalize();
         // Backup must succeed before either persisted or live preferences change.

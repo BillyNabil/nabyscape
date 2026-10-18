@@ -218,14 +218,15 @@ public sealed partial class Store
         string path=ResolveMigration(legacyRoot,newRoot,out var warning);
         return new Store(path){Warning=warning};
     }
+    private static T Fresh<T>() where T:new()=>typeof(T)==typeof(Settings)?(T)(object)FactoryDefaults.Create():new T();
     public T Load<T>(string name) where T:new()
     {
         var file=Path.Combine(DirectoryPath,name+".json");
-        if(!File.Exists(file)) return new();
+        if(!File.Exists(file)) return Fresh<T>();
         try
         {
             using var document=JsonDocument.Parse(File.ReadAllText(file));
-            var value=document.RootElement.Deserialize<T>(Options) ?? new();
+            var value=document.RootElement.Deserialize<T>(Options) ?? Fresh<T>();
             if(value is Settings settings && !settings.CompactLayout)
             {
                 // Older classic profiles predate the configurable panel dimensions.
@@ -238,7 +239,7 @@ public sealed partial class Store
         {
             Warning="Settings could not be read. Defaults were loaded and the original file was preserved.";
             try { File.Copy(file,file+".backup-"+DateTime.Now.ToString("yyyyMMddHHmmss"),true); } catch { }
-            return new();
+            return Fresh<T>();
         }
     }
     public void Save<T>(string name,T value)

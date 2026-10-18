@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-252c36?style=flat-square" alt="MIT license"></a>
 </p>
 
-**Latest release: v2.5.0.** Independent hover pages, smooth tuck transitions, clearer mixer icons, and the new local tools are included. [What changed →](docs/releases/v2.5.0.md)
+**Latest release: v2.5.1.** Independent hover pages, smooth tuck transitions, clearer mixer icons, and the new local tools are included. [What changed →](docs/releases/v2.5.1.md)
 
 ## Glance. Hover. Open.
 
@@ -71,6 +71,8 @@ Captured from actual WPF controls using **Midnight Notch**. Artwork, notes, task
 
 ## Make it feel like your desktop
 
+**New installs now start with Daily Notch:** 327 × 36 closed island, 526 px panel, 447 × 207 hover, black glass, artwork + waveform, icon navigation and 420 ms motion. Six hover pages are enabled; detachable previews, satellite and Activities start off. Existing installations keep their saved preferences. [Import the same default layout](docs/presets/default-layout.json). Clipboard capture, startup and download watching remain opt-in; no personal content or app targets are included.
+
 <p align="center"><img src="docs/evidence/integration-2.5.0/native-mica-wgc.jpg" alt="Actual v2.5 Settings window with Native Mica selected, custom window controls and contextual previews" width="100%"></p>
 
 Actual v2.5 Settings capture. The original gallery and silent film retain their v2.4.2 labels; they illustrate the shared design, not every new feature.
@@ -87,9 +89,9 @@ The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel
 
 **Windows 11 x64.** The self-contained builds include .NET; no SDK is needed to run the app.
 
-- **[Download the v2.5.0 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.0/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
-- **[Download the v2.5.0 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.0/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
-- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.0/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.5.0) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+- **[Download the v2.5.1 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.1/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
+- **[Download the v2.5.1 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.1/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
+- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.5.1/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.5.1) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
 
 The installer is currently unsigned. Download from the official repository and review the version and checksums before running. Portable mode still stores data in your Windows user profile. Starting with Windows is optional and off by default. Closing Settings keeps NabyScape running; choose **Quit** from the tray to exit.
 

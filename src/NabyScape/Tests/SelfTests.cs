@@ -14,6 +14,18 @@ internal static class SelfTests
         void Test(string name,Action test)
         {try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
         static void Assert(bool condition,string reason="Assertion failed") {if(!condition)throw new Exception(reason);}
+        Test("Factory layout matches the selected daily appearance without personal content or consent",()=>
+        {
+            var s=FactoryDefaults.Create();
+            Assert(s.Width==327 && s.Height==36 && s.PanelWidth==526 && s.PanelMaxHeight==417 && s.PanelScale==1.04 && s.HoverWidth==447 && s.HoverHeight==207);
+            Assert(s.GlassStrength==.58 && s.CategoryStyle=="Icons" && s.LaunchStyle=="Icons" && s.Performance=="Maksimal" && s.WheelAction=="pages" && s.HideMaximized && s.TuckEdge==9);
+            Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews && !s.ActivitySatellite && !s.ActivitiesEnabled);
+            Assert(string.Join(",",HoverPagePolicy.Pages(s))=="media,timer,focus,calendar,notes,files");
+            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,system,battery,shortcuts,stopwatch,tools" && s.Widgets.All(w=>w.Enabled));
+            Assert(!s.ClipboardHistory && !s.AutoStart && !s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
+            Assert(s.Shortcuts.Count==2 && s.Shortcuts[0].Target=="explorer.exe" && s.Shortcuts[1].Target=="ms-settings:");
+            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==10);
+        });
         Test("App resources retain installer notices, theme and icon after source relocation",()=>
         {
             var assembly=typeof(App).Assembly;
@@ -112,7 +124,7 @@ internal static class SelfTests
             });
             Test("New preferences retain compact defaults without creating a settings file",()=>
             {
-                var fresh=new Settings();var read=store.Load<Settings>("new-settings");Assert(fresh.PanelWidth==384 && fresh.PanelMaxHeight==408 && read.CompactLayout && read.PanelWidth==384 && read.PanelMaxHeight==408);Assert(!File.Exists(Path.Combine(temp,"new-settings.json")));
+                var fresh=FactoryDefaults.Create();var read=store.Load<Settings>("new-settings");Assert(fresh.PanelWidth==526 && fresh.PanelMaxHeight==417 && read.CompactLayout && read.PanelWidth==526 && read.PanelMaxHeight==417);Assert(!File.Exists(Path.Combine(temp,"new-settings.json")));
             });
             Test("Partial classic profile imports preserve current panel dimensions",()=>
             {
@@ -130,7 +142,7 @@ internal static class SelfTests
             });
             Test("Malformed settings are backed up before recovery",()=>
             {
-                File.WriteAllText(Path.Combine(temp,"broken.json"),"{bad json");var s=store.Load<Settings>("broken");Assert(s.Width==228 && store.Warning!=null && Directory.GetFiles(temp,"broken.json.backup-*").Length>0);
+                File.WriteAllText(Path.Combine(temp,"broken.json"),"{bad json");var s=store.Load<Settings>("broken");Assert(s.Width==327 && store.Warning!=null && Directory.GetFiles(temp,"broken.json.backup-*").Length>0);
             });
             Test("Broken shortcut produces actionable failure",()=>
             {
