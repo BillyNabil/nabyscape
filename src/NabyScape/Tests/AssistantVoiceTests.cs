@@ -24,6 +24,10 @@ internal static class AssistantVoiceTests
         { Endpoint = endpoint; Key = key; Gemini = gemini; if (HoldConnect) await Task.Delay(Timeout.Infinite, token); }
         public async Task Send(string json, CancellationToken token)
         {
+            if (Aborted) throw new InvalidOperationException("The fixture socket has been aborted.");
+            // Model native ManagedWebSocket: cancellation of an in-flight frame
+            // aborts the whole socket, not just this individual write operation.
+            using var abortOnCancellation = token.Register(Abort);
             Interlocked.Increment(ref EnteredSends);
             if (HoldSend) await Task.Delay(Timeout.Infinite, token);
             if (SendGate != null) await SendGate.Task.WaitAsync(token);
@@ -34,7 +38,7 @@ internal static class AssistantVoiceTests
         public async Task<string?> Receive(CancellationToken token) => await Incoming.Reader.ReadAsync(token);
         internal void Push(string? json) => Incoming.Writer.TryWrite(json);
         internal string[] Payloads() { lock (Sent) return Sent.ToArray(); }
-        public void Abort() => Aborted = true;
+        public void Abort() { Aborted = true; Incoming.Writer.TryWrite(null); }
         public void Dispose() => Disposed = true;
     }
     private sealed class Audio : IAssistantVoiceAudio
@@ -225,7 +229,7 @@ internal static class AssistantVoiceTests
             var sent = socket.Payloads().Where(p => p.Contains("function_call_output") || p.Contains("response.create")).ToArray();
             Assert(sent.Length == 3 && sent[0].Contains("call-a") && sent[1].Contains("call-b") && sent[2].Contains("response.create")); await voice.Stop();
         });
-        RunAsync("Voice canceled unsent results remain retryable before and after acquiring send lock", async () =>
+        RunAsync("Voice result cancellation retries only unsent frames and finishes started frames without aborting", async () =>
         {
             var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
             await Start(voice); var a = await ReceiveCall(voice, socket, "result-a"); var b = await ReceiveCall(voice, socket, "result-b");
@@ -241,14 +245,35 @@ internal static class AssistantVoiceTests
             await voice.SendToolResult(b, "second", default);
             Assert(socket.Payloads().Count(p => p.Contains("function_call_output")) == 2 && socket.Payloads().Count(p => p.Contains("response.create")) == 1);
             var c = await ReceiveCall(voice, socket, "result-c");
-            socket.SendGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); entered = socket.EnteredSends;
+            var inFlightGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); socket.SendGate = inFlightGate; entered = socket.EnteredSends;
             using var afterLock = new CancellationTokenSource(); Task third = voice.SendToolResult(c, "third", afterLock.Token);
             await Until(() => socket.EnteredSends > entered); afterLock.Cancel();
+            Assert(!third.IsCompleted && !socket.Aborted && voice.Connected);
+            inFlightGate.TrySetResult();
             try { await third; throw new Exception("Expected in-send cancellation"); } catch (OperationCanceledException) { }
-            Assert(!voice.CallToken(c.Id).IsCancellationRequested && !socket.Payloads().Any(p => p.Contains("result-c")));
-            socket.SendGate = null; await voice.SendToolResult(c, "third", default); Assert(socket.Payloads().Count(p => p.Contains("result-c")) == 1);
+            Assert(voice.CallToken(c.Id).IsCancellationRequested && socket.Payloads().Count(p => p.Contains("result-c")) == 1);
+            Assert(!socket.Aborted && voice.Connected && socket.Payloads().Count(p => p.Contains("response.create")) == 1);
+            Reject<InvalidOperationException>(() => voice.SendToolResult(c, "duplicate", default).GetAwaiter().GetResult());
+            socket.SendGate = null; await voice.SendText("session remains usable", default);
             await voice.Stop();
         });
+        foreach (string protocol in AssistantVoiceSession.Protocols)
+            RunAsync("Voice " + protocol + " server cancellation finishes an in-flight result without socket abort or continuation", async () =>
+            {
+                var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                await Start(voice, Provider(protocol)); var call = await ReceiveCall(voice, socket, "late-result"); CancellationToken callToken = voice.CallToken(call.Id);
+                var sendingGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); socket.SendGate = sendingGate;
+                int entered = socket.EnteredSends; Task sending = voice.SendToolResult(call, "already started", default);
+                await Until(() => socket.EnteredSends > entered);
+                socket.Push(socket.Gemini ? "{\"toolCallCancellation\":{\"ids\":[\"late-result\"]}}" : "{\"type\":\"input_audio_buffer.speech_started\"}");
+                await Until(() => callToken.IsCancellationRequested);
+                Assert(!sending.IsCompleted && !socket.Aborted && voice.Connected);
+                sendingGate.TrySetResult();
+                try { await sending; throw new Exception("Expected canceled late result"); } catch (OperationCanceledException) { }
+                Assert(socket.Payloads().Count(p => p.Contains("late-result")) == 1 && !socket.Payloads().Any(p => p.Contains("response.create")));
+                Assert(!socket.Aborted && voice.Connected); socket.SendGate = null;
+                await voice.SendText("next input", default); await voice.Stop();
+            });
         foreach (string protocol in AssistantVoiceSession.Protocols)
             RunAsync("Voice " + protocol + " cancels emitted tool tokens on server interruption new input and Stop", async () =>
             {

@@ -180,17 +180,22 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             string output = s.Gemini
                 ? JsonSerializer.Serialize(new { toolResponse = new { functionResponses = new[] { new { id = call.Id, name = call.Name, response = new { result } } } } })
                 : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "function_call_output", call_id = call.Id, output = result } });
-            await SendLocked(s, output, linked.Token).ConfigureAwait(false);
+            linked.Token.ThrowIfCancellationRequested();
+            // Canceling ClientWebSocket.SendAsync aborts the entire connection. A call
+            // canceled after this point may deliver one late correlated result, but
+            // must not break the session or trigger a continuation for that call.
+            await SendLocked(s, output, s.Cancel.Token).ConfigureAwait(false);
             bool resume;
             lock (gate)
             {
                 // Removal follows successful delivery while the send lock still owns ordering.
-                // A caller canceled before delivery may retry the same pending result.
+                // Only cancellation before starting the frame leaves a retryable result.
                 bool removed = s.Pending.Remove(call.Id);
                 s.Calls.Remove(call.Id);
-                resume = removed && Active(s) && !s.ResponseActive && s.Pending.Count == 0;
+                resume = removed && Active(s) && !linked.IsCancellationRequested && !s.ResponseActive && s.Pending.Count == 0;
             }
-            if (!s.Gemini && resume) await SendLocked(s, "{\"type\":\"response.create\"}", linked.Token).ConfigureAwait(false);
+            linked.Token.ThrowIfCancellationRequested();
+            if (!s.Gemini && resume) await SendLocked(s, "{\"type\":\"response.create\"}", s.Cancel.Token).ConfigureAwait(false);
         }
         finally { if (held) s.SendLock.Release(); }
     }
@@ -279,8 +284,10 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             await s.SendLock.WaitAsync(linked.Token).ConfigureAwait(false); held = true;
             foreach (string payload in payloads)
             {
-                await SendLocked(s, payload, linked.Token).ConfigureAwait(false);
+                linked.Token.ThrowIfCancellationRequested();
+                await SendLocked(s, payload, s.Cancel.Token).ConfigureAwait(false);
             }
+            linked.Token.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException) when (linked.IsCancellationRequested) { throw; }
         catch { Fail(s, "Voice upload failed. Start voice again to reconnect."); throw new InvalidOperationException("Voice upload failed. Start voice again to reconnect."); }
