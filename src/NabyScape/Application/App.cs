@@ -8,7 +8,7 @@ using Forms=System.Windows.Forms;
 
 namespace NabyScape;
 
-public sealed class App : Application
+public sealed partial class App : Application
 {
     private Mutex? mutex;
     private EventWaitHandle? openEvent,exitEvent;
@@ -91,10 +91,12 @@ public sealed class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        mutex=new Mutex(true,"Local\\LumaIsland.Desktop",out var created);
-        if(!created) {try {using var signal=EventWaitHandle.OpenExisting("Local\\LumaIsland.OpenSettings");signal.Set();}catch(WaitHandleCannotBeOpenedException){}Shutdown();return; }
-        openEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\LumaIsland.OpenSettings");
-        exitEvent=new EventWaitHandle(false,EventResetMode.AutoReset,"Local\\LumaIsland.Exit");
+        bool assistantFixture=Array.Exists(e.Args,a=>a=="--assistant-only") && Array.Exists(e.Args,a=>a=="--diagnostics");
+        string instance=assistantFixture?"Local\\LumaIsland.AssistantDiagnostics":"Local\\LumaIsland";
+        mutex=new Mutex(true,instance+".Desktop",out var created);
+        if(!created) {try {using var signal=EventWaitHandle.OpenExisting(instance+".OpenSettings");signal.Set();}catch(WaitHandleCannotBeOpenedException){}Shutdown();return; }
+        openEvent=new EventWaitHandle(false,EventResetMode.AutoReset,instance+".OpenSettings");
+        exitEvent=new EventWaitHandle(false,EventResetMode.AutoReset,instance+".Exit");
         openWait=ThreadPool.RegisterWaitForSingleObject(openEvent,(_,_)=>Dispatcher.BeginInvoke(ShowSettings),null,Timeout.Infinite,false);
         exitWait=ThreadPool.RegisterWaitForSingleObject(exitEvent,(_,_)=>Dispatcher.BeginInvoke(Quit),null,Timeout.Infinite,false);
         ShutdownMode=ShutdownMode.OnExplicitShutdown;
@@ -103,6 +105,7 @@ public sealed class App : Application
         var diagnosticPath=diagnosticIndex>=0 && diagnosticIndex+1<e.Args.Length ? e.Args[diagnosticIndex+1] : null;
         diagnosticMode=diagnosticPath!=null;
         Store=new(diagnosticPath==null ? null : Path.Combine(diagnosticPath,"test-profile"));Settings=diagnosticPath==null?Store.Load<Settings>("settings"):new Settings();Settings.Normalize();Settings.AutoStart=StartupService.Enabled();
+        if(assistantFixture){Settings.HotkeyEnabled=Settings.VisibilityHotkeyEnabled=Settings.TuckHotkeyEnabled=false;Settings.HideFullscreen=Settings.HideMaximized=false;}
         Updates=new(Store,Array.Exists(e.Args,a=>a=="--stage3-only")?new Stage3Diagnostics.Network():null);
         UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);
         Motion.Configure(Settings);
@@ -111,12 +114,14 @@ public sealed class App : Application
         Audio=new(Store.Log);Media=new(Store.Log);Productivity=new(Store,Store.Log,diagnosticPath==null);Productivity.SetClipboardEnabled(Settings.ClipboardHistory);
         Brightness=new();Brightness.Start(diagnosticPath==null);
         Calendar=new(Store);Awake=new();Activities=new(Store,Session.Focus,Awake,SaveSession,Store.Log);
+        Assistant=new(this,diagnosticPath!=null?new AssistantMemoryKeys():null);
         tray=new Forms.NotifyIcon{Text="NabyScape",Visible=diagnosticPath==null};
         using(var stream=GetResourceStream(new Uri("pack://application:,,,/Assets/island.ico")).Stream) tray.Icon=new System.Drawing.Icon(stream);
         var menu=new Forms.ContextMenuStrip();
         menu.Items.Add("Open island",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.Reveal()));
         menu.Items.Add("Command bar",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ShowCommands()));
         menu.Items.Add("Settings",null,(_,_)=>Dispatcher.Invoke(ShowSettings));
+        menu.Items.Add("AI companion",null,(_,_)=>Dispatcher.Invoke(ShowAssistant));
         menu.Items.Add("Tuck / Return to automatic",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleTuck()));
         menu.Items.Add("Hide / show",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleVisibility()));
         menu.Items.Add(new Forms.ToolStripSeparator());
@@ -130,7 +135,7 @@ public sealed class App : Application
         Media.Changed+=()=>PublishUpdate(RuntimeChange.Media);
         Audio.Changed+=()=>PublishUpdate(RuntimeChange.Audio);
         Productivity.Changed+=()=>PublishUpdate(RuntimeChange.Productivity);Calendar.Changed+=()=>PublishUpdate(RuntimeChange.Calendar);
-        if(Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only" or "--stage1-only" or "--stage2-only" or "--stage3-only" or "--stage4-only" or "--stage5-only" or "--stage6-only" or "--integration-settings-only" or "--interaction-hotfix-only" or "--interaction-tuck-hide-only" or "--interaction-classic-mixer-only") || diagnosticPath!=null && Array.Exists(e.Args,a=>a=="--showcase"))Media.DiagnosticFixture=true;else _=Media.Initialize();
+        if(assistantFixture || Array.Exists(e.Args,a=>a is "--performance-benchmark" or "--performance-checks-only" or "--stage1-only" or "--stage2-only" or "--stage3-only" or "--stage4-only" or "--stage5-only" or "--stage6-only" or "--integration-settings-only" or "--interaction-hotfix-only" or "--interaction-tuck-hide-only" or "--interaction-classic-mixer-only") || diagnosticPath!=null && Array.Exists(e.Args,a=>a=="--showcase"))Media.DiagnosticFixture=true;else _=Media.Initialize();
         Audio.Read();Usage=Native.SystemUsage();
         int counter=0;
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};
@@ -202,6 +207,7 @@ public sealed class App : Application
     { quitting=true;Shutdown(); }
     protected override void OnExit(ExitEventArgs e)
     {
+        Assistant?.Dispose();assistantWindow?.Close();assistantProviders?.Close();
         tick?.Stop();Downloads?.Dispose();Updates?.Dispose();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();

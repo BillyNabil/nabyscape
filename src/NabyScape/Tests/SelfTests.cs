@@ -11,8 +11,9 @@ internal static class SelfTests
     public static void Run(string[] args)
     {
         var checks=new List<string>();int failed=0;
+        int reportAt=Array.IndexOf(args,"--report");string? progressPath=reportAt>=0 && reportAt+1<args.Length?args[reportAt+1]+".progress":null;
         void Test(string name,Action test)
-        {try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
+        {if(progressPath!=null)File.WriteAllText(progressPath,name);try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
         static void Assert(bool condition,string reason="Assertion failed") {if(!condition)throw new Exception(reason);}
         Test("Factory layout matches the selected daily appearance without personal content or consent",()=>
         {
@@ -36,6 +37,9 @@ internal static class SelfTests
             var keys=reader.Cast<System.Collections.DictionaryEntry>().Select(entry=>entry.Key.ToString()).ToArray();
             Assert(keys.Contains("theme.baml") && keys.Contains("assets/island.ico"),"WPF resource paths changed");
         });
+        AssistantProviderTests.Run(Test);
+        AssistantVoiceTests.Run(Test);
+        AssistantCoreTests.Run(Test);
         Stage5Tests.Run((name,pass)=>Test("Stage5: "+name,()=>Assert(pass)));
         InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         WaveformMotionTests.Run((name,pass)=>Test(name,()=>Assert(pass)));

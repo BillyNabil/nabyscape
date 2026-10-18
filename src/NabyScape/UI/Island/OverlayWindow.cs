@@ -205,7 +205,7 @@ public sealed partial class OverlayWindow : Window
         Collapse();userHidden=!show;
         visibilityOverride=show?lastExternalForeground:IntPtr.Zero;
         environmentHidden=false;SetTucked(false);
-        app.Previews?.SetHidden(!show);if(show){Show();Position();}else Hide();
+        app.Previews?.SetHidden(!show);if(!show)app.HideAssistant();if(show){Show();Position();}else Hide();
     }
     private IntPtr visibilityOverride,lastExternalForeground;
     private IntPtr RememberExternalForeground()

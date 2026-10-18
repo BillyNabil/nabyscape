@@ -51,6 +51,7 @@ public sealed partial class OverlayWindow
     }
     private IEnumerable<(string title,string detail,Action run)> Commands()
     {
+        yield return ("AI companion","Chat, voice and reviewed actions · configure your own provider",app.ShowAssistant);
         yield return ("Notifications","View pending notifications and Downloads · Enter",()=>{CloseCommands();OpenNotice(true);});
         if(app.Settings.ActivitiesEnabled)yield return ("Activities","Run or edit your workspace routines",()=>ShowActivities());
         foreach(var definition in app.Activities.Definitions.Where(_=>app.Settings.ActivitiesEnabled)){var action=definition;yield return ("Activity · "+action.Name,"Open activity controls",()=>ShowActivities());}

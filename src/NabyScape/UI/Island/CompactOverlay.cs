@@ -126,6 +126,7 @@ public sealed partial class OverlayWindow
         title.FontSize=18;artist.FontSize=12;artwork.Width=artwork.Height=56;timerTime.FontSize=focusTime.FontSize=27;clock.FontSize=26;
         var navigation=new Grid{Margin=new(0,0,0,app.Settings.SectionGap)};
         navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});navigation.ColumnDefinitions.Add(new());navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
+        navigation.Children.Add(AssistantLauncher());
         var settings=Icons.Button("settings","Settings",app.ShowSettings,false,28);settings.Margin=new(0);settings.Background=Brushes.Transparent;Grid.SetColumn(settings,2);navigation.Children.Add(settings);
         if(bodyWidth<250){navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});Grid.SetRow(settings,0);}
         int categoryCount=Math.Max(1,PanelWidgets.Select(w=>PageFor(w.Id)).Distinct().Count());

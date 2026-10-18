@@ -240,6 +240,7 @@ public sealed partial class SettingsWindow : Window
     {
         var s=app.Settings;
         UpdatesSection();NotificationSettings();
+        page.Children.Add(Section("AI companion",UI.Text("An optional animated companion for chat, live voice and selected-screen context. Configure your own providers; microphone, screen and reviewed actions are session choices. Keys stay in Windows Credential Manager; conversation stays in memory.",12,UI.Muted),UI.Row(UI.Button("Open companion",app.ShowAssistant),UI.Button("Manage AI providers",app.ShowAssistantProviders))));
         var startup=new CheckBox{Content="Start automatically when signing in to Windows",IsChecked=s.AutoStart};
         UI.Named(startup,"Start automatically when signing in to Windows");        startup.Click+=(_,_)=>
         {

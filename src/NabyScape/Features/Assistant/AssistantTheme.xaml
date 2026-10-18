@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style TargetType="Expander">
+    <Setter Property="Foreground" Value="#B1B5BE"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Expander">
+      <StackPanel>
+        <ToggleButton Content="{TemplateBinding Header}" IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" Foreground="{TemplateBinding Foreground}" HorizontalContentAlignment="Left" Padding="0,8" BorderThickness="0" Background="Transparent">
+          <ToggleButton.Template><ControlTemplate TargetType="ToggleButton"><Border Background="Transparent" Padding="{TemplateBinding Padding}"><DockPanel><TextBlock x:Name="Chevron" Text="›" FontSize="17" Foreground="{TemplateBinding Foreground}" Margin="0,0,8,0" RenderTransformOrigin="0.5,0.5"/><ContentPresenter VerticalAlignment="Center"/></DockPanel></Border><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Chevron" Property="RenderTransform"><Setter.Value><RotateTransform Angle="90"/></Setter.Value></Setter></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="Foreground" Value="White"/></Trigger></ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template>
+        </ToggleButton>
+        <ContentPresenter x:Name="Body" ContentSource="Content" Visibility="Collapsed" Margin="0,6,0,2"/>
+      </StackPanel>
+      <ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="True"><Setter TargetName="Body" Property="Visibility" Value="Visible"/></Trigger></ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style TargetType="PasswordBox">
+    <Setter Property="Background" Value="#16181C"/><Setter Property="Foreground" Value="#F0F1F4"/><Setter Property="CaretBrush" Value="White"/><Setter Property="BorderBrush" Value="#30343D"/><Setter Property="Padding" Value="10,8"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="PasswordBox"><Border x:Name="Frame" CornerRadius="12" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" Padding="{TemplateBinding Padding}"><ScrollViewer x:Name="PART_ContentHost"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="#F0F1F4"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+  </Style>
+</ResourceDictionary>

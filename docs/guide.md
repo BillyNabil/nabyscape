@@ -83,6 +83,8 @@ Mixer rows control individual Windows audio sessions; multiple sessions for one 
 
 No account or cloud service is required. Preferences, timers, notes, tasks, shortcuts, and calendar events stay on this device. Clipboard history is opt-in; disabling it clears stored clipboard history and images. File shelf entries refer to the originals.
 
+The optional v2.6.0 development [AI companion](assistant.md) starts off. If enabled, your chosen messages and explicitly enabled audio/screen context go to your configured provider; approved note-reading can send note contents. Provider keys live in Windows Credential Manager, chat history stays in memory, and screen/control permissions last only for the session. The public v2.5.1 download does not yet include this candidate feature.
+
 **v2.5.0** stores local content and preferences in `%LOCALAPPDATA%\NabyScape`, migrating legacy LumaIsland data as described below. Existing installations retain their install path and internal identifiers for compatibility:
 
 ```text

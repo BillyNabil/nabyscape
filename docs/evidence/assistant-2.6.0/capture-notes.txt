@@ -1,0 +1,1 @@
+Synthetic WPF fixtures, not a live AI response. 1x/1.5x/2x are render pixel densities of actual WPF windows, not mixed-DPI monitor emulation. No API, microphone, desktop screenshot, credential vault or native input was used. Physical DPI switching and live provider/device interoperability remain manual acceptance checks.
