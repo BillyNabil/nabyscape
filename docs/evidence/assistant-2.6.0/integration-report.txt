@@ -7,6 +7,11 @@ PASS  Assistant pending action exposes review before changing state
 PASS  Assistant Decline leaves the isolated timer untouched
 PASS  Assistant Run once executes exactly the reviewed app action
 PASS  Assistant Stop dismisses approval and revokes session controls
+PASS  Assistant handled child Escape stops approval from Run once
+PASS  Assistant handled child Escape stops approval from Decline
+PASS  Assistant handled child Escape stops approval from Providers
+PASS  Assistant handled child Escape stops approval from Actions on
+PASS  Assistant handled child Escape stops approval from Display to share
 PASS  Assistant compact layout keeps form scrollable at 480
 PASS  Assistant compact layout keeps form scrollable at 360
 PASS  Assistant closing window releases listeners and orb rendering

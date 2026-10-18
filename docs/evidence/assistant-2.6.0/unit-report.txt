@@ -2,12 +2,16 @@ PASS  Factory layout matches the selected daily appearance without personal cont
 PASS  App resources retain installer notices, theme and icon after source relocation
 PASS  Assistant provider presets require an explicit model and capability choices
 PASS  Assistant endpoints block cleartext remote private IP credentials query and fragments
+PASS  Assistant ChatCompletions bounded voice outcomes preserve valid replay after HTTP tool history
 PASS  Assistant ChatCompletions maps text image system tools and safe authentication
 PASS  Assistant ChatCompletions round trips tool IDs arguments and opaque continuation
+PASS  Assistant Responses bounded voice outcomes preserve valid replay after HTTP tool history
 PASS  Assistant Responses maps text image system tools and safe authentication
 PASS  Assistant Responses round trips tool IDs arguments and opaque continuation
+PASS  Assistant Anthropic bounded voice outcomes preserve valid replay after HTTP tool history
 PASS  Assistant Anthropic maps text image system tools and safe authentication
 PASS  Assistant Anthropic round trips tool IDs arguments and opaque continuation
+PASS  Assistant Gemini bounded voice outcomes preserve valid replay after HTTP tool history
 PASS  Assistant Gemini maps text image system tools and safe authentication
 PASS  Assistant Gemini round trips tool IDs arguments and opaque continuation
 PASS  Assistant Gemini preserves strict nested JSON Schema in parametersJsonSchema
@@ -36,6 +40,19 @@ PASS  Voice GeminiLive server cancellation finishes an in-flight result without 
 PASS  Voice OpenAIRealtime cancels emitted tool tokens on server interruption new input and Stop
 PASS  Voice GeminiLive cancels emitted tool tokens on server interruption new input and Stop
 PASS  Voice stop cancels blocked send synchronously and restart has no stale callbacks
+PASS  Voice OpenAIRealtime fresh action image precedes output and continuation atomically after rate wait
+PASS  Voice GeminiLive fresh action image precedes output and continuation atomically after rate wait
+PASS  Voice image rate wait cancels before capture or output per caller
+PASS  Voice image rate wait cancels before capture or output per call
+PASS  Voice slow fresh capture leaves microphone upload free and cancels without stale reuse
+PASS  Voice in-flight fresh image uses session cancellation and skips canceled output and continuation
+PASS  Voice completed outcome survives delivery boundary upload
+PASS  Voice completed outcome survives delivery boundary capture
+PASS  Voice completed outcome survives delivery boundary cancel
+PASS  Voice completed outcome survives delivery boundary old-session
+PASS  Voice completed outcome survives delivery boundary clear
+PASS  Voice local evidence bounds history and text without adding protocol tool records
+PASS  Voice activity preserves thinking and audible speech across interleaved silent output and microphone ticks
 PASS  Voice PCM meter measures signed samples including negative full scale
 PASS  Voice playback buffer accepts long response bursts and repeated generation clears
 PASS  Assistant complete tool turn preserves protocol metadata, IDs and fresh screen
@@ -343,7 +360,7 @@ PASS  Mixer: WPF mixer row at 302 DIP truncates long names with full accessible 
 PASS  Mixer: WPF mixer row at 193.6 DIP keeps icon, percentage, mute and usable slider inside bounds
 PASS  Mixer: WPF mixer row at 193.6 DIP reflows without overlapping header or controls
 PASS  Mixer: WPF mixer row at 193.6 DIP truncates long names with full accessible identity
-PASS  Mixer: Native read-only snapshot: 5 outputs, 19 sessions, 0 errors
+PASS  Mixer: Native read-only snapshot: 5 outputs, 23 sessions, 0 errors
 PASS  Monitor: GPU sums processes per engine and uses busiest engine
 PASS  Monitor: GPU initial read is unavailable, never fabricated zero
 PASS  Monitor: GPU reset counters invalidate the baseline
@@ -430,4 +447,4 @@ PASS  Running and paused timers survive process restart
 PASS  Malformed settings are backed up before recovery
 PASS  Broken shortcut produces actionable failure
 PASS  Unsupported shortcut URI is rejected
-RESULT: 432 passed, 0 failed
+RESULT: 449 passed, 0 failed
