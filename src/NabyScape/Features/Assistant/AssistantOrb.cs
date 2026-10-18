@@ -4,7 +4,6 @@ using System.Windows.Media;
 
 namespace NabyScape;
 
-internal enum AssistantState { Idle,Connecting,Listening,Thinking,Speaking,Approval,Error }
 
 // Original vector character, no video/WebView/shader or hidden idle render loop.
 internal sealed class AssistantOrb : FrameworkElement

@@ -14,7 +14,7 @@ internal static class AssistantVoiceTests
     {
         internal readonly Channel<string?> Incoming = Channel.CreateUnbounded<string?>();
         internal readonly List<string> Sent = new();
-        internal bool Ack = true, Aborted, Disposed, HoldConnect, HoldSend;
+        internal bool Ack = true, Aborted, Disposed, HoldConnect, HoldSend, ThrowSend;
         internal int SendDelayMs, EnteredSends;
         internal TaskCompletionSource? SendGate;
         internal Uri? Endpoint;
@@ -24,6 +24,7 @@ internal static class AssistantVoiceTests
         { Endpoint = endpoint; Key = key; Gemini = gemini; if (HoldConnect) await Task.Delay(Timeout.Infinite, token); }
         public async Task Send(string json, CancellationToken token)
         {
+            if (ThrowSend) throw new System.IO.IOException("fixture upload failure");
             if (Aborted) throw new InvalidOperationException("The fixture socket has been aborted.");
             // Model native ManagedWebSocket: cancellation of an in-flight frame
             // aborts the whole socket, not just this individual write operation.
@@ -40,6 +41,11 @@ internal static class AssistantVoiceTests
         internal string[] Payloads() { lock (Sent) return Sent.ToArray(); }
         public void Abort() { Aborted = true; Incoming.Writer.TryWrite(null); }
         public void Dispose() => Disposed = true;
+    }
+    private sealed class NoTransport : IAssistantTransport
+    {
+        public Task<AssistantReply> Complete(AssistantProvider p,string? key,IReadOnlyList<AssistantMessage> messages,IReadOnlyList<AssistantTool> tools,CancellationToken token)
+            => throw new Exception("Local outcome fixtures never request a provider.");
     }
     private sealed class Audio : IAssistantVoiceAudio
     {
@@ -300,6 +306,118 @@ internal static class AssistantVoiceTests
             Task stopping = voice.Stop(); Assert(devices[0].Disposed && first.Aborted); await stopping;
             try { await sending; throw new Exception("Expected cancellation"); } catch (OperationCanceledException) { }
             await Start(voice); first.Push("{\"type\":\"response.output_text.done\",\"text\":\"stale\"}"); await Task.Delay(20); Assert(callbacks == 0 && voice.Connected); await voice.Stop();
+        });
+        foreach (string protocol in AssistantVoiceSession.Protocols)
+            RunAsync("Voice " + protocol + " fresh action image precedes output and continuation atomically after rate wait", async () =>
+            {
+                var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                await Start(voice, Provider(protocol)); await voice.SendImage("data:image/jpeg;base64,AQID", default);
+                var call = await ReceiveCall(voice, socket, "fresh-result");
+                bool captured = false, periodicCaptured = false;
+                long began = Environment.TickCount64;
+                Task action = voice.SendToolResult(call, "completed once", default, _ => { captured = true; return Task.FromResult<string?>("data:image/jpeg;base64,BAUG"); });
+                Task periodic = voice.SendImage(_ => { periodicCaptured = true; return Task.FromResult<string?>("data:image/jpeg;base64,BwgJ"); }, default);
+                await Task.Delay(60); Assert(!captured && !periodicCaptured && !action.IsCompleted);
+                // A rate wait must not starve the ten-frame microphone queue.
+                for (int frame = 0; frame < 12; frame++) { audio.Capture!(new byte[2400]); await Task.Delay(50); Assert(voice.Connected); }
+                await Until(() => socket.Payloads().Count(p => p.Contains(socket.Gemini ? "audio/pcm;rate=16000" : "input_audio_buffer.append")) == 12);
+                await action; Assert(Environment.TickCount64 - began >= 850 && captured && !periodicCaptured);
+                var sent = socket.Payloads();
+                int image = Array.FindIndex(sent, p => p.Contains("BAUG"));
+                int result = Array.FindIndex(sent, p => p.Contains("completed once"));
+                Assert(image >= 0 && result == image + 1);
+                if (protocol == "OpenAIRealtime") Assert(sent[result + 1].Contains("response.create"));
+                await periodic; Assert(periodicCaptured && socket.Payloads().Last().Contains("BwgJ")); await voice.Stop();
+            });
+        foreach (bool serverCancellation in new[] { false, true })
+            RunAsync("Voice image rate wait cancels before capture or output " + (serverCancellation ? "per call" : "per caller"), async () =>
+            {
+                var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                await Start(voice); await voice.SendImage("data:image/jpeg;base64,AQID", default);
+                var call = await ReceiveCall(voice, socket, "image-wait"); using var cancellation = new CancellationTokenSource(); int captures = 0;
+                Task work = voice.SendToolResult(call, "unsent", cancellation.Token, _ => { captures++; return Task.FromResult<string?>("data:image/jpeg;base64,BAUG"); });
+                await Task.Delay(30);
+                if (serverCancellation) socket.Push("{\"type\":\"input_audio_buffer.speech_started\"}"); else cancellation.Cancel();
+                try { await work; throw new Exception("Expected rate-wait cancellation"); } catch (OperationCanceledException) { }
+                Assert(captures == 0 && !socket.Payloads().Any(p => p.Contains("function_call_output") || p.Contains("response.create")) && !socket.Aborted && voice.Connected);
+                if (!serverCancellation) await voice.SendToolResult(call, "retry", default, _ => Task.FromResult<string?>("data:image/jpeg;base64,BAUG"));
+                await voice.Stop();
+            });
+        RunAsync("Voice slow fresh capture leaves microphone upload free and cancels without stale reuse", async () =>
+        {
+            var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+            await Start(voice); var call = await ReceiveCall(voice, socket, "slow-capture"); using var cancellation = new CancellationTokenSource();
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var capture = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Task work = voice.SendToolResult(call, "completed", cancellation.Token, token => { started.TrySetResult(); return capture.Task.WaitAsync(token); });
+            await started.Task;
+            for (int i = 0; i < 12; i++) { audio.Capture!(new byte[2400]); await Task.Delay(50); Assert(voice.Connected); }
+            await Until(() => socket.Payloads().Count(p => p.Contains("input_audio_buffer.append")) == 12);
+            cancellation.Cancel(); try { await work; throw new Exception("Expected capture cancellation"); } catch (OperationCanceledException) { }
+            Assert(!socket.Aborted && voice.Connected && !socket.Payloads().Any(p => p.Contains("input_image") || p.Contains("function_call_output") || p.Contains("response.create")));
+            await voice.Stop();
+        });
+        RunAsync("Voice in-flight fresh image uses session cancellation and skips canceled output and continuation", async () =>
+        {
+            var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+            await Start(voice); var call = await ReceiveCall(voice, socket, "image-flight"); using var cancellation = new CancellationTokenSource();
+            var frameGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously); socket.SendGate = frameGate; int entered = socket.EnteredSends;
+            Task work = voice.SendToolResult(call, "unsent", cancellation.Token, _ => Task.FromResult<string?>("data:image/jpeg;base64,BAUG"));
+            await Until(() => socket.EnteredSends > entered); cancellation.Cancel(); Assert(!work.IsCompleted && !socket.Aborted);
+            frameGate.TrySetResult(); try { await work; throw new Exception("Expected cancellation"); } catch (OperationCanceledException) { }
+            Assert(voice.Connected && !socket.Aborted && socket.Payloads().Last().Contains("BAUG") && !socket.Payloads().Any(p => p.Contains("function_call_output") || p.Contains("response.create")));
+            socket.SendGate = null; await voice.SendText("still usable", default); await voice.Stop();
+        });
+        foreach (string failure in new[] { "upload", "capture", "cancel", "old-session", "clear" })
+            RunAsync("Voice completed outcome survives delivery boundary " + failure, async () =>
+            {
+                var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                using var conversation = new AssistantConversation(new NoTransport());
+                using var cancellation = new CancellationTokenSource(); await Start(voice);
+                var call = await ReceiveCall(voice, socket, "outcome-" + failure); int deliveries = 0;
+                Task<string> Execute(AssistantCall _, CancellationToken token)
+                {
+                    if (failure == "upload") socket.ThrowSend = true;
+                    if (failure == "cancel") cancellation.Cancel();
+                    if (failure == "clear") conversation.Clear();
+                    return Task.FromResult("Task added exactly once");
+                }
+                try
+                {
+                    await AssistantVoiceActionFlow.Run(call, conversation, Execute, () => failure != "old-session", (result, token) =>
+                    {
+                        deliveries++;
+                        return voice.SendToolResult(call, result, token, failure == "capture" ? _ => Task.FromException<string?>(new System.IO.IOException("capture failed")) : null);
+                    }, cancellation.Token);
+                    Assert(failure is "old-session" or "clear");
+                }
+                catch (OperationCanceledException) { Assert(failure == "cancel"); }
+                catch (InvalidOperationException) { Assert(failure == "upload"); }
+                catch (System.IO.IOException) { Assert(failure == "capture"); }
+                Assert(conversation.Messages.Count == (failure == "clear" ? 0 : 1));
+                if (failure != "clear") Assert(conversation.Messages.Single().Text.Contains("Task added exactly once"));
+                Assert(deliveries == (failure is "old-session" or "clear" ? 0 : 1));
+                await voice.Stop();
+            });
+        test("Voice local evidence bounds history and text without adding protocol tool records", () =>
+        {
+            using var conversation = new AssistantConversation(new NoTransport());
+            for (int i = 0; i < 70; i++) conversation.RecordVoiceOutcome(conversation.Epoch, new(i.ToString(), "inspect_app", new string('x', 10000)), new string('y', 50000));
+            Assert(conversation.Messages.Count == 48 && conversation.Messages.All(m => m.Text.Length < 15000 && m.Role == "assistant" && m.Calls == null && m.CallId == null));
+        });
+        test("Voice activity preserves thinking and audible speech across interleaved silent output and microphone ticks", () =>
+        {
+            var activity = new AssistantVoiceActivity(); activity.Reset();
+            activity.Level(0, true, 1000); Assert(activity.State(1000) == AssistantState.Listening);
+            activity.Thinking();
+            for (int i = 0; i < 20; i++) { activity.Level(.8f, false, 1000 + i * 50); activity.Level(0, true, 1000 + i * 50); Assert(activity.State(1000 + i * 50) == AssistantState.Thinking); }
+            activity.Level(.7f, true, 2000); activity.Level(.2f, false, 2050); Assert(activity.State(2050) == AssistantState.Speaking && activity.Energy(2050) == .7f);
+            activity.Transcript("assistant"); activity.Level(0, true, 2100); activity.Level(1, false, 2150); Assert(activity.State(2150) == AssistantState.Speaking);
+            Assert(activity.State(2221) == AssistantState.Listening);
+            activity.Transcript("user"); activity.Level(0, true, 2300); activity.Level(.9f, false, 2350); Assert(activity.State(2350) == AssistantState.Thinking);
+            activity.Transcript("assistant"); Assert(activity.State(2400) == AssistantState.Listening);
+            activity.Level(.01f, true, 2450); Assert(activity.State(2450) == AssistantState.Listening);
+            activity.Level(float.NaN, true, 2500); activity.Level(1, true, 2550); activity.Reset(); Assert(activity.State(2550) == AssistantState.Listening && activity.Energy(2550) == 0);
         });
         test("Voice PCM meter measures signed samples including negative full scale", () =>
         { Assert(AssistantVoiceAudio.Peak(new byte[] { 0, 0, 0, 128 }, 4) == 1f); Assert(AssistantVoiceAudio.Peak(new byte[20], 20) == 0); });

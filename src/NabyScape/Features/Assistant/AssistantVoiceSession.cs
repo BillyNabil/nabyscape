@@ -50,6 +50,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         internal readonly bool Gemini = gemini, Vision = vision;
         internal readonly CancellationTokenSource Cancel = new();
         internal readonly SemaphoreSlim SendLock = new(1, 1);
+        internal readonly SemaphoreSlim ImageLock = new(1, 1);
         internal readonly Channel<byte[]> Input = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(10) { SingleReader = true, SingleWriter = true, FullMode = BoundedChannelFullMode.Wait });
         internal readonly TaskCompletionSource Ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
         internal readonly Dictionary<string, AssistantCall> Pending = new(StringComparer.Ordinal);
@@ -143,23 +144,55 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         else { events.Add(TextItem("user", text)); events.Add("{\"type\":\"response.create\"}"); }
         return SendBatch(s, events, cancellationToken);
     }
-    public Task SendImage(string dataUrl, CancellationToken cancellationToken)
+    public Task SendImage(string dataUrl, CancellationToken cancellationToken) => SendImage(_ => Task.FromResult<string?>(dataUrl), cancellationToken);
+    public async Task SendImage(Func<CancellationToken, Task<string?>> capture, CancellationToken cancellationToken)
     {
-        var s = GetSession(); if (!s.Vision) throw new InvalidOperationException("Enable vision for this voice provider before sharing images.");
-        int comma = dataUrl?.IndexOf(',') ?? -1;
-        if (dataUrl == null || dataUrl.Length > 3 * 1024 * 1024 || comma < 0 || !(dataUrl.StartsWith("data:image/jpeg;base64,", StringComparison.Ordinal) || dataUrl.StartsWith("data:image/png;base64,", StringComparison.Ordinal)))
+        var s = GetSession();
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, s.Cancel.Token);
+        await s.ImageLock.WaitAsync(linked.Token).ConfigureAwait(false);
+        try
+        {
+            await WaitImageRate(s, linked.Token).ConfigureAwait(false);
+            string payload = await CaptureImage(s, capture, linked.Token).ConfigureAwait(false);
+            await s.SendLock.WaitAsync(linked.Token).ConfigureAwait(false);
+            try { await SendImageLocked(s, payload, linked.Token).ConfigureAwait(false); }
+            finally { s.SendLock.Release(); }
+        }
+        finally { s.ImageLock.Release(); }
+    }
+    private static async Task WaitImageRate(Session s, CancellationToken token)
+    {
+        // Reserve image order while allowing microphone frames through SendLock
+        // during the one-second rate wait. Capture happens only after that wait.
+        long remaining = s.LastImage == 0 ? 0 : 1000 - (Environment.TickCount64 - s.LastImage);
+        if (remaining > 0) await Task.Delay((int)remaining, token).ConfigureAwait(false);
+    }
+    private static async Task<string> CaptureImage(Session s, Func<CancellationToken, Task<string?>> capture, CancellationToken token)
+    {
+        if (!s.Vision) throw new InvalidOperationException("Enable vision for this voice provider before sharing images.");
+        // ImageLock reserves capture/delivery order. Slow capture or a busy UI must
+        // not hold SendLock and starve the bounded microphone upload queue.
+        token.ThrowIfCancellationRequested();
+        string? dataUrl = await capture(token).ConfigureAwait(false);
+        token.ThrowIfCancellationRequested();
+        if (dataUrl == null) throw new InvalidOperationException("A fresh shared image is unavailable.");
+        int comma = dataUrl.IndexOf(',');
+        if (dataUrl.Length > 3 * 1024 * 1024 || comma < 0 || !(dataUrl.StartsWith("data:image/jpeg;base64,", StringComparison.Ordinal) || dataUrl.StartsWith("data:image/png;base64,", StringComparison.Ordinal)))
             throw new InvalidOperationException("Supply a bounded JPEG or PNG image data URL.");
         try { _ = Convert.FromBase64String(dataUrl[(comma + 1)..]); } catch { throw new InvalidOperationException("The shared image is invalid."); }
-        lock (gate)
-        {
-            long now = Environment.TickCount64;
-            if (s.LastImage != 0 && now - s.LastImage < 1000) throw new InvalidOperationException("Share at most one image per second.");
-            s.LastImage = now;
-        }
-        return SendBatch(s, new[] { s.Gemini ? JsonSerializer.Serialize(new { realtimeInput = new { video = new { mimeType = dataUrl[5..dataUrl.IndexOf(';')], data = dataUrl[(comma + 1)..] } } })
-            : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "message", role = "user", content = new[] { new { type = "input_image", image_url = dataUrl } } } }) }, cancellationToken);
+        string payload = s.Gemini ? JsonSerializer.Serialize(new { realtimeInput = new { video = new { mimeType = dataUrl[5..dataUrl.IndexOf(';')], data = dataUrl[(comma + 1)..] } } })
+            : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "message", role = "user", content = new[] { new { type = "input_image", image_url = dataUrl } } } });
+        token.ThrowIfCancellationRequested();
+        return payload;
     }
-    public async Task SendToolResult(AssistantCall call, string result, CancellationToken cancellationToken)
+    private async Task SendImageLocked(Session s, string payload, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        await SendLocked(s, payload, s.Cancel.Token).ConfigureAwait(false);
+        s.LastImage = Environment.TickCount64;
+        token.ThrowIfCancellationRequested();
+    }
+    public async Task SendToolResult(AssistantCall call, string result, CancellationToken cancellationToken, Func<CancellationToken, Task<string?>>? freshImage = null)
     {
         CheckText(result); var s = GetSession();
         CancellationToken callToken;
@@ -170,13 +203,21 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             callToken = s.Calls[call.Id].Token;
         }
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, s.Cancel.Token, callToken);
-        bool held = false;
+        bool held = false, imageHeld = false;
+        string? imagePayload = null;
         try
         {
+            if (freshImage != null)
+            {
+                await s.ImageLock.WaitAsync(linked.Token).ConfigureAwait(false); imageHeld = true;
+                await WaitImageRate(s, linked.Token).ConfigureAwait(false);
+                imagePayload = await CaptureImage(s, freshImage, linked.Token).ConfigureAwait(false);
+            }
             await s.SendLock.WaitAsync(linked.Token).ConfigureAwait(false); held = true;
             lock (gate)
                 if (!Active(s) || !s.Pending.TryGetValue(call.Id, out var expected) || expected != call)
                     throw new InvalidOperationException("This voice tool request is no longer pending.");
+            if (imagePayload != null) await SendImageLocked(s, imagePayload, linked.Token).ConfigureAwait(false);
             string output = s.Gemini
                 ? JsonSerializer.Serialize(new { toolResponse = new { functionResponses = new[] { new { id = call.Id, name = call.Name, response = new { result } } } } })
                 : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "function_call_output", call_id = call.Id, output = result } });
@@ -197,7 +238,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             linked.Token.ThrowIfCancellationRequested();
             if (!s.Gemini && resume) await SendLocked(s, "{\"type\":\"response.create\"}", s.Cancel.Token).ConfigureAwait(false);
         }
-        finally { if (held) s.SendLock.Release(); }
+        finally { if (held) s.SendLock.Release(); if (imageHeld) s.ImageLock.Release(); }
     }
     // Hardware and callbacks stop before returning the Task, even when callers do not await it.
     public Task Stop()

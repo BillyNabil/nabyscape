@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -15,6 +18,23 @@ namespace NabyScape;
 // desktop capture, clipboard access or injected mouse/keyboard input.
 internal static class AssistantDiagnostics
 {
+    private sealed class FixtureVoice : IAssistantVoice
+    {
+        public bool Connected {get;private set;}=true;
+        internal bool Stopped,Disposed;
+        public event Action<string,string>? Transcript {add{} remove{}}
+        public event Action<string>? Status {add{} remove{}}
+        public event Action<AssistantCall>? ToolCall {add{} remove{}}
+        public event Action<float,bool>? Level {add{} remove{}}
+        public CancellationToken CallToken(string id)=>new(true);
+        public Task Start(AssistantProvider provider,string? key,string instructions,IReadOnlyList<AssistantTool> tools,IReadOnlyList<AssistantMessage> history,CancellationToken token)=>throw new InvalidOperationException("Fixture voice cannot open devices or a provider.");
+        public Task SendText(string text,CancellationToken token)=>Task.CompletedTask;
+        public Task SendImage(string image,CancellationToken token)=>Task.CompletedTask;
+        public Task SendImage(Func<CancellationToken,Task<string?>> capture,CancellationToken token)=>throw new InvalidOperationException("Fixture voice cannot capture.");
+        public Task SendToolResult(AssistantCall call,string result,CancellationToken token,Func<CancellationToken,Task<string?>>? freshImage=null)=>Task.CompletedTask;
+        public Task Stop(){Connected=false;Stopped=true;return Task.CompletedTask;}
+        public ValueTask DisposeAsync(){Disposed=true;return ValueTask.CompletedTask;}
+    }
     internal static async Task Run(App app,OverlayWindow island,string directory,Action<string,bool> check)
     {
         island.Hide();var ai=app.Assistant;
@@ -37,6 +57,25 @@ internal static class AssistantDiagnostics
         check("Assistant Run once executes exactly the reviewed app action",app.Session.Timer.Running && app.Session.Timer.Remaining(DateTimeOffset.UtcNow)>40 && ai.Pending==null);app.Session.Timer.Reset();app.SaveSession();
         review=ai.Execute(new("stopped","nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);ai.StopSession();await review;
         check("Assistant Stop dismisses approval and revokes session controls",!app.Session.Timer.Running && !ai.ActionsAllowed && ai.Pending==null && !ai.Desktop.Sharing && !ai.VoiceConnected);
+        foreach(string target in new[]{"Run once","Decline","Providers","Actions on","Display to share"})
+        {
+            ai.SetActions(true);ai.Desktop.ControlEnabled=true;
+            var fixtureVoice=new FixtureVoice();typeof(AssistantRuntime).GetField("voice",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai,fixtureVoice);
+            review=ai.Execute(new("escape-"+target,"nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);
+            window.UpdateLayout();
+            var child=Diagnostics.Descendants(window).OfType<UIElement>().First(e=>AutomationProperties.GetName(e)==target || e is Button b && Equals(b.Content,target));
+            KeyEventHandler handledChild=(_,e)=>e.Handled=true;
+            child.AddHandler(Keyboard.KeyDownEvent,handledChild);
+            try
+            {
+                // Programmatic routed event only; no activation, native key input,
+                // screen or device is required, including for already-handled keys.
+                child.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(window),0,Key.Escape){RoutedEvent=Keyboard.KeyDownEvent});
+                await review;
+                check("Assistant handled child Escape stops approval from "+target,ai.Pending==null && !ai.ActionsAllowed && !ai.Desktop.ControlEnabled && !ai.VoiceConnected && fixtureVoice.Stopped && fixtureVoice.Disposed && !app.Session.Timer.Running);
+            }
+            finally { child.RemoveHandler(Keyboard.KeyDownEvent,handledChild); }
+        }
         foreach(var size in new[]{(480d,690d),(360d,420d)})
         {
             window.Width=size.Item1;window.Height=size.Item2;await Task.Delay(70);window.UpdateLayout();

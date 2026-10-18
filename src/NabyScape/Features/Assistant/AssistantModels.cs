@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace NabyScape;
 
+internal enum AssistantState { Idle,Connecting,Listening,Thinking,Speaking,Approval,Error }
+
 internal sealed class AssistantProvider
 {
     public string Id {get;set;}=Guid.NewGuid().ToString("N");
@@ -51,6 +53,7 @@ internal interface IAssistantVoice : IAsyncDisposable
     Task Start(AssistantProvider provider,string? apiKey,string instructions,IReadOnlyList<AssistantTool> tools,IReadOnlyList<AssistantMessage> history,CancellationToken cancellationToken);
     Task SendText(string text,CancellationToken cancellationToken);
     Task SendImage(string dataUrl,CancellationToken cancellationToken);
-    Task SendToolResult(AssistantCall call,string result,CancellationToken cancellationToken);
+    Task SendImage(Func<CancellationToken,Task<string?>> capture,CancellationToken cancellationToken);
+    Task SendToolResult(AssistantCall call,string result,CancellationToken cancellationToken,Func<CancellationToken,Task<string?>>? freshImage=null);
     Task Stop();
 }

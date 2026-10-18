@@ -30,6 +30,7 @@ internal sealed class AssistantWindow : Window
     private readonly DispatcherTimer screenTimer=new(){Interval=TimeSpan.FromSeconds(5)};
     private bool syncing,frameBusy,closed;
     private int rendered;
+    private AssistantMessage? firstRendered;
     private string providerSignature="",lastFrame="";
     internal AssistantWindow(App app)
     {
@@ -45,7 +46,8 @@ internal sealed class AssistantWindow : Window
         var review=new StackPanel();approvalTitle.FontWeight=FontWeights.SemiBold;review.Children.Add(approvalTitle);approvalText.Margin=new(0,6,0,10);review.Children.Add(new ScrollViewer{Content=approvalText,MaxHeight=95,VerticalScrollBarVisibility=ScrollBarVisibility.Auto});review.Children.Add(UI.Row(Pill("Run once",()=>ai.Decide(true),true),Pill("Decline",()=>ai.Decide(false))));
         approval=new Border{Background=UI.Brush("#202328"),BorderBrush=UI.Brush("#515661"),BorderThickness=new(1),CornerRadius=new(14),Padding=new(12),Margin=new(0,8,0,8),Child=review,Visibility=Visibility.Collapsed};page.Children.Add(approval);
         input.AcceptsReturn=true;input.TextWrapping=TextWrapping.Wrap;input.MinHeight=62;input.MaxHeight=120;input.Margin=new(0,10,0,8);input.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;input.ToolTip="Enter to send · Shift+Enter for a new line · Escape to stop";page.Children.Add(input);
-        input.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)){e.Handled=true;_=Send();}else if(e.Key==Key.Escape){ai.StopSession();e.Handled=true;}};
+        AddHandler(Keyboard.KeyDownEvent,new KeyEventHandler((_,e)=>{if(e.Key==Key.Escape){ai.StopSession();e.Handled=true;}}),true);
+        input.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)){e.Handled=true;_=Send();}};
         send=Pill("Send",()=>_=Send(),true);voice=Pill("Start voice",()=>_=ToggleVoice());share=Pill("Share screen",()=>_=ToggleScreen());
         var bar=new WrapPanel();foreach(var b in new[]{send,voice,share,Pill("Stop",ai.StopSession),Pill("Clear",ai.Clear)})bar.Children.Add(b);page.Children.Add(bar);
         var permissions=new StackPanel();var options=new WrapPanel();actions=Pill("Actions off",()=>ai.SetActions(!ai.ActionsAllowed));computer=Pill("Computer off",()=>{try{ai.SetComputerControl(!ai.Desktop.ControlEnabled);}catch(Exception ex){status.Text=ex.Message;}});options.Children.Add(actions);options.Children.Add(computer);permissions.Children.Add(options);
@@ -96,7 +98,7 @@ internal sealed class AssistantWindow : Window
             if(ai.Pending is { } pending){approvalTitle.Text=pending.Name=="computer"?"Review computer action":"Review NabyScape action";approvalText.Text=pending.Arguments;}
             bool bottom=transcript.ScrollableHeight-transcript.VerticalOffset<30;
             var history=ai.Conversation.Messages;
-            if(history.Count<rendered){messages.Children.Clear();rendered=0;}
+            if(history.Count<rendered || rendered>0 && !ReferenceEquals(firstRendered,history.FirstOrDefault())){messages.Children.Clear();rendered=0;}
             if(history.Count==0 && messages.Children.Count==0)
             {var welcome=UI.Text("A little help, right here.\n\nAdd a provider, then type a message. Start voice when you want to talk. Screen context and actions are yours to enable for each session.",13,UI.Muted);welcome.Margin=new(2,18,2,24);messages.Children.Add(welcome);}
             if(history.Count>0 && rendered==0)messages.Children.Clear();
@@ -107,7 +109,7 @@ internal sealed class AssistantWindow : Window
                 var bubble=new Border{Child=text,CornerRadius=new(13),Background=message.Role=="user"?UI.Brush("#24272D"):Brushes.Transparent,Margin=new(message.Role=="user"?32:0,4,message.Role=="user"?0:20,5)};messages.Children.Add(bubble);
                 if(!app.Settings.ReduceMotion)Motion.Fade(bubble,1,180);
             }
-            rendered=history.Count;if(bottom)Dispatcher.BeginInvoke(()=>transcript.ScrollToEnd());
+            rendered=history.Count;firstRendered=history.FirstOrDefault();if(bottom)Dispatcher.BeginInvoke(()=>transcript.ScrollToEnd());
             transcript.Height=Math.Max(72,ActualHeight-(ai.Pending!=null?510:380));RefreshOrb();RefreshScreen();
         }
         finally{syncing=false;}

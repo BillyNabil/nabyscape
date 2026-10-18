@@ -14,6 +14,7 @@ internal sealed class AssistantConversation : IDisposable
     private int busy,epoch;
     internal bool LastTurnHasActionResults {get;private set;}
     internal bool Busy=>Volatile.Read(ref busy)!=0;
+    internal int Epoch=>epoch;
     internal IReadOnlyList<AssistantMessage> Messages=>messages.ToArray();
     internal event Action<AssistantMessage>? Added;
     internal AssistantConversation(IAssistantTransport transport)=>this.transport=transport;
@@ -21,6 +22,15 @@ internal sealed class AssistantConversation : IDisposable
     internal void Clear(){Stop();epoch++;messages.Clear();LastTurnHasActionResults=false;}
     internal void Record(string role,string text)
     {if(!Busy && text.Length<=16000 && role is "user" or "assistant"){if(messages.Count>48)messages.Clear();Add(new(role,text));}}
+    internal void RecordVoiceOutcome(int generation,AssistantCall call,string result)
+    {
+        if(generation!=epoch)return;
+        // Local evidence is recorded before any cancellable upload; retain bounded,
+        // plain text rather than an orphan protocol tool result on a later session.
+        if(messages.Count>=48)messages.RemoveRange(0,messages.Count-47);
+        string Bound(string text,int limit)=>text.Length>limit?text[..limit]:text;
+        Add(new("assistant","Reviewed voice action outcome · "+Bound(call.Name,100)+" ["+Bound(call.Id,128)+"] "+Bound(call.Arguments,2000)+" → "+Bound(result,12000)));
+    }
     private void Add(AssistantMessage message)
     {
         messages.Add(message);Added?.Invoke(message);
