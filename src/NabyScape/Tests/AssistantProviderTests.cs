@@ -102,6 +102,26 @@ internal static class AssistantProviderTests
                 Assert(transport.Complete(Provider(protocol), null, history, new[] { Tool }, CancellationToken.None).GetAwaiter().GetResult().Text == "Hello" && requests == 2);
             });
         }
+        test("Assistant Gemini preserves strict nested JSON Schema in parametersJsonSchema", () =>
+        {
+            using var schema = JsonDocument.Parse("""
+                {"type":"object","additionalProperties":false,"$defs":{"target":{"type":"object","additionalProperties":false,"properties":{"title":{"type":"string"}},"required":["title"]}},"properties":{"target":{"$ref":"#/$defs/target"}},"required":["target"]}
+                """);
+            var strictTool = new AssistantTool("inspect_app", "Inspect a selected app", schema.RootElement.Clone());
+            using var transport = new AssistantTransport(new Fake(async (request, token) =>
+            {
+                using var document = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(token));
+                var declaration = document.RootElement.GetProperty("tools")[0].GetProperty("functionDeclarations")[0];
+                Assert(!declaration.TryGetProperty("parameters", out _));
+                var parameters = declaration.GetProperty("parametersJsonSchema");
+                Assert(JsonElement.DeepEquals(parameters, schema.RootElement));
+                Assert(!parameters.GetProperty("additionalProperties").GetBoolean()
+                    && !parameters.GetProperty("$defs").GetProperty("target").GetProperty("additionalProperties").GetBoolean()
+                    && parameters.GetProperty("properties").GetProperty("target").GetProperty("$ref").GetString() == "#/$defs/target");
+                return Ok(Reply("Gemini"));
+            }));
+            Assert(transport.Complete(Provider("Gemini"), null, Messages, new[] { strictTool }, CancellationToken.None).GetAwaiter().GetResult().Text == "Hello");
+        });
         test("Assistant invalid empty malformed and oversized responses use safe fixed errors", () =>
         {
             foreach (string protocol in Protocols) foreach (string body in new[] { "", "null", "{}", "[]", "{\"error\":{\"message\":\"fixture-secret\"}}", Reply(protocol, true).Replace("inspect_app", "unknown_tool", StringComparison.Ordinal) })

@@ -318,7 +318,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         foreach (var tool in tools)
         {
             if (provider.Protocol == "ChatCompletions") definitions.Add(new JsonObject { ["type"] = "function", ["function"] = new JsonObject { ["name"] = tool.Name, ["description"] = tool.Description, ["parameters"] = Node(tool.Parameters) } });
-            else definitions.Add(new JsonObject { ["name"] = tool.Name, ["description"] = tool.Description, [provider.Protocol == "Anthropic" ? "input_schema" : "parameters"] = Node(tool.Parameters) });
+            else definitions.Add(new JsonObject { ["name"] = tool.Name, ["description"] = tool.Description, [provider.Protocol switch { "Anthropic" => "input_schema", "Gemini" => "parametersJsonSchema", _ => "parameters" }] = Node(tool.Parameters) });
             if (provider.Protocol == "Responses") { definitions.Last()!["type"] = "function"; definitions.Last()!["strict"] = false; }
         }
         switch (provider.Protocol)
