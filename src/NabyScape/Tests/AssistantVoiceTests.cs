@@ -403,7 +403,7 @@ internal static class AssistantVoiceTests
         {
             using var conversation = new AssistantConversation(new NoTransport());
             for (int i = 0; i < 70; i++) conversation.RecordVoiceOutcome(conversation.Epoch, new(i.ToString(), "inspect_app", new string('x', 10000)), new string('y', 50000));
-            Assert(conversation.Messages.Count == 48 && conversation.Messages.All(m => m.Text.Length < 15000 && m.Role == "assistant" && m.Calls == null && m.CallId == null));
+            Assert(conversation.Messages.Count is > 0 and <= 48 && conversation.Messages.Last().Text.Contains("[69]") && conversation.Messages.All(m => m.Text.Length < 15000 && m.Role == "assistant" && m.Calls == null && m.CallId == null));
         });
         test("Voice activity preserves thinking and audible speech across interleaved silent output and microphone ticks", () =>
         {

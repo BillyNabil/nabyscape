@@ -61,6 +61,32 @@ internal static class AssistantProviderTests
         });
         foreach (string protocol in Protocols)
         {
+            test("Assistant " + protocol + " bounded voice outcomes preserve valid replay after HTTP tool history", () => Task.Run(async () =>
+            {
+                int requests=0,executed=0;
+                using var transport=new AssistantTransport(new Fake(async (request,token)=>
+                {
+                    requests++;
+                    string wire=await request.Content!.ReadAsStringAsync(token);
+                    if(requests==1)return Ok(Reply(protocol,true));
+                    if(requests==2)Assert(wire.Contains("call_1") && wire.Contains("executed once"));
+                    else Assert(wire.Contains("voice outcome one") && wire.Contains("voice outcome two") && !wire.Contains("call_1") && wire.Contains("Continue after voice"));
+                    return Ok(Reply(protocol));
+                }));
+                using var conversation=new AssistantConversation(transport);
+                var provider=Provider(protocol);
+                await conversation.Send(provider,null,"Fixture","Inspect",null,new[]{Tool},(_,_)=>{executed++;return Task.FromResult("executed once");});
+                Assert(conversation.Messages.Count==4 && conversation.Messages[1].Calls?.Single().Id=="call_1" && conversation.Messages[2].Role=="tool");
+                for(int i=0;i<22;i++){conversation.Record("user","ordinary request "+i);conversation.Record("assistant","ordinary reply "+i);}
+                Assert(conversation.Messages.Count==48);
+                conversation.RecordVoiceOutcome(conversation.Epoch,new("voice-one","inspect_app","{}"),"voice outcome one");
+                conversation.RecordVoiceOutcome(conversation.Epoch,new("voice-two","inspect_app","{}"),"voice outcome two");
+                // Actual adapter validation/serialization must accept replay after
+                // two bound-crossing outcomes, rather than retaining tool(call_1)
+                // after removing the preceding assistant call message.
+                await conversation.Send(provider,null,"Fixture","Continue after voice",null,new[]{Tool},(_,_)=>throw new Exception("No repeat action expected"));
+                Assert(requests==3 && executed==1 && conversation.Messages.Last().Text=="Hello");
+            }).GetAwaiter().GetResult());
             test("Assistant " + protocol + " maps text image system tools and safe authentication", () =>
             {
                 int requests = 0;

@@ -27,7 +27,9 @@ internal sealed class AssistantConversation : IDisposable
         if(generation!=epoch)return;
         // Local evidence is recorded before any cancellable upload; retain bounded,
         // plain text rather than an orphan protocol tool result on a later session.
-        if(messages.Count>=48)messages.RemoveRange(0,messages.Count-47);
+        // Keep HTTP tool-call turns intact: trimming individual messages can leave
+        // an orphan tool result that makes the next provider request invalid.
+        if(messages.Count>=48)messages.Clear();
         string Bound(string text,int limit)=>text.Length>limit?text[..limit]:text;
         Add(new("assistant","Reviewed voice action outcome · "+Bound(call.Name,100)+" ["+Bound(call.Id,128)+"] "+Bound(call.Arguments,2000)+" → "+Bound(result,12000)));
     }

@@ -57,6 +57,8 @@ internal static class AssistantDiagnostics
         check("Assistant Run once executes exactly the reviewed app action",app.Session.Timer.Running && app.Session.Timer.Remaining(DateTimeOffset.UtcNow)>40 && ai.Pending==null);app.Session.Timer.Reset();app.SaveSession();
         review=ai.Execute(new("stopped","nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);ai.StopSession();await review;
         check("Assistant Stop dismisses approval and revokes session controls",!app.Session.Timer.Running && !ai.ActionsAllowed && ai.Pending==null && !ai.Desktop.Sharing && !ai.VoiceConnected);
+        var sessionControls=Diagnostics.Descendants(window).OfType<Expander>().Single(e=>Equals(e.Header,"Session controls"));
+        sessionControls.IsExpanded=true;window.UpdateLayout();
         foreach(string target in new[]{"Run once","Decline","Providers","Actions on","Display to share"})
         {
             ai.SetActions(true);ai.Desktop.ControlEnabled=true;
@@ -76,6 +78,7 @@ internal static class AssistantDiagnostics
             }
             finally { child.RemoveHandler(Keyboard.KeyDownEvent,handledChild); }
         }
+        sessionControls.IsExpanded=false;window.UpdateLayout();
         foreach(var size in new[]{(480d,690d),(360d,420d)})
         {
             window.Width=size.Item1;window.Height=size.Item2;await Task.Delay(70);window.UpdateLayout();
