@@ -25,6 +25,7 @@ internal sealed class AssistantView : UserControl
     private readonly ComboBox provider=new(){MinHeight=32};
     private readonly ComboBox display=new(){MinHeight=30};
     private readonly Button send,voice,share,actions,computer;
+    private readonly Button? closeButton;
     private readonly Border approval;
     private readonly TextBlock approvalTitle=UI.Text("",12),approvalText=UI.Text("",11,UI.Muted);
     private readonly Expander screenPreview=new(){Header="Shared display preview",IsExpanded=false};
@@ -45,8 +46,8 @@ internal sealed class AssistantView : UserControl
         var page=new StackPanel{Margin=island?new Thickness(8,0,8,8):new Thickness(20,14,20,16)};
         var heading=new Grid();heading.ColumnDefinitions.Add(new(){Width=GridLength.Auto});heading.ColumnDefinitions.Add(new());heading.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
         if(island)orb.Width=orb.Height=72;
-        heading.Children.Add(orb);var title=new StackPanel{Margin=new(island?8:12,0,0,0),VerticalAlignment=VerticalAlignment.Center};title.Children.Add(UI.Heading("Companion",island?18:20));title.Children.Add(UI.Text(island?"Right here with you.":"Chat, talk, or work together.",11,UI.Muted));Grid.SetColumn(title,1);heading.Children.Add(title);
-        if(island && close!=null){var back=Pill("Back to island",close);back.Margin=new(6,0,0,0);back.VerticalAlignment=VerticalAlignment.Center;back.Padding=new(9,5,9,5);Grid.SetColumn(back,2);heading.Children.Add(back);}page.Children.Add(heading);
+        heading.Children.Add(orb);var title=new StackPanel{Margin=new(island?8:12,0,0,0),VerticalAlignment=VerticalAlignment.Center};var titleText=UI.Heading("Companion",island?18:20);titleText.TextWrapping=TextWrapping.NoWrap;titleText.TextTrimming=TextTrimming.CharacterEllipsis;title.Children.Add(titleText);title.Children.Add(UI.Text(island?"Right here with you.":"Chat, talk, or work together.",11,UI.Muted));Grid.SetColumn(title,1);heading.Children.Add(title);
+        if(island && close!=null){closeButton=Pill("Back to island",close);closeButton.ToolTip="Back to island";closeButton.Margin=new(6,0,0,0);closeButton.VerticalAlignment=VerticalAlignment.Center;closeButton.Padding=new(9,5,9,5);Grid.SetColumn(closeButton,2);heading.Children.Add(closeButton);}page.Children.Add(heading);
         var pick=new Grid{Margin=new(0,island?4:12,0,island?5:8)};pick.ColumnDefinitions.Add(new());pick.ColumnDefinitions.Add(new(){Width=GridLength.Auto});pick.Children.Add(provider);UI.Named(provider,"AI provider");
         var configure=Pill("Providers",app.ShowAssistantProviders);configure.Margin=new(8,0,0,0);Grid.SetColumn(configure,1);pick.Children.Add(configure);page.Children.Add(pick);
         provider.SelectionChanged+=(_,_)=>{if(!syncing && provider.SelectedItem is AssistantProvider p && p.Id!=ai.Options.SelectedProvider)ai.SelectProvider(p.Id);};
@@ -63,6 +64,7 @@ internal sealed class AssistantView : UserControl
         screenPreview.Content=screenImage;screenPreview.Margin=new(0,island?0:8,0,0);screenPreview.Expanded+=(_,_)=>RefreshScreen();page.Children.Add(screenPreview);
         Content=page;
         Loaded+=OnLoaded;Unloaded+=OnUnloaded;SizeChanged+=(_,_)=>AdjustLayout();
+        IsVisibleChanged+=(_,_)=>{if(IsVisible){RefreshOrb();RefreshScreen();}};
         Refresh();
     }
     internal static Button Pill(string text,Action action,bool primary=false)
@@ -93,6 +95,11 @@ internal sealed class AssistantView : UserControl
     private void HostSizeChanged(object sender,SizeChangedEventArgs e)=>AdjustLayout();
     private void AdjustLayout()
     {
+        if(closeButton!=null)
+        {
+            bool compact=ActualWidth>0 && ActualWidth<360;
+            closeButton.Content=compact?"‹":"Back to island";closeButton.MinWidth=compact?31:0;closeButton.FontSize=compact?20:11;
+        }
         double available=island?hostViewport?.ViewportHeight??0:hostWindow?.ActualHeight??0;
         double height=island?(available>0?Math.Clamp(available-285,110,150):124):Math.Max(72,(available>0?available:640)-(ai.Pending!=null?510:380));
         if(Math.Abs(transcript.Height-height)>.5)transcript.Height=height;
@@ -115,7 +122,7 @@ internal sealed class AssistantView : UserControl
         }
         catch(Exception ex){ai.StopSession();status.Text=ex.Message;}
     }
-    private void RefreshOrb(){orb.State=ai.State;orb.Level=ai.Level;orb.ReduceMotion=app.Settings.ReduceMotion;}
+    private void RefreshOrb(){if(!IsVisible)return;orb.State=ai.State;orb.Level=ai.Level;orb.ReduceMotion=app.Settings.ReduceMotion;}
     private void Refresh()
     {
         syncing=true;
