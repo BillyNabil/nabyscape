@@ -12,7 +12,7 @@ public sealed partial class OverlayWindow
 {
     private readonly Grid assistantCharacterHost=new(),assistantPeek=new();
     private readonly Border assistantHeaderSpace=new();
-    private readonly AssistantOrb closedAssistant=new(){Width=26,Height=26},peekAssistant=new(){Width=72,Height=72};
+    private readonly AssistantOrb closedAssistant=new(){Width=32,Height=32,TrackPointerLocally=false},peekAssistant=new(){Width=72,Height=72,TrackPointerLocally=false};
     private readonly TextBlock assistantGreeting=UI.Text("Hey, I'm here.",17),assistantCaption=UI.Text("Chat or talk, right from your island.",11,UI.Muted);
     private readonly DispatcherTimer assistantHover=new();
     private readonly DispatcherTimer assistantReplyDismiss=new(){Interval=TimeSpan.FromSeconds(8)};
@@ -23,7 +23,27 @@ public sealed partial class OverlayWindow
     private Button assistantCharacterButton=null!;
     private bool assistantOpen,assistantPeeking;
     private int assistantPeekRevision;
+    private Point? assistantLastPointer;
+    private bool AssistantPointerTracking=>!DiagnosticRun && !userHidden && !IsTucked && !app.Settings.ReduceMotion && Motion.Enabled && (closedAssistant.IsVisible || peekAssistant.IsVisible);
+    private void TrackAssistantPointer()
+    {
+        if(!AssistantPointerTracking){assistantLastPointer=null;ConfigureDisplayFollow();return;}
+        if(!Native.CursorPoint(out var cursor))return;
+        TrackAssistantPointerAt(new Point(cursor.X,cursor.Y));
+    }
+    private void TrackAssistantPointerAt(Point screenPoint)
+    {
+        if(assistantLastPointer==screenPoint)return;assistantLastPointer=screenPoint;
+        void Track(AssistantOrb orb)
+        {
+            if(!orb.IsVisible)return;
+            var local=orb.PointFromScreen(screenPoint);
+            orb.LookAt((local.X-orb.ActualWidth/2)/360,(local.Y-orb.ActualHeight/2)/280);
+        }
+        Track(closedAssistant);Track(peekAssistant);
+    }
     private bool AssistantCharacterAvailable=>app.Assistant.Options.IslandCharacter || app.Assistant.VoiceConnected || app.Assistant.Desktop.Sharing || app.Assistant.Busy;
+    private bool AssistantSpotifyPlaying=>app.Media.Available && app.Media.Playing && (app.Media.Selected?.SourceAppUserModelId.Contains("Spotify",StringComparison.OrdinalIgnoreCase)==true);
     internal bool AssistantOpen=>assistantOpen && expanded;
     internal bool AssistantPeeking=>assistantPeeking;
     internal AssistantView? IslandAssistantView=>islandAssistantView;
@@ -37,7 +57,7 @@ public sealed partial class OverlayWindow
     {
         header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});Grid.SetColumn(assistantHeaderSpace,5);header.Children.Add(assistantHeaderSpace);
         assistantCharacterHost.HorizontalAlignment=HorizontalAlignment.Center;assistantCharacterHost.VerticalAlignment=VerticalAlignment.Top;
-        assistantCharacterButton=UI.Button("AI character on island",()=>OpenAssistant());assistantCharacterButton.Content=closedAssistant;assistantCharacterButton.Padding=new(0);assistantCharacterButton.MinHeight=24;assistantCharacterButton.Margin=new(0,0,9,0);assistantCharacterButton.HorizontalAlignment=HorizontalAlignment.Right;assistantCharacterButton.VerticalAlignment=VerticalAlignment.Center;assistantCharacterButton.Background=Brushes.Transparent;assistantCharacterButton.ToolTip="AI companion · hover to meet · click to chat";
+        assistantCharacterButton=AssistantOrb.Launcher("AI character on island",()=>OpenAssistant(),closedAssistant);assistantCharacterButton.MinHeight=24;assistantCharacterButton.Margin=new(0,0,9,0);assistantCharacterButton.HorizontalAlignment=HorizontalAlignment.Right;assistantCharacterButton.VerticalAlignment=VerticalAlignment.Center;assistantCharacterButton.ToolTip="AI companion · hover to meet · click to chat";
         assistantCharacterButton.MouseEnter+=(_,_)=>{hoverDelay.Stop();assistantHover.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDelayMs);assistantHover.Start();};
         assistantCharacterButton.MouseLeave+=(_,_)=>assistantHover.Stop();
         assistantCharacterButton.PreviewMouseLeftButtonDown+=(_,_)=>assistantHover.Stop();
@@ -45,7 +65,6 @@ public sealed partial class OverlayWindow
         assistantCharacterButton.MouseLeave+=(_,_)=>{closedAssistant.SetHover(false);closedAssistant.Press(false);};
         assistantCharacterButton.PreviewMouseLeftButtonDown+=(_,_)=>closedAssistant.Press(true);
         assistantCharacterButton.PreviewMouseLeftButtonUp+=(_,_)=>closedAssistant.Press(false);
-        assistantCharacterButton.MouseMove+=(_,e)=>{var p=e.GetPosition(assistantCharacterButton);closedAssistant.LookAt(p.X/Math.Max(1,assistantCharacterButton.ActualWidth)*2-1,p.Y/Math.Max(1,assistantCharacterButton.ActualHeight)*2-1);};assistantCharacterButton.MouseLeave+=(_,_)=>closedAssistant.LookAt(0,0);
         assistantCharacterHost.Children.Add(assistantCharacterButton);visuals.Children.Add(assistantCharacterHost);
         assistantPeek.Visibility=Visibility.Collapsed;assistantPeek.Opacity=0;assistantPeek.HorizontalAlignment=HorizontalAlignment.Center;assistantPeek.VerticalAlignment=VerticalAlignment.Top;
         assistantPeek.RowDefinitions.Add(new());assistantPeek.RowDefinitions.Add(new(){Height=GridLength.Auto});
@@ -56,12 +75,8 @@ public sealed partial class OverlayWindow
         assistantHover.Tick+=(_,_)=>{assistantHover.Stop();if(assistantCharacterButton.IsMouseOver && !expanded && !userHidden)PreviewAssistant();};
         assistantReplyDismiss.Tick+=(_,_)=>{assistantReplyDismiss.Stop();if(assistantPeeking && !PointerInside())Collapse();};
         app.Assistant.Changed+=AssistantIslandChanged;app.Assistant.VisualChanged+=RefreshAssistantVisuals;app.SettingsChanged+=RefreshAssistantCharacter;
-        PreviewMouseMove+=(_,e)=>
-        {
-            void Track(AssistantOrb orb){if(!orb.IsVisible)return;var p=e.GetPosition(orb);orb.LookAt((p.X-orb.ActualWidth/2)/Math.Max(90,PaintedWidth*.4),(p.Y-orb.ActualHeight/2)/Math.Max(65,PaintedHeight*.45));}
-            Track(closedAssistant);Track(peekAssistant);
-        };
-        MouseLeave+=(_,_)=>{closedAssistant.LookAt(0,0);peekAssistant.LookAt(0,0);};
+        closedAssistant.IsVisibleChanged+=(_,_)=>{assistantLastPointer=null;ConfigureDisplayFollow();};
+        peekAssistant.IsVisibleChanged+=(_,_)=>{assistantLastPointer=null;ConfigureDisplayFollow();};
         RefreshAssistantCharacter();
     }
     private void AssistantIslandChanged()
@@ -78,7 +93,8 @@ public sealed partial class OverlayWindow
     }
     private void RefreshAssistantVisuals()
     {
-        void Apply(AssistantOrb orb){if(!orb.IsVisible)return;orb.State=app.Assistant.State;orb.Level=app.Assistant.Level;orb.Live=app.Assistant.VoiceConnected;orb.ReduceMotion=app.Settings.ReduceMotion;}
+        bool spotify=AssistantSpotifyPlaying;
+        void Apply(AssistantOrb orb){if(!orb.IsVisible)return;orb.State=app.Assistant.State;orb.Level=app.Assistant.Level;orb.Live=app.Assistant.VoiceConnected;orb.ReduceMotion=app.Settings.ReduceMotion;orb.Music=spotify;}
         Apply(closedAssistant);Apply(peekAssistant);
         if(lastAssistantVisualState==app.Assistant.State)return;lastAssistantVisualState=app.Assistant.State;
         assistantGreeting.Text=app.Assistant.State switch{AssistantState.Listening=>"I'm listening.",AssistantState.Thinking=>"Let me think…",AssistantState.Speaking=>"Let's talk.",AssistantState.Approval=>"Your call.",AssistantState.Connecting=>"Connecting…",AssistantState.Error=>"Let's check that.",_=>"Hey, I'm here."};
@@ -88,13 +104,13 @@ public sealed partial class OverlayWindow
         if(assistantCharacterButton==null)return;
         bool enabled=AssistantCharacterAvailable;
         assistantCharacterButton.ToolTip=app.Assistant.VoiceConnected?"Microphone on · click for voice controls":app.Assistant.Desktop.Sharing?"Screen sharing on · click for controls":"AI companion · hover to meet · click to chat";
-        double size=Math.Clamp(app.Settings.Height-8,20,28);assistantCharacterButton.Width=assistantCharacterButton.Height=size;closedAssistant.Width=closedAssistant.Height=size;
+        double size=Math.Clamp(app.Settings.Height-4,24,32);assistantCharacterButton.MinHeight=size;assistantCharacterButton.Width=assistantCharacterButton.Height=size;closedAssistant.Width=closedAssistant.Height=size;
         assistantHeaderSpace.Width=size+9;assistantHeaderSpace.Visibility=enabled && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;
         assistantCharacterHost.Width=Math.Max(120,Math.Min(app.Settings.Width,expandedWidth)-(surface.Notch?32:12));assistantCharacterHost.Height=app.Settings.Height;
         SyncAssistantVisibility();
         RefreshAssistantVisuals();
     }
-    private void SyncAssistantVisibility(){assistantCharacterHost.Visibility=AssistantCharacterAvailable && !expanded && !peeking && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;}
+    private void SyncAssistantVisibility(){assistantCharacterHost.Visibility=AssistantCharacterAvailable && !expanded && !peeking && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;if(closedAssistant.IsVisible)closedAssistant.Music=AssistantSpotifyPlaying;ConfigureDisplayFollow();}
     internal void PreviewAssistant()
     {
         if(expanded || userHidden || !AssistantCharacterAvailable || (TuckRequested && !tuckPreview))return;

@@ -37,14 +37,15 @@ public sealed partial class OverlayWindow
     private Forms.Screen IslandScreen=>Native.ChooseScreen(app.Settings);
     private void InitializeDisplayFollow()
     {
-        pointerCheck.Tick+=(_,_)=>ResolveFollow();
+        pointerCheck.Tick+=(_,_)=>{ResolveFollow();TrackAssistantPointer();};
         IsVisibleChanged+=(_,_)=>ConfigureDisplayFollow();
         app.SettingsChanged+=ConfigureDisplayFollow;
         ConfigureDisplayFollow();
     }
     private void ConfigureDisplayFollow()
     {
-        if(app.Settings.DisplayMode!="Follow" || userHidden || !IsVisible)
+        if(app.Settings.DisplayMode!="Follow")Native.FollowMonitor=null;
+        if(userHidden || !IsVisible || (app.Settings.DisplayMode!="Follow" && !AssistantPointerTracking))
         {
             pointerCheck.Stop();followPolicy.Reset();
             if(app.Settings.DisplayMode!="Follow")Native.FollowMonitor=null;

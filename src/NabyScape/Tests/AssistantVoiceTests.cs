@@ -100,6 +100,36 @@ internal static class AssistantVoiceTests
                 Reject<InvalidOperationException>(() => Start(voice, p).GetAwaiter().GetResult());
             Assert(socket.Endpoint == null && !audio.Started);
         });
+        RunAsync("Gemini startup rejection preserves safe failure instead of reporting cancellation", async () =>
+        {
+            foreach (int code in new[] { 400, 401, 403, 404, 429, 500 })
+            {
+                var socket = new Socket { Ack = false }; var audio = new Audio();
+                await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+                Task starting = Start(voice, Provider("GeminiLive"));
+                await Until(() => socket.Payloads().Length == 1);
+                socket.Push(JsonSerializer.Serialize(new { error = new { code, message = "secret-provider-key-and-user-input" } }));
+                try { await starting; throw new Exception("Expected rejection"); }
+                catch (InvalidOperationException ex)
+                {
+                    if (!ex.Message.StartsWith("Gemini") || ex.Message.Contains("secret-provider")) throw new Exception("Rejection " + code + ": " + ex.Message);
+                    if (code == 429) Assert(ex.Message.Contains("quota"));
+                    if (code == 404) Assert(ex.Message.Contains("model not found"));
+                }
+                await Until(() => socket.Disposed);
+                Assert(!audio.Started && !voice.Connected);
+            }
+        });
+        RunAsync("Voice closed before setup is a connection error rather than user stop", async () =>
+        {
+            var socket = new Socket { Ack = false }; var audio = new Audio();
+            await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+            Task starting = Start(voice, Provider("GeminiLive"));
+            await Until(() => socket.Payloads().Length == 1); socket.Push(null);
+            try { await starting; throw new Exception("Expected disconnect"); }
+            catch (InvalidOperationException ex) { Assert(ex.Message.Contains("disconnected")); }
+            Assert(!audio.Started && !voice.Connected && socket.Disposed);
+        });
         foreach (string protocol in AssistantVoiceSession.Protocols)
         {
             RunAsync("Voice " + protocol + " setup rates history safe auth text image and correlated tools", async () =>

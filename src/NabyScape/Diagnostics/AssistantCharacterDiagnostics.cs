@@ -20,13 +20,29 @@ internal static class AssistantCharacterDiagnostics
         try
         {
             window.Show();await Task.Delay(350);
-            check("Idle character uses sparse blinking without continuous rendering",!orb.Rendering && orb.BlinkScheduled);
+            check("Visible idle character animates retained transforms without a managed render callback",orb.IdleAnimating && !orb.Rendering && orb.BlinkScheduled);
+            double firstOffset=orb.IdleOffset;await Task.Delay(420);
+            check("Idle float progresses without pointer or session input",orb.IdleAnimating && Math.Abs(orb.IdleOffset-firstOffset)>.1 && !app.Assistant.VoiceConnected);
+            orb.SetHover(true);check("Hover takes over the idle transforms immediately",!orb.IdleAnimating);orb.SetHover(false);
             orb.LookAt(10,-10);await Task.Delay(230);
             check("Pointer tracking eases to bounded eye coordinates",Math.Abs(orb.Gaze.X-6)<.1 && Math.Abs(orb.Gaze.Y+4)<.1 && !orb.Rendering);
             orb.LookAt(double.NaN,double.PositiveInfinity);await Task.Delay(230);
             check("Nonfinite pointer coordinates safely return the face to center",Math.Abs(orb.Gaze.X)<.1 && Math.Abs(orb.Gaze.Y)<.1);
             orb.Press(true);check("Press feedback preserves the click gesture without starting a session",orb.Pressed && !app.Assistant.VoiceConnected && !app.Assistant.Desktop.Sharing);
             orb.Press(false);await Task.Delay(320);check("Release settles and clears the pressed state",!orb.Pressed);
+            orb.ReduceMotion=true;orb.LookAt(0,0);canvas.UpdateLayout();
+            var round=Capture(canvas);var pixels=new byte[round.PixelWidth*round.PixelHeight*4];round.CopyPixels(pixels,round.PixelWidth*4,0);
+            int minX=320,minY=218,maxX=0,maxY=0;
+            for(int y=12;y<150;y++)for(int x=80;x<240;x++)
+            {
+                int p=(y*320+x)*4;
+                if(pixels[p+2]>25 && pixels[p+1]>25 && pixels[p]>25){minX=Math.Min(minX,x);maxX=Math.Max(maxX,x);minY=Math.Min(minY,y);maxY=Math.Max(maxY,y);}
+            }
+            check("Resting silhouette has equal width and height",Math.Abs((maxX-minX)-(maxY-minY))<=1 && maxX-minX>115);
+            orb.Music=true;canvas.UpdateLayout();Write(Capture(canvas),Path.Combine(directory,"character-headphones.png"));
+            check("Music costume does not open a voice or screen session",orb.Music && !app.Assistant.VoiceConnected && !app.Assistant.Desktop.Sharing);
+            orb.Music=false;
+            orb.ReduceMotion=false;
             var gif=new GifBitmapEncoder();
             var states=new[]{AssistantState.Idle,AssistantState.Listening,AssistantState.Thinking,AssistantState.Speaking,AssistantState.Approval,AssistantState.Error};
             var sheet=new DrawingVisual();
@@ -85,14 +101,14 @@ internal static class AssistantCharacterDiagnostics
             }
             var sheetImage=new RenderTargetBitmap(960,436,96,96,PixelFormats.Pbgra32);sheetImage.Render(sheet);Write(sheetImage,Path.Combine(directory,"character-expressions.png"));
             orb.State=AssistantState.Listening;await Task.Delay(60);check("Listening character wakes the existing paced render callback",orb.Rendering);
-            orb.ReduceMotion=true;check("Reduce Motion stops both continuous rendering and scheduled blinks",!orb.Rendering && !orb.BlinkScheduled);
+            orb.ReduceMotion=true;check("Reduce Motion stops idle/live animation and scheduled blinks",!orb.Rendering && !orb.IdleAnimating && !orb.BlinkScheduled);
             orb.Press(true);orb.Press(false);orb.LookAt(1,1);check("Reduced-motion pointer feedback stays finite and static",!orb.Rendering && double.IsFinite(orb.Gaze.X));
             bool motionEnabled=Motion.Enabled;
             try{Motion.Enabled=false;orb.ReduceMotion=false;check("Disabling app animations also stops character frames and sparse blinks",!orb.Rendering && !orb.BlinkScheduled);}
             finally{Motion.Enabled=motionEnabled;orb.ReduceMotion=false;}
-            orb.ReduceMotion=false;window.Hide();check("Hidden character releases render callbacks and blink scheduling",!orb.Rendering && !orb.BlinkScheduled && !orb.Pressed);
-            window.Show();orb.State=AssistantState.Idle;await Task.Delay(40);check("Visible idle character resumes sparse blinking only",!orb.Rendering && orb.BlinkScheduled);
-            window.Close();await Task.Delay(40);check("Closing character view releases all visual scheduling",!orb.Rendering && !orb.BlinkScheduled);
+            orb.ReduceMotion=false;window.Hide();check("Hidden character releases idle/live animation and blink scheduling",!orb.Rendering && !orb.IdleAnimating && !orb.BlinkScheduled && !orb.Pressed);
+            window.Show();orb.State=AssistantState.Idle;await Task.Delay(40);check("Visible idle character resumes retained motion and sparse blinking",!orb.Rendering && orb.IdleAnimating && orb.BlinkScheduled);
+            window.Close();await Task.Delay(40);check("Closing character view releases all visual scheduling",!orb.Rendering && !orb.IdleAnimating && !orb.BlinkScheduled);
             check("Character interaction never enables microphone, sharing or actions",!app.Assistant.VoiceConnected && !app.Assistant.Desktop.Sharing && !app.Assistant.ActionsAllowed);
             File.WriteAllText(Path.Combine(directory,"capture-notes.txt"),"Actual retained WPF character, synthetic listening/speaking levels and state fixtures. GIF sampled at 25 fps; application uses its existing FramePacer. No provider, credential, microphone, speaker, desktop capture or native input used.");
         }

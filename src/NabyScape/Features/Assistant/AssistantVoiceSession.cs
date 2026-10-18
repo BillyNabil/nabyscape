@@ -65,6 +65,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         internal CancellationTokenRegistration Registration;
         internal bool Connected, Ended, ResponseActive, IgnoreAudio;
         internal string AudioItem = "";
+        internal string? Failure;
         internal int AudioIndex, AudioStart, OutputBytes;
         internal int StopThread;
         internal long LastImage;
@@ -131,8 +132,17 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             lock (gate) { if (!Active(s)) throw new OperationCanceledException(); s.Connected = true; }
             Emit(s, () => Status?.Invoke("Voice connected"));
         }
-        catch (OperationCanceledException) { End(s); throw; }
-        catch { Fail(s, "Voice connection failed. Check the endpoint, model, voice and API key, then start again."); throw new InvalidOperationException("Voice connection failed. Check the endpoint, model, voice and API key, then start again."); }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested || (s.Ended && s.Failure == null)) { End(s); throw; }
+        catch (OperationCanceledException)
+        {
+            string message = s.Failure ?? "Voice connection timed out. Check the network and voice endpoint, then try again.";
+            Fail(s, message); throw new InvalidOperationException(message);
+        }
+        catch
+        {
+            string message = s.Failure ?? "Voice connection failed. Check the endpoint, model, voice and API key, then start again.";
+            Fail(s, message); throw new InvalidOperationException(message);
+        }
     }
 
     public Task SendText(string text, CancellationToken cancellationToken)
@@ -283,7 +293,11 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         lock (gate) if (ReferenceEquals(current, s)) current = null;
         s.HardwareStopped.Set();
     }
-    private void Fail(Session s, string message) { Emit(s, () => Status?.Invoke(message)); End(s); }
+    private void Fail(Session s, string message)
+    {
+        lock (gate) { if (Active(s)) s.Failure ??= message; }
+        Emit(s, () => Status?.Invoke(s.Failure ?? message)); End(s);
+    }
     private bool Active(Session s) => ReferenceEquals(current, s) && !s.Ended;
     private Session GetSession() { lock (gate) return current is { Connected: true } s ? s : throw new InvalidOperationException("Start voice first."); }
     private void Emit(Session s, Action action)
@@ -424,7 +438,20 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     }
     private async Task HandleGemini(Session s, JsonElement e)
     {
-        if (e.TryGetProperty("error", out _)) throw new InvalidDataException();
+        if (e.TryGetProperty("error", out var error))
+        {
+            // Never display raw provider messages: they may echo credentials or input.
+            int code = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("code", out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number) ? number : 0;
+            Fail(s, code switch
+            {
+                401 or 403 => "Gemini rejected access. Check the Google AI Studio API key and model access in Settings > AI.",
+                404 => "Gemini Live model not found. Check the realtime model ID in Settings > AI.",
+                429 => "Gemini Live quota exceeded. Check your Google AI Studio limits or try again later.",
+                400 => "Gemini rejected the voice configuration. Check the realtime model, voice name and supported capabilities in Settings > AI.",
+                _ => "Gemini rejected the voice session. Check the API key, live model and quota in Google AI Studio."
+            });
+            return;
+        }
         if (e.TryGetProperty("setupComplete", out _)) s.Ready.TrySetResult();
         if (e.TryGetProperty("goAway", out _)) { Fail(s, "Voice session is ending. Start voice again to reconnect."); return; }
         if (e.TryGetProperty("toolCallCancellation", out var cancelled) && cancelled.TryGetProperty("ids", out var ids))

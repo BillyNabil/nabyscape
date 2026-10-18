@@ -42,6 +42,18 @@ internal static class AssistantIslandDiagnostics
         var character=Button("AI character on island");var closedOrb=Diagnostics.Descendants(character).OfType<AssistantOrb>().Single();
         check("Island character is discoverable before enabling AI or adding a key",!ai.Options.Enabled && ai.Options.IslandCharacter && character.IsVisible && !closedOrb.Rendering && !ai.VoiceConnected && !ai.Desktop.Sharing);
         Capture("island-ai-closed");
+        check("Closed character stays square and fits the compact header",Math.Abs(closedOrb.ActualWidth-closedOrb.ActualHeight)<.1 && closedOrb.ActualHeight>=30 && closedOrb.ActualHeight<=s.Height);
+        island.DiagnosticRun=false;Invoke("ConfigureDisplayFollow");
+        check("Visible closed character wakes shared desktop pointer sampling",Field<System.Windows.Threading.DispatcherTimer>(island,"pointerCheck").IsEnabled);
+        island.DiagnosticRun=true;Invoke("ConfigureDisplayFollow");
+        double idleOffset=closedOrb.IdleOffset;await Task.Delay(420);
+        check("Closed dock character animates while untouched without starting voice or a managed render loop",closedOrb.IdleAnimating && Math.Abs(closedOrb.IdleOffset-idleOffset)>.1 && !closedOrb.Rendering && !ai.VoiceConnected);
+        Invoke("TrackAssistantPointerAt",closedOrb.PointToScreen(new Point(closedOrb.ActualWidth/2+360,closedOrb.ActualHeight/2+280)));await Task.Delay(210);
+        check("Desktop pointer coordinates outside the dock guide the closed character eyes",Math.Abs(closedOrb.Gaze.X-6)<.1 && Math.Abs(closedOrb.Gaze.Y-4)<.1 && !ai.VoiceConnected);
+        closedOrb.SetHover(true);closedOrb.LookAt(-1,-.3);await Task.Delay(230);Capture("island-ai-closed-curious");
+        check("Closed character responds to nearby pointer without opening audio or a render loop",closedOrb.Gaze.X< -5.8 && !closedOrb.Rendering && !ai.VoiceConnected);
+        closedOrb.Press(true);await Task.Delay(100);Capture("island-ai-closed-press");closedOrb.Press(false);closedOrb.SetHover(false);closedOrb.LookAt(0,0);await Task.Delay(320);
+        closedOrb.ReduceMotion=true;closedOrb.Music=true;Capture("island-ai-closed-headphones");closedOrb.Music=false;closedOrb.ReduceMotion=false;
         island.PreviewActivity();
         check("Normal hover immediately hides the closed AI overlay before its transition",island.IsPeeking && !island.AssistantPeeking && !character.IsVisible);
         await Task.Delay(300);Capture("island-normal-hover");island.Collapse();await Task.Delay(300);
