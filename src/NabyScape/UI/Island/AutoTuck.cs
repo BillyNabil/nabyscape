@@ -69,7 +69,7 @@ public sealed partial class OverlayWindow
     {
         if(!AutoTuckPolicy.CanHover(userHidden,TuckRequested,tucked))return;
         SetTucked(false);Position();tuckPreview=true;
-        try{if(app.Assistant.VoiceConnected && app.Assistant.Options.IslandCharacter)PreviewAssistant();else PreviewActivity();}finally{tuckPreview=false;}
+        try{if(!fileDragActive && app.Assistant.VoiceConnected && app.Assistant.Options.IslandCharacter)PreviewAssistant();else PreviewActivity();}finally{tuckPreview=false;}
     }
 }
 

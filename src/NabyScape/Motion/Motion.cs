@@ -26,10 +26,15 @@ internal static class Motion
         target.BeginAnimation(property,new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds))
         {BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=new ExponentialEase{Exponent=5,EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop});
     }
-    public static void Fade(UIElement element,double value,double milliseconds=150,double delay=0)
+    public static void Fade(UIElement element,double value,double milliseconds=150,double delay=0,Action? completed=null)
     {
         double current=element.Opacity;element.BeginAnimation(UIElement.OpacityProperty,null);element.Opacity=value;
-        if(Enabled && Math.Abs(current-value)>.001)element.BeginAnimation(UIElement.OpacityProperty,new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds)){BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=new CubicEase{EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop});
+        if(Enabled && Math.Abs(current-value)>.001)
+        {
+            var animation=new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds)){BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=new CubicEase{EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop};
+            if(completed!=null)animation.Completed+=(_,_)=>completed();element.BeginAnimation(UIElement.OpacityProperty,animation);
+        }
+        else completed?.Invoke();
     }
     public static void Enter(FrameworkElement element,double distance=8,double delay=0)
     {

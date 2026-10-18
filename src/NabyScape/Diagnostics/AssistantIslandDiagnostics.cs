@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -13,9 +17,26 @@ namespace NabyScape;
 
 internal static class AssistantIslandDiagnostics
 {
+    private sealed class FixtureDesktop : IAssistantDesktopBackend
+    {
+        internal int Starts,Stops,Captures,Inputs;
+        public IReadOnlyList<AssistantScreenTarget> Targets()=>new[]{new AssistantScreenTarget("fixture","Fixture display",new System.Drawing.Rectangle(0,0,640,480))};
+        public void Begin(IntPtr owner)=>Starts++;
+        public void End()=>Stops++;
+        public AssistantScreenFrame Capture(AssistantScreenTarget target){Captures++;throw new InvalidOperationException("Island fixture cannot capture a display.");}
+        public void Execute(AssistantScreenFrame frame,JsonElement action,CancellationToken token){Inputs++;throw new InvalidOperationException("Island fixture cannot send native input.");}
+    }
     internal static async Task Run(App app,OverlayWindow island,string directory,Action<string,bool> check)
     {
         var ai=app.Assistant;var s=app.Settings;s.Width=327;s.Height=36;s.PanelWidth=526;s.PanelMaxHeight=417;s.HoverWidth=447;s.HoverHeight=207;s.PanelScale=1.04;s.HideMaximized=s.HideFullscreen=false;app.ChangeSettings();
+        var desktop=new FixtureDesktop();typeof(AssistantDesktop).GetField("backend",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai.Desktop,desktop);
+        T Field<T>(object target,string name)=>(T)target.GetType().GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(target)!;
+        void Invoke(string name,params object[] args)=>typeof(OverlayWindow).GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(island,args);
+        AssistantDiagnostics.FixtureVoice LiveVoice()
+        {
+            var fixture=new AssistantDiagnostics.FixtureVoice();typeof(AssistantRuntime).GetField("voice",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai,fixture);
+            typeof(AssistantRuntime).GetField("state",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai,AssistantState.Listening);ai.SetIslandCharacter(true);return fixture;
+        }
         island.Show();island.Collapse();await Task.Delay(350);
         Button Button(string name)=>Diagnostics.Descendants(island).OfType<Button>().First(b=>AutomationProperties.GetName(b)==name);
         var character=Button("AI character on island");var closedOrb=Diagnostics.Descendants(character).OfType<AssistantOrb>().Single();
@@ -35,8 +56,14 @@ internal static class AssistantIslandDiagnostics
         app.PublishUpdate(RuntimeChange.Clock);app.PublishUpdate(RuntimeChange.Countdown);
         check("Inline draft and selection survive app heartbeat",editor.Text=="A draft right inside my island." && editor.SelectionStart==2 && editor.SelectionLength==5);
         Capture("island-ai-chat");
-        island.CloseAssistant();await Task.Delay(300);island.Reveal(false);island.SelectPage("media",false);await Task.Delay(120);island.OpenAssistant(false);await Task.Delay(300);
+        island.CloseAssistant();await Task.Delay(300);island.Reveal(false);island.SelectPage("access",false);await Task.Delay(550);double normalHeight=island.PaintedHeight;
+        island.OpenAssistant(false);await Task.Delay(550);
+        var viewport=Field<ScrollViewer>(island,"scroll");
+        check("Opening AI from a short expanded widget resizes the painted surface to its chat viewport",normalHeight<350 && island.PaintedHeight>normalHeight+30 && Math.Abs(island.PaintedHeight-viewport.Height-26)<1);
         check("Returning through normal widgets keeps the same inline editor and draft",ReferenceEquals(view,island.IslandAssistantView) && editor.Text=="A draft right inside my island." && editor.SelectionStart==2 && editor.SelectionLength==5);
+        island.ShowCommands(false);Field<TextBox>(island,"commandInput").Text="AI companion";await Task.Delay(550);double commandHeight=island.PaintedHeight;
+        Button("AI companion").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(550);
+        check("The filtered command entry resizes its short surface for inline AI and keeps the draft",commandHeight<350 && island.AssistantOpen && island.PaintedHeight>commandHeight+30 && Math.Abs(island.PaintedHeight-viewport.Height-26)<1 && editor.Text=="A draft right inside my island.");
         int Listeners()=>((MulticastDelegate?)typeof(AssistantRuntime).GetField("Changed",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(ai))?.GetInvocationList().Length??0;
         int baseline=Listeners();
         for(int i=0;i<12;i++){island.CloseAssistant();island.Reveal(false);island.SelectPage("media",false);island.OpenAssistant(false);}
@@ -56,18 +83,43 @@ internal static class AssistantIslandDiagnostics
         var approval=ai.Execute(new("inline-review","nabyscape","{\"action\":\"timer_start\",\"seconds\":60}"),default);await Task.Delay(200);
         check("Reviewed actions stay inside the island without a dialog",ai.Pending?.Id=="inline-review" && Button("Run once").IsVisible && app.Windows.Count==windows && !app.Session.Timer.Running);
         Capture("island-ai-review");ai.Decide(false);await approval;
-        var live=new AssistantDiagnostics.FixtureVoice();typeof(AssistantRuntime).GetField("voice",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai,live);ai.SetIslandCharacter(true);
+        var live=LiveVoice();
         island.Collapse();await Task.Delay(250);
         check("Collapsing inline chat keeps a live session with a visible microphone indicator",ai.VoiceConnected && !live.Stopped && character.IsVisible && closedOrb.Live);
+        island.PreviewAssistant();await Task.Delay(250);var peekOrb=Field<AssistantOrb>(island,"peekAssistant");
+        check("The visible listening peek owns an active orb render subscription",peekOrb.IsVisible && peekOrb.Rendering);
+        island.OpenAssistant(false);await Task.Delay(250);
+        check("Opening live inline AI collapses the faded peek and releases its orb rendering",!peekOrb.IsVisible && !peekOrb.Rendering && Diagnostics.Descendants(view).OfType<AssistantOrb>().Single().Rendering && ai.VoiceConnected);
+        Button("Back to island").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(250);
+        check("Back to island keeps voice running and preserves the inline draft",!island.AssistantOpen && ai.VoiceConnected && !live.Stopped && editor.Text=="A draft right inside my island.");
+        island.PreviewAssistant();await Task.Delay(200);Invoke("HideAssistantPeek");island.PreviewAssistant();await Task.Delay(550);
+        check("A reveal during the peek exit fade keeps the new listening peek visible",island.AssistantPeeking && peekOrb.IsVisible && peekOrb.Rendering && Field<Grid>(island,"assistantPeek").Opacity>.99);
+        bool motionEnabled=Motion.Enabled;Motion.Enabled=false;island.OpenAssistant(false);
+        check("Reduced-motion inline entry collapses the hidden peek immediately",!peekOrb.IsVisible && !peekOrb.Rendering && ai.VoiceConnected);Motion.Enabled=motionEnabled;
         s.AlwaysTucked=true;app.ChangeSettings();island.Collapse();island.RevealTuckedPreview();await Task.Delay(200);
         check("A tucked live character reveals AI hover at the top edge",island.AssistantPeeking && !island.IsTucked && ai.VoiceConnected);
+        island.Collapse();await Task.Delay(200);Invoke("BeginFileDrop");Invoke("ShowShelfDropPreview",(object)Array.Empty<string>());await Task.Delay(200);
+        check("A file drag onto a tucked live session reveals the visible files preview and feedback",!island.IsTucked && !island.AssistantPeeking && island.PeekPage=="files" && Field<Border>(island,"shelfDropPreview").IsVisible && ai.VoiceConnected);
+        Invoke("FinishFileDrop",false);await Task.Delay(200);
+        check("Canceling a tucked live file drag returns to the tucked edge without stopping voice",island.IsTucked && !island.IsPeeking && !island.AssistantPeeking && ai.VoiceConnected && !live.Stopped);
+        Invoke("BeginFileDrop");
+        var droppedPath=Path.Combine(directory,"island-ai-closed.png");
+        app.Productivity.AddFiles(new[]{droppedPath});Invoke("FinishFileDrop",true);
+        check("An accepted tucked live file drop stages the fixture and keeps files visible",app.Productivity.Shelf.Any(item=>item.Path==droppedPath) && island.IsPeeking && island.PeekPage=="files" && !island.AssistantPeeking && !island.IsTucked && ai.VoiceConnected && !live.Stopped);
         s.AlwaysTucked=false;app.ChangeSettings();
+        island.OpenAssistant(false);ai.Desktop.Start("fixture",IntPtr.Zero);ai.Desktop.ControlEnabled=true;int stopsBefore=desktop.Stops;bool closeCanceled=false;System.ComponentModel.CancelEventHandler closing=(_,e)=>closeCanceled=e.Cancel;island.Closing+=closing;island.Close();island.Closing-=closing;await Task.Delay(150);
+        check("The actual Closing path cancels close, manually hides and stops fixture voice, screen and control",closeCanceled && island.UserHidden && !island.IsVisible && app.Windows.Cast<Window>().Contains(island) && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && !ai.Desktop.ControlEnabled && desktop.Stops>stopsBefore);
+        island.ToggleVisibility();live=LiveVoice();island.OpenAssistant(false);ai.Desktop.Start("fixture",IntPtr.Zero);ai.Desktop.ControlEnabled=true;
+        var escape=new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(island)!,0,Key.Escape){RoutedEvent=Keyboard.PreviewKeyDownEvent};island.RaiseEvent(escape);await Task.Delay(150);
+        check("AI Escape stops fixture voice and screen sharing while leaving the island visible",escape.Handled && island.IsVisible && !island.AssistantOpen && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && !ai.Desktop.ControlEnabled);
+        live=LiveVoice();
         island.Collapse();island.ToggleVisibility();ai.Conversation.Record("assistant","A hidden island must stay hidden.");await Task.Delay(100);
         check("Replies respect manual hide, stop the live session and do not reveal the island",island.UserHidden && !island.IsVisible && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && !closedOrb.Rendering);
         island.ToggleVisibility();ai.SetIslandCharacter(false);await Task.Delay(100);
         check("Island character can be turned off independently",!character.IsVisible && !ai.Options.IslandCharacter && !ai.VoiceConnected);
         ai.SetIslandCharacter(true);island.Collapse();await Task.Delay(250);
         check("Turning the character back on does not start capture",character.IsVisible && !ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
+        check("Lifecycle checks used only fixture screen sessions with no capture or native input",desktop.Starts==2 && desktop.Captures==0 && desktop.Inputs==0);
         ai.Clear();
         File.WriteAllText(Path.Combine(directory,"capture-notes.txt"),"Actual WPF island render with synthetic conversation. No provider API, credential vault, microphone/speaker, desktop capture or native input used. A shared runtime drives closed character, hover greeting and inline chat. No separate Companion window is created by the tested entry point.");
         void Capture(string name)

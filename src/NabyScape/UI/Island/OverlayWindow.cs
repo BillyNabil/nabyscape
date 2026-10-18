@@ -71,7 +71,7 @@ public sealed partial class OverlayWindow : Window
         SizeChanged+=(_,_)=>Position();
         IsVisibleChanged+=(_,_)=>{if(!IsVisible)InvalidateSystemMonitor();};
         PreviewKeyDown+=(_,e)=> {if(e.Key==Key.K && Keyboard.Modifiers==ModifierKeys.Control){ShowCommands();e.Handled=true;}else if(e.Key==Key.Escape){if(assistantOpen || assistantPeeking){app.Assistant.StopSession();CloseAssistant();}else if(commandOpen)CloseCommands();else if(activitiesOpen)CloseActivities();else Collapse();e.Handled=true;}};
-        Closing+=(_,e)=> {if(!app.Quitting){e.Cancel=true;Collapse();Hide();userHidden=true;app.Previews?.SetHidden(true);}};
+        Closing+=(_,e)=> {if(!app.Quitting){e.Cancel=true;SetVisibility(false);}};
         Deactivated+=(_,_)=> {if((expanded || peeking) && !DiagnosticRun && audioMenu?.IsOpen!=true)Collapse();};
         app.SettingsChanged+=ApplySettings;app.Updated+=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged+=DisplayChanged;
         volume.ValueChanged+=(_,_)=> {if(!updating){app.Audio.SetVolume(volume.Value/100);volumeText.Text=$"{volume.Value:0}%";}};
@@ -203,9 +203,10 @@ public sealed partial class OverlayWindow : Window
         if(TuckRequested){ApplyEnvironmentTuck();return;}
         motion.OnComplete(()=> {if(expanded || peeking)return;peekPanel.Visibility=Visibility.Collapsed;assistantPeek.Visibility=Visibility.Collapsed;scroll.Visibility=Visibility.Collapsed;UpdateSatellite();});
     }
-    public void ToggleVisibility()
+    public void ToggleVisibility()=>SetVisibility(userHidden || !IsVisible);
+    private void SetVisibility(bool show)
     {
-        FinishFileDrop(false);bool show=userHidden || !IsVisible;
+        FinishFileDrop(false);
         RememberExternalForeground();
         Collapse();userHidden=!show;
         visibilityOverride=show?lastExternalForeground:IntPtr.Zero;

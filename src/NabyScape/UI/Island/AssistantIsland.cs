@@ -22,6 +22,7 @@ public sealed partial class OverlayWindow
     private AssistantView? islandAssistantView;
     private Button assistantCharacterButton=null!;
     private bool assistantOpen,assistantPeeking;
+    private int assistantPeekRevision;
     private bool AssistantCharacterAvailable=>app.Assistant.Options.IslandCharacter || app.Assistant.VoiceConnected || app.Assistant.Desktop.Sharing || app.Assistant.Busy;
     internal bool AssistantOpen=>assistantOpen && expanded;
     internal bool AssistantPeeking=>assistantPeeking;
@@ -86,6 +87,7 @@ public sealed partial class OverlayWindow
     internal void PreviewAssistant()
     {
         if(expanded || userHidden || !AssistantCharacterAvailable || (TuckRequested && !tuckPreview))return;
+        assistantPeekRevision++;
         HideNotice();EndPeekGesture();StopHoverTimers();assistantReplyDismiss.Stop();automaticPreview=false;activityDismiss.Stop();peeking=true;assistantPeeking=true;peekDetailed=true;Show();Dimensions();
         peekPanel.Visibility=Visibility.Collapsed;scroll.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=false;Motion.Fade(compact,0,100);
         double width=Math.Min(app.Settings.HoverWidth,expandedWidth),height=AssistantPeekHeight;LayoutAssistantPeek();assistantPeek.Visibility=Visibility.Visible;assistantPeek.IsHitTestVisible=true;
@@ -94,13 +96,17 @@ public sealed partial class OverlayWindow
         outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>VisiblePoint(p));UpdateSatellite();WakeLiveRendering();
     }
     private void HideAssistantPeek()
-    {assistantHover.Stop();assistantReplyDismiss.Stop();assistantPeeking=false;assistantPeek.IsHitTestVisible=false;Motion.Fade(assistantPeek,0,100);}
+    {
+        int revision=++assistantPeekRevision;
+        assistantHover.Stop();assistantReplyDismiss.Stop();assistantPeeking=false;assistantPeek.IsHitTestVisible=false;
+        Motion.Fade(assistantPeek,0,100,completed:()=>{if(!assistantPeeking && revision==assistantPeekRevision)assistantPeek.Visibility=Visibility.Collapsed;});
+    }
     internal void OpenAssistant(bool activate=true)
     {
         activate&=!DiagnosticRun;
         FlushNotes();commandOpen=activitiesOpen=false;hoverPanelWidget=null;
         if(!assistantOpen){assistantOpen=true;bodyDirty=true;}
-        Reveal(activate);RefreshAssistantCharacter();if(activate)Dispatcher.BeginInvoke(()=>islandAssistantView?.FocusComposer());
+        Reveal(activate);ResizeToolPanel();RefreshAssistantCharacter();if(activate)Dispatcher.BeginInvoke(()=>islandAssistantView?.FocusComposer());
     }
     private void MountAssistantView()
     {
