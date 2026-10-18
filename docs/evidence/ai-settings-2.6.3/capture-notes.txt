@@ -1,0 +1,1 @@
+Actual WPF island render with synthetic conversation. No provider API, credential vault, microphone/speaker, desktop capture or native input used. A shared runtime drives closed character, hover greeting and inline chat. No separate Companion window is created by the tested entry point.

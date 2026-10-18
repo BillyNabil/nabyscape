@@ -1,0 +1,41 @@
+PASS  Island character is discoverable before enabling AI or adding a key
+PASS  Normal hover immediately hides the closed AI overlay before its transition
+PASS  Hover reveals the character and Chat/Talk inside the same island
+PASS  AI hover has no voice or screen side effects
+PASS  Shelf drag takes priority over the AI hover
+PASS  Canceling shelf drag restores the AI hover
+PASS  Tray and command entry opens inline without creating a Companion window
+PASS  Inline chat has no provider picker or provider configuration controls
+PASS  Inline draft and selection survive app heartbeat
+PASS  Opening AI from a short expanded widget resizes the painted surface to its chat viewport
+PASS  Returning through normal widgets keeps the same inline editor and draft
+PASS  The filtered command entry resizes its short surface for inline AI and keeps the draft
+PASS  Repeated normal/AI navigation does not accumulate runtime listeners
+PASS  Inline editor stays inside island bounds at 360
+PASS  Inline editor stays inside island bounds at 526
+PASS  A new reply can emerge from the closed island without opening a window
+PASS  Reviewed actions stay inside the island without a dialog
+PASS  Collapsing inline chat keeps a live session with a visible microphone indicator
+PASS  The visible listening peek owns an active orb render subscription
+PASS  Opening live inline AI collapses the faded peek and releases its orb rendering
+PASS  Back to island keeps voice running and preserves the inline draft
+PASS  A reveal during the peek exit fade keeps the new listening peek visible
+PASS  Reduced-motion inline entry collapses the hidden peek immediately
+PASS  A tucked live character reveals AI hover at the top edge
+PASS  A file drag onto a tucked live session retains visible files and feedback across environment checks without a pointer
+PASS  Canceling a tucked live file drag returns to the tucked edge without stopping voice
+PASS  An accepted tucked live file drop stages the fixture and keeps files visible
+PASS  The actual Closing path cancels close, manually hides and stops fixture voice, screen and control
+PASS  AI Escape stops fixture voice and screen sharing while leaving the island visible
+PASS  Replies respect manual hide, stop the live session and do not reveal the island
+PASS  Island character can be turned off independently
+PASS  Turning the character back on does not start capture
+PASS  Lifecycle checks used only fixture screen sessions with no capture or native input
+PASS  Provider entry opens the AI category in the main Settings app
+PASS  AI settings preserve provider editing drafts across category navigation
+PASS  Embedded AI settings keep connection fields inside the form at 1100
+PASS  Embedded AI settings keep connection fields inside the form at 600
+PASS  Programmatic AI navigation keeps the compact category picker synchronized
+PASS  Closing Settings clears the unsaved key without granting session capture
+PASS  First-run AI settings hide empty connection fields until a provider is added
+RESULT: 0 failures

@@ -1,0 +1,23 @@
+PASS  Assistant defaults are opt-in with no session permissions
+PASS  Assistant settings refresh preserves composer and selection
+PASS  Assistant idle orb has no render subscription
+PASS  Assistant active orb wakes on demand
+PASS  Assistant Reduce Motion detaches continuous rendering
+PASS  Assistant pending action exposes review before changing state
+PASS  Assistant Decline leaves the isolated timer untouched
+PASS  Assistant Run once executes exactly the reviewed app action
+PASS  Assistant Stop dismisses approval and revokes session controls
+PASS  Assistant handled child Escape stops approval from Run once
+PASS  Assistant handled child Escape stops approval from Decline
+PASS  Assistant handled child Escape stops approval from Clear
+PASS  Assistant handled child Escape stops approval from Actions on
+PASS  Assistant handled child Escape stops approval from Display to share
+PASS  Assistant compact layout keeps form scrollable at 480
+PASS  Assistant compact layout keeps form scrollable at 360
+PASS  Assistant closing window releases listeners and orb rendering
+PASS  Assistant repeated open/close does not accumulate runtime listeners
+PASS  Assistant providers fit compact width with vertical access at 600
+PASS  Assistant providers fit compact width with vertical access at 360
+PASS  Assistant custom caption has accessible window controls
+PASS  Assistant Clear removes in-memory messages
+RESULT: 0 failures
