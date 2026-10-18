@@ -199,7 +199,8 @@ public sealed partial class App : Application
     {
         overlay?.Collapse();
         if(settingsWindow==null) { settingsWindow=new SettingsWindow(this);settingsWindow.Closed+=(_,_)=>settingsWindow=null; }
-        settingsWindow.Show();settingsWindow.Activate();
+        if(diagnosticMode)settingsWindow.ShowActivated=false;
+        settingsWindow.Show();if(!diagnosticMode)settingsWindow.Activate();
     }
     public void Notify(string title,string text)
     { PostNotice(new("failure",title,text)); }
@@ -207,7 +208,7 @@ public sealed partial class App : Application
     { quitting=true;Shutdown(); }
     protected override void OnExit(ExitEventArgs e)
     {
-        Assistant?.Dispose();assistantWindow?.Close();assistantProviders?.Close();
+        Assistant?.Dispose();assistantWindow?.Close();
         tick?.Stop();Downloads?.Dispose();Updates?.Dispose();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();

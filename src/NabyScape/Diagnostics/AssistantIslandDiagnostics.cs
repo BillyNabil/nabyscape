@@ -42,6 +42,9 @@ internal static class AssistantIslandDiagnostics
         var character=Button("AI character on island");var closedOrb=Diagnostics.Descendants(character).OfType<AssistantOrb>().Single();
         check("Island character is discoverable before enabling AI or adding a key",!ai.Options.Enabled && ai.Options.IslandCharacter && character.IsVisible && !closedOrb.Rendering && !ai.VoiceConnected && !ai.Desktop.Sharing);
         Capture("island-ai-closed");
+        island.PreviewActivity();
+        check("Normal hover immediately hides the closed AI overlay before its transition",island.IsPeeking && !island.AssistantPeeking && !character.IsVisible);
+        await Task.Delay(300);Capture("island-normal-hover");island.Collapse();await Task.Delay(300);
         island.PreviewAssistant();await Task.Delay(350);
         check("Hover reveals the character and Chat/Talk inside the same island",island.AssistantPeeking && island.IsPeeking && !island.IsExpanded && island.PaintedHeight<=190.1 && Button("Chat here").IsVisible);
         check("AI hover has no voice or screen side effects",!ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
@@ -53,6 +56,7 @@ internal static class AssistantIslandDiagnostics
         int windows=app.Windows.Count;app.ShowAssistant();await Task.Delay(350);
         check("Tray and command entry opens inline without creating a Companion window",island.AssistantOpen && app.Windows.Count==windows && !app.Windows.Cast<Window>().Any(w=>w is AssistantWindow));
         var view=island.IslandAssistantView!;var editor=view.Editor;editor.Text="A draft right inside my island.";editor.Select(2,5);
+        check("Inline chat has no provider picker or provider configuration controls",!Diagnostics.Descendants(view).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="AI provider") && !Diagnostics.Descendants(view).OfType<Button>().Any(b=>Equals(b.Content,"Providers")));
         app.PublishUpdate(RuntimeChange.Clock);app.PublishUpdate(RuntimeChange.Countdown);
         check("Inline draft and selection survive app heartbeat",editor.Text=="A draft right inside my island." && editor.SelectionStart==2 && editor.SelectionLength==5);
         Capture("island-ai-chat");
@@ -121,6 +125,25 @@ internal static class AssistantIslandDiagnostics
         check("Turning the character back on does not start capture",character.IsVisible && !ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
         check("Lifecycle checks used only fixture screen sessions with no capture or native input",desktop.Starts==2 && desktop.Captures==0 && desktop.Inputs==0);
         ai.Clear();
+        app.ShowAssistantProviders();await Task.Delay(250);
+        var settings=app.Windows.OfType<SettingsWindow>().Single();
+        var providerEditor=Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single();
+        check("Provider entry opens the AI category in the main Settings app",providerEditor.IsVisible && !app.Windows.OfType<AssistantProvidersWindow>().Any());
+        var model=Diagnostics.Descendants(providerEditor).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Chat model");model.Text="Unsaved fixture model";model.Select(2,4);
+        typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Application"});settings.OpenAiSettings();await Task.Delay(150);
+        check("AI settings preserve provider editing drafts across category navigation",ReferenceEquals(providerEditor,Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single()) && model.Text=="Unsaved fixture model" && model.SelectionStart==2 && model.SelectionLength==4);
+        foreach(double width in new[]{1100d,600d})
+        {
+            settings.Width=width;settings.Height=650;await Task.Delay(150);settings.UpdateLayout();
+            check("Embedded AI settings keep connection fields inside the form at "+width,double.IsNaN(providerEditor.Height) && model.ActualWidth>100 && model.ActualWidth<settings.ActualWidth);
+            var image=new RenderTargetBitmap((int)settings.ActualWidth,(int)settings.ActualHeight,96,96,PixelFormats.Pbgra32);image.Render(settings);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var file=File.Create(Path.Combine(directory,"settings-ai-"+width+".png"));png.Save(file);
+        }
+        var password=Diagnostics.Descendants(providerEditor).OfType<PasswordBox>().Single();password.Password="fixture-only-unsaved-key";settings.Close();
+        check("Closing Settings clears the unsaved key without granting session capture",password.Password.Length==0 && !ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
+        ai.Options.Providers.Clear();ai.Options.SelectedProvider=ai.Options.SelectedVoiceProvider="";app.ShowAssistantProviders();await Task.Delay(100);
+        settings=app.Windows.OfType<SettingsWindow>().Single();providerEditor=Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single();
+        check("First-run AI settings hide empty connection fields until a provider is added",Diagnostics.Descendants(providerEditor).OfType<Expander>().Single(e=>Equals(e.Header,"Provider connection")).Visibility==Visibility.Collapsed && !Diagnostics.Descendants(providerEditor).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Chat provider").IsEnabled);
+        settings.Close();
         File.WriteAllText(Path.Combine(directory,"capture-notes.txt"),"Actual WPF island render with synthetic conversation. No provider API, credential vault, microphone/speaker, desktop capture or native input used. A shared runtime drives closed character, hover greeting and inline chat. No separate Companion window is created by the tested entry point.");
         void Capture(string name)
         {

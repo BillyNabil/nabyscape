@@ -59,7 +59,7 @@ internal static class AssistantDiagnostics
         check("Assistant Stop dismisses approval and revokes session controls",!app.Session.Timer.Running && !ai.ActionsAllowed && ai.Pending==null && !ai.Desktop.Sharing && !ai.VoiceConnected);
         var sessionControls=Diagnostics.Descendants(window).OfType<Expander>().Single(e=>Equals(e.Header,"Session controls"));
         sessionControls.IsExpanded=true;window.UpdateLayout();
-        foreach(string target in new[]{"Run once","Decline","Providers","Actions on","Display to share"})
+        foreach(string target in new[]{"Run once","Decline","Clear","Actions on","Display to share"})
         {
             ai.SetActions(true);ai.Desktop.ControlEnabled=true;
             var fixtureVoice=new FixtureVoice();typeof(AssistantRuntime).GetField("voice",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai,fixtureVoice);

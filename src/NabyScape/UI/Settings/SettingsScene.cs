@@ -60,7 +60,7 @@ internal sealed class SettingsScene : FrameworkElement
         switch(kind)
         {
             case "AI companion":
-                dc.DrawEllipse(white,null,new Point(53,51),22,22);dc.DrawEllipse(fill,null,new Point(47,48),2,2);dc.DrawEllipse(fill,null,new Point(59,48),2,2);Text("Your provider",94,24,15,true);Text("Chat · live voice · selected display",94,51,12);Keys("Review action",278,23,115);Note("Optional · session capture controls · Windows credential storage");break;
+                dc.DrawEllipse(UI.Brush("#23262D"),new Pen(UI.Brush("#777D88"),1),new Point(53,51),24,24);dc.DrawRoundedRectangle(white,null,new Rect(42,37,7,16),3.5,3.5);dc.DrawRoundedRectangle(white,null,new Rect(57,37,7,16),3.5,3.5);Text("Connect your AI",94,24,15,true);Text("Provider → model → chat / voice",94,51,12);Keys("Local key",298,23,95);Note("Optional · keys in Windows Credential Manager · session capture controls");break;
             case "Shape":
                 Box(28,22,160,36,Brushes.Black,6);Box(228,22,160,36,Brushes.Black,18);Text("Notch · attached to edge",30,69,11);Text("Pill · floating",230,69,11);Note("Current: "+(s.Preset=="Mac"?"Notch":"Pill"));break;
             case "Settings material":

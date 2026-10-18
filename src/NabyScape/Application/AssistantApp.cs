@@ -4,7 +4,6 @@ public sealed partial class App
 {
     internal AssistantRuntime Assistant {get;private set;}=null!;
     private AssistantWindow? assistantWindow;
-    private AssistantProvidersWindow? assistantProviders;
     internal void ShowAssistant()
     {
         if(overlay!=null){overlay.OpenAssistant();return;}
@@ -17,8 +16,7 @@ public sealed partial class App
     }
     internal void ShowAssistantProviders()
     {
-        if(assistantProviders==null){assistantProviders=new(this);assistantProviders.Closed+=(_,_)=>assistantProviders=null;}
-        assistantProviders.Show();if(assistantProviders.WindowState==System.Windows.WindowState.Minimized)assistantProviders.WindowState=System.Windows.WindowState.Normal;assistantProviders.Activate();
+        ShowSettings();settingsWindow?.OpenAiSettings();
     }
-    internal void HideAssistant(){Assistant?.StopSession();assistantWindow?.Hide();assistantProviders?.Hide();}
+    internal void HideAssistant(){Assistant?.StopSession();assistantWindow?.Hide();}
 }

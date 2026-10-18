@@ -51,8 +51,8 @@ public sealed partial class OverlayWindow
         assistantPeek.RowDefinitions.Add(new());assistantPeek.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var hero=new Grid();hero.ColumnDefinitions.Add(new(){Width=GridLength.Auto});hero.ColumnDefinitions.Add(new());hero.Children.Add(peekAssistant);
         var words=new StackPanel{VerticalAlignment=VerticalAlignment.Center,Margin=new(12,0,0,0)};assistantGreeting.FontWeight=FontWeights.SemiBold;assistantGreeting.TextWrapping=TextWrapping.NoWrap;assistantGreeting.TextTrimming=TextTrimming.CharacterEllipsis;words.Children.Add(assistantGreeting);assistantCaption.Margin=new(0,5,0,0);assistantCaption.MaxHeight=46;words.Children.Add(assistantCaption);Grid.SetColumn(words,1);hero.Children.Add(words);assistantPeek.Children.Add(hero);
-        var chat=AssistantWindow.Pill("Chat here",()=>OpenAssistant(),true);assistantTalk=AssistantWindow.Pill("Talk",()=>{if(app.Assistant.VoiceConnected)app.Assistant.StopSession();else{OpenAssistant();_=app.Assistant.StartVoice();}});var providers=AssistantWindow.Pill("Providers",app.ShowAssistantProviders);
-        var actions=new WrapPanel{Margin=new(0,6,0,0)};actions.Children.Add(chat);actions.Children.Add(assistantTalk);actions.Children.Add(providers);Grid.SetRow(actions,1);assistantPeek.Children.Add(actions);visuals.Children.Add(assistantPeek);
+        var chat=AssistantWindow.Pill("Chat here",()=>OpenAssistant(),true);assistantTalk=AssistantWindow.Pill("Talk",()=>{if(app.Assistant.VoiceConnected)app.Assistant.StopSession();else{OpenAssistant();_=app.Assistant.StartVoice();}});
+        var actions=new WrapPanel{Margin=new(0,6,0,0)};actions.Children.Add(chat);actions.Children.Add(assistantTalk);Grid.SetRow(actions,1);assistantPeek.Children.Add(actions);visuals.Children.Add(assistantPeek);
         assistantHover.Tick+=(_,_)=>{assistantHover.Stop();if(assistantCharacterButton.IsMouseOver && !expanded && !userHidden)PreviewAssistant();};
         assistantReplyDismiss.Tick+=(_,_)=>{assistantReplyDismiss.Stop();if(assistantPeeking && !PointerInside())Collapse();};
         app.Assistant.Changed+=AssistantIslandChanged;app.Assistant.VisualChanged+=RefreshAssistantVisuals;app.SettingsChanged+=RefreshAssistantCharacter;
@@ -69,7 +69,7 @@ public sealed partial class OverlayWindow
         RefreshAssistantCharacter();RefreshAssistantVisuals();
         if(!AssistantCharacterAvailable && assistantPeeking)CloseAssistant();
         assistantGreeting.Text=app.Assistant.State switch{AssistantState.Listening=>"I'm listening.",AssistantState.Thinking=>"Let me think…",AssistantState.Speaking=>"Let's talk.",AssistantState.Approval=>"Your call.",AssistantState.Connecting=>"Connecting…",AssistantState.Error=>"Let's check that.",_=>"Hey, I'm here."};
-        assistantCaption.Text=!app.Assistant.Options.Enabled?"Choose your provider to get started.":app.Assistant.Pending!=null?"Review this action in your island.":app.Assistant.State==AssistantState.Idle?"Chat or talk, right from your island.":app.Assistant.Status;
+        assistantCaption.Text=!app.Assistant.Options.Enabled?"Set up your companion in Settings → AI.":app.Assistant.Pending!=null?"Review this action in your island.":app.Assistant.State==AssistantState.Idle?"Chat or talk, right from your island.":app.Assistant.Status;
         assistantTalk.Content=app.Assistant.VoiceConnected?"End voice":"Talk";assistantTalk.IsEnabled=!app.Assistant.Busy;
         var reply=app.Assistant.Conversation.Messages.LastOrDefault(m=>m.Role=="assistant" && !string.IsNullOrWhiteSpace(m.Text) && !m.Text.StartsWith("Reviewed voice action outcome") && !m.Text.StartsWith("The reply was interrupted"));
         bool fresh=reply!=null && !ReferenceEquals(reply,assistantLastReply);assistantLastReply=reply;
@@ -91,9 +91,10 @@ public sealed partial class OverlayWindow
         double size=Math.Clamp(app.Settings.Height-8,20,28);assistantCharacterButton.Width=assistantCharacterButton.Height=size;closedAssistant.Width=closedAssistant.Height=size;
         assistantHeaderSpace.Width=size+9;assistantHeaderSpace.Visibility=enabled && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;
         assistantCharacterHost.Width=Math.Max(120,Math.Min(app.Settings.Width,expandedWidth)-(surface.Notch?32:12));assistantCharacterHost.Height=app.Settings.Height;
-        assistantCharacterHost.Visibility=enabled && !expanded && !peeking && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;
+        SyncAssistantVisibility();
         RefreshAssistantVisuals();
     }
+    private void SyncAssistantVisibility(){assistantCharacterHost.Visibility=AssistantCharacterAvailable && !expanded && !peeking && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;}
     internal void PreviewAssistant()
     {
         if(expanded || userHidden || !AssistantCharacterAvailable || (TuckRequested && !tuckPreview))return;

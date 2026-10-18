@@ -17,6 +17,7 @@ internal static class PreferenceReset
         ["Audio"]="ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
         ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
+        ["AI"]=Array.Empty<string>(),
         ["Application"]="AutoCheckUpdates NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' ')
     };
     internal static string Summary(string? category)

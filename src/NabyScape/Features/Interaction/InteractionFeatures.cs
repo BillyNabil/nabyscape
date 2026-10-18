@@ -116,6 +116,7 @@ public sealed partial class OverlayWindow
     }
     private void UpdateSatellite()
     {
+        SyncAssistantVisibility();
         if(!peeking)satellitePreview=false;
         var selectedNext=ShowMediaPrimary?SelectedSatellite:null;
         if(selectedNext==null){DismissSatellite(userHidden || TuckRequested || !IsVisible);if(!peeking && satelliteWindow?.IsVisible!=true)satelliteKind=null;return;}

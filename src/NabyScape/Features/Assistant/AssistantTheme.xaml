@@ -1,4 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style x:Key="AssistantComposer" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+    <Setter Property="Padding" Value="4,7"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox"><Border Background="Transparent" Padding="{TemplateBinding Padding}"><ScrollViewer x:Name="PART_ContentHost"/></Border></ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style TargetType="Expander">
     <Setter Property="Foreground" Value="#B1B5BE"/>
     <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Expander">

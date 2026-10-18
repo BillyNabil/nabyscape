@@ -25,10 +25,12 @@ public sealed partial class SettingsWindow
             ["Audio"]="Closed media display, waveform and sound controls.",
             ["System"]="Status readings and clock format.",
             ["Launch"]="Your app shortcuts and activity routines.",
+            ["AI"]="Providers, models, voice and companion preferences.",
             ["Application"]="Startup, local data and app information."
         };
         var intro=UI.Text(descriptions[current],12,UI.Muted);intro.Margin=new(0,-14,0,18);page.Children.Insert(1,intro);
         var sections=page.Children.OfType<Border>().Where(b=>b.Tag is string).ToArray();
+        sectionIndexHost.Visibility=sections.Length>1?Visibility.Visible:Visibility.Collapsed;
         var links=new ComboBox{HorizontalAlignment=HorizontalAlignment.Stretch};UI.Named(links,"Settings section index");
         links.Items.Add(new ComboBoxItem{Content="Jump to a section…",IsEnabled=false});links.SelectedIndex=0;
         foreach(var section in sections)links.Items.Add(new ComboBoxItem{Content=(string)section.Tag,Tag=section});
@@ -68,6 +70,7 @@ public sealed partial class SettingsWindow
         {
             "Enabled widgets & order" or "Text and navigation" =>("Panel","Navigation"),
             "Hover pages" or "Hover & swipe" or "Hover preview" =>("Hover","Music"),
+            "AI companion" =>("Panel","AI"),
             "Individual tools" =>("Panel","Tools"),
             "Clipboard history" =>("Panel","Smart clipboard"),
             "Focus sessions" =>("Panel","Focus"),
