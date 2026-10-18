@@ -14,7 +14,7 @@ internal sealed class AssistantOrb : FrameworkElement
     private bool rendering,reduceMotion,live,hovered,pressed;
     private readonly TranslateTransform gaze=new(),lift=new();
     private readonly RotateTransform lean=new(0,50,50);
-    private readonly ScaleTransform squash=new(1,1,50,50),leftLid=new(1,1,35,41),rightLid=new(1,1,65,41);
+    private readonly ScaleTransform squash=new(1,1,50,50),expression=new(1,1,50,41),leftLid=new(1,1,35,41),rightLid=new(1,1,65,41);
     private readonly DispatcherTimer blinkTimer=new(){Interval=TimeSpan.FromSeconds(4.1)};
     private readonly FramePacer pacer=new();
     private double phase,level,displayLevel,last,lookX;
@@ -36,7 +36,7 @@ internal sealed class AssistantOrb : FrameworkElement
     internal AssistantState State
     {
         get=>state;
-        set{if(state==value)return;state=value;Refresh();if(IsVisible && !reduceMotion && Motion.Enabled){Blink(state==AssistantState.Approval);Bounce(state==AssistantState.Error);}}
+        set{if(state==value)return;state=value;Move(expression,ScaleTransform.ScaleYProperty,EyeScale,220);Refresh();if(IsVisible && !reduceMotion && Motion.Enabled){Blink(state==AssistantState.Approval);Bounce(state==AssistantState.Error);}}
     }
     internal bool ReduceMotion {get=>reduceMotion;set{reduceMotion=value;Refresh();}}
     internal double Level {get=>level;set=>level=Math.Clamp(double.IsFinite(value)?value:0,0,1);}
@@ -44,6 +44,7 @@ internal sealed class AssistantOrb : FrameworkElement
     internal bool BlinkScheduled=>blinkTimer.IsEnabled;
     internal bool Pressed=>pressed;
     internal Point Gaze=>new(gaze.X,gaze.Y);
+    private double EyeScale=>(state==AssistantState.Listening?31:state==AssistantState.Thinking?23:state==AssistantState.Error?20:27)/27d;
     internal void LookAt(double x,double y)
     {
         x=Math.Clamp(double.IsFinite(x)?x:0,-1,1);y=Math.Clamp(double.IsFinite(y)?y:0,-1,1);lookX=x;
@@ -67,7 +68,7 @@ internal sealed class AssistantOrb : FrameworkElement
     internal void Blink(bool wink=false)
     {
         if(!IsLoaded || !IsVisible || reduceMotion || !Motion.Enabled)return;
-        Animate(leftLid,ScaleTransform.ScaleYProperty,1,.08,1,180);if(!wink)Animate(rightLid,ScaleTransform.ScaleYProperty,1,.08,1,180,24);
+        Animate(leftLid,ScaleTransform.ScaleYProperty,leftLid.ScaleY,.08,1,180);if(!wink)Animate(rightLid,ScaleTransform.ScaleYProperty,rightLid.ScaleY,.08,1,180,24);
     }
     private static void Animate(Animatable target,DependencyProperty property,double start,double middle,double end,double duration,double delay=0)
     {
@@ -82,13 +83,14 @@ internal sealed class AssistantOrb : FrameworkElement
         double target=hovered?1.045:1;
         if(reduceMotion || !Motion.Enabled){Move(squash,ScaleTransform.ScaleXProperty,1,0);Move(squash,ScaleTransform.ScaleYProperty,1,0);return;}
         Animate(squash,ScaleTransform.ScaleXProperty,squash.ScaleX,1.075,target,280);Animate(squash,ScaleTransform.ScaleYProperty,squash.ScaleY,.95,target,280);
-        if(shake)Animate(lean,RotateTransform.AngleProperty,-7,7,lookX*5,300);
+        if(shake)Animate(lean,RotateTransform.AngleProperty,lean.Angle,7,lookX*5,300);
     }
     private void ResetInteraction()
     {
         hovered=pressed=false;lookX=0;
         gaze.BeginAnimation(TranslateTransform.XProperty,null);gaze.BeginAnimation(TranslateTransform.YProperty,null);lift.BeginAnimation(TranslateTransform.YProperty,null);lean.BeginAnimation(RotateTransform.AngleProperty,null);
         squash.BeginAnimation(ScaleTransform.ScaleXProperty,null);squash.BeginAnimation(ScaleTransform.ScaleYProperty,null);leftLid.BeginAnimation(ScaleTransform.ScaleYProperty,null);rightLid.BeginAnimation(ScaleTransform.ScaleYProperty,null);
+        expression.BeginAnimation(ScaleTransform.ScaleYProperty,null);expression.ScaleY=EyeScale;
         gaze.X=gaze.Y=lift.Y=lean.Angle=0;squash.ScaleX=squash.ScaleY=leftLid.ScaleY=rightLid.ScaleY=1;
     }
     private void Refresh()
@@ -119,15 +121,15 @@ internal sealed class AssistantOrb : FrameworkElement
             path.BeginFigure(PointAt(0),true,true);
             for(int i=0;i<12;i++){var p0=PointAt(i-1);var p1=PointAt(i);var p2=PointAt(i+1);var p3=PointAt(i+2);path.BezierTo(new(p1.X+(p2.X-p0.X)/6,p1.Y+(p2.Y-p0.Y)/6),new(p2.X-(p3.X-p1.X)/6,p2.Y-(p3.Y-p1.Y)/6),p2,true,false);}
         }
-        dc.DrawGeometry(body,new Pen(state==AssistantState.Error?errorEdge:state==AssistantState.Approval?approvalEdge:edge,Math.Max(.85,65/size)),shape);dc.PushTransform(gaze);
-        double searching=state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*4:0,height=state==AssistantState.Listening?31:state==AssistantState.Thinking?23:state==AssistantState.Error?20:27;
+        dc.DrawGeometry(body,new Pen(state==AssistantState.Error?errorEdge:state==AssistantState.Approval?approvalEdge:edge,Math.Max(.85,65/size)),shape);dc.PushTransform(gaze);dc.PushTransform(expression);
+        double searching=state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*4:0,height=27;
         for(int i=0;i<2;i++)
         {
             double x=i==0?35:65,y=41+bob+(state==AssistantState.Approval?(i==0?-3:3):0),h=height+(state==AssistantState.Speaking && moving?Math.Sin(t*11+i*.9)*energy*8+energy*5:0);
             dc.PushTransform(i==0?leftLid:rightLid);dc.PushTransform(new RotateTransform(state==AssistantState.Error?(i==0?-18:18):-8+(state==AssistantState.Thinking?searching:0),x,y));
             dc.DrawRoundedRectangle(eyes,null,new(x-7.5+searching,y-h/2,15,h),7.5,7.5);dc.Pop();dc.Pop();
         }
-        dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();
+        dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();
         if(live)dc.DrawEllipse(eyes,new Pen(body,Math.Max(2,110/size)),new(83,83),6.5,6.5);
         dc.Pop();
     }
