@@ -1,0 +1,1 @@
+Actual retained WPF character, synthetic listening/speaking levels and state fixtures. GIF sampled at 25 fps; application uses its existing FramePacer. No provider, credential, microphone, speaker, desktop capture or native input used.

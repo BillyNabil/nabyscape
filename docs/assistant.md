@@ -1,4 +1,4 @@
-# AI companion · v2.6.1 candidate
+# AI companion · v2.6.2 candidate
 
 An optional companion inside NabyScape: text chat, live voice, a reactive character, selected-display context, and actions you review before they run. The island, audio controls and local tools continue to work without AI.
 
@@ -11,6 +11,8 @@ This is a local development candidate. The public installer remains v2.5.1 until
 3. Return to the island, choose the chat provider and send a message. **Enter** sends; **Shift+Enter** adds a line. **Escape** or **Stop** cancels the session. Provider configuration lives under **Providers**, also available in **Settings → Application → AI companion**.
 
 The character is a discoverable launcher before AI is enabled; it does not start a microphone, screen capture or network request. **Idle character visible / hidden** in Providers controls this launcher. An active microphone or screen session retains an indicator. Eye movement follows the pointer while interacting, and listening/thinking/speaking use the same runtime across the small character, hover greeting and inline chat.
+
+The v2.6.2 character is a matte blob with large white eyes. It follows the pointer across the island/chat area, leans toward it, blinks occasionally, lifts on hover, and squashes/winks on press before settling. Listening opens its eyes; thinking glances from side to side; speaking responds to audio level; approval and error have distinct expressions. These gestures work before adding a provider. Idle blinking is sparse, with no continuous render callback. Hidden/unloaded characters stop both frame and blink scheduling. Reduce Motion disables animated reactions and scheduled blinking while preserving static states and controls. [Actual character renders and motion preview →](verification-assistant-character-2.6.2.md)
 
 **Check configuration** validates the fields locally. It does not test your key, model access or endpoint. The first chat or voice request checks those with your provider.
 
