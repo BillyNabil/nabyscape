@@ -1,0 +1,465 @@
+PASS  Factory layout matches the selected daily appearance without personal content or consent
+PASS  App resources retain installer notices, theme and icon after source relocation
+PASS  Assistant provider presets require an explicit model and capability choices
+PASS  Assistant endpoints block cleartext remote private IP credentials query and fragments
+PASS  Assistant ChatCompletions bounded voice outcomes preserve valid replay after HTTP tool history
+PASS  Assistant ChatCompletions maps text image system tools and safe authentication
+PASS  Assistant ChatCompletions round trips tool IDs arguments and opaque continuation
+PASS  Assistant Responses bounded voice outcomes preserve valid replay after HTTP tool history
+PASS  Assistant Responses maps text image system tools and safe authentication
+PASS  Assistant Responses round trips tool IDs arguments and opaque continuation
+PASS  Assistant Anthropic bounded voice outcomes preserve valid replay after HTTP tool history
+PASS  Assistant Anthropic maps text image system tools and safe authentication
+PASS  Assistant Anthropic round trips tool IDs arguments and opaque continuation
+PASS  Assistant Gemini bounded voice outcomes preserve valid replay after HTTP tool history
+PASS  Assistant Gemini maps text image system tools and safe authentication
+PASS  Assistant Gemini round trips tool IDs arguments and opaque continuation
+PASS  Assistant Gemini preserves strict nested JSON Schema in parametersJsonSchema
+PASS  Assistant invalid empty malformed and oversized responses use safe fixed errors
+PASS  Assistant capability input text call ID and tool count limits fail before network
+PASS  Assistant rejects disabled or malformed tool calls and partial outputs
+PASS  Assistant cancellation timeout redirects HTTP errors and localhost remain bounded
+PASS  Voice endpoints reject remote WS credentials private IP and API key queries
+PASS  Voice requires configured supported protocol model and voice
+PASS  Gemini startup rejection preserves safe failure instead of reporting cancellation
+PASS  Voice closed before setup is a connection error rather than user stop
+PASS  Voice OpenAIRealtime setup rates history safe auth text image and correlated tools
+PASS  Voice OpenAIRealtime waits for setup and cancellation opens no hardware
+PASS  Voice GeminiLive setup rates history safe auth text image and correlated tools
+PASS  Voice GeminiLive waits for setup and cancellation opens no hardware
+PASS  Voice OpenAI final transcripts real levels and barge in cancel truncate playback
+PASS  Voice Gemini combines transcript fragments until turn end and clears interruption
+PASS  Voice malformed messages sanitized provider errors and closed sockets stop hardware
+PASS  Voice output overflow truncates one reply and keeps the session usable
+PASS  Voice stop cancels connection before microphone creation
+PASS  Voice microphone queue bounds stalled upload and suppresses callbacks after stop
+PASS  Voice native capture cadence stays healthy with 10ms network send latency
+PASS  Voice rejects unadvertised tool calls without executing or emitting them
+PASS  Voice OpenAI waits for all correlated tool results before one continuation
+PASS  Voice result cancellation retries only unsent frames and finishes started frames without aborting
+PASS  Voice OpenAIRealtime server cancellation finishes an in-flight result without socket abort or continuation
+PASS  Voice GeminiLive server cancellation finishes an in-flight result without socket abort or continuation
+PASS  Voice OpenAIRealtime cancels emitted tool tokens on server interruption new input and Stop
+PASS  Voice GeminiLive cancels emitted tool tokens on server interruption new input and Stop
+PASS  Voice stop cancels blocked send synchronously and restart has no stale callbacks
+PASS  Voice OpenAIRealtime fresh action image precedes output and continuation atomically after rate wait
+PASS  Voice GeminiLive fresh action image precedes output and continuation atomically after rate wait
+PASS  Voice image rate wait cancels before capture or output per caller
+PASS  Voice image rate wait cancels before capture or output per call
+PASS  Voice slow fresh capture leaves microphone upload free and cancels without stale reuse
+PASS  Voice in-flight fresh image uses session cancellation and skips canceled output and continuation
+PASS  Voice completed outcome survives delivery boundary upload
+PASS  Voice completed outcome survives delivery boundary capture
+PASS  Voice completed outcome survives delivery boundary cancel
+PASS  Voice completed outcome survives delivery boundary old-session
+PASS  Voice completed outcome survives delivery boundary clear
+PASS  Voice local evidence bounds history and text without adding protocol tool records
+PASS  Voice activity preserves thinking and audible speech across interleaved silent output and microphone ticks
+PASS  Voice PCM meter measures signed samples including negative full scale
+PASS  Voice playback buffer accepts long response bursts and repeated generation clears
+PASS  Assistant complete tool turn preserves protocol metadata, IDs and fresh screen
+PASS  Assistant never executes an unoffered action
+PASS  Assistant rejects concurrent turns and cancellation rolls back unfinished calls
+PASS  Assistant Clear rejects late provider replies and prevents subsequent actions
+PASS  Assistant action round limit rolls back incomplete turns
+PASS  Assistant preserves completed action evidence when its later summary fails
+PASS  Assistant failed provider save never associates a staged key with the old destination
+PASS  Assistant successful destination changes rotate identity without carrying a key
+PASS  Assistant conversation bounds reject oversized replies
+PASS  Assistant desktop gates permissions and validates before any backend input
+PASS  Assistant queued captures cannot start after sharing stops
+PASS  Assistant failed capture setup releases backend resources
+PASS  Assistant maps shared pixels across negative monitor bounds and rejects unsafe key shapes
+PASS  Assistant options exclude secrets and begin with all permissions off
+PASS  Stage5: running elapsed uses monotonic time across backwards wall clock
+PASS  Stage5: pause freezes elapsed across sleep
+PASS  Stage5: uptime includes sleep while running and formats hours
+PASS  Stage5: persisted running stopwatch recovers UTC elapsed once
+PASS  Stage5: recovery is idempotent
+PASS  Stage5: backwards persisted UTC never subtracts elapsed
+PASS  Stage5: reset clears running and persisted anchor
+PASS  Stage5: corrupt elapsed recovers safely
+PASS  Stage5: legacy nonempty monitor maps Selected
+PASS  Stage5: legacy empty monitor maps Primary
+PASS  Stage5: old visual profile maps Selected without a new default override
+PASS  Stage5: visual profile preserves Follow mode
+PASS  Stage5: legacy null monitor profile normalizes to Primary
+PASS  Stage5: mixed negative landscape and portrait identities resolve without coordinate assumptions
+PASS  Stage5: hotplug falls back to primary without mutating stored selection
+PASS  Stage5: reconnected selected monitor is resolved again
+PASS  Stage5: Primary ignores stored selected monitor
+PASS  Stage5: mixed bounds placement contains island -1920/0/1/0
+PASS  Stage5: mixed bounds placement contains island -1920/0/1/50
+PASS  Stage5: mixed bounds placement contains island -1920/0/1/100
+PASS  Stage5: mixed bounds placement contains island -1920/0/1.5/0
+PASS  Stage5: mixed bounds placement contains island -1920/0/1.5/50
+PASS  Stage5: mixed bounds placement contains island -1920/0/1.5/100
+PASS  Stage5: mixed bounds placement contains island -1920/0/2/0
+PASS  Stage5: mixed bounds placement contains island -1920/0/2/50
+PASS  Stage5: mixed bounds placement contains island -1920/0/2/100
+PASS  Stage5: mixed bounds placement contains island 0/-640/1/0
+PASS  Stage5: mixed bounds placement contains island 0/-640/1/50
+PASS  Stage5: mixed bounds placement contains island 0/-640/1/100
+PASS  Stage5: mixed bounds placement contains island 0/-640/1.5/0
+PASS  Stage5: mixed bounds placement contains island 0/-640/1.5/50
+PASS  Stage5: mixed bounds placement contains island 0/-640/1.5/100
+PASS  Stage5: mixed bounds placement contains island 0/-640/2/0
+PASS  Stage5: mixed bounds placement contains island 0/-640/2/50
+PASS  Stage5: mixed bounds placement contains island 0/-640/2/100
+PASS  Stage5: mixed bounds placement contains island 1920/80/1/0
+PASS  Stage5: mixed bounds placement contains island 1920/80/1/50
+PASS  Stage5: mixed bounds placement contains island 1920/80/1/100
+PASS  Stage5: mixed bounds placement contains island 1920/80/1.5/0
+PASS  Stage5: mixed bounds placement contains island 1920/80/1.5/50
+PASS  Stage5: mixed bounds placement contains island 1920/80/1.5/100
+PASS  Stage5: mixed bounds placement contains island 1920/80/2/0
+PASS  Stage5: mixed bounds placement contains island 1920/80/2/50
+PASS  Stage5: mixed bounds placement contains island 1920/80/2/100
+PASS  Stage5: follow first observation waits
+PASS  Stage5: follow waits through 249 ms
+PASS  Stage5: follow moves at 250 ms
+PASS  Stage5: monitor identity change restarts hysteresis
+PASS  Stage5: blocked interaction policy resets pending target
+PASS  Stage5: manual hide cancels pending movement
+PASS  Stage5: show resolves pointer immediately
+PASS  Stage5: return to source cancels pending movement
+PASS  Stage5: blocked show waits until interaction ends
+PASS  Stage5: old widgets retain enabled state and add stopwatch option
+PASS  Satellite excludes empty countdowns
+PASS  Satellite selects earliest running deadline
+PASS  Satellite timer wins deadline tie
+PASS  Satellite ignores paused timer
+PASS  Satellite respects disabled countdown widgets
+PASS  Satellite excludes overdue deadlines
+PASS  Automatic companion uses CPU without countdowns
+PASS  Automatic companion prefers countdown over calendar
+PASS  Automatic companion prefers nearby calendar over CPU
+PASS  Fixed RAM companion ignores active countdown
+PASS  Fixed CPU companion respects disabled system
+PASS  Fixed calendar hides without nearby event
+PASS  Fixed calendar respects disabled tools
+PASS  Automatic companion falls back to clock
+PASS  Companion hides when all eligible widgets are disabled
+PASS  Countdown-only mode keeps original behavior
+PASS  Unknown companion source migrates to Automatic
+PASS  Companion source survives layout profile round trip
+PASS  Cover short release is click
+PASS  Cover hold fires once state
+PASS  Held cover does not also click
+PASS  Cancelled drag does not click or hold
+PASS  New countdown start changes ownership
+PASS  Countdown pause preserves ownership
+PASS  System hover migrates disabled
+PASS  Interaction visual preferences round trip
+PASS  Waveform levels stay bounded with varied audio
+PASS  Waveform bars have independent asymmetric responses
+PASS  Waveform pause and reduced motion clear every bar
+PASS  Waveform silence stays quiet without decorative fallback
+PASS  Waveform response converges consistently across render rates
+PASS  Waveform releases smoothly and settles after audio stops
+PASS  Narrow mastered-music peaks retain visible measured dynamics
+PASS  Invalid audio samples never produce invalid bar geometry
+PASS  Quiet audible levels remain measured even with decorative fallback enabled
+PASS  Closed waveform makes quiet measured bands legible while preserving contrast
+PASS  Closed waveform does not amplify silent frequency bands
+PASS  Closed waveform pause returns to its baseline without exceeding minimum dock height
+PASS  Activities: ordered launch failures continue; duplicate and reentrant starts are blocked
+PASS  Activities: Stop ends the owned automatic break without changing step results
+PASS  Activities: replacing Focus needs confirmation; Stop preserves later user replacements
+PASS  Activities: persisted definitions reload without execution or active state
+PASS  Activities: invalid targets, template without target, durations, and duplicate focus rejected
+PASS  Activities: saving failure preserves previous definitions
+PASS  Activities: expired or manually replaced awake is not stopped; failed releases can retry
+PASS  Detached previews start closed
+PASS  Detached preview opens one instance
+PASS  Manual hide hides all open previews
+PASS  Manual show restores only previews still open
+PASS  Open while manually hidden respects hide
+PASS  Explicitly opened hidden preview restores on show
+PASS  Close removes only its UI state
+PASS  Preview aliases use canonical singleton keys
+PASS  Disconnected monitor position clamps to available work area
+PASS  Oversized preview fits monitor work area
+PASS  Preview minimum dimensions are enforced
+PASS  Small DPI work area stays reachable
+PASS  Corrupt nonfinite geometry has bounded defaults
+PASS  Valid negative-monitor coordinates remain unchanged
+PASS  Scaled work area clamps bottom and right
+PASS  Smart clipboard: whole HEX values normalize without altering source
+PASS  Smart clipboard: RGB accepts only complete integer channels within bounds
+PASS  Smart clipboard: links use existing validation and expose an explicit clean variant
+PASS  Smart clipboard: native-free service preserves privacy and persists source data
+PASS  Audio consumers share one monotonic 30 Hz lease
+PASS  Media source changes bypass the old source lease
+PASS  Audio cadence stays at 30 Hz through render timestamp jitter
+PASS  Theme and behavior changes preserve content and geometry signatures
+PASS  Closed dimensions do not require rebuilding panel controls
+PASS  Panel dimensions reflow controls without changing content identity
+PASS  Widget and tool changes invalidate only the content signature
+PASS  Surface dimension updates publish one final contour
+PASS  Repeated brushes and icon geometry share frozen resources
+PASS  Thumbnail memory and entry count remain bounded
+PASS  CPU overview queries GPU counters without sensor or process metadata
+PASS  Absent sensor providers back off and explicit reopen retries immediately
+PASS  Local shortcut icons resolve an isolated native shortcut and cache a frozen bitmap
+PASS  Icon lookup rejects web and network paths and leaves missing local shortcuts absent
+PASS  Installed catalog deduplicates identities and excludes invalid apps without launches
+PASS  Installed launch uses a validated single structured explorer argument
+PASS  Installed app identity persists and old Name Target shortcuts remain compatible
+PASS  Category and launch label modes remain independent
+PASS  Semantic compact Timer and Focus headings toggle at size eleven without margins
+PASS  Semantic monitor heading ignores altered section margin
+PASS  Classic card factory marks headings inside nested logical content
+PASS  Calendar heading in button content is styled before a window is shown
+PASS  Rebuilt tool and asynchronous monitor headings accept current settings
+PASS  Typography leaves clocks countdowns artists media and content text unclassified
+PASS  Current and outgoing media titles remain independent of opposite heading settings
+PASS  Fake installed app discovery honors cancellation
+PASS  Settings backdrop gates and native errors are explicit and fail closed
+PASS  Settings material persists independently and old layouts preserve the selection
+PASS  Every registered Settings example is unique and renders without a running app
+PASS  Settings bounds fit small, detached and scaled work areas
+PASS  Interactive Settings movement crosses adjacent displays before containment
+PASS  Widget labels and caption have separate measured tile space
+PASS  Tool preferences migrate without deleting old data or enabling new hover pages
+PASS  Leaving a scrolling media title restores its bounded ellipsis layout
+PASS  Selected media meters match Spotify desktop and packaged identities without including Discord
+PASS  Layout and visibility settings have concrete explanations
+PASS  Color picker constructs and applies its hue template under the application theme
+PASS  Monitor rows reattach after repeated scroll-owner and legacy-panel rebuilds
+PASS  Color picker HSV preserves RGB colors and bounded channels
+PASS  Presentation settings normalize safely and retain independent choices
+PASS  Control colors validate and profile preferences preserve navigation
+PASS  Control contrast follows light and dark custom surfaces
+PASS  Presentation profiles exclude personal application identities and machine hotkeys
+PASS  Hover pages retain all ten explicit choices with every main widget hidden
+PASS  Mixer fallback is compact app identity and process lookup uses local limited query
+PASS  Migration fresh copy rebases only internal clipboard images and retains legacy
+PASS  Migration ignores interrupted staging and never merges existing destination
+PASS  Migration invalid JSON or blocked destination falls back with warning
+PASS  Explicit Store path does not migrate sibling legacy data
+PASS  Reset category all and restore preserve capture startup shortcuts and personal files
+PASS  Pre-material preference backups restore the original solid Settings surface
+PASS  Backup save errors abort reset and invalid restore leaves settings intact
+PASS  Reset category map covers all resettable preferences exactly once
+PASS  Tuck defaults bounds profile and all shortcut conflicts
+PASS  Updates accept newer stable and ignore equal/older releases
+PASS  Updates reject malformed host schema prerelease and wrong architecture assets
+PASS  Update diagnostic fixtures stay newer after release version bumps
+PASS  Pre-update preference backups restore with default update preference
+PASS  Updates strict checksum parsing rejects duplicate missing and malformed hashes
+PASS  Updates offline timeout rate-limit and redirects leave app intact
+PASS  Updates duplicate checks and 24 hour state do not poll
+PASS  Updates bad checksum and truncated downloads never become executable
+PASS  Updates successful fake download checksum verification and duplicate download exclusion
+PASS  Update helper fake installer waits verifies and surfaces failure without executing on timeout
+PASS  Updates inspect actual published x64 file version and reject mismatch without executing it
+PASS  Update duplicate install handoff is excluded until completion
+PASS  Update helper rejects downgrade malformed version and arbitrary executable handoffs
+PASS  Update handoff exact PID start time path portable guard and backup failure
+PASS  Notification defaults, routing, toggles, cap, grouping, delivery failure and timeout
+PASS  Displayed download groups freeze through drag, dismiss and subsequent bursts
+PASS  Single 41-file arrival retains every original across delivery and dismissal
+PASS  Single 128-file arrival retains every original across delivery and dismissal
+PASS  Downloads temp folder baseline, partial rename, growing size, locks, races, burst, missing, folder change and disable cleanup
+PASS  Customization profiles round-trip without personal data or startup changes
+PASS  Partial customization profiles preserve omitted values and normalize supplied geometry
+PASS  Invalid customization profile does not mutate current preferences
+PASS  Layout settings repair non-finite geometry and preserve unique hover order
+PASS  Mixer includes paused sessions and rejects expired sessions
+PASS  Timer keeps its absolute deadline while UI is closed
+PASS  Pause/resume preserves remaining time
+PASS  Continuous progress preserves duration across pause, restart and resume
+PASS  Legacy sessions have bounded progress without a saved duration
+PASS  Sleep past a deadline completes exactly once
+PASS  Reset clears state
+PASS  Countdown display handles hours
+PASS  Settings normalize dimensions, colors, widgets, and durations
+PASS  Hex colors reject malformed input
+PASS  Enhancement settings validate unknown profiles and gestures
+PASS  Performance profiles adapt to battery, load and interaction
+PASS  Frame pacing preserves 60 Hz cadence on a 180 Hz callback stream
+PASS  Legacy tool order expands in place and keeps disabled choices
+PASS  Widget switches now independently control tools and preserve layout export
+PASS  Browser auto-preview switch leaves Spotify and manual playback policy intact
+PASS  LRC parsing handles multi-stamps, offsets and Unicode without inventing word times
+PASS  Lyrics are opt-in, Spotify-only and cached without repeated requests
+PASS  Real FFT separates bass from treble with finite bounded bands
+PASS  Cancelled lyric replies cannot overwrite a new track or hide an offline state
+PASS  Dock visible edges can reach monitor sides despite its larger transparent host
+PASS  Spectrum has fast independent attack, measured silence and bounded release
+PASS  New preference limits and sound generation stay valid
+PASS  Auto tuck: Automatic tuck leaves six DIP at the display edge
+PASS  Auto tuck: Short surfaces are never moved below the edge
+PASS  Auto tuck: Inactive automatic state tucks False/False
+PASS  Auto tuck: Pointer or interaction retains revealed state False/False
+PASS  Auto tuck: Inactive automatic state tucks False/True
+PASS  Auto tuck: Pointer or interaction retains revealed state False/True
+PASS  Auto tuck: Inactive automatic state tucks True/False
+PASS  Auto tuck: Pointer or interaction retains revealed state True/False
+PASS  Auto tuck: Inactive automatic state tucks True/True
+PASS  Auto tuck: Pointer or interaction retains revealed state True/True
+PASS  Auto tuck: Manual hide cannot become an automatic tuck
+PASS  Auto tuck: Ending automatic suppression restores the normal state
+PASS  Auto tuck: Only a tucked automatic edge can reveal a hover
+PASS  Auto tuck: Translated contour retains a narrow clickable center False
+PASS  Auto tuck: Translated contour retains a narrow clickable center True
+PASS  Peek: Small wheel deltas accumulate
+PASS  Peek: A continuous wheel gesture advances once
+PASS  Peek: A new wheel gesture can reverse
+PASS  Peek: Direction changes discard stale deltas
+PASS  Peek: Tray show uses the last eligible external foreground
+PASS  Peek: External foreground tracking replaces the previous app
+PASS  Peek: Stale retained foreground falls back to no override
+PASS  Peek: Missing retained foreground falls back without an exception
+PASS  Peek: New external foreground wins over a stale retained window
+PASS  Peek: Own windows retain foreground override
+PASS  Peek: Same app retains foreground override
+PASS  Peek: Another external app clears foreground override
+PASS  Peek: Focused note keeps vertical wheel only over editor
+PASS  Peek: Expanded and closed bypass preview wheel
+PASS  Peek: Safe hover rectangle False/0/100
+PASS  Peek: Safe hover rectangle False/0/184
+PASS  Peek: Safe hover rectangle False/0/280
+PASS  Peek: Safe hover rectangle False/16/100
+PASS  Peek: Safe hover rectangle False/16/184
+PASS  Peek: Safe hover rectangle False/16/280
+PASS  Peek: Safe hover rectangle False/40/100
+PASS  Peek: Safe hover rectangle False/40/184
+PASS  Peek: Safe hover rectangle False/40/280
+PASS  Peek: Safe hover rectangle True/0/100
+PASS  Peek: Safe hover rectangle True/0/184
+PASS  Peek: Safe hover rectangle True/0/280
+PASS  Peek: Safe hover rectangle True/16/100
+PASS  Peek: Safe hover rectangle True/16/184
+PASS  Peek: Safe hover rectangle True/16/280
+PASS  Peek: Safe hover rectangle True/40/100
+PASS  Peek: Safe hover rectangle True/40/184
+PASS  Peek: Safe hover rectangle True/40/280
+PASS  Audio: Meter sees louder non-default output
+PASS  Audio: Meter caches native discovery across frames
+PASS  Audio: Broken meter removed without losing healthy endpoint
+PASS  Audio: Meter retries failed device on next bounded lease
+PASS  Audio: Playing decorative waveform has subtle motion at silence
+PASS  Audio: Stopped waveform returns to quiet baseline
+PASS  Audio: Real-only waveform stays quiet without a peak
+PASS  Audio: Real waveform responds to measured output
+PASS  Audio: Audio output values preserve device identity and display name
+PASS  Audio: Output switching applies console, multimedia, and communications roles
+PASS  Audio: A failed output role still attempts the remaining roles and reports failure
+PASS  Audio: Blank output ID is rejected and logged without changing hardware
+PASS  Audio: Audio failures expose operation-specific English recovery guidance and log original exceptions
+PASS  Audio: Disposed audio service safely rejects hardware operations
+PASS  Audio: Read-only output enumeration matches active render endpoints
+PASS  Audio: Read-only default output matches the Windows multimedia endpoint
+PASS  Audio: Read-only microphone state uses communications with multimedia fallback
+PASS  Audio: Repeated audio reads and disposal leave cached device state consistent
+PASS  Mixer: Gain clamps at both bounds
+PASS  Mixer: Non-finite volume rejected
+PASS  Mixer: All apps adjusts sessions across outputs without endpoint gain
+PASS  Mixer: All outputs adjusts only endpoint masters
+PASS  Mixer: Stale session failure preserves remaining operations
+PASS  Mixer: Partial backend failure continues
+PASS  Mixer: Duplicate session instances never double-scale
+PASS  Mixer: Mixer capture and held volume keys protect active edits
+PASS  Mixer: Mixer idle focus and released volume keys resume refresh
+PASS  Mixer: Mixer refresh keeps slider attached while adding and removing rows
+PASS  Mixer: Mixer uses an app monogram and a legible 16 DIP mute glyph
+PASS  Mixer: Mixer output identity uses a speaker rather than an app fallback
+PASS  Mixer: WPF mixer row at 193.6 DIP keeps icon, percentage, mute and usable slider inside bounds
+PASS  Mixer: WPF mixer row at 193.6 DIP reflows without overlapping header or controls
+PASS  Mixer: WPF mixer row at 193.6 DIP truncates long names with full accessible identity
+PASS  Mixer: WPF mixer row at 302 DIP keeps icon, percentage, mute and usable slider inside bounds
+PASS  Mixer: WPF mixer row at 302 DIP reflows without overlapping header or controls
+PASS  Mixer: WPF mixer row at 302 DIP truncates long names with full accessible identity
+PASS  Mixer: WPF mixer row at 193.6 DIP keeps icon, percentage, mute and usable slider inside bounds
+PASS  Mixer: WPF mixer row at 193.6 DIP reflows without overlapping header or controls
+PASS  Mixer: WPF mixer row at 193.6 DIP truncates long names with full accessible identity
+PASS  Mixer: Native read-only snapshot: 5 outputs, 20 sessions, 0 errors
+PASS  Monitor: GPU sums processes per engine and uses busiest engine
+PASS  Monitor: GPU initial read is unavailable, never fabricated zero
+PASS  Monitor: GPU reset counters invalidate the baseline
+PASS  Monitor: GPU elapsed timestamp must increase
+PASS  Monitor: GPU unchanged counters are measured zero
+PASS  Monitor: GPU aggregate is bounded to one hundred percent
+PASS  Monitor: Malformed adapter names cannot become measurements
+PASS  Monitor: GPU formatting preserves unavailable states
+PASS  Monitor: Sensor units distinguish temperatures and fans
+PASS  Monitor: Unavailable hardware includes no invented readings
+PASS  Monitor: Independent GPU adapters retain independent utilization
+PASS  Monitor: Delayed hardware read respects bounded caller wait
+PASS  Monitor: Busy hardware provider does not queue a second read
+PASS  Monitor: Successful read completed after wait is delivered on next capture
+PASS  Monitor: Completed hardware result is delivered only once
+PASS  Monitor: Reset keeps a single old-generation read in flight
+PASS  Monitor: Next capture rejects delayed completion after generation reset
+PASS  Monitor: Hardware completion older than freshness window is discarded
+PASS  Monitor: Reset during caller wait also rejects completed hardware sample
+PASS  Monitor: Initial metadata failure remains unavailable
+PASS  Monitor: Failed metadata discovery backs off before retry
+PASS  Monitor: GPU metadata recovers without restarting monitor
+PASS  Monitor: Repeated metadata failures increase bounded retry interval
+PASS  Monitor: CPU metadata recovers with core details after failed initial reads
+PASS  Monitor: Successful metadata is cached across generation resets
+PASS  Monitor: Unavailable metadata retries cap backoff at thirty seconds
+PASS  Monitor: Hardware reader generation reset preserves unavailable GPU baseline
+PASS  Monitor: Failed process enumeration leaves both counts unavailable
+PASS  Monitor: Unavailable process counts render explicitly
+PASS  Monitor: Successful empty enumeration remains a measured zero
+PASS  Monitor: Per-process thread failure retains available process count
+PASS  Monitor: Partial thread count retains its lower-bound marker
+PASS  Monitor: Network baseline is sampling
+PASS  Monitor: Network delta uses elapsed seconds
+PASS  Monitor: Unchanged network counter is a real zero
+PASS  Monitor: Counter reset starts a new baseline
+PASS  Monitor: Invalid elapsed intervals do not produce rates
+PASS  Monitor: Binary byte units are explicit
+PASS  Monitor: Unprimed rate is never shown as zero
+PASS  Monitor: Uptime retains days
+PASS  Monitor: CPU requires a baseline
+PASS  Monitor: CPU excludes idle time
+PASS  Monitor: CPU reset or zero interval is unavailable
+PASS  Utilities: Utilities: keep awake starts disabled, expires, resets flags, and releases on disposal
+PASS  Utilities: Utilities: keep awake validates durations and preserves state on native failures
+PASS  Utilities: Utilities: keep awake rejects calls from another thread before native access
+PASS  Utilities: Utilities: clean links preserve raw paths, escaping, fragments, order, and repeated functional keys
+PASS  Utilities: Utilities: signed links remain entirely unchanged including tracking parameters
+PASS  Utilities: Utilities: clean links reject invalid schemes, credentials, oversized and malformed input
+PASS  Utilities: Utilities: calendar saves, reloads, preserves offsets and IDs, and removes
+PASS  Utilities: Utilities: calendar validates title, date range, URL and 200-event limit
+PASS  Utilities: Utilities: calendar disk failures leave memory and change notifications untouched
+PASS  Utilities: Utilities: calendar bounds and normalizes stored records without rewriting source
+PASS  Utilities: Utilities: calendar corrupt JSON is backed up and preserved until an explicit mutation
+PASS  Local event editor parses exact dates and rejects invalid date input
+PASS  Productivity: Productivity: clipboard is disabled by default and ingest cannot read it
+PASS  Productivity: Productivity: notes, tasks and completion survive restart
+PASS  Productivity: Productivity: tasks are capped at 100 and text at 20000
+PASS  Productivity: Productivity: shelf handles missing paths, deduplication and 40-file cap
+PASS  Productivity: Productivity: shelf survives restart without deleting broken references
+PASS  Productivity: Productivity: shelf deduplicates trailing directory separators and preserves filesystem roots
+PASS  Productivity: Productivity: clipboard deduplication, empty exclusion and text cap
+PASS  Productivity: Productivity: pause stops text and image capture
+PASS  Productivity: Productivity: separate pinned and unpinned limits retain newest entries
+PASS  Productivity: Productivity: image deduplication, removal and 10 MB cap
+PASS  Productivity: Productivity: clear purges pinned images and leaves source files alone
+PASS  Productivity: Productivity: evicting an unpinned image removes its cached PNG
+PASS  Productivity: Productivity: disabling purges history and cache without altering notes
+PASS  Productivity: Productivity: restart loads history without enabling capture; disabled cleanup still works
+PASS  Productivity: Productivity: malformed JSON recovers through Store with a backup
+PASS  Productivity: Productivity: corrupt collections normalize and cannot delete outside cache
+PASS  Productivity: Productivity: orphan cache files are purged on restart
+PASS  Productivity: Productivity: corrupt cached images are discarded on restart
+PASS  Productivity: Productivity: persistence failures are logged; note typing stays in memory
+PASS  Notch has flared shoulders and transparent lower corners
+PASS  Pill and notch share a symmetric closed contour
+PASS  Legacy classic preferences retain panel size without rewriting the file
+PASS  Legacy compact and unspecified layouts retain compact panel defaults
+PASS  Persisted classic panel dimensions migrate only missing keys
+PASS  New preferences retain compact defaults without creating a settings file
+PASS  Partial classic profile imports preserve current panel dimensions
+PASS  Preferences round-trip ordering, disabled widgets and shortcuts
+PASS  Running and paused timers survive process restart
+PASS  Malformed settings are backed up before recovery
+PASS  Broken shortcut produces actionable failure
+PASS  Unsupported shortcut URI is rejected
+RESULT: 464 passed, 0 failed

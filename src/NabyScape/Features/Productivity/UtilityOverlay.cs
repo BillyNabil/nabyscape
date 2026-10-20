@@ -17,7 +17,7 @@ public sealed partial class OverlayWindow
     private string taskDraft="";
     private bool utilityMutating;
     private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links") };
-    private bool ToolOn(string id)=>app.Settings.ToolEnabled(id);
+    private bool ToolOn(string id)=>app.Settings.ToolEnabled(id) || app.Settings.HoverViews.Any(view=>view.Id==id && view.Enabled && HoverPagePolicy.Available(app.Settings,id));
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private ContextMenu? audioMenu;
     private FrameworkElement BuildToolsPage()
@@ -111,13 +111,13 @@ public sealed partial class OverlayWindow
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(mode!="home" && !ToolOn(mode))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();OpenHoverPanel("tools",activate);RefreshTools();}
+    {if(mode!="home" && !ToolOn(mode))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();if(mode=="home")mode=app.Settings.Widgets.FirstOrDefault(w=>w.Enabled && Settings.ToolNames.ContainsKey(w.Id))?.Id??"notes";toolsMode=mode;OpenHoverPanel(mode,activate);RefreshTools();}
     private void RefreshTools()
     {
 
         if(toolsMode!="home" && !ToolOn(toolsMode))toolsMode="home";
         toolsContent.Children.Clear();var p=app.Productivity;if(p==null)return;
-        if(toolsMode!="home")
+        if(toolsMode!="home" && !Settings.ToolNames.ContainsKey(activePage))
         {
             var back=UI.Button("All tools",()=>NavigateTool("home"));var label=UI.Text("‹   All tools",11,UI.Muted);back.Content=label;back.HorizontalAlignment=HorizontalAlignment.Left;back.Background=Brushes.Transparent;back.BorderThickness=new(0);back.Padding=new(1,0,8,0);back.MinHeight=24;back.Margin=new(0,0,0,10);toolsContent.Children.Add(back);
         }
@@ -138,7 +138,7 @@ public sealed partial class OverlayWindow
             BuildSmartClipboard(toolsContent);
         }
         ApplyHeadingTypography(toolsContent);
-        if(expanded && activePage=="tools"){Dimensions(true);motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
+        if(expanded && (activePage=="tools" || Settings.ToolNames.ContainsKey(activePage))){Dimensions(true);motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
     }
     internal ContextMenu? AudioPopup=>audioMenu;
     internal void OpenAudioMenu()

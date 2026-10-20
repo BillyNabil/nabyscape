@@ -2,7 +2,7 @@
 
 [Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable user guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Interactive island preview](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience)
 
-**Current release: v2.5.1.** [Download and release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.5.1). The original showcase film remains labeled v2.4.2.
+**Current release: v2.7.2.** [Download and release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.2). The original showcase film remains labeled v2.4.2.
 
 New installations use the **Daily Notch** layout: 327 × 36 closed island, 526 px panel, 447 × 207 hover, 420 ms motion and icon navigation. [Default layout](presets/default-layout.json). Existing settings are never replaced on upgrade; explicit preference reset uses this default while preserving personal content, startup and clipboard consent.
 
@@ -17,6 +17,27 @@ Each release includes **SHA256SUMS** for verifying the downloads. For developmen
 **Windows 11 x64 is required.** The self-contained build includes the .NET runtime; you do not need an SDK to run it. The current installer is unsigned. Portable use still stores preferences in your Windows user profile.
 
 Open Settings from the island or tray. Changes save automatically. Starting with Windows is optional and off by default; closing Settings keeps the app running. Choose **Quit** from the tray to exit.
+
+## Music and lyrics
+
+Select Spotify in the Music panel, then use the lyrics icon beside playback, or enable **Settings → Audio → Lyrics → Show synced Spotify lyrics**. Lyrics appear to the right when there is enough room; the panel returns to its saved width when you hide them. Smaller working areas use a stacked layout.
+
+Choose Slide, Focus or Karaoke and adjust timing by up to ten seconds in either direction. Automatic lookup sends the track title, artist and duration to LRCLIB; no Spotify login or API key is needed. Availability varies by track and service. Use Retry or import a local `.lrc` file for the current track. Local imports and cached lyrics stay in memory for the app session. Karaoke sweeps across a line using its timing; it does not provide word timestamps.
+
+**Settings → Audio → Visualizer** offers Frequency spectrum, Amplitude history and sensitivity. Frequency spectrum measures the matching Windows output, so other apps on the same device can contribute. Amplitude history uses the selected app's level. Audio is processed in memory, and sampling stops when no visible waveform needs it.
+
+## Panels, scrolling and placement
+
+Enable and reorder each tool under **Settings → Content → Enabled widgets & order**. Main panels and hover pages have independent choices. Select minimal dots in **Settings → Appearance → Text and navigation** if preferred.
+
+- Wheel over panel navigation to change slides. Ctrl+Tab also switches panels.
+- Scroll inside Clipboard to browse its history without moving the heading or navigation. The list retains its position; horizontal gestures or Shift+wheel switch panels outside text editors.
+- Notes keeps its own editor scrolling. Notes and Tasks open separate pages with shared local data.
+- Enable **Settings → Layout → Move & resize** to expose a top grip and lower corner handles. Move or resize the current state; Escape cancels a drag. Resizing an open panel vertically switches to fixed height. The tray and closed-island menu also expose this option.
+
+Focus and Break durations can be edited directly in the Focus panel. New values apply to the next session. **Settings → Application → Completion sound** offers Chime, Bell, a local WAV or Off, independent volume and a preview. Completion sound respects the Timer/Focus notification-type toggle. Custom WAV files must be at most 10 MB and 15 seconds.
+
+To suppress automatic YouTube/browser playback previews, turn off **Settings → Controls → Automatic activity → Automatic browser media previews**. Manual island hover and playback controls remain available.
 
 ## New in v2.5.0
 

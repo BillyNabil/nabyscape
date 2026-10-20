@@ -22,10 +22,10 @@ internal static class SelfTests
             Assert(s.GlassStrength==.58 && s.CategoryStyle=="Icons" && s.LaunchStyle=="Icons" && s.Performance=="Maksimal" && s.WheelAction=="pages" && s.HideMaximized && s.TuckEdge==9);
             Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews && !s.ActivitySatellite && !s.ActivitiesEnabled);
             Assert(string.Join(",",HoverPagePolicy.Pages(s))=="media,timer,focus,calendar,notes,files");
-            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,system,battery,shortcuts,stopwatch,tools" && s.Widgets.All(w=>w.Enabled));
+            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links" && s.Widgets.All(w=>w.Enabled));
             Assert(!s.ClipboardHistory && !s.AutoStart && !s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
             Assert(s.Shortcuts.Count==2 && s.Shortcuts[0].Target=="explorer.exe" && s.Shortcuts[1].Target=="ms-settings:");
-            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==10);
+            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==16);
         });
         Test("App resources retain installer notices, theme and icon after source relocation",()=>
         {
@@ -58,7 +58,7 @@ internal static class SelfTests
             var original=new Settings{PanelWidth=520,PanelScale=1.1,Background="#182028",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Private",Target="https://private.example"}}};original.HoverViews.Reverse();var encoded=CustomizationProfile.Export(original);Assert(!encoded.Contains("Private") && !encoded.Contains("AutoStart") && !encoded.Contains("ClipboardHistory"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.PanelWidth==520 && target.PanelScale==1.1 && target.Background=="#182028" && target.HoverViews[0].Id=="system" && !target.AutoStart && !target.ClipboardHistory && target.Shortcuts.Count==2);
         });
         Test("Partial customization profiles preserve omitted values and normalize supplied geometry",()=>
-        {var target=new Settings{Width=331,Background="#182028"};CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"PanelWidth\":99999,\"AutoStart\":true}}",target);Assert(target.PanelWidth==640 && target.Width==331 && target.Background=="#182028" && !target.AutoStart);});
+        {var target=new Settings{Width=331,Background="#182028"};CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{\"PanelWidth\":99999,\"AutoStart\":true}}",target);Assert(target.PanelWidth==960 && target.Width==331 && target.Background=="#182028" && !target.AutoStart);});
         Test("Invalid customization profile does not mutate current preferences",()=>
         {var target=new Settings{Width=331};bool failed=false;try{CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{}}",target);}catch{failed=true;}Assert(failed && target.Width==331);});
         Test("Layout settings repair non-finite geometry and preserve unique hover order",()=>
@@ -76,12 +76,13 @@ internal static class SelfTests
         {
             var s=new Settings{Width=900,Height=-4,Opacity=2,Accent="invalid",FocusMinutes=0,Widgets=new(){new(){Id="media"},new(){Id="media"},new(){Id="invalid"}}};s.Normalize();
             Assert(s.Width==400 && s.Height==28 && s.Opacity==1 && s.Accent=="#FFFFFF" && s.FocusMinutes==1);
-            Assert(s.Widgets.Count==Settings.Names.Count && s.Widgets.Select(w=>w.Id).Distinct().Count()==Settings.Names.Count);
+            Assert(s.Widgets.Count==Settings.Names.Count-1 && s.Widgets.All(w=>w.Id!="tools") && s.Widgets.Select(w=>w.Id).Distinct().Count()==Settings.Names.Count-1);
         });
         Test("Hex colors reject malformed input",()=> {Assert(Settings.ValidColor("#abcDEF"));Assert(!Settings.ValidColor("red"));Assert(!Settings.ValidColor("#00000000"));Assert(!Settings.ValidColor(null));});
         Test("Enhancement settings validate unknown profiles and gestures",()=>{var s=new Settings{Performance="bad",WheelAction="bad",HotkeyKey="5",VolumeStep=999};s.Normalize();Assert(s.Performance=="Auto" && s.WheelAction=="volume" && s.HotkeyKey=="I" && s.VolumeStep==10 && !s.ClipboardHistory);});
         Test("Performance profiles adapt to battery, load and interaction",()=>{Assert(OverlayWindow.FrameLimitFor("Auto",180,true,false,20)==180);Assert(OverlayWindow.FrameLimitFor("Auto",180,false,false,20)==60);Assert(OverlayWindow.FrameLimitFor("Auto",180,true,true,20)==60);Assert(OverlayWindow.FrameLimitFor("Auto",180,true,false,90)==60);Assert(OverlayWindow.FrameLimitFor("Hemat",180,false,false,20)==30);Assert(OverlayWindow.FrameLimitFor("Maksimal",180,true,true,90)==180);});
         Test("Frame pacing preserves 60 Hz cadence on a 180 Hz callback stream",()=>{var p=new FramePacer();int accepted=0;for(int i=0;i<=180;i++)if(p.Accept(TimeSpan.FromSeconds(i/180d),60))accepted++;Assert(accepted is >=60 and <=62,$"Accepted {accepted}");});
+        MediaExperienceTests.Run(Test);
         AutoTuckTests.Run((name,result)=>Test("Auto tuck: "+name,()=>Assert(result)));
         PeekInteractionTests.Run((name,result)=>Test("Peek: "+name,()=>Assert(result)));
         AudioDeviceTests.Run((name,result)=>Test("Audio: "+name,()=>Assert(result)));

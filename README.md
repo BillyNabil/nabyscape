@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="Assets/showcase/marketing-hero.png" alt="NabyScape: A little space. A lot closer. Actual v2.4.2 music panel and compact island on a blue graphite desktop composition." width="100%">
+  <img src="docs/evidence/scroll-lyrics-2.7.2/lyrics-right-200.png" alt="Actual NabyScape v2.7.2: music controls on the left and synced lyrics in a dedicated right column. Original sample text in the real WPF interface." width="100%">
 </p>
 
 <h1 align="center">NabyScape</h1>
-<p align="center">Music, system stats and everyday tools.<br>A customizable island for Windows 11, small by default.</p>
+<p align="center">Your music. A little company. Everything within reach.<br>A customizable island for Windows 11, small by default.</p>
 
 <p align="center">
   <a href="https://nabyscape.sigma-bw-0740.chatgpt.site"><strong>Website</strong></a> ·
-  <a href="https://nabyscape.sigma-bw-0740.chatgpt.site/#download"><strong>Download</strong></a> ·
-  <a href="https://nabyscape.sigma-bw-0740.chatgpt.site/docs/">Guide</a> ·
+  <a href="https://github.com/BillyNabil/nabyscape/releases/latest"><strong>Download</strong></a> ·
+  <a href="docs/guide.md">Guide</a> ·
   <a href="https://nabyscape.sigma-bw-0740.chatgpt.site/#experience">Interactive preview</a> ·
   <a href="https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-demo.mp4">Actual app demo</a>
 </p>
@@ -20,7 +20,39 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-252c36?style=flat-square" alt="MIT license"></a>
 </p>
 
-**Latest release: v2.6.3.** Adds the optional AI companion to the island, with a reactive character, chat, configurable providers and live voice. API keys are not bundled; you provide your own and NabyScape stores them in Windows Credential Manager. [Release notes →](https://github.com/BillyNabil/nabyscape/releases/tag/v2.6.3)
+**Latest release: v2.7.2.** Synced Spotify lyrics beside your player, a more responsive measured spectrum, simpler Naby chat, individual tool panels and clipboard scrolling that keeps navigation in place. [Download the installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/NabyScape-win-x64-Setup.exe) · [What's changed](docs/releases/v2.7.2.md)
+
+The preview above is the actual v2.7.2 WPF interface with original sample content. The optional AI companion uses your own provider; API keys are stored in Windows Credential Manager and are never bundled.
+
+## Music, with room for the words
+
+Open lyrics from the icon beside playback. The island makes room for a dedicated right column; hide it to return to your saved width. On a narrow screen, the player and lyrics stack. Choose **Slide**, **Focus** or **Karaoke** in **Settings → Audio → Lyrics**, with a timing adjustment and a live sample.
+
+<p align="center"><img src="docs/evidence/media-ux-2.7.0/lyrics-presets.gif" alt="Slide, Focus and Karaoke lyric animation presets, using original sample lines" width="474"></p>
+
+Automatic lookup is opt-in and sends the Spotify track title, artist and duration to LRCLIB. Availability depends on the track and service; Retry and local `.lrc` import are available. Karaoke follows line timing. [Lyrics setup and limits](docs/guide.md#music-and-lyrics)
+
+Even closed, the island follows the music. Its shared output spectrum measures 25 frequency bands, with a larger compact display and quick attack/release. Choose amplitude history or adjust sensitivity in **Settings → Audio → Visualizer**.
+
+<p align="center"><img src="docs/evidence/closed-waveform-2.7.1/closed-waveform.gif" alt="Actual compact WPF waveform animation driven by synthetic frequency-band test data" width="654"></p>
+
+The animation uses a synthetic test signal. During normal use, frequency bands come from the media's output; other apps sharing that output can affect the spectrum. Selected-app amplitude history remains available.
+
+## Less in the way
+
+<table>
+  <tr><th align="left">A quieter place to ask</th><th align="left">Your next session, your duration</th></tr>
+  <tr><td width="58%"><img src="docs/evidence/media-ux-2.7.0/naby-chat-526.png" alt="Actual simplified Naby chat with sample conversation, inline composer and session controls"></td><td><img src="docs/evidence/media-ux-2.7.0/focus-editable.png" alt="Actual Focus panel with directly editable Focus and Break durations"></td></tr>
+</table>
+
+- **Naby chat:** a simpler composer with voice and screen-sharing controls. Configure providers in the app's Settings; microphone, screen sharing and reviewed actions remain explicit choices.
+- **Your tools, in your order:** Shelf, Notes, Tasks, Clipboard, Calendar, Keep awake and Clean links each have their own panel. Use icons, labels or minimal dots.
+- **Scroll with intent:** wheel over navigation to change panels; scroll inside Clipboard to move only its history. Headers stay put, and the list remembers its position. Shift+wheel or a horizontal gesture can leave a list.
+- **Move and resize:** enable **Settings → Layout → Move & resize**, then use the top grip and lower corners. Closed, hover and open-panel sizes remain independent; Escape cancels a drag.
+- **Focus that fits:** edit Focus and Break minutes in the panel. Choose Chime, Bell, your own WAV or Off for completion feedback, with separate volume.
+- **Optional browser previews:** switch off automatic browser-media previews in **Settings → Controls** if YouTube's hover playback interrupts your flow.
+
+These are real WPF previews with sample content. [Media and interaction verification](docs/verification-media-ux-2.7.0.md) · [Clipboard and side-lyrics checks](docs/verification-scroll-lyrics-2.7.2.md)
 
 ## Glance. Hover. Open.
 
@@ -28,9 +60,9 @@ A quick look at your music and the time. A preview when you hover. Full controls
 
 <p align="center"><img src="Assets/showcase/interaction.png" alt="Actual v2.4.2 interface in three states: compact artwork and waveform, music hover preview, and expanded music controls" width="100%"></p>
 
-- **Glance:** artwork or an icon, a title or amplitude waveform, and a bold clock.
+- **Glance:** artwork or an icon, a title or measured waveform, and a bold clock.
 - **Hover:** browse the pages you enabled. Scroll or swipe sideways to switch.
-- **Open:** click for the full panel. Long content scrolls normally; swipe sideways or use Shift+wheel to switch panels outside text editors.
+- **Open:** click for the full panel. Wheel over navigation to switch panels; scroll inside a list or editor to read its content. Swipe sideways or use Shift+wheel outside text editors to switch panels.
 
 **[Try the three states in your browser →](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience)** The browser preview uses real app captures with sample content. It does not connect to Windows or play audio.
 
@@ -53,7 +85,7 @@ Captured from actual WPF controls using **Midnight Notch**. Artwork, notes, task
 
 ## The everyday, in reach
 
-**Music.** Playback, seeking, Windows media-session selection, output volume and an app mixer. The waveform follows the selected app across active outputs. Actions depend on what each media app exposes to Windows.
+**Music.** Playback, seeking, Windows media-session selection, output volume, an app mixer and optional synced Spotify lyrics. Use output frequency bands or selected-app amplitude history; output loopback also includes other apps on the same device. Actions depend on what each media app exposes to Windows.
 
 <p align="center"><img src="Assets/showcase/media-raw.png" alt="Actual music panel with original sample artwork, playback, amplitude waveform, timeline and output volume" width="600"></p>
 
@@ -89,9 +121,9 @@ The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel
 
 **Windows 11 x64.** The self-contained builds include .NET; no SDK is needed to run the app.
 
-- **[Download the v2.6.3 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.6.3/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
-- **[Download the v2.6.3 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.6.3/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
-- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.6.3/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.6.3) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+- **[Download the v2.7.2 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
+- **[Download the v2.7.2 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
+- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.2) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
 
 The installer is currently unsigned. Download from the official repository and review the version and checksums before running. Portable mode still stores data in your Windows user profile. Starting with Windows is optional and off by default. Closing Settings keeps NabyScape running; choose **Quit** from the tray to exit.
 
@@ -107,7 +139,7 @@ Global shortcuts are configurable. With cover gestures enabled, click closed art
 
 ## Local by design
 
-No NabyScape account or cloud sync is required. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. The AI companion is optional and uses a provider you configure. API keys are not bundled; Windows Credential Manager stores them for your Windows user. The app does not automatically fetch link previews.
+No NabyScape account or cloud sync is required. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. Lyrics lookup is an opt-in request to LRCLIB using track metadata. The AI companion is optional and uses a provider you configure. API keys are not bundled; Windows Credential Manager stores them for your Windows user. The app does not automatically fetch link previews.
 
 **AI companion · v2.6.3:** a character in the top island, with hover greetings, inline chat, live voice, selected-display context and reviewed app/desktop actions using your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Initial provider verification →](docs/verification-assistant-2.6.0.md) · [Interactive character preview →](docs/verification-assistant-character-2.6.2.md) · [Settings and chat layout →](docs/verification-ai-settings-2.6.3.md). API keys are not bundled; they are stored in Windows Credential Manager on your PC.
 

@@ -19,6 +19,8 @@ public sealed partial class App : Application
     private OverlayWindow? overlay;
     private bool quitting;
     internal InternalNotifications Notifications {get;}=new();
+    internal LyricsService Lyrics {get;}=new();
+    internal CountdownAudio CountdownAudio {get;}=new();
     internal DownloadArrivals? Downloads {get;private set;}
     private bool diagnosticMode;
     private string downloadConfiguration="";
@@ -111,7 +113,7 @@ public sealed partial class App : Application
         Motion.Configure(Settings);
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();Session.Stopwatch??=new();Session.Stopwatch.Recover();
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
-        Audio=new(Store.Log);Media=new(Store.Log);Productivity=new(Store,Store.Log,diagnosticPath==null);Productivity.SetClipboardEnabled(Settings.ClipboardHistory);
+        Audio=new(Store.Log){SpectrumEnabled=Settings.WaveformSource=="Spectrum"};Media=new(Store.Log);Productivity=new(Store,Store.Log,diagnosticPath==null);Productivity.SetClipboardEnabled(Settings.ClipboardHistory);
         Brightness=new();Brightness.Start(diagnosticPath==null);
         Calendar=new(Store);Awake=new();Activities=new(Store,Session.Focus,Awake,SaveSession,Store.Log);
         Assistant=new(this,diagnosticPath!=null?new AssistantMemoryKeys():null);
@@ -121,6 +123,7 @@ public sealed partial class App : Application
         menu.Items.Add("Open island",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.Reveal()));
         menu.Items.Add("Command bar",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ShowCommands()));
         menu.Items.Add("Settings",null,(_,_)=>Dispatcher.Invoke(ShowSettings));
+        menu.Items.Add("Move & resize island",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleDockEditing()));
         menu.Items.Add("AI companion",null,(_,_)=>Dispatcher.Invoke(ShowAssistant));
         menu.Items.Add("Tuck / Return to automatic",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleTuck()));
         menu.Items.Add("Hide / show",null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleVisibility()));
@@ -167,7 +170,7 @@ public sealed partial class App : Application
     public void CheckCountdowns()
     {
         var now=DateTimeOffset.UtcNow;bool changed=false;
-        if(Session.Timer.Complete(now)) { changed=true;PostNotice(new("timer","Timer finished","Your timer has finished."));SystemSounds.Asterisk.Play(); }
+        if(Session.Timer.Complete(now)) { changed=true;PostNotice(new("timer","Timer finished","Your timer has finished."));if(Settings.NotifyTimer)CountdownAudio.Play(Settings); }
         var focusDeadline=Session.Focus.Deadline;
         if(Session.Focus.Complete(now))
         {
@@ -181,7 +184,7 @@ public sealed partial class App : Application
                 else { Session.Focus.Reset();PostNotice(new("focus","Focus session complete","Your focus session and break have finished.")); }
             }
             else { Session.Focus.Reset();PostNotice(new("focus","Break finished","Ready for your next focus session.")); }
-            SystemSounds.Asterisk.Play();
+            if(Settings.NotifyFocus)CountdownAudio.Play(Settings);
         }
         if(changed) SaveSession();
     }
@@ -189,7 +192,7 @@ public sealed partial class App : Application
     public void SaveSession() { try { Session.Stopwatch.Checkpoint();Store.Save("session",Session); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet", "Could not save the timer state."); } PublishUpdate(RuntimeChange.Countdown); }
     public void ChangeSettings()
     {
-        Settings.Normalize();if(!Settings.ActivitiesEnabled)Activities?.Stop();UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
+        Settings.Normalize();Audio.SpectrumEnabled=Settings.WaveformSource=="Spectrum";if(!Settings.ActivitiesEnabled)Activities?.Stop();UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         try { Store.Save("settings",Settings); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }
         ConfigureDownloads();if(Settings.NotificationDelivery is "Off" or "Windows")Notifications.Clear();
@@ -209,7 +212,7 @@ public sealed partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Assistant?.Dispose();assistantWindow?.Close();
-        tick?.Stop();Downloads?.Dispose();Updates?.Dispose();
+        tick?.Stop();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();Updates?.Dispose();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();
         Previews?.Dispose();Activities?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();

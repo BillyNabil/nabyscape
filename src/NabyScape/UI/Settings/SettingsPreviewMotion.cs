@@ -80,7 +80,7 @@ public sealed partial class SettingsWindow
             bool animate=!app.Settings.ReduceMotion && app.Settings.LiveActivity && app.Media.Playing;
             double peak=animate?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;animate=animate && !app.Audio.MediaMeterMuted;
             bool fresh=animate && sequence!=app.Audio.MediaLevel.Sequence;sequence=app.Audio.MediaLevel.Sequence;
-            wave.Sample(animate?peak:0,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion);
+            wave.Sample(animate?peak:0,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
         });return wave;
     }
     private void RefreshLivePreviewData()
@@ -128,7 +128,7 @@ public sealed partial class SettingsWindow
         float peak=app.Media.Playing && app.Settings.LiveActivity && !app.Settings.ReduceMotion?app.Audio.MediaPeak(app.Media.Selected?.SourceAppUserModelId):0;
         bool animate=app.Media.Playing && !app.Audio.MediaMeterMuted && app.Settings.LiveActivity && !app.Settings.ReduceMotion;
         bool fresh=animate && signalSequence!=app.Audio.MediaLevel.Sequence;signalSequence=app.Audio.MediaLevel.Sequence;
-        audioSignalWave.Sample(peak,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion);
+        audioSignalWave.Sample(peak,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
         audioSignalState.Text=!app.Settings.LiveActivity?"Live activity is off · enable it in Audio":app.Settings.ReduceMotion?"Reduce Motion is on · the waveform stays still":!app.Media.Playing?"Playback paused · quiet baseline":app.Audio.MediaMeterMuted?"Selected app or output is muted":app.Audio.MediaMeterSessions==0?"No matching audio meter · optional gentle fallback":$"Live meter · {app.Audio.MediaAudibleSessions} audible session · {peak*100:0}% peak";
     }
 }

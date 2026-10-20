@@ -1,0 +1,24 @@
+PASS  Completion chime plays directly on the Windows output
+PASS  Real output loopback resolves the app session and produces FFT bands
+PASS  Tools appear as seven independent navigation panels, without a Tools folder
+PASS  Dot navigation retains names and selection semantics
+PASS  Tasks opens its checklist directly and Notes is not duplicated
+PASS  Notes survive moving between separate tool panels
+PASS  Resource-only preferences preserve note editor, selection and scroll
+PASS  Focus duration is editable directly in the panel
+PASS  Focus start uses the edited duration
+PASS  Dock exposes named move and corner-resize grips
+PASS  Cancelling geometry edits restores independent closed, hover and panel sizes
+PASS  Hover width can exceed panel width independently
+PASS  Media horizontal insets are symmetric at 300 DIP
+PASS  Media horizontal insets are symmetric at 526 DIP
+PASS  Output spectrum releases capture after its last visual consumer
+PASS  All lyric presets render within the content inset
+PASS  AI composer remains usable with preserved draft at 300 DIP
+PASS  AI composer remains usable with preserved draft at 526 DIP
+PASS  Settings Audio registers all new visual examples
+PASS  Settings Layout registers all new visual examples
+PASS  Settings Application registers all new visual examples
+PASS  Settings Content registers all new visual examples
+PASS  UI diagnostics never start voice or screen sharing
+RESULT: 0 failures

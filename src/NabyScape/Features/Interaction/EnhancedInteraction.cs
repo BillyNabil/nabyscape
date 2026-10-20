@@ -85,7 +85,7 @@ public sealed partial class OverlayWindow
     private void AutomaticActivity(string kind,string heading,string detail)
     {
         if(!app.Settings.SmartActivities || expanded || userHidden || TuckRequested || !IsVisible || (peeking && !automaticPreview))return;
-        if(!WidgetOn(kind))return;
+        if(!WidgetOn(kind) || kind=="media" && !MediaPreviewPolicy.AllowAutomatic(app.Settings,app.Media.Selected?.SourceAppUserModelId))return;
         if(!DiagnosticRun && app.Settings.HideFullscreen && Native.FullscreenOn(Native.ChooseScreen(app.Settings),hwnd))return;
         previewKind=kind;activityTitle=heading;activityDetail=detail;automaticPreview=true;
         if(!peeking)PreviewActivity();else{peekId=kind;LayoutPeek(0,false);UpdatePeek();}activityDismiss.Stop();activityDismiss.Start();

@@ -50,7 +50,7 @@ public sealed partial class OverlayWindow
     private double AssistantPeekHeight=>Math.Min(app.Settings.HoverHeight,190);
     private void LayoutAssistantPeek()
     {
-        double width=Math.Min(app.Settings.HoverWidth,expandedWidth);var bounds=PeekLayout.SafeBounds(width,AssistantPeekHeight,app.Settings.Radius,surface.Notch);
+        double width=PeekSurfaceWidth;var bounds=PeekLayout.SafeBounds(width,AssistantPeekHeight,app.Settings.Radius,surface.Notch);
         assistantPeek.Width=bounds.Width;assistantPeek.Height=bounds.Height;assistantPeek.Margin=new(0,bounds.Top,0,0);
     }
     private void InitializeAssistantIsland(Grid header)
@@ -117,7 +117,7 @@ public sealed partial class OverlayWindow
         assistantPeekRevision++;
         HideNotice();EndPeekGesture();StopHoverTimers();assistantReplyDismiss.Stop();automaticPreview=false;activityDismiss.Stop();peeking=true;assistantPeeking=true;peekDetailed=true;Show();Dimensions();
         peekPanel.Visibility=Visibility.Collapsed;scroll.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=false;Motion.Fade(compact,0,100);
-        double width=Math.Min(app.Settings.HoverWidth,expandedWidth),height=AssistantPeekHeight;LayoutAssistantPeek();assistantPeek.Visibility=Visibility.Visible;assistantPeek.IsHitTestVisible=true;
+        double width=PeekSurfaceWidth,height=AssistantPeekHeight;LayoutAssistantPeek();assistantPeek.Visibility=Visibility.Visible;assistantPeek.IsHitTestVisible=true;
         AssistantIslandChanged();Motion.Fade(assistantPeek,1,app.Settings.AnimationMs);Motion.Enter(peekAssistant,8);
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,width,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.SurfaceHeightProperty,height,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.GlassLiftProperty,1,app.Settings.AnimationMs);
         outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>VisiblePoint(p));UpdateSatellite();WakeLiveRendering();

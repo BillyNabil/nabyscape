@@ -102,7 +102,7 @@ public sealed partial class OverlayWindow
     internal bool SystemSummaryVisible=>IsVisible && (peeking && peekId=="system" || WidgetOn("system") && (SatelliteNeedsSystemSamples || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen)));
     private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && !peeking && surface.SurfaceHeight<=app.Settings.Height+.5 && surface.SurfaceWidth<=app.Settings.Width+.5 && !FeedbackVisible && !TuckRequested && !userHidden && IsVisible;
     private CalendarEvent? SatelliteEvent=>app.Calendar.Events.Where(e=>e.End>DateTimeOffset.UtcNow && e.Start<=DateTimeOffset.UtcNow.AddHours(24)).OrderBy(e=>e.Start).FirstOrDefault();
-    private string? SelectedSatellite=>SecondaryActivity.SelectSource(app.Settings.SatelliteSource,SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")),SatelliteEvent!=null,WidgetOn("system"),WidgetOn("tools"),WidgetOn("clock"));
+    private string? SelectedSatellite=>SecondaryActivity.SelectSource(app.Settings.SatelliteSource,SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")),SatelliteEvent!=null,WidgetOn("system"),ToolOn("calendar"),WidgetOn("clock"));
     private bool ShowMediaPrimary=>SatelliteEligible && SelectedSatellite!=null && SatelliteHasRoom();
     private bool SatelliteNeedsSystemSamples=>SatelliteEligible && SatelliteHasRoom() && SelectedSatellite is "cpu" or "ram";
     private string? SatellitePeekKind=>satelliteKind is "cpu" or "ram" or "clock"?"system":satelliteKind;

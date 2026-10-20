@@ -18,6 +18,7 @@ internal sealed class AssistantView : UserControl,IDisposable
     private readonly AssistantRuntime ai;
     private readonly bool island;
     private readonly AssistantOrb orb=new();
+    private readonly Grid layout=new();
     private readonly TextBlock status=UI.Text("",11,UI.Muted);
     private readonly StackPanel messages=new();
     private readonly ScrollViewer transcript;
@@ -45,26 +46,32 @@ internal sealed class AssistantView : UserControl,IDisposable
         Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/NabyScape;component/Features/Assistant/AssistantTheme.xaml",UriKind.Relative)});
         input.Style=(Style)FindResource("AssistantComposer");
         Foreground=Brushes.White;UseLayoutRounding=true;
-        var page=new StackPanel{Margin=island?new Thickness(8,0,8,8):new Thickness(20,14,20,16)};
-        var heading=new Grid();heading.ColumnDefinitions.Add(new(){Width=GridLength.Auto});heading.ColumnDefinitions.Add(new());heading.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
-        if(island)orb.Width=orb.Height=48;
-        heading.Children.Add(orb);var title=new StackPanel{Margin=new(island?8:12,0,0,0),VerticalAlignment=VerticalAlignment.Center};var titleText=UI.Heading("Ask Naby",island?18:20);titleText.TextWrapping=TextWrapping.NoWrap;titleText.TextTrimming=TextTrimming.CharacterEllipsis;title.Children.Add(titleText);title.Children.Add(context);Grid.SetColumn(title,1);heading.Children.Add(title);
-        if(island && close!=null){closeButton=Pill("Back to island",close);closeButton.ToolTip="Back to island";closeButton.Margin=new(6,0,0,0);closeButton.VerticalAlignment=VerticalAlignment.Center;closeButton.Padding=new(9,5,9,5);Grid.SetColumn(closeButton,2);heading.Children.Add(closeButton);}page.Children.Add(heading);
-        status.Margin=new(0,0,0,island?5:10);page.Children.Add(status);
-        transcript=new ScrollViewer{Content=messages,Height=island?124:260,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};UI.Named(transcript,"AI conversation");page.Children.Add(transcript);
-        var review=new StackPanel();approvalTitle.FontWeight=FontWeights.SemiBold;review.Children.Add(approvalTitle);approvalText.Margin=new(0,6,0,8);review.Children.Add(new ScrollViewer{Content=approvalText,MaxHeight=island?72:95,VerticalScrollBarVisibility=ScrollBarVisibility.Auto});review.Children.Add(UI.Row(Pill("Run once",()=>ai.Decide(true),true),Pill("Decline",()=>ai.Decide(false))));
-        approval=new Border{Background=UI.Brush("#202328"),BorderBrush=UI.Brush("#515661"),BorderThickness=new(1),CornerRadius=new(14),Padding=new(island?10:12),Margin=new(0,6,0,6),Child=review,Visibility=Visibility.Collapsed};page.Children.Add(approval);
-        input.AcceptsReturn=true;input.TextWrapping=TextWrapping.Wrap;input.MinHeight=island?44:62;input.MaxHeight=island?88:120;input.Margin=new(0,island?6:10,0,island?5:8);input.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;input.ToolTip="Enter to send · Shift+Enter for a new line · Escape to stop";
+        var page=layout;page.Margin=island?new Thickness(0,2,0,4):new Thickness(20,12,20,12);
+        for(int i=0;i<7;i++)page.RowDefinitions.Add(new(){Height=i==2?new GridLength(1,GridUnitType.Star):GridLength.Auto});
+        void Row(UIElement child,int row){Grid.SetRow(child,row);page.Children.Add(child);}
+        var heading=new Grid{Margin=new(0,0,0,10)};heading.ColumnDefinitions.Add(new(){Width=GridLength.Auto});heading.ColumnDefinitions.Add(new());heading.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
+        orb.Width=orb.Height=island?34:40;heading.Children.Add(orb);
+        var title=new StackPanel{Margin=new(9,0,0,0),VerticalAlignment=VerticalAlignment.Center};title.Children.Add(UI.Heading("Naby",18));context.FontSize=10;context.Margin=new(0,2,0,0);title.Children.Add(context);Grid.SetColumn(title,1);heading.Children.Add(title);
+        var headerActions=new StackPanel{Orientation=Orientation.Horizontal,VerticalAlignment=VerticalAlignment.Center};
+        stop=IconAction("Stop","stop",ai.StopSession);clear=IconAction("Clear","trash",ai.Clear);headerActions.Children.Add(stop);headerActions.Children.Add(clear);
+        headerActions.Children.Add(IconAction("AI Settings","settings",app.ShowAssistantProviders));
+        if(island && close!=null){closeButton=IconAction("Back to island","chevron",close);closeButton.Content=Icons.Create("chevron",13);closeButton.Content=new System.Windows.Controls.Viewbox{Width=13,Height=13,Child=Icons.Create("chevron",13),RenderTransformOrigin=new(.5,.5),RenderTransform=new RotateTransform(90)};headerActions.Children.Add(closeButton);}
+        Grid.SetColumn(headerActions,2);heading.Children.Add(headerActions);Row(heading,0);
+        status.Margin=new(2,0,2,8);status.MaxHeight=48;status.TextTrimming=TextTrimming.CharacterEllipsis;Row(status,1);
+        transcript=new ScrollViewer{Content=messages,VerticalScrollBarVisibility=ScrollBarVisibility.Hidden,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Padding=new(0,2,0,10)};UI.Named(transcript,"AI conversation");Row(transcript,2);
+        var review=new StackPanel();approvalTitle.FontWeight=FontWeights.SemiBold;review.Children.Add(approvalTitle);approvalText.Margin=new(0,6,0,8);review.Children.Add(new ScrollViewer{Content=approvalText,MaxHeight=68,VerticalScrollBarVisibility=ScrollBarVisibility.Hidden});review.Children.Add(UI.Row(Pill("Run once",()=>ai.Decide(true),true),Pill("Decline",()=>ai.Decide(false))));
+        approval=new Border{Background=UI.Brush("#1B1E23"),BorderBrush=UI.Brush("#41464F"),BorderThickness=new(1),CornerRadius=new(10),Padding=new(10),Margin=new(0,6,0,6),Child=review,Visibility=Visibility.Collapsed};Row(approval,3);
+        input.AcceptsReturn=true;input.TextWrapping=TextWrapping.Wrap;input.MinHeight=44;input.MaxHeight=90;input.Margin=new(0);input.Padding=new(1,7,1,7);input.FontSize=13;input.VerticalContentAlignment=VerticalAlignment.Top;input.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;input.ToolTip="Enter to send · Shift+Enter for a new line · Escape to stop";
         input.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)){e.Handled=true;_=Send();}};
-        send=Pill("Send",()=>_=Send(),true);voice=Pill("Start voice",()=>_=ToggleVoice());share=Pill("Share screen",()=>_=ToggleScreen());
-        stop=Pill("Stop",ai.StopSession);clear=Pill("Clear",ai.Clear);
-        send.Content="↑";send.ToolTip="Send message · Enter";send.MinWidth=34;send.Margin=new(6,0,0,0);send.VerticalAlignment=VerticalAlignment.Center;input.Margin=new(0);input.BorderThickness=new(0);input.Background=Brushes.Transparent;
-        var editorHost=new Grid();editorHost.Children.Add(input);var hint=UI.Text("Message Naby…",12,UI.Muted);hint.Margin=new(4,0,0,0);hint.VerticalAlignment=VerticalAlignment.Center;hint.IsHitTestVisible=false;editorHost.Children.Add(hint);input.TextChanged+=(_,_)=>hint.Visibility=input.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
-        var composer=new DockPanel();DockPanel.SetDock(send,Dock.Right);composer.Children.Add(send);composer.Children.Add(editorHost);page.Children.Add(new Border{Child=composer,Background=UI.Brush("#15171B"),BorderBrush=UI.Brush("#34363C"),BorderThickness=new(1),CornerRadius=new(14),Padding=new(8,4,6,4),Margin=new(0,6,0,8)});
-        var bar=new WrapPanel();foreach(var b in new[]{voice,share,stop,clear}){if(island)b.Padding=new(9,5,9,5);bar.Children.Add(b);}page.Children.Add(bar);
-        var permissions=new StackPanel();var options=new WrapPanel();actions=Pill("Actions off",()=>ai.SetActions(!ai.ActionsAllowed));computer=Pill("Computer off",()=>{try{ai.SetComputerControl(!ai.Desktop.ControlEnabled);}catch(Exception ex){status.Text=ex.Message;}});options.Children.Add(actions);options.Children.Add(computer);permissions.Children.Add(options);
-        display.ItemsSource=ai.Desktop.Targets();display.SelectedIndex=0;UI.Named(display,"Display to share");permissions.Children.Add(display);permissions.Children.Add(UI.Text(island?"Actions require Run once. Only the selected display is shared. Voice uses Windows default input/output. Back to island keeps voice running; Stop ends the session.":"Actions require Run once. Screen sharing uses only this display. Voice uses Windows default input/output. Closing or minimizing stops the live session.",11,UI.Muted));page.Children.Add(new Expander{Header="Session controls",Content=permissions,Margin=new(0,island?0:8,0,0)});
-        screenPreview.Content=screenImage;screenPreview.Margin=new(0,island?0:8,0,0);screenPreview.Expanded+=(_,_)=>RefreshScreen();page.Children.Add(screenPreview);
+        send=IconAction("Send","send",()=>_=Send(),true);voice=IconAction("Start voice","mic",()=>_=ToggleVoice());share=IconAction("Share screen","screen",()=>_=ToggleScreen());
+        send.VerticalAlignment=VerticalAlignment.Center;input.BorderThickness=new(0);input.Background=Brushes.Transparent;
+        var editorHost=new Grid();editorHost.Children.Add(input);var hint=UI.Text("Message Naby…",13,UI.Muted);hint.Margin=new(1,7,0,0);hint.VerticalAlignment=VerticalAlignment.Top;hint.IsHitTestVisible=false;editorHost.Children.Add(hint);input.TextChanged+=(_,_)=>hint.Visibility=input.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
+        var composer=new Grid();composer.RowDefinitions.Add(new(){Height=GridLength.Auto});composer.RowDefinitions.Add(new(){Height=GridLength.Auto});composer.ColumnDefinitions.Add(new());composer.ColumnDefinitions.Add(new(){Width=GridLength.Auto});composer.Children.Add(editorHost);Grid.SetColumn(send,1);composer.Children.Add(send);
+        var bar=new DockPanel{Margin=new(0,3,0,0)};var keys=UI.Text("Enter ↵",9,UI.Muted);keys.Opacity=.65;DockPanel.SetDock(keys,Dock.Right);bar.Children.Add(keys);var tools=new StackPanel{Orientation=Orientation.Horizontal};tools.Children.Add(voice);tools.Children.Add(share);bar.Children.Add(tools);Grid.SetRow(bar,1);Grid.SetColumnSpan(bar,2);composer.Children.Add(bar);
+        Row(new Border{Child=composer,Background=UI.Brush("#17191D"),BorderBrush=UI.Brush("#30343B"),BorderThickness=new(1),CornerRadius=new(13),Padding=new(11,4,6,5),Margin=new(0,4,0,3)},4);
+        var permissions=new StackPanel();var options=new WrapPanel();actions=Pill("Actions off",()=>ai.SetActions(!ai.ActionsAllowed));computer=Pill("Computer off",()=>{try{ai.SetComputerControl(!ai.Desktop.ControlEnabled);}catch(Exception ex){status.Text=ex.Message;status.Visibility=Visibility.Visible;}});options.Children.Add(actions);options.Children.Add(computer);permissions.Children.Add(options);
+        display.ItemsSource=ai.Desktop.Targets();display.SelectedIndex=0;UI.Named(display,"Display to share");permissions.Children.Add(display);permissions.Children.Add(UI.Text("Actions ask for approval. Share only the selected display. Stop ends voice and sharing.",10,UI.Muted));Row(new Expander{Header="Permissions",Content=permissions,Margin=new(1,0,0,0)},5);
+        screenPreview.Content=screenImage;screenPreview.Margin=new(0);screenPreview.Expanded+=(_,_)=>RefreshScreen();Row(screenPreview,6);
         Content=page;
         Loaded+=OnLoaded;Unloaded+=OnUnloaded;SizeChanged+=(_,_)=>AdjustLayout();
         PreviewMouseMove+=(_,e)=>{var p=e.GetPosition(orb);orb.LookAt((p.X-orb.ActualWidth/2)/Math.Max(100,ActualWidth*.45),(p.Y-orb.ActualHeight/2)/Math.Max(90,ActualHeight*.45));};
@@ -107,15 +114,16 @@ internal sealed class AssistantView : UserControl,IDisposable
     private void HostSizeChanged(object sender,SizeChangedEventArgs e)=>AdjustLayout();
     private void AdjustLayout()
     {
-        if(closeButton!=null)
-        {
-            bool compact=ActualWidth>0 && ActualWidth<360;
-            closeButton.Content="‹";closeButton.MinWidth=compact?31:0;closeButton.FontSize=20;
-        }
-        double available=island?hostViewport?.ViewportHeight??0:hostWindow?.ActualHeight??0;
-        double height=island?(available>0?Math.Clamp(available-230,140,230):124):Math.Max(72,(available>0?available:640)-(ai.Pending!=null?510:380));
-        if(Math.Abs(transcript.Height-height)>.5)transcript.Height=height;
-        input.MinHeight=island?44:available>0 && available<420?36:62;
+        double available;
+        if(island){var screen=Native.ChooseScreen(app.Settings);available=screen.WorkingArea.Height/Native.Scale(screen)-55;}
+        else available=(hostWindow?.ActualHeight>0?hostWindow.ActualHeight:640)-78;
+        double height=Math.Max(170,island?Math.Min(app.Settings.PanelMaxHeight-38,available):available);
+        if(Math.Abs(layout.Height-height)>.5 || double.IsNaN(layout.Height))layout.Height=height;
+        input.MinHeight=height<300?36:44;
+    }
+    private static Button IconAction(string name,string icon,Action action,bool primary=false)
+    {
+        var button=Icons.Button(icon,name,action,primary,30);button.Margin=new(1,0,1,0);button.Padding=new(7);button.Tag=new CornerRadius(primary?15:8);if(!primary)button.Background=Brushes.Transparent;return button;
     }
     private async System.Threading.Tasks.Task Send()
     {string text=input.Text.Trim();if(text.Length==0 || ai.Busy)return;input.Clear();bool success=await ai.Send(text);if(!success && !ai.LastSendHadActionResults && input.Text.Length==0)input.Text=text;}
@@ -140,11 +148,12 @@ internal sealed class AssistantView : UserControl,IDisposable
         if(syncing)return;syncing=true;
         try
         {
-            context.Text=ai.Provider?.Name??"Your companion";
+            context.Text=ai.VoiceConnected?"Live voice":ai.Desktop.Sharing?"Display shared":"Your companion";
             status.Text=!ai.Options.Enabled?"Enable your companion in Settings → AI.":ai.Status.Replace("Configure a realtime endpoint and model in Providers.","Set up voice in Settings → AI.").Replace("in provider settings","in Settings → AI");
+            status.Visibility=!ai.Options.Enabled || ai.Provider==null || ai.State!=AssistantState.Idle?Visibility.Visible:Visibility.Collapsed;
             stop.Visibility=ai.Busy || ai.VoiceConnected || ai.Desktop.Sharing || ai.Pending!=null?Visibility.Visible:Visibility.Collapsed;clear.Visibility=ai.Conversation.Messages.Count>0?Visibility.Visible:Visibility.Collapsed;
             send.IsEnabled=ai.Options.Enabled && !ai.Busy;voice.IsEnabled=ai.Options.Enabled && !ai.Busy;share.IsEnabled=ai.Options.Enabled && (!ai.Busy || ai.Desktop.Sharing);
-            voice.Content=ai.VoiceConnected?"End voice":"Start voice";share.Content=ai.Desktop.Sharing?"Stop sharing":"Share screen";actions.Content=ai.ActionsAllowed?"Actions on":"Actions off";computer.Content=ai.Desktop.ControlEnabled?"Computer on":"Computer off";
+            voice.Content=Icons.Create(ai.VoiceConnected?"mic-off":"mic",16);voice.ToolTip=ai.VoiceConnected?"End voice":"Start voice";voice.Background=ai.VoiceConnected?UI.Brush("#343940"):Brushes.Transparent;share.Content=Icons.Create("screen",16);share.ToolTip=ai.Desktop.Sharing?"Stop sharing":"Share screen";share.Background=ai.Desktop.Sharing?UI.Brush("#343940"):Brushes.Transparent;actions.Content=ai.ActionsAllowed?"Actions on":"Actions off";computer.Content=ai.Desktop.ControlEnabled?"Computer on":"Computer off";
             screenPreview.Visibility=ai.Desktop.Sharing?Visibility.Visible:Visibility.Collapsed;computer.IsEnabled=ai.Desktop.Sharing;actions.IsEnabled=ai.Options.Enabled;
             display.IsEnabled=!ai.Desktop.Sharing;
             approval.Visibility=ai.Pending!=null?Visibility.Visible:Visibility.Collapsed;
@@ -153,13 +162,14 @@ internal sealed class AssistantView : UserControl,IDisposable
             var history=ai.Conversation.Messages;
             if(history.Count<rendered || rendered>0 && !ReferenceEquals(firstRendered,history.FirstOrDefault())){messages.Children.Clear();rendered=0;}
             if(history.Count==0 && messages.Children.Count==0)
-            {var welcome=UI.Text(island?"What would you like to do?\nType a message or start talking.":"What would you like to do?\nType a message or start talking.",island?12:13,UI.Muted);welcome.Margin=island?new Thickness(2,10,2,12):new Thickness(2,18,2,24);messages.Children.Add(welcome);}
+            {var welcome=UI.Text(island?"What’s on your mind?":"What’s on your mind?",island?12:13,UI.Muted);welcome.Margin=island?new Thickness(2,10,2,12):new Thickness(2,18,2,24);messages.Children.Add(welcome);}
             if(history.Count>0 && rendered==0)messages.Children.Clear();
             for(int i=rendered;i<history.Count;i++)
             {
                 var message=history[i];if(message.Role is not ("user" or "assistant") || string.IsNullOrWhiteSpace(message.Text) || message.Text.StartsWith("Updated shared screen after"))continue;
-                var text=UI.Text(message.Text,island?12:13);text.Margin=island?new Thickness(10,7,10,7):new Thickness(12,9,12,9);
-                var bubble=new Border{Child=text,CornerRadius=new(13),Background=message.Role=="user"?UI.Brush("#24272D"):Brushes.Transparent,Margin=new(message.Role=="user"?32:0,4,message.Role=="user"?0:20,5)};messages.Children.Add(bubble);
+                var text=UI.Text(message.Text,13);text.Margin=message.Role=="user"?new Thickness(12,9,12,9):new Thickness(2,10,2,10);
+                var menu=new ContextMenu();var copy=new MenuItem{Header="Copy message"};copy.Click+=(_,_)=>{try{Clipboard.SetText(message.Text);}catch{}};menu.Items.Add(copy);text.ContextMenu=menu;
+                var bubble=new Border{Child=text,CornerRadius=new(11),Background=message.Role=="user"?UI.Brush("#25282E"):Brushes.Transparent,Margin=new(message.Role=="user"?42:0,3,message.Role=="user"?0:12,5)};messages.Children.Add(bubble);
                 if(IsLoaded && !app.Settings.ReduceMotion)Motion.Fade(bubble,1,180);
             }
             rendered=history.Count;firstRendered=history.FirstOrDefault();restoreScroll=false;

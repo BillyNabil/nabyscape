@@ -9,9 +9,28 @@ namespace NabyScape;
 public sealed partial class OverlayWindow
 {
     private string? selectedClipId;
+    private ScrollViewer? clipboardScroll;
+    private StackPanel? clipboardHeader;
+    private double clipboardOffset;
+    private double clipboardWheelOffset=double.NaN;
+    private void SizeClipboardViewport()
+    {
+        if(clipboardScroll==null || clipboardHeader==null || clipboardScroll.Parent!=clipboardHeader || toolsMode!="clips" || activePage is not ("clips" or "tools"))return;
+        var screen=Native.ChooseScreen(app.Settings);double scale=app.Settings.PanelScale;
+        double available=Math.Min(app.Settings.PanelMaxHeight,screen.WorkingArea.Height/Native.Scale(screen)-16);
+        double reserved=26/scale;
+        foreach(FrameworkElement child in clipboardHeader.Children)if(child!=clipboardScroll){child.Measure(new Size(bodyWidth,double.PositiveInfinity));reserved+=child.DesiredSize.Height;}
+        foreach(FrameworkElement child in body.Children)if(child!=compactPageHost){child.Measure(new Size(bodyWidth,double.PositiveInfinity));reserved+=child.DesiredSize.Height;}
+        clipboardScroll.MaxHeight=Math.Max(36,available/scale-reserved-8);
+        // Measuring the header for its budget must not leave a cached page size
+        // from the previous viewport width in the outer ScrollViewer.
+        clipboardHeader.InvalidateMeasure();if(clipboardHeader.Parent is UIElement owner)owner.InvalidateMeasure();compactPageHost.InvalidateMeasure();body.InvalidateMeasure();
+    }
     private void BuildSmartClipboard(StackPanel panel)
     {
         var p=app.Productivity;
+        if(clipboardScroll?.IsVisible==true)clipboardOffset=clipboardScroll.VerticalOffset;
+        clipboardScroll=null;clipboardWheelOffset=double.NaN;clipboardHeader=panel;
         panel.Children.Add(UI.Heading("Smart clipboard",18));
         if(!p.ClipboardEnabled)
         {
@@ -29,6 +48,11 @@ public sealed partial class OverlayWindow
         var controls=new WrapPanel();panel.Children.Add(controls);
         controls.Children.Add(ActionButton("Clear history",()=>MutateUtility(p.ClearClips)));
         controls.Children.Add(ActionButton("Turn off",()=>{app.Settings.ClipboardHistory=false;app.ChangeSettings();}));
+        var content=new StackPanel();clipboardScroll=UI.Scroll(content);clipboardScroll.Tag="panel-content-scroll";clipboardScroll.HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled;clipboardScroll.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;clipboardScroll.PanningMode=PanningMode.VerticalOnly;clipboardScroll.Margin=new(0,5,0,0);UI.Named(clipboardScroll,"Clipboard history");panel.Children.Add(clipboardScroll);
+        clipboardScroll.PreviewMouseWheel+=(_,e)=>{if((System.Windows.Input.Keyboard.Modifiers&System.Windows.Input.ModifierKeys.Shift)!=0)return;ScrollClipboardWheel(e.Delta);e.Handled=true;};
+        var historyViewport=clipboardScroll;double restoreOffset=clipboardOffset;
+        historyViewport.ScrollChanged+=(_,e)=>{if(e.VerticalChange!=0 && historyViewport.IsVisible && ReferenceEquals(historyViewport,clipboardScroll))clipboardWheelOffset=clipboardOffset=historyViewport.VerticalOffset;};
+        historyViewport.Loaded+=(_,_)=>historyViewport.ScrollToVerticalOffset(restoreOffset);
         var clips=p.Clips.OrderByDescending(c=>c.Pinned).ThenByDescending(c=>c.Timestamp).ToArray();
         if(!clips.Any(c=>c.Id==selectedClipId))selectedClipId=null;
         foreach(var item in clips)
@@ -47,12 +71,13 @@ public sealed partial class OverlayWindow
             var timestamp=item.Timestamp.ToLocalTime().ToString(item.Timestamp.ToLocalTime().Date==DateTime.Today?"HH:mm":"MMM d · HH:mm");
             var summary=classified.Kind switch{SmartClipKind.Image=>dimensions??"Preview unavailable",SmartClipKind.Link=>"Link",SmartClipKind.Color=>classified.Hex,_=>"Text"};
             var subline=UI.Text((item.Pinned?"Pinned · ":"")+summary+" · "+timestamp,10,selectedClipId==item.Id?UI.ContrastText(app.Settings.SelectionFill):UI.Muted);subline.TextWrapping=TextWrapping.NoWrap;subline.TextTrimming=TextTrimming.CharacterEllipsis;subline.Margin=new(0,3,0,0);labels.Children.Add(subline);Grid.SetColumn(labels,1);grid.Children.Add(labels);
-            var row=UI.Button("View "+classified.Kind,()=>{selectedClipId=selectedClipId==item.Id?null:item.Id;RefreshTools();ResizeToolPanel();Dispatcher.BeginInvoke(()=>toolsContent.Children.OfType<StackPanel>().FirstOrDefault(part=>part.Tag as string=="clip-detail")?.BringIntoView());});row.Content=grid;row.HorizontalContentAlignment=HorizontalAlignment.Stretch;row.MinHeight=56;row.Padding=new(7,6,7,6);row.Margin=new(0,2,0,0);if(selectedClipId==item.Id)row.SetResourceReference(Control.BackgroundProperty,"SelectionFill");else row.Background=Brushes.Transparent;if(selectedClipId==item.Id)row.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");else row.BorderBrush=Brushes.Transparent;row.BorderThickness=new(1);panel.Children.Add(row);
+            var row=UI.Button("View "+classified.Kind,()=>{selectedClipId=selectedClipId==item.Id?null:item.Id;RefreshTools();ResizeToolPanel();Dispatcher.BeginInvoke(()=>((clipboardScroll?.Content as StackPanel)?.Children.OfType<StackPanel>().FirstOrDefault(part=>part.Tag as string=="clip-detail"))?.BringIntoView());});row.Content=grid;row.HorizontalContentAlignment=HorizontalAlignment.Stretch;row.MinHeight=56;row.Padding=new(7,6,7,6);row.Margin=new(0,2,0,0);if(selectedClipId==item.Id)row.SetResourceReference(Control.BackgroundProperty,"SelectionFill");else row.Background=Brushes.Transparent;if(selectedClipId==item.Id)row.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");else row.BorderBrush=Brushes.Transparent;row.BorderThickness=new(1);content.Children.Add(row);
         }
-        if(clips.Length==0){var empty=UI.Text("Your next copied item will appear here.",12,UI.Muted);empty.Margin=new(0,12,0,0);panel.Children.Add(empty);return;}
+        SizeClipboardViewport();
+        if(clips.Length==0){var empty=UI.Text("Your next copied item will appear here.",12,UI.Muted);empty.Margin=new(0,12,0,0);content.Children.Add(empty);return;}
         var selected=clips.FirstOrDefault(c=>c.Id==selectedClipId);if(selected==null)return;
         var detail=SmartClipboard.Classify(selected);
-        var section=new StackPanel{Tag="clip-detail",Margin=new(0,12,0,0)};panel.Children.Add(section);
+        var section=new StackPanel{Tag="clip-detail",Margin=new(0,12,0,0)};content.Children.Add(section);
         section.Children.Add(UI.Text(detail.Kind+" · "+selected.Timestamp.ToLocalTime().ToString("g"),10,UI.Muted));
         var status=UI.Text("",10,UI.Muted);var actions=new WrapPanel{Margin=new(0,5,0,0)};
         void Copy(string? variant=null){status.Text=p.TryCopyClip(selected,variant)?"Copied.":"Could not copy. The clipboard may be busy; try again.";ResizeToolPanel();}
@@ -94,5 +119,15 @@ public sealed partial class OverlayWindow
         }
         actions.Children.Add(ActionButton(selected.Pinned?"Unpin":"Pin",()=>MutateUtility(()=>p.ToggleClipPin(selected.Id))));
         actions.Children.Add(ActionButton("Remove",()=>MutateUtility(()=>p.RemoveClip(selected.Id))));section.Children.Add(actions);section.Children.Add(status);
+    }
+    internal bool ScrollClipboardWheel(int delta)
+    {
+        if(clipboardScroll?.IsVisible!=true)return false;
+        double distance=SystemParameters.WheelScrollLines<0?clipboardScroll.ViewportHeight:SystemParameters.WheelScrollLines*16;
+        // ScrollViewer applies queued offsets during layout. Accumulate deltas so
+        // several trackpad events in one frame do not replace each other.
+        double from=double.IsFinite(clipboardWheelOffset)?clipboardWheelOffset:clipboardScroll.VerticalOffset;
+        clipboardWheelOffset=Math.Clamp(from-delta/120d*distance,0,clipboardScroll.ScrollableHeight);
+        clipboardScroll.ScrollToVerticalOffset(clipboardWheelOffset);return true;
     }
 }

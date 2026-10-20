@@ -11,14 +11,14 @@ internal static class PreferenceReset
     internal static readonly Dictionary<string,string[]> Categories=new()
     {
         ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings AnimationMs ReduceMotion LiveActivity Performance RecentColors".Split(' '),
-        ["Layout"]="Width Height Horizontal Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
+        ["Layout"]="DockUnlocked PanelAutoHeight Width Height Horizontal Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
         ["Content"]="Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
-        ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource SmartActivities WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers HideFullscreen HideMaximized VisibilityHotkeyEnabled VisibilityHotkeyKey VisibilityHotkeyModifiers AlwaysTucked TuckEdge TuckHotkeyEnabled TuckHotkeyKey TuckHotkeyModifiers".Split(' '),
-        ["Audio"]="ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
+        ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource SmartActivities BrowserMediaPreviews WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers HideFullscreen HideMaximized VisibilityHotkeyEnabled VisibilityHotkeyKey VisibilityHotkeyModifiers AlwaysTucked TuckEdge TuckHotkeyEnabled TuckHotkeyKey TuckHotkeyModifiers".Split(' '),
+        ["Audio"]="WaveformSource WaveformSensitivity LyricsEnabled LyricsAnimation LyricsOffset ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
         ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
         ["AI"]=Array.Empty<string>(),
-        ["Application"]="AutoCheckUpdates NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' ')
+        ["Application"]="CountdownSound CountdownSoundVolume CountdownSoundFile AutoCheckUpdates NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' ')
     };
     internal static string Summary(string? category)
     {

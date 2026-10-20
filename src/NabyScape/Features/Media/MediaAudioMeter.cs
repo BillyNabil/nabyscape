@@ -25,7 +25,7 @@ public sealed partial class AudioService
         {
             meterSessions++;
             if(outputMuted || session.SimpleAudioVolume.Mute || session.SimpleAudioVolume.Volume<=0)continue;
-            meterAudible++;peak=Math.Max(peak,session.AudioMeterInformation.MasterPeakValue);
+            meterAudible++;mediaOutputs.Add(endpoint.Device.ID);peak=Math.Max(peak,session.AudioMeterInformation.MasterPeakValue);
         }
         return peak;
     }
@@ -42,11 +42,11 @@ public sealed partial class AudioService
     {
         long stamp=Stopwatch.GetTimestamp();
         if(!mediaSampleGate.Accept(source,stamp))return MediaLevel.Peak;
-        float peak=ReadMediaPeak(source);MediaLevel=new(mediaSampleGate.Sequence,stamp,peak,MediaMeterMuted,meterSessions,meterAudible);return peak;
+        float peak=ReadMediaPeak(source);SampleSpectrum(source);MediaLevel=new(mediaSampleGate.Sequence,stamp,peak,MediaMeterMuted,meterSessions,meterAudible);return peak;
     }
     private float ReadMediaPeak(string? source)
     {
-        DiagnosticMeterReads++;
+        DiagnosticMeterReads++;mediaOutputs.Clear();
         if(DiagnosticPeak!=null){meterSessions=meterAudible=1;MediaMeterMuted=false;return CurrentMediaPeak=DiagnosticPeak();}
         if(disposed || string.IsNullOrWhiteSpace(source)){MediaMeterMuted=false;meterSessions=meterAudible=0;return CurrentMediaPeak=0;}
         if(mediaPeaks==null || mediaPeakSource!=source)

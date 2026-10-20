@@ -31,6 +31,17 @@ internal static class Icons
     // Lucide icons, ISC license in LUCIDE-LICENSE.txt. Consistent 24px canvas.
     private static readonly Dictionary<string,string> NavigationPaths=new()
     {
+        ["folder"]="M3,7 H10 L12,9 H21 V20 H3 Z M3,7 V4 H10 L12,6 H21 V9",
+        ["notes"]="M14,2 H6 Q4,2 4,4 V20 Q4,22 6,22 H18 Q20,22 20,20 V8 Z M14,2 V8 H20 M8,13 H16 M8,17 H14",
+        ["clipboard"]="M9,5 H5 V21 H19 V5 H15 M9,3 H15 V7 H9 Z",
+        ["coffee"]="M4,8 H17 V16 Q17,20 13,20 H8 Q4,20 4,16 Z M17,9 H20 Q24,13 17,15 M8,3 V5 M13,2 V5",
+        ["lyrics"]="M4,5 H20 M4,10 H17 M4,15 H20 M4,20 H13",
+        ["mic"]="M9,5 A3,3 0 0 1 15,5 V12 A3,3 0 0 1 9,12 Z M5,11 V12 A7,7 0 0 0 19,12 V11 M12,19 V22 M8,22 H16",
+        ["mic-off"]="M3,3 L21,21 M9,8 V12 Q9,15 12,15 M15,9 V5 A3,3 0 0 0 10,3 M5,11 V12 A7,7 0 0 0 17,17 M19,12 V11 M12,19 V22 M8,22 H16",
+        ["screen"]="M4,4 H20 V17 H4 Z M8,21 H16 M12,17 V21",
+        ["send"]="M12,20 V4 M6,10 L12,4 18,10",
+        ["trash"]="M3,6 H21 M9,6 V3 H15 V6 M6,6 L7,21 H17 L18,6 M10,10 V17 M14,10 V17",
+        ["stop"]="M6,6 H18 V18 H6 Z",
         ["file-text"]="M14,2 H6 Q4,2 4,4 V20 Q4,22 6,22 H18 Q20,22 20,20 V8 Z M14,2 V8 H20 M8,13 H16 M8,17 H14",
         ["image"]="M5,3 H19 Q21,3 21,5 V19 Q21,21 19,21 H5 Q3,21 3,19 V5 Q3,3 5,3 Z M3,16 L9,10 16,17 M14,15 L17,12 21,16 M14,7 A1,1 0 1 1 13.99,7",
         ["link"]="M10,13 Q13,16 16,13 L20,9 Q23,6 20,3 Q17,0 14,3 L12,5 M14,11 Q11,8 8,11 L4,15 Q1,18 4,21 Q7,24 10,21 L12,19",

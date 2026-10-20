@@ -1,0 +1,1 @@
+Synthetic clipboard and original lyric text. WPF PreviewMouseWheel routed-event checks and offscreen captures at 100/150/200% raster scale. No system clipboard read/write, provider request, microphone, screen capture or playback transport command. Physical mixed-DPI monitors and GPU presentation were not measured.

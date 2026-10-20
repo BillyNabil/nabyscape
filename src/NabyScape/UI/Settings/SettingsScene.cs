@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
+    internal static readonly string[] Sections={"Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -75,7 +75,7 @@ internal sealed class SettingsScene : FrameworkElement
             case "Typography":
                 Text("Song title",24,23,21,s.BoldMediaTitle);Text("Artist name",24,54,12,false,muted);Text("Panel heading",232,27,16,s.BoldHeadings);Text("Body text stays regular",232,56,11,false,muted);Note("Current title weights; body text stays the same");break;
             case "Text and navigation":
-                foreach(var item in new[]{("Media",22d),("Focus",112d),("Status",202d),("Tools",292d)}){Box(item.Item2,22,76,46);if(s.CategoryStyle!="Text")dc.DrawEllipse(null,new Pen(white,1.4),new Point(item.Item2+38,36),6,6);if(s.CategoryStyle!="Icons")Text(item.Item1,item.Item2+14,s.CategoryStyle=="Text"?38:49,11);}Note("Navigation · "+s.CategoryStyle.Replace("IconsLabels","Icons + labels"));break;
+                foreach(var item in new[]{("Media",22d),("Focus",112d),("Status",202d),("Tools",292d)}){Box(item.Item2,22,76,46);if(s.CategoryStyle=="Dots"){dc.DrawEllipse(white,null,new Point(item.Item2+38,44),3,3);continue;}if(s.CategoryStyle!="Text")dc.DrawEllipse(null,new Pen(white,1.4),new Point(item.Item2+38,36),6,6);if(s.CategoryStyle!="Icons")Text(item.Item1,item.Item2+14,s.CategoryStyle=="Text"?38:49,11);}Note("Navigation · "+s.CategoryStyle.Replace("IconsLabels","Icons + labels"));break;
             case "Motion":
                 Box(23,28,68,22,Brushes.Black);Text("Music",34,33,9);Line(108,40,176,40);Box(193,16,135,63,Brushes.Black);Cover(203,25,22);Text("Song title",234,28,10,true);Bar(204,65,112,.4);Text(s.ReduceMotion?"Instant state change":$"{s.AnimationMs:0} ms transition",23,78,11);Text("Closed → open",193,87,11,false,muted);break;
             case "Animation performance":
@@ -138,8 +138,14 @@ internal sealed class SettingsScene : FrameworkElement
                 bool hide=kind=="Hide or show the island";Keys(hide?s.VisibilityHotkeyModifiers:s.HotkeyModifiers,24,24,130);Keys(hide?s.VisibilityHotkeyKey:s.HotkeyKey,166,24,40);Text(hide?"Hide / show":"Open / close panel",232,30,13,true);Note("Works while another app is focused");break;
             case "Closed media display":
                 Box(32,22,352,40,Brushes.Black);if(s.ClosedMediaIcon=="Artwork")Cover(46,31,22);else Wave(46,42);if(s.ClosedMediaContent=="Waveform")Wave(158,42);else Text("Song title",160,34,13,true);Text("12:45",334,36,11,true);Note("Current closed media layout · example title and artwork");break;
-            case "Waveform source":case "Live signal":
-                Text("Selected media app",22,20,13,true);Line(166,42,222,42);Wave(256,43);Text("Amplitude history",246,67,11,false,muted);Note("Measured audio levels; these are not frequency bands");break;
+            case "Visualizer":case "Waveform source":case "Live signal":
+                Text(s.WaveformSource=="Spectrum"?"Bass → mids → treble":"Amplitude history",22,18,13,true);Wave(125,62);Text(s.WaveformSensitivity.ToString("0.##")+"× sensitivity",270,38,12);Note(s.WaveformSource=="Spectrum"?"Real frequency bands · selected media output mix":"Measured selected-app amplitude · fast attack, smooth release");break;
+            case "Lyrics":
+                Text("A little closer to the music",24,17,11,false,muted);Text("One line, right on time",24,42,22,true);Text("Slide     Focus     Karaoke",24,77,11,false,muted);Toggle(355,20,s.LyricsEnabled);Note(s.LyricsAnimation+" · Spotify lyrics via LRCLIB · no key required");break;
+            case "Move & resize":
+                Island(95,22,220,36);Line(88,18,66,18);Line(66,18,66,83);Line(66,83,88,83);Text("↔",180,70,20);Toggle(352,28,s.DockUnlocked);Note("Drag the top grip to move · lower corners resize each state");break;
+            case "Completion sound":
+                Text(s.CountdownSound=="Off"?"Silent":"♪",25,18,28,true);Wave(119,50);Text(s.CountdownSound,264,25,16,true);Text((s.CountdownSoundVolume*100).ToString("0")+"%",264,53,12,false,muted);Note("Timer & Focus · audible without Windows notifications");break;
             case "Live feedback":
                 Island(24,23,208,34);Bar(54,47,146,.66);Text("Volume / brightness",252,27,12);Text("Temporary feedback",252,50,11,false,muted);Note($"Volume {(s.VolumeFeedback?"on":"off")} · brightness {(s.BrightnessFeedback?"on":"off")} · quiet motion {(s.WaveformIdleMotion?"on":"off")}");break;
             case "Volume mixer":case "Audio behavior":

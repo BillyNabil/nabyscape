@@ -17,7 +17,7 @@ internal static class LauncherPresentation
     {current.FontWeight=bold?FontWeights.SemiBold:FontWeights.Normal;if(outgoing!=null)outgoing.FontWeight=current.FontWeight;}
     internal static bool ShowIcon(string mode)=>mode!="Text";
     internal static bool ShowLabel(string mode)=>mode!="Icons";
-    internal static string CategoryIcon(string page)=>page switch{"media"=>"nav-media","focus"=>"nav-focus","status"=>"nav-status","tools"=>"nav-tools",_=>"nav-launch"};
+    internal static string CategoryIcon(string page)=>page switch{"media"=>"nav-media","focus"=>"nav-focus","status"=>"nav-status","tools"=>"nav-tools","files"=>"folder","notes" or "tasks"=>"notes","clips"=>"clipboard","calendar"=>"calendar","awake"=>"coffee","links"=>"link",_=>"nav-launch"};
 }
 public sealed partial class OverlayWindow
 {
@@ -37,6 +37,13 @@ public sealed partial class OverlayWindow
     private bool? bodyHeadingWeight;
     private void StyleCategory(Button button,string page,bool selected=false)
     {
+        bool dots=app.Settings.CategoryStyle=="Dots";
+        if(dots)
+        {
+            button.Background=Brushes.Transparent;button.MinWidth=18;button.MinHeight=30;button.Padding=new(5);button.Margin=new(0);
+            button.Content=new System.Windows.Shapes.Rectangle{Width=selected?13:5,Height=5,RadiusX=2.5,RadiusY=2.5,Fill=selected?Brushes.White:UI.Muted,Opacity=selected?1:.5};
+            button.ToolTip=PageName(page);UI.Named(button,PageName(page));System.Windows.Automation.AutomationProperties.SetItemStatus(button,selected?"Selected":"");button.ClearValue(CategoryAppearanceKeyProperty);return;
+        }
         bool iconsOnly=app.Settings.CategoryStyle=="Icons" || app.Settings.CategoryStyle=="IconsLabels" && bodyWidth<300;
         button.Background=selected?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;button.Foreground=selected?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;
         var key=(page,app.Settings.CategoryStyle,iconsOnly,selected,app.Settings.SelectionFill);

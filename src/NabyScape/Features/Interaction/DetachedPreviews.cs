@@ -49,8 +49,8 @@ public sealed class DetachedPreviewManager : IDisposable
     public bool CanOpen(string kind)
     {
         kind=NormalizeKind(kind);
-        if(disposed || !app.Settings.DetachablePreviews || kind is "calendar" or "notes" or "files" && !app.Settings.ToolEnabled(kind))return false;
-        string widget=kind is "calendar" or "notes" or "files"?"tools":kind;
+        if(disposed || !app.Settings.DetachablePreviews || kind is "calendar" or "notes" or "files" && !HoverPagePolicy.Available(app.Settings,kind))return false;
+        string widget=kind;
         return kind is "stopwatch" or "media" or "timer" or "focus" or "calendar" or "notes" or "files" or "system"
             && (app.Settings.HoverViews.Any(v=>v.Id==kind && v.Enabled) || app.Settings.Widgets.Any(w=>w.Id==widget && w.Enabled) || kind=="media" && app.Settings.Widgets.Any(w=>w.Id=="volume" && w.Enabled));
     }

@@ -13,7 +13,7 @@ internal readonly record struct OverlaySettingsState(int Content,int Reflow,int 
         var content=new HashCode();content.Add(s.CompactLayout);content.Add(s.CategoryStyle);content.Add(s.LaunchStyle);content.Add(s.ActivitiesEnabled);content.Add(s.LiveActivity);content.Add(s.MonitorNetwork);content.Add(s.MonitorStorage);content.Add(s.MonitorProcesses);
         foreach(var widget in s.Widgets){content.Add(widget.Id);content.Add(widget.Enabled);}foreach(var tool in s.Tools){content.Add(tool.Id);content.Add(tool.Enabled);}foreach(var shortcut in s.Shortcuts){content.Add(shortcut.Name);content.Add(shortcut.Target);content.Add(shortcut.AppId);}
         int reflow=HashCode.Combine(s.PanelWidth,s.PanelPadding,s.PanelScale,s.SectionGap);
-        int geometry=HashCode.Combine(HashCode.Combine(s.Width,s.Height,s.Radius,s.Preset,s.Horizontal,s.Top,s.Monitor),s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.DisplayMode);
+        int geometry=HashCode.Combine(HashCode.Combine(s.Width,s.Height,s.Radius,s.Preset,s.Horizontal,s.Top,s.Monitor),s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.DisplayMode,s.PanelAutoHeight);
         int hotkeys=HashCode.Combine(HashCode.Combine(s.TuckHotkeyEnabled,s.TuckHotkeyModifiers,s.TuckHotkeyKey),HashCode.Combine(s.HotkeyEnabled,s.HotkeyModifiers,s.HotkeyKey,s.VisibilityHotkeyEnabled,s.VisibilityHotkeyModifiers,s.VisibilityHotkeyKey));
         return new(content.ToHashCode(),reflow,geometry,hotkeys);
     }
@@ -81,9 +81,9 @@ public sealed partial class OverlayWindow
         if(previous.Geometry!=next.Geometry || previous.Reflow!=next.Reflow)
         {
             refreshHz=Native.RefreshRate(Native.ChooseScreen(s));compact.Width=Math.Max(120,Math.Min(s.Width,expandedWidth)-(surface.Notch?32:12));compact.Height=s.Height;compact.MinHeight=s.Height;
-            Dimensions();foreach(var reflow in bodyReflow)reflow();Dimensions();foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));Width=Math.Max(expandedWidth,s.Width);Height=Math.Max(HostHeight,s.Height);
+            Dimensions();foreach(var reflow in bodyReflow)reflow();Dimensions();foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));Width=WindowHostWidth;Height=Math.Max(HostHeight,s.Height);
             surface.BeginUpdate();
-            try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(s.HoverWidth,expandedWidth):s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?s.HoverHeight:100):s.Height);}
+            try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?s.HoverHeight:100):s.Height);}
             finally{surface.EndUpdate();}
             if(peeking)PreparePeekDeck();
         }

@@ -6,7 +6,7 @@ using System.Windows.Threading;
 
 namespace NabyScape;
 
-// Output-envelope history, not synthetic frequency data. No loopback capture or microphone.
+// Shared measured frequency bands, with an output-envelope fallback.
 internal sealed class ActivityVisual : FrameworkElement
 {
     private readonly double[] history=new double[25];
@@ -19,8 +19,16 @@ internal sealed class ActivityVisual : FrameworkElement
     internal bool WaveOnly {get;init;}
     internal bool Slender {get;init;}
     internal double Envelope=>envelope;
+    internal double WaveBarHeight(int index,double height)
+    {
+        double baseline=Math.Min(height,Slender?1.4:1.8);
+        // The small closed dock needs perceptual expansion: quiet measured bands must
+        // remain legible at 22 DIP, without lifting silence or flattening the peaks.
+        double level=Slender?Math.Pow(levels[index],.65):levels[index];
+        return baseline+Math.Max(0,height-(Slender?baseline:2))*level;
+    }
     internal ActivityVisual(){Width=18;Height=18;VerticalAlignment=VerticalAlignment.Center;IsHitTestVisible=false;}
-    internal void Sample(double peak,double dt,double fraction,bool session,bool focused,bool animate,double seconds,bool advanceHistory=true,bool decorative=false)
+    internal void Sample(double peak,double dt,double fraction,bool session,bool focused,bool animate,double seconds,bool advanceHistory=true,bool decorative=false,System.Collections.Generic.IReadOnlyList<float>? spectrum=null,double sensitivity=1)
     {
         peak=double.IsFinite(peak)?Math.Clamp(peak,0,1):0;dt=Math.Clamp(dt,.001,.5);
         double target=0;
@@ -43,12 +51,12 @@ internal sealed class ActivityVisual : FrameworkElement
         for(int i=0;i<levels.Length;i++)
         {
             // Staggered amplitude envelopes, not frequency bands. Avoid mirrored motion.
-            int delay=(i*7+i/4)%19;
+            int delay=(i*5+i/7)%9;
             double recent=Math.Clamp(history[delay]+(envelope-history[0])*Math.Exp(-delay*.12),0,1);
             double transient=Math.Abs(history[delay]-history[Math.Min(24,delay+3)]);
             double gain=.62+.38*((i*11+3)%17)/16d;
-            double targetBar=Math.Clamp(recent*gain+transient*(.2+.4*(i%3)/2d),0,1);
-            double old=levels[i],response=targetBar>old?.022+.004*(i%5):.11+.019*(i%7);
+            double targetBar=spectrum is {Count:25}?Math.Clamp(Math.Pow(spectrum[i],1.5)*sensitivity,0,1):Math.Clamp((recent*gain+transient*(.45+.55*(i%3)/2d))*sensitivity,0,1);
+            double old=levels[i],response=targetBar>old?.009+.001*(i%3):.065+.007*(i%4);
             levels[i]=animate?targetBar+(old-targetBar)*Math.Exp(-dt/response):0;
             if(levels[i]<.0001)levels[i]=0;
             if(Math.Abs(old-levels[i])>.0002)changed=true;
@@ -77,12 +85,12 @@ internal sealed class ActivityVisual : FrameworkElement
             dc.Pop();return;
         }
         int count=WaveOnly?Math.Min(25,Math.Max(5,(int)(w/3))):5;double gap=WaveOnly?1.5:1.4,bw=Math.Max(.4,(w-gap*(count-1))/count);
-        if(Slender){bw=Math.Min(1.2,Math.Max(.4,(w-(count-1)*1.8)/count));gap=Math.Min(1.8,Math.Max(.8,(w-count*bw)/Math.Max(1,count-1)));}
+        if(Slender){bw=Math.Min(2,Math.Max(.4,(w-(count-1)*2.25)/count));gap=Math.Min(2.25,Math.Max(.8,(w-count*bw)/Math.Max(1,count-1)));}
         double start=Slender?(w-(count*bw+(count-1)*gap))/2:0;
         for(int i=0;i<count;i++)
         {
             int index=(int)Math.Round(i*24d/Math.Max(1,count-1));
-            double v=levels[index];double baseline=Slender?1:1.8;double height=baseline+(h-2)*v;
+            double height=WaveBarHeight(index,h);
             dc.DrawRoundedRectangle(Brushes.White,null,new Rect(start+i*(bw+gap),(h-height)/2,bw,height),bw/2,bw/2);
         }
     }
@@ -90,7 +98,7 @@ internal sealed class ActivityVisual : FrameworkElement
 
 public sealed partial class OverlayWindow
 {
-    private readonly ActivityVisual activity=new(),musicWave=new(){Width=96,Height=16,WaveOnly=true,HorizontalAlignment=HorizontalAlignment.Center};
+    private readonly ActivityVisual activity=new(),musicWave=new(){Width=112,Height=22,WaveOnly=true,HorizontalAlignment=HorizontalAlignment.Center};
     private readonly DispatcherTimer liveTick=new(DispatcherPriority.Render){Interval=TimeSpan.FromMilliseconds(250)};
     private DateTimeOffset lastLive,quietSince,feedbackUntil,timelineAt;
     private long audioSequence;
@@ -162,10 +170,10 @@ public sealed partial class OverlayWindow
         if((now-quietSince).TotalSeconds>1.2){StopLiveRendering();return;}
         bool decorative=app.Settings.WaveformIdleMotion && app.Media.Playing && !app.Audio.MediaMeterMuted;
         double seconds=now.ToUnixTimeMilliseconds()/1000d;
-        if(!expanded && !peeking && activity.IsVisible)activity.Sample(peak,dt,session?.Progress(now)??0,session!=null,session==app.Session.Focus,running || session==null,seconds,sample,decorative);
-        if(!expanded && !peeking && closedTitleWave.IsVisible)closedTitleWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
-        if(expanded && musicWave.IsVisible)musicWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
-        if(peeking && !assistantPeeking && peekId=="media" && peekWave.IsVisible)peekWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative);
+        if(!expanded && !peeking && activity.IsVisible)activity.Sample(peak,dt,session?.Progress(now)??0,session!=null,session==app.Session.Focus,running || session==null,seconds,sample,decorative,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
+        if(!expanded && !peeking && closedTitleWave.IsVisible)closedTitleWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
+        if(expanded && musicWave.IsVisible)musicWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
+        if(peeking && !assistantPeeking && peekId=="media" && peekWave.IsVisible)peekWave.Sample(peak,dt,0,false,false,app.Media.Playing && !app.Audio.MediaMeterMuted,seconds,sample,decorative,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
         if(app.Settings.GlassStyle && (peeking || expanded || motion.Active))
         {
             var p=Mouse.GetPosition(this);double x=Math.Clamp((p.X-(ActualWidth-surface.SurfaceWidth)/2)/surface.SurfaceWidth,0,1),y=Math.Clamp(p.Y/surface.SurfaceHeight,0,1);

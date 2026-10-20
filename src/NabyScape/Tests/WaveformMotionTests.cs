@@ -33,5 +33,12 @@ internal static class WaveformMotionTests
         var quietReal=new ActivityVisual();var quietFallback=new ActivityVisual();
         for(int i=0;i<360;i++){quietReal.Sample(.02,1/60d,0,false,false,true,i/60d,true,false);quietFallback.Sample(.02,1/60d,0,false,false,true,i/60d,true,true);}
         test("Quiet audible levels remain measured even with decorative fallback enabled",Math.Abs(quietReal.Envelope-quietFallback.Envelope)<.0001);
+        var compact=new ActivityVisual{Slender=true,WaveOnly=true};var bands=new float[25];bands[3]=.3f;bands[12]=.65f;bands[19]=1;
+        for(int i=0;i<12;i++)compact.Sample(.3,1/60d,0,false,false,true,i/60d,true,false,bands,1.35);
+        double quiet=compact.WaveBarHeight(3,22),mid=compact.WaveBarHeight(12,22),loud=compact.WaveBarHeight(19,22);
+        test("Closed waveform makes quiet measured bands legible while preserving contrast",quiet>8 && mid>quiet+4 && loud>mid+3 && loud<=22);
+        test("Closed waveform does not amplify silent frequency bands",compact.WaveBarHeight(0,22)==1.4);
+        compact.Sample(0,.1,0,false,false,false,1);
+        test("Closed waveform pause returns to its baseline without exceeding minimum dock height",Enumerable.Range(0,25).All(i=>compact.WaveBarHeight(i,22)==1.4));
     }
 }

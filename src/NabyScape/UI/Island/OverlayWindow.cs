@@ -60,17 +60,17 @@ public sealed partial class OverlayWindow : Window
         UI.Named(compact,"Open or close island");compact.ToolTip="Click to open · Esc to close";
         Motion.Button(compact);
         compact.Click+=(_,_)=> {if(app.Notifications.Current!=null && !expanded){OpenNotice();return;}if(expanded)Collapse();else{LeaveAssistantPanel();Reveal();}};
-        scroll=UI.Scroll(body);scroll.VerticalAlignment=VerticalAlignment.Top;scroll.HorizontalAlignment=HorizontalAlignment.Center;scroll.Visibility=Visibility.Collapsed;scroll.Opacity=0;scroll.RenderTransform=bodySlide;
+        scroll=UI.Scroll(body);scroll.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;scroll.HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled;scroll.VerticalAlignment=VerticalAlignment.Top;scroll.HorizontalAlignment=HorizontalAlignment.Center;scroll.Visibility=Visibility.Collapsed;scroll.Opacity=0;scroll.RenderTransform=bodySlide;
         root.RenderTransform=tuckSlide;root.MouseLeftButtonDown+=(_,e)=>{if(TuckRequested && !expanded && e.OriginalSource==surface){Reveal();e.Handled=true;}};root.Children.Add(surface);root.Children.Add(visuals);visuals.Children.Add(compact);visuals.Children.Add(scroll);Content=root;
-        InitializeAssistantIsland(header);
-        surface.ContourChanged+=()=>visuals.Clip=surface.Contour;
+        InitializeAssistantIsland(header);InitializeDockEditing();
+        surface.ContourChanged+=()=>{visuals.Clip=surface.Contour;Position();};
         foreach(var number in new[]{clock,compactClock,timerTime,focusTime,cpu,ram})Typography.SetNumeralAlignment(number,FontNumeralAlignment.Tabular);
         title.FontWeight=FontWeights.SemiBold;timerTime.FontWeight=focusTime.FontWeight=FontWeights.SemiBold;clock.FontWeight=compactClock.FontWeight=FontWeights.Bold;
         Typography.SetNumeralAlignment(compactClock,FontNumeralAlignment.Tabular);
         SourceInitialized+=(_,_)=> {hwnd=new WindowInteropHelper(this).Handle;Native.SetWindowLong(hwnd,-20,Native.GetWindowLong(hwnd,-20)|0x80);HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);ApplySettings();};
         SizeChanged+=(_,_)=>Position();
         IsVisibleChanged+=(_,_)=>{if(!IsVisible)InvalidateSystemMonitor();};
-        PreviewKeyDown+=(_,e)=> {if(e.Key==Key.K && Keyboard.Modifiers==ModifierKeys.Control){ShowCommands();e.Handled=true;}else if(e.Key==Key.Escape){if(assistantOpen || assistantPeeking){app.Assistant.StopSession();CloseAssistant();}else if(commandOpen)CloseCommands();else if(activitiesOpen)CloseActivities();else Collapse();e.Handled=true;}};
+        PreviewKeyDown+=(_,e)=> {if(dockEditing){if(e.Key==Key.Escape){foreach(var grip in new[]{moveGrip,resizeLeft,resizeRight})if(grip.IsDragging)grip.CancelDrag();e.Handled=true;}return;}if(e.Key==Key.K && Keyboard.Modifiers==ModifierKeys.Control){ShowCommands();e.Handled=true;}else if(e.Key==Key.Escape){if(assistantOpen || assistantPeeking){app.Assistant.StopSession();CloseAssistant();}else if(commandOpen)CloseCommands();else if(activitiesOpen)CloseActivities();else Collapse();e.Handled=true;}};
         Closing+=(_,e)=> {if(!app.Quitting){e.Cancel=true;SetVisibility(false);}};
         Deactivated+=(_,_)=> {if((expanded || peeking) && !DiagnosticRun && audioMenu?.IsOpen!=true)Collapse();};
         app.SettingsChanged+=ApplySettings;app.Updated+=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged+=DisplayChanged;
@@ -84,13 +84,17 @@ public sealed partial class OverlayWindow : Window
     private void Dimensions(bool contentChanged=false)
     {
         var screen=Native.ChooseScreen(app.Settings);var scale=Native.Scale(screen);
-        expandedWidth=Math.Min(app.Settings.PanelWidth,screen.WorkingArea.Width/scale-24);
-        double available=screen.WorkingArea.Height/scale-(app.Settings.Preset=="Mac"?0:app.Settings.Top)-16;
-        bodyWidth=Math.Max(140,(expandedWidth-app.Settings.PanelPadding*2-18)/app.Settings.PanelScale);
+        expandedWidth=MediaLyricsLayout.Width(app.Settings,screen.WorkingArea.Width/scale-24,ShowLyricsLayout);
+        double available=screen.WorkingArea.Height/scale-16;
+        bodyWidth=Math.Max(140,(expandedWidth-app.Settings.PanelPadding*2)/app.Settings.PanelScale);
         body.Width=bodyWidth;
+        ArrangeMediaLyrics();SizeClipboardViewport();
+        // Keep room for the expanding lyric column; shrinking the contour does not
+        // resize its layered host in the middle of the return animation.
+        if(expanded && Width<WindowHostWidth)Width=WindowHostWidth;
         if(body.LayoutTransform is ScaleTransform scaling){scaling.ScaleX=scaling.ScaleY=app.Settings.PanelScale;}else body.LayoutTransform=new ScaleTransform(app.Settings.PanelScale,app.Settings.PanelScale);
         double desired=app.Settings.PanelMaxHeight;
-        if(app.Settings.CompactLayout)
+        if(app.Settings.CompactLayout && app.Settings.PanelAutoHeight)
         {
             double contentHeight=0;var constraint=new Size(bodyWidth,double.PositiveInfinity);
             // Measure the selected page directly: the collapsed ScrollViewer and stretched
@@ -114,7 +118,7 @@ public sealed partial class OverlayWindow : Window
         FlushNotes();ConfigureHotkey();var s=app.Settings;refreshHz=Native.RefreshRate(Native.ChooseScreen(s));Motion.Configure(s);Opacity=s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac";surface.Radius=s.Radius;
         hoverDelay.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDelayMs);detailDelay.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDetailDelayMs);
         HideNotice();EndPeekGesture();peeking=false;peekPanel.BeginAnimation(OpacityProperty,null);peekPanel.Opacity=0;peekPanel.Visibility=Visibility.Collapsed;compact.BeginAnimation(OpacityProperty,null);compact.Opacity=1;compact.IsHitTestVisible=true;StopHoverTimers();
-        compact.Width=Math.Max(120,Math.Min(s.Width,expandedWidth)-(surface.Notch?32:12));compact.Height=s.Height;compact.MinHeight=s.Height;Dimensions();if(expanded)EnsureBody();Dimensions();motion.Dispose();Width=Math.Max(expandedWidth,s.Width);Height=Math.Max(HostHeight,s.Height);
+        compact.Width=Math.Max(120,Math.Min(s.Width,expandedWidth)-(surface.Notch?32:12));compact.Height=s.Height;compact.MinHeight=s.Height;Dimensions();if(expanded)EnsureBody();Dimensions();motion.Dispose();Width=WindowHostWidth;Height=Math.Max(HostHeight,s.Height);
         scroll.BeginAnimation(OpacityProperty,null);scroll.Opacity=expanded?1:0;scroll.Visibility=expanded?Visibility.Visible:Visibility.Collapsed;
         bodySlide.BeginAnimation(TranslateTransform.YProperty,null);bodySlide.Y=expanded?0:-8;
         motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:s.Height);
@@ -134,7 +138,7 @@ public sealed partial class OverlayWindow : Window
         if(commandOpen){body.Children.Add(BuildCommandPage());return;}
         if(app.Settings.CompactLayout){BuildCompactBody();return;}
         if(classicMixerOpen){var mixer=BuildMixerPage();body.Children.Add(mixer);return;}
-        if(hoverPanelWidget!=null){body.Children.Add(BuildCompactPage(PageFor(hoverPanelWidget)));return;}
+        if(hoverPanelWidget!=null){if(Settings.ToolNames.ContainsKey(hoverPanelWidget)){toolsMode=hoverPanelWidget;body.Children.Add(UI.Button("Back to widgets",()=>{hoverPanelWidget=null;BuildBody();ResizeToolPanel();}));body.Children.Add(BuildToolsPage());}else body.Children.Add(BuildCompactPage(PageFor(hoverPanelWidget)));return;}
         var heading=new DockPanel{Margin=new(2,0,4,12)};var settings=Icons.Button("settings","Settings",app.ShowSettings,false,32);settings.Margin=new(0);settings.Background=UI.Brush("#1C1C1E");
         DockPanel.SetDock(settings,Dock.Right);heading.Children.Add(settings);var name=UI.Heading("Activity",18);name.FontWeight=FontWeights.SemiBold;heading.Children.Add(name);body.Children.Add(heading);body.Children.Add(widgets);
         double full=bodyWidth,half=(full-10)/2;widgets.Width=full+10;
@@ -163,14 +167,14 @@ public sealed partial class OverlayWindow : Window
                 case "focus":
                     small=true;focusPause=Icons.Button("pause","Pause or resume focus",()=> {if(app.Session.Focus.Running)app.Session.Focus.Pause(DateTimeOffset.UtcNow);else app.Session.Focus.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,30);
                     var focusStart=Icons.Button("play","Start focus",()=> {app.Session.Focus.Start(app.Settings.FocusMinutes*60,DateTimeOffset.UtcNow,"work");app.SaveSession();},true,30);var focusReset=UI.Button("Reset",()=> {app.Session.Focus.Reset();app.SaveSession();});focusReset.Padding=new(7,3,7,3);focusReset.FontSize=10;focusReset.MinHeight=28;focusPhase.Height=34;focusPhase.Margin=new(0,4,0,4);
-                    card=UI.Card("Focus",focusTime,focusPhase,UI.Row(focusStart,focusPause,focusReset));break;
+                    card=UI.Card("Focus",focusTime,FocusDurationEditor(),focusPhase,UI.Row(focusStart,focusPause,focusReset));break;
                 case "clock":small=true;date.Margin=new(0,6,0,2);card=UI.Card("Local time",clock,date);break;
                 case "system":small=true;cpuBar.Foreground=ramBar.Foreground=Brushes.White;cpuBar.Background=ramBar.Background=UI.Brush("#3A3A3C");card=UI.Card("System",cpu,cpuBar,ram,ramBar);break;
                 case "battery":small=true;card=UI.Card("Battery",battery);batteryCard=card;break;
                 case "shortcuts":
                     var shortcuts=new WrapPanel();foreach(var shortcut in app.Settings.Shortcuts){var button=LaunchButton(shortcut);shortcuts.Children.Add(button);}card=UI.Card("Quick launch",UI.Button("Search commands  ·  Ctrl+K",()=>ShowCommands()),UI.Button("Activities",()=>ShowActivities()),shortcuts);break;
                 case "tools":card=UI.Card("Tools",BuildToolsPage());break;
-                default:continue;
+                default:if(Settings.ToolNames.ContainsKey(widget.Id)){string toolId=widget.Id;card=UI.Card(Settings.ToolNames[toolId],UI.Button("Open "+Settings.ToolNames[toolId],()=>ShowTools(toolId)));}else continue;break;
             }
             card.Width=small?half:full;card.Margin=new(0,0,small?10:0,10);
             if(small)card.MinHeight=widget.Id is "timer" or "focus"?184:120;
@@ -227,11 +231,12 @@ public sealed partial class OverlayWindow : Window
     {
         if(hwnd==IntPtr.Zero || positioning)return;positioning=true;
         try{var s=app.Settings;var screen=Native.ChooseScreen(s);var scale=Native.Scale(screen);var b=screen.Bounds;var width=(int)Math.Ceiling(ActualWidth*scale);var height=(int)Math.Ceiling(ActualHeight*scale);if(width<1 || height<1)return;
-            var point=MonitorFollowPolicy.Place(s,b,scale,width,height,TuckRequested);Native.GetWindowRect(hwnd,out var current);if(current.Left!=point.X || current.Top!=point.Y)Native.SetWindowPos(hwnd,new IntPtr(-1),point.X,point.Y,0,0,0x0010|0x0001);
+            var point=MonitorFollowPolicy.Place(s,b,scale,width,Math.Min(height,(int)Math.Ceiling(PaintedHeight*scale)),TuckRequested,(int)Math.Ceiling(PaintedWidth*scale));Native.GetWindowRect(hwnd,out var current);if(current.Left!=point.X || current.Top!=point.Y)Native.SetWindowPos(hwnd,new IntPtr(-1),point.X,point.Y,0,0,0x0010|0x0001);
         }finally{positioning=false;}
     }
     public void CheckEnvironment()
     {
+        if(dockEditing)return;
         if(DiagnosticRun && !diagnosticForeground.HasValue && !manualTuck && !app.Settings.AlwaysTucked){Position();return;}
         var foreground=RememberExternalForeground();
         if(userHidden)return;
@@ -257,7 +262,7 @@ public sealed partial class OverlayWindow : Window
         try{
             if((change&(RuntimeChange.Media|RuntimeChange.Settings))!=0)
             {
-            SwapText(title,app.Media.Title);SwapText(artist,app.Media.Artist);SwapArtwork(artwork,app.Media.Artwork);artwork.Visibility=app.Media.Artwork==null?Visibility.Collapsed:Visibility.Visible;
+            SyncLyrics();SwapText(title,app.Media.Title);SwapText(artist,app.Media.Artist);SwapArtwork(artwork,app.Media.Artwork);artwork.Visibility=app.Media.Artwork==null?Visibility.Collapsed:Visibility.Visible;
             if(play!=null){var icon=app.Media.Playing?"pause":"play";if(playIcon!=icon){playIcon=icon;play.Content=Icons.Create(icon,22,Brushes.Black);}play.IsEnabled=app.Media.CanToggle;next.IsEnabled=app.Media.CanNext;previous.IsEnabled=app.Media.CanPrevious;}
             var key=string.Join("|",app.Media.Sessions.Select(s=>s.SourceAppUserModelId));bool sessionsChanged=key!=sessionKey;if(sessionsChanged){sessionKey=key;sessions.Items.Clear();foreach(var session in app.Media.Sessions)sessions.Items.Add(MediaService.SessionName(session));}sessions.SelectedIndex=app.Media.Sessions.FindIndex(s=>s.SourceAppUserModelId==app.Media.Selected?.SourceAppUserModelId);sessions.Visibility=app.Media.Sessions.Count>1?Visibility.Visible:Visibility.Collapsed;
             if(sessionsChanged && app.Settings.CompactLayout){Dimensions();motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));motion.OnComplete(()=>{});}
@@ -272,5 +277,5 @@ public sealed partial class OverlayWindow : Window
             UpdateTimeline();
         }finally{updating=false;}
     }
-    public void Cleanup(){CleanupAssistantIsland();pointerCheck.Stop();app.SettingsChanged-=ConfigureDisplayFollow;shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();tuckMotion.Dispose();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
+    public void Cleanup(){CleanupAssistantIsland();pointerCheck.Stop();app.SettingsChanged-=ConfigureDisplayFollow;app.SettingsChanged-=RefreshDockHandles;shelfThumbnails.Clear();CleanupInteractionFeatures();CleanupActivities();StopFeedback();StopSystemMonitor();FlushNotes();app.Productivity.Changed-=ProductivityChanged;app.Calendar.Changed-=CalendarChanged;app.Awake.Changed-=AwakeChanged;activityDismiss.Stop();if(hotkeyRegistered)UnregisterHotKey(hwnd,HotkeyId);if(visibilityHotkeyRegistered)UnregisterHotKey(hwnd,VisibilityHotkeyId);if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;StopHoverTimers();liveTick.Stop();StopLiveRendering();seekDelay.Stop();tuckMotion.Dispose();motion.Dispose();outside?.Dispose();app.SettingsChanged-=ApplySettings;app.Updated-=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged-=DisplayChanged;}
 }

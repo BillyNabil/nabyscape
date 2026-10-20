@@ -32,7 +32,7 @@ public sealed partial class OverlayWindow
         }
     }
     private void ResizeToolPanel()
-    {body.UpdateLayout();Dimensions(true);if(expanded)motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}
+    {body.UpdateLayout();Dimensions(true);if(expanded){motion.Go(surface,IslandSurface.SurfaceWidthProperty,expandedWidth,Math.Min(300,app.Settings.AnimationMs));motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}}
     internal void ShowCommands(bool activate=true)
     {
         LeaveAssistantPanel();activitiesOpen=false;FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
@@ -62,7 +62,7 @@ public sealed partial class OverlayWindow
             var page=pair.Item1;if(!app.Settings.Widgets.Any(w=>w.Enabled && PageFor(w.Id)==page))continue;
             yield return (pair.Item2,"Open this island page",()=>{CloseCommands();if(app.Settings.CompactLayout)SelectPage(page);});
         }
-        if(WidgetOn("tools"))
+        if(Settings.ToolNames.Keys.Any(ToolOn))
         {
             foreach(var pair in new[]{("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard")})
             {string mode=pair.Item1;if(!ToolOn(mode))continue;yield return(pair.Item2,"Open everyday tool",()=>ShowTools(mode));}

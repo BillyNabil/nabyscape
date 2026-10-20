@@ -112,7 +112,7 @@ public sealed partial class SettingsWindow : Window
     }
     private Border Section(string title,params UIElement[] children)
     {
-        var content=new StackPanel();var label=UI.Text(title,13);label.FontWeight=FontWeights.SemiBold;label.Margin=new(0,0,0,12);content.Children.Add(label);var example=new SettingsScene(title,app.Settings){Margin=new(0,0,0,16)};settingExamples.Add(example);content.Children.Add(example);foreach(var child in children){if(child is Button action){action.HorizontalAlignment=HorizontalAlignment.Left;action.Margin=new(0,8,0,0);}if(child is FrameworkElement element && element.Parent is Panel old)old.Children.Remove(child);else if(child is FrameworkElement owned && owned.Parent is Expander expander)expander.Content=null;content.Children.Add(child);}
+        var content=new StackPanel();var label=UI.Text(title,13);label.FontWeight=FontWeights.SemiBold;label.Margin=new(0,0,0,12);content.Children.Add(label);if(title!="Lyrics"){var example=new SettingsScene(title,app.Settings){Margin=new(0,0,0,16)};settingExamples.Add(example);content.Children.Add(example);}foreach(var child in children){if(child is Button action){action.HorizontalAlignment=HorizontalAlignment.Left;action.Margin=new(0,8,0,0);}if(child is FrameworkElement element && element.Parent is Panel old)old.Children.Remove(child);else if(child is FrameworkElement owned && owned.Parent is Expander expander)expander.Content=null;content.Children.Add(child);}
         return new Border{Tag=title,BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,0,0,1),Padding=new(0,0,0,22),Margin=new(0,0,0,24),Child=content};
     }
     private static Expander Advanced(string title,UIElement content)
@@ -162,7 +162,7 @@ public sealed partial class SettingsWindow : Window
         HoverControls();InteractionFeatureControls();
         ComboBox Choice(string label,string[] labels,string[] values,string currentValue,Action<string> changed)
         {var box=new ComboBox();foreach(var item in labels)box.Items.Add(item);box.SelectedIndex=Math.Max(0,Array.IndexOf(values,currentValue));UI.Named(box,label);box.SelectionChanged+=(_,_)=>{if(box.SelectedIndex>=0){changed(values[box.SelectedIndex]);Save();}};return box;}
-        page.Children.Add(Section("Automatic activity",Check("Preview new tracks & sessions ending soon",s.SmartActivities,v=>s.SmartActivities=v),UI.Text("Brief previews appear without taking focus or replacing an open panel.",12,UI.Muted)));
+        page.Children.Add(Section("Automatic activity",Check("Preview new tracks & sessions ending soon",s.SmartActivities,v=>s.SmartActivities=v),Check("Automatic browser media previews",s.BrowserMediaPreviews,v=>s.BrowserMediaPreviews=v),UI.Text("Turn off to suppress automatic browser previews, including YouTube hover playback. Unknown Windows media identities are also suppressed. Manual island hover and playback controls still work.",11,UI.Muted),UI.Text("Brief previews appear without taking focus or replacing an open panel.",12,UI.Muted)));
         var wheelStep=new StackPanel();AddSlider(wheelStep,"Volume step",s.VolumeStep,1,10,v=>s.VolumeStep=(int)v,"%");
         page.Children.Add(Section("Notch gestures",UI.Text("Mouse wheel",12,UI.Muted),Choice("Wheel action",new[]{"Volume","Switch tabs","Off"},new[]{"volume","pages","none"},s.WheelAction,v=>s.WheelAction=v),UI.Text("Middle click",12,UI.Muted),Choice("Middle-click action",new[]{"Play / pause","Mute microphone","Off"},new[]{"toggle","microphone","none"},s.MiddleAction,v=>s.MiddleAction=v),wheelStep));
         var modifier=Choice("Hotkey modifiers",new[]{"Ctrl+Alt","Ctrl+Shift","Alt+Shift"},new[]{"Ctrl+Alt","Ctrl+Shift","Alt+Shift"},s.HotkeyModifiers,v=>s.HotkeyModifiers=v);var keys=Enumerable.Range('A',26).Select(c=>((char)c).ToString()).ToArray();
@@ -184,8 +184,7 @@ public sealed partial class SettingsWindow : Window
             DockPanel.SetDock(controls,Dock.Right);grid.Children.Add(controls);grid.Children.Add(Check(Settings.Names[widget.Id],widget.Enabled,v=>widget.Enabled=v));widgets.Children.Add(grid);
         }
         page.Children.Add(Section("Enabled widgets & order",widgets));
-        var tools=new StackPanel();foreach(var tool in s.Tools){var id=tool.Id;tools.Children.Add(Check(Settings.ToolNames[id]+" tool",tool.Enabled,v=>tool.Enabled=v));}
-        page.Children.Add(Section("Individual tools",UI.Text("Hide tools you do not use. Saved files, notes, tasks and clipboard history are kept. Clipboard capture is controlled below.",11,UI.Muted),tools));
+        page.Children.Add(UI.Text("Each tool has its own panel above. Enable and reorder Notes, Tasks, Shelf, Clipboard, Calendar, Keep awake and Clean links alongside your other widgets. Saved content is preserved.",11,UI.Muted));
         var focus=new StackPanel();AddSlider(focus,"Focus duration",s.FocusMinutes,1,240,v=>s.FocusMinutes=(int)v," min");AddSlider(focus,"Break duration",s.BreakMinutes,1,120,v=>s.BreakMinutes=(int)v," min");
         focus.Children.Add(UI.Text("New durations apply to the next session.",11,UI.Muted));page.Children.Add(Section("Focus sessions",focus));
         page.Children.Add(Section("Stopwatch",new StopwatchView(app),UI.Text("Count elapsed time with Start, Pause, Resume and Reset. Sleep is counted, and the session survives restart. Tab to a button and press Space or Enter. Enable Stopwatch above to show it in Focus.",11,UI.Muted)));

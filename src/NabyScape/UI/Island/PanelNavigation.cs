@@ -20,7 +20,10 @@ public sealed partial class OverlayWindow
         for(var node=source;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))
         {
             if(node is TextBoxBase or PasswordBox)return false;
-            if(!horizontal && node is ScrollViewer viewer && viewer.ScrollableHeight>1)return false;
+            // The outer panel viewport must not steal wheel gestures from its navigation.
+            // An inner content viewport (even at its end) owns vertical wheel input.
+            if(!horizontal && node is FrameworkElement region && region.Tag as string=="panel-navigation")break;
+            if(!horizontal && node is ScrollViewer viewer && (viewer.Tag as string=="panel-content-scroll" || viewer.ScrollableHeight>1))return false;
         }
         int direction=panelWheel.Push(horizontal?delta:-delta,Environment.TickCount64);
         if(direction!=0)CyclePage(direction);return true;

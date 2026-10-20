@@ -13,7 +13,9 @@ namespace NabyScape;
 public sealed partial class OverlayWindow
 {
     private double PeekExpandedHeight=>app.Settings.HoverHeight;
-    private double PeekWidth=>Math.Min(app.Settings.HoverWidth,app.Settings.PanelWidth)-64;
+    private double PeekSurfaceWidth=>Math.Min(app.Settings.HoverWidth,IslandScreen.WorkingArea.Width/Native.Scale(IslandScreen)-24);
+    private double WindowHostWidth {get{double scale=Native.Scale(IslandScreen);return Math.Ceiling(Math.Max(Math.Max(expandedWidth,app.Settings.Width),PeekSurfaceWidth)*scale)/scale;}}
+    private double PeekWidth=>PeekSurfaceWidth-64;
     private readonly Grid peekMedia=new(),peekViewport=new(){ClipToBounds=true,Height=124,Background=Brushes.Transparent};
     private readonly Dictionary<string,FrameworkElement> peekViews=new();
     private readonly Dictionary<string,TranslateTransform> peekMoves=new();
@@ -38,7 +40,7 @@ public sealed partial class OverlayWindow
     private string? peekFilePath;
     private string? peekShelfArtPath;
     private readonly Image peekShelfArt=new(){Width=44,Height=44,Stretch=Stretch.Uniform,Margin=new(0,0,12,0),Visibility=Visibility.Collapsed};
-    private bool PeekInteractionActive=>peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true || audioMenu?.IsOpen==true;
+    private bool PeekInteractionActive=>dockEditing || peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true || audioMenu?.IsOpen==true;
     internal string PeekPage=>peekId;
     internal string[] HoverDeckIds=>PeekPages();
     internal bool PeekTabSafe=>peekViews.Where(pair=>pair.Key!=peekId).All(pair=>KeyboardNavigation.GetTabNavigation(pair.Value)==KeyboardNavigationMode.None);
@@ -147,7 +149,7 @@ public sealed partial class OverlayWindow
     {
         if(assistantPeeking){LayoutAssistantPeek();return;}
         double height=peekDetailed?PeekExpandedHeight:100;
-        var safe=PeekLayout.SafeBounds(Math.Min(app.Settings.HoverWidth,expandedWidth),height,app.Settings.Radius,surface.Notch);
+        var safe=PeekLayout.SafeBounds(PeekSurfaceWidth,height,app.Settings.Radius,surface.Notch);
         peekPanel.Width=peekViewport.Width=safe.Width;peekPanel.Height=safe.Height;
         peekPanel.Margin=new(0,safe.Top,0,0);
         double contentHeight=peekDetailed?124:Math.Min(64,safe.Height);

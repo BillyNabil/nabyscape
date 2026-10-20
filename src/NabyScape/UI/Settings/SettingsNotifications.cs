@@ -5,7 +5,7 @@ public sealed partial class SettingsWindow
 {
     private void NotificationSettings()
     {
-        var s=app.Settings;
+        var s=app.Settings;CompletionSoundSettings();
         var delivery=new ComboBox{ItemsSource=new[]{"Notch","Windows","Both","Off"},SelectedItem=s.NotificationDelivery};UI.Named(delivery,"Notification delivery");delivery.SelectionChanged+=(_,_)=>{s.NotificationDelivery=delivery.SelectedItem?.ToString()??"Notch";Save();};
         page.Children.Add(Section("Notifications",
             delivery,

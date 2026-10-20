@@ -1,0 +1,1 @@
+Synthetic frequency-band fixtures, not a recording of music. Full dock WPF renderings at 100/150/200% raster scale, not physical monitor movement or GPU-presented-frame measurement. No keys, microphone, screen capture, media transport command or audio recording used.

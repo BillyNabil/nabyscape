@@ -1,0 +1,12 @@
+{
+  "Version": "2.7.2.0",
+  "Running": true,
+  "InstalledPayloadMatches": true,
+  "StartupPreserved": true,
+  "NotesTasksShelfPreserved": true,
+  "AssistantConfigurationPreserved": true,
+  "CalendarPreserved": true,
+  "ClipboardExactMatch": false,
+  "ClipboardRotationConsistentWithThirtyItemLimit": true,
+  "PostLaunchObservation": "A new text clipboard entry was captured after launch, rotating the oldest unpinned entry at the existing 30-item limit. The remaining original 29 entries are present; the complete prior history is in the local backup. The lyrics preference was toggled after launch; saved panel geometry remains unchanged. Live user changes were preserved."
+}

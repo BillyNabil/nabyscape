@@ -272,7 +272,7 @@ public sealed partial class AudioService : IDisposable
     public void Dispose()
     {
         if(disposed)return;
-        disposed=true;DisposeNotifications();ReleaseMeter();mediaPeaks?.Dispose();mediaPeaks=null;peakCache?.Dispose();peakCache=null;
+        disposed=true;outputSpectrum?.Dispose();outputSpectrum=null;MediaSpectrum=null;DisposeNotifications();ReleaseMeter();mediaPeaks?.Dispose();mediaPeaks=null;peakCache?.Dispose();peakCache=null;
         try{enumerator?.Dispose();}catch(Exception ex){AudioError(ex);}
         enumerator=null;Available=MicrophoneAvailable=false;Volume=0;Muted=MicrophoneMuted=false;DefaultOutputId="";
     }

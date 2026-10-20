@@ -7,7 +7,7 @@ namespace NabyScape;
 
 public sealed partial class OverlayWindow
 {
-    private readonly ActivityVisual closedTitleWave=new(){Width=double.NaN,MaxWidth=72,Height=12,WaveOnly=true,Slender=true,HorizontalAlignment=HorizontalAlignment.Stretch,Visibility=Visibility.Collapsed};
+    private readonly ActivityVisual closedTitleWave=new(){Width=double.NaN,MaxWidth=104,Height=22,WaveOnly=true,Slender=true,HorizontalAlignment=HorizontalAlignment.Stretch,Visibility=Visibility.Collapsed};
     internal double ClosedTitleWaveWidth=>closedTitleWave.ActualWidth;
     internal double ClosedTitleWaveLevel=>closedTitleWave.Envelope;
     internal bool ClosedTitleWaveVisible=>closedTitleWave.Visibility==Visibility.Visible && summary.Visibility==Visibility.Collapsed;

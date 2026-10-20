@@ -14,12 +14,13 @@ internal sealed class MonitorFollowPolicy
     internal void Reset(){candidate="";since=0;}
     internal static string Target(string[] available,string primary,string mode,string stored,string? followed)
     {string preferred=mode=="Follow"?followed??stored:mode=="Primary"?primary:stored;return Array.Exists(available,name=>name==preferred)?preferred:primary;}
-    internal static System.Drawing.Point Place(Settings s,System.Drawing.Rectangle bounds,double scale,int width,int height,bool tucked)
+    internal static System.Drawing.Point Place(Settings s,System.Drawing.Rectangle bounds,double scale,int width,int height,bool tucked,int paintedWidth=0)
     {
         double compact=s.Width*scale;
         int x=bounds.Left+(int)((bounds.Width-compact)*s.Horizontal/100+compact/2-width/2d);
         int y=bounds.Top+(int)((tucked || s.Preset=="Mac"?0:s.Top)*scale);
-        return new(Math.Clamp(x,bounds.Left,Math.Max(bounds.Left,bounds.Right-width)),Math.Clamp(y,bounds.Top,Math.Max(bounds.Top,bounds.Bottom-height)));
+        int inset=paintedWidth>0?Math.Max(0,(width-paintedWidth)/2):0;
+        return new(Math.Clamp(x,bounds.Left-inset,Math.Max(bounds.Left-inset,bounds.Right-width+inset)),Math.Clamp(y,bounds.Top,Math.Max(bounds.Top,bounds.Bottom-height)));
     }
     internal string? Observe(string current,string pointer,long now,bool blocked,bool hidden,bool immediate=false)
     {
@@ -70,9 +71,9 @@ public sealed partial class OverlayWindow
         // Reflow existing controls: relocating never navigates or rebuilds an editor.
         Dimensions();foreach(var reflow in bodyReflow)reflow();Dimensions();
         if(peeking)ApplyPeekGeometry();
-        Width=Math.Max(expandedWidth,app.Settings.Width);Height=Math.Max(HostHeight,app.Settings.Height);
+        Width=WindowHostWidth;Height=Math.Max(HostHeight,app.Settings.Height);
         refreshHz=Native.RefreshRate(IslandScreen);
-        surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?Math.Min(app.Settings.HoverWidth,expandedWidth):app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
+        surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
         Position();CheckEnvironment();UpdateSatellite();
     }
 }

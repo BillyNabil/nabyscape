@@ -1,0 +1,7 @@
+PASS  Closed waveform uses 104 by 22 DIP at the user's 327 by 36 dock size
+PASS  Enlarged closed waveform leaves the clock and companion their own space
+PASS  Closed waveform fits dock bounds at 180 by 28
+PASS  Closed waveform fits dock bounds at 400 by 72
+PASS  Paused compact waveform settles to a quiet baseline
+PASS  Compact waveform checks never connect voice, share a screen or capture audio
+RESULT: 0 failures

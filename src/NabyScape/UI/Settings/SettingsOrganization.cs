@@ -20,7 +20,7 @@ public sealed partial class SettingsWindow
         {
             ["Appearance"]="Colors, text and animation.",
             ["Layout"]="Display, position and sizes for each island state.",
-            ["Content"]="Panel order, tools, hover pages and clipboard capture.",
+            ["Content"]="Widget and tool order, hover pages, focus and clipboard capture.",
             ["Controls"]="Hover timing, mouse gestures, keyboard shortcuts and auto-hide.",
             ["Audio"]="Closed media display, waveform and sound controls.",
             ["System"]="Status readings and clock format.",
