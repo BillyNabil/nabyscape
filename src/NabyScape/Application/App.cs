@@ -62,6 +62,7 @@ public sealed partial class App : Application
     public BrightnessService Brightness { get; private set; }=null!;
     public string BrightnessStatus=>Brightness?.Status??"Brightness feedback unavailable";
     public AudioService Audio { get; private set; }=null!;
+    internal AmbientAudioDriver AmbientAudio {get;private set;}=null!;
     public ProductivityService Productivity {get;private set;}=null!;
     internal ActivityActionsService Activities {get;private set;}=null!;
     internal DetachedPreviewManager Previews {get;private set;}=null!;
@@ -114,6 +115,7 @@ public sealed partial class App : Application
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();Session.Stopwatch??=new();Session.Stopwatch.Recover();
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
         Audio=new(Store.Log){SpectrumEnabled=Settings.WaveformSource=="Spectrum"};Media=new(Store.Log);Productivity=new(Store,Store.Log,diagnosticPath==null);Productivity.SetClipboardEnabled(Settings.ClipboardHistory);
+        AmbientAudio=new(this);
         Brightness=new();Brightness.Start(diagnosticPath==null);
         Calendar=new(Store);Awake=new();Activities=new(Store,Session.Focus,Awake,SaveSession,Store.Log);
         Assistant=new(this,diagnosticPath!=null?new AssistantMemoryKeys():null);
@@ -144,7 +146,7 @@ public sealed partial class App : Application
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};
         tick.Tick+=(_,_)=>
         {
-            CheckCountdowns();Notifications.Tick(DateTimeOffset.UtcNow,overlay.NotificationBusy);
+            CheckCountdowns();if(NotificationPolicy.Quiet(Settings,DateTimeOffset.UtcNow) && Notifications.Count>0 && Notifications.Current?.Kind!="preview")Notifications.Clear();else Notifications.Tick(DateTimeOffset.UtcNow,overlay.NotificationBusy,Settings.NotificationSeconds);
             try{Awake.Tick(DateTimeOffset.UtcNow);}catch(Exception ex){Store.Log(ex);Notify("Could not update keep awake",ex.Message);}
             var changed=RuntimeChange.Clock;
             if(Session.Timer.Running || Session.Focus.Running || Session.Stopwatch.Running)changed|=RuntimeChange.Countdown;
@@ -170,7 +172,7 @@ public sealed partial class App : Application
     public void CheckCountdowns()
     {
         var now=DateTimeOffset.UtcNow;bool changed=false;
-        if(Session.Timer.Complete(now)) { changed=true;PostNotice(new("timer","Timer finished","Your timer has finished."));if(Settings.NotifyTimer)CountdownAudio.Play(Settings); }
+        if(Session.Timer.Complete(now)) { changed=true;PostNotice(new("timer","Timer finished","Your timer has finished."));if(Settings.NotifyTimer && !NotificationPolicy.Quiet(Settings,now))CountdownAudio.Play(Settings); }
         var focusDeadline=Session.Focus.Deadline;
         if(Session.Focus.Complete(now))
         {
@@ -184,7 +186,7 @@ public sealed partial class App : Application
                 else { Session.Focus.Reset();PostNotice(new("focus","Focus session complete","Your focus session and break have finished.")); }
             }
             else { Session.Focus.Reset();PostNotice(new("focus","Break finished","Ready for your next focus session.")); }
-            if(Settings.NotifyFocus)CountdownAudio.Play(Settings);
+            if(Settings.NotifyFocus && !NotificationPolicy.Quiet(Settings,now))CountdownAudio.Play(Settings);
         }
         if(changed) SaveSession();
     }
@@ -195,7 +197,7 @@ public sealed partial class App : Application
         Settings.Normalize();Audio.SpectrumEnabled=Settings.WaveformSource=="Spectrum";if(!Settings.ActivitiesEnabled)Activities?.Stop();UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         try { Store.Save("settings",Settings); } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }
-        ConfigureDownloads();if(Settings.NotificationDelivery is "Off" or "Windows")Notifications.Clear();
+        ConfigureDownloads();if(Settings.NotificationDelivery is "Off" or "Windows" || NotificationPolicy.Quiet(Settings,DateTimeOffset.UtcNow))Notifications.Clear();
         Previews?.ApplySettings();SettingsChanged?.Invoke();PublishUpdate(RuntimeChange.Settings);
     }
     public void ShowSettings()
@@ -212,7 +214,7 @@ public sealed partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Assistant?.Dispose();assistantWindow?.Close();
-        tick?.Stop();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();Updates?.Dispose();
+        tick?.Stop();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();Updates?.Dispose();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();
         Previews?.Dispose();Activities?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();

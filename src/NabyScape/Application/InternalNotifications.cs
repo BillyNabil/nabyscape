@@ -20,7 +20,7 @@ internal sealed class InternalNotifications
     internal static (bool Notch,bool Windows) Route(string mode,bool hidden)=>mode switch{"Windows"=>(false,true),"Both"=>(!hidden,true),"Off"=>(false,false),_=>(!hidden,hidden)};
     internal void Post(Settings settings,InternalNotice notice,bool hidden,Action<InternalNotice> windows,DateTimeOffset now)
     {
-        if(!Enabled(settings,notice.Kind))return;
+        if(!Enabled(settings,notice.Kind) || NotificationPolicy.Quiet(settings,now))return;
         // Watcher iterations can deliver up to 128 arrivals. Bound each payload before
         // either delivery route, so every original remains accessible after dismissal.
         if(notice.Kind=="downloads" && notice.Files is {Length:>40} arrivals)
@@ -41,8 +41,8 @@ internal sealed class InternalNotifications
         if(notice.Kind=="downloads")lastDownloadAt=now;
         Publish();
     }
-    internal void Tick(DateTimeOffset now,bool busy)
-    {if(busy){if(queue.Count>0)queue[0]=(queue[0].Notice,now,queue[0].Displayed);return;}if(queue.Count>0 && now-queue[0].At>TimeSpan.FromSeconds(12)){queue.RemoveAt(0);Publish();}}
+    internal void Tick(DateTimeOffset now,bool busy,double seconds=12)
+    {if(busy){if(queue.Count>0)queue[0]=(queue[0].Notice,now,queue[0].Displayed);return;}if(queue.Count>0 && now-queue[0].At>TimeSpan.FromSeconds(seconds)){queue.RemoveAt(0);Publish();}}
     internal void Dismiss(){if(queue.Count>0){queue.RemoveAt(0);Publish();}}
     internal void Clear(){queue.Clear();Publish();}
 }

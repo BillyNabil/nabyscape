@@ -1,0 +1,1 @@
+3 visible ambient consumers: 20 shared meter reads in 1.001 seconds. Counts reflect dispatched callbacks, not guaranteed wall-clock presentation or GPU frames. Synthetic audio envelope, no real microphone or provider connection. Raster exports at 1x/1.5x/2x do not replace physical mixed-DPI monitor testing.

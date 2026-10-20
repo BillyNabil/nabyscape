@@ -54,19 +54,3 @@ internal sealed class CountdownAudio : IDisposable
     }
     public void Dispose(){var old=player;player=null;try{old?.Stop();}catch{}old?.Dispose();stream?.Dispose();stream=null;}
 }
-
-public sealed partial class OverlayWindow
-{
-    private System.Windows.FrameworkElement FocusDurationEditor()
-    {
-        var row=new System.Windows.Controls.Grid{Margin=new(0,2,0,9)};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new());
-        void Number(string label,int value,int maximum,int column,Action<int> changed)
-        {
-            var group=new System.Windows.Controls.StackPanel{Margin=new(column==0?0:6,0,column==0?6:0,0)};group.Children.Add(UI.Text(label+" · min",10,UI.Muted));
-            var input=UI.Input(label+" minutes",value.ToString());input.Margin=new(0,5,0,0);input.MinWidth=0;input.MinHeight=30;input.Padding=new(8,5,8,5);input.MaxLength=3;group.Children.Add(input);System.Windows.Controls.Grid.SetColumn(group,column);row.Children.Add(group);
-            void Commit(){if(int.TryParse(input.Text,out int number) && number>=1 && number<=maximum){changed(number);app.ChangeSettings();}else{input.Text=(column==0?app.Settings.FocusMinutes:app.Settings.BreakMinutes).ToString();input.ToolTip="Enter 1–"+maximum+" minutes.";}}
-            input.LostKeyboardFocus+=(_,_)=>Commit();input.PreviewKeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Enter){Commit();e.Handled=true;}};
-        }
-        Number("Focus",app.Settings.FocusMinutes,240,0,value=>app.Settings.FocusMinutes=value);Number("Break",app.Settings.BreakMinutes,120,1,value=>app.Settings.BreakMinutes=value);return row;
-    }
-}

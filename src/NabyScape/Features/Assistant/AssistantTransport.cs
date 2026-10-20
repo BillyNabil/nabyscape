@@ -105,7 +105,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         var endpoint = ValidateEndpoint(provider.BaseUrl);
         ValidateInput(provider, messages, tools);
         if (apiKey is { Length: > 4096 } || apiKey?.Any(char.IsControl) == true) throw new InvalidOperationException("The API key is invalid.");
-        var activeTools = provider.Tools ? tools : Array.Empty<AssistantTool>();
+        var activeTools = provider.Tools && provider.Backend!="Hermes" ? tools : Array.Empty<AssistantTool>();
         var body = Build(provider, messages, activeTools);
         byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(body);
         if (bytes.Length > MaximumBodyBytes) throw new InvalidOperationException("The assistant request is too large. Reduce the conversation or image size.");
@@ -119,6 +119,16 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         request.Content = new ByteArrayContent(bytes);
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if(provider.Backend=="Hermes")
+        {
+            if(provider.Protocol!="ChatCompletions")throw new InvalidOperationException("Hermes Agent uses Chat Completions. Select that protocol.");
+            if(provider.HermesSessionId.Length>0)
+            {
+                if(!Guid.TryParseExact(provider.HermesSessionId,"N",out _))throw new InvalidOperationException("The Hermes session is invalid. Clear chat and try again.");
+                request.Headers.Add("X-Hermes-Session-Id","nabyscape-"+provider.HermesSessionId);
+            }
+            request.Headers.Add("Idempotency-Key",Guid.NewGuid().ToString("N"));
+        }
         if (!string.IsNullOrWhiteSpace(apiKey))
         {
             if (provider.Protocol == "Anthropic") request.Headers.Add("x-api-key", apiKey);
@@ -127,7 +137,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         }
         if (provider.Protocol == "Anthropic") request.Headers.Add("anthropic-version", "2023-06-01");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        deadline.CancelAfter(timeout);
+        deadline.CancelAfter(provider.Backend=="Hermes" && timeout==TimeSpan.FromSeconds(90)?TimeSpan.FromMinutes(3):timeout);
         try
         {
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token).ConfigureAwait(false);

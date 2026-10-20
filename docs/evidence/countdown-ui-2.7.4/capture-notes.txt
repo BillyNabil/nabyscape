@@ -1,0 +1,1 @@
+Isolated synthetic profile. No personal notes, clipboard, provider keys or network AI requests. 150/200% captures are WPF raster exports, not physical monitor DPI tests. Countdown completion delivery and sound disabled only in this fixture.

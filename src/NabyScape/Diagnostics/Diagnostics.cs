@@ -47,6 +47,12 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--reactive-ambient-only")){await ReactiveAmbientDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--premium-experience-only")){await PremiumExperienceDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--premium-notifications-only")){await Stage4Diagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--countdown-panel-only")){await CountdownPanelDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--visual-polish-only")){await VisualPolishDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--visual-polish-matrix")){await IntegrationSettingsDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--scroll-lyrics-only")){await ScrollLyricsDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--closed-waveform-only")){await ClosedWaveformDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--media-ux-only")){await MediaExperienceDiagnostics.Run(app,overlay,directory,Check);return;}

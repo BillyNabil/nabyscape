@@ -1,0 +1,315 @@
+PASS  Integration idle Closed/Music preview omits brand fallback and waveform
+PASS  Matrix 1024x600-100pct viewport 1024x552 DIP incl 48 DIP taskbar; form 386
+PASS  Matrix 1024x600-100pct category chooser and preview collapse
+PASS  Matrix 1024x600-100pct Appearance horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Appearance named controls scroll into view
+PASS  Matrix 1024x600-100pct Appearance scroll reaches end
+PASS  Matrix 1024x600-100pct Layout horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Layout named controls scroll into view
+PASS  Matrix 1024x600-100pct Layout scroll reaches end
+PASS  Matrix 1024x600-100pct Content horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Content named controls scroll into view
+PASS  Matrix 1024x600-100pct Content scroll reaches end
+PASS  Matrix 1024x600-100pct Controls horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Controls named controls scroll into view
+PASS  Matrix 1024x600-100pct Controls scroll reaches end
+PASS  Matrix 1024x600-100pct Audio horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Audio named controls scroll into view
+PASS  Matrix 1024x600-100pct Audio scroll reaches end
+PASS  Matrix 1024x600-100pct System horizontal controls fit ()
+PASS  Matrix 1024x600-100pct System named controls scroll into view
+PASS  Matrix 1024x600-100pct System scroll reaches end
+PASS  Matrix 1024x600-100pct Launch horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Launch named controls scroll into view
+PASS  Matrix 1024x600-100pct Launch scroll reaches end
+PASS  Matrix 1024x600-100pct Application horizontal controls fit ()
+PASS  Matrix 1024x600-100pct Application named controls scroll into view
+PASS  Matrix 1024x600-100pct Application scroll reaches end
+PASS  Matrix 1024x600-150pct viewport 683x352 DIP incl 48 DIP taskbar; form 138
+PASS  Matrix 1024x600-150pct category chooser and preview collapse
+PASS  Matrix 1024x600-150pct Appearance horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Appearance named controls scroll into view
+PASS  Matrix 1024x600-150pct Appearance scroll reaches end
+PASS  Matrix 1024x600-150pct Layout horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Layout named controls scroll into view
+PASS  Matrix 1024x600-150pct Layout scroll reaches end
+PASS  Matrix 1024x600-150pct Content horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Content named controls scroll into view
+PASS  Matrix 1024x600-150pct Content scroll reaches end
+PASS  Matrix 1024x600-150pct Controls horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Controls named controls scroll into view
+PASS  Matrix 1024x600-150pct Controls scroll reaches end
+PASS  Matrix 1024x600-150pct Audio horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Audio named controls scroll into view
+PASS  Matrix 1024x600-150pct Audio scroll reaches end
+PASS  Matrix 1024x600-150pct System horizontal controls fit ()
+PASS  Matrix 1024x600-150pct System named controls scroll into view
+PASS  Matrix 1024x600-150pct System scroll reaches end
+PASS  Matrix 1024x600-150pct Launch horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Launch named controls scroll into view
+PASS  Matrix 1024x600-150pct Launch scroll reaches end
+PASS  Matrix 1024x600-150pct Application horizontal controls fit ()
+PASS  Matrix 1024x600-150pct Application named controls scroll into view
+PASS  Matrix 1024x600-150pct Application scroll reaches end
+PASS  Matrix 1024x600-200pct viewport 512x252 DIP incl 48 DIP taskbar; form 69
+PASS  Matrix 1024x600-200pct category chooser and preview collapse
+PASS  Matrix 1024x600-200pct Appearance horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Appearance named controls scroll into view
+PASS  Matrix 1024x600-200pct Appearance scroll reaches end
+PASS  Matrix 1024x600-200pct Layout horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Layout named controls scroll into view
+PASS  Matrix 1024x600-200pct Layout scroll reaches end
+PASS  Matrix 1024x600-200pct Content horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Content named controls scroll into view
+PASS  Matrix 1024x600-200pct Content scroll reaches end
+PASS  Matrix 1024x600-200pct Controls horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Controls named controls scroll into view
+PASS  Matrix 1024x600-200pct Controls scroll reaches end
+PASS  Matrix 1024x600-200pct Audio horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Audio named controls scroll into view
+PASS  Matrix 1024x600-200pct Audio scroll reaches end
+PASS  Matrix 1024x600-200pct System horizontal controls fit ()
+PASS  Matrix 1024x600-200pct System named controls scroll into view
+PASS  Matrix 1024x600-200pct System scroll reaches end
+PASS  Matrix 1024x600-200pct Launch horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Launch named controls scroll into view
+PASS  Matrix 1024x600-200pct Launch scroll reaches end
+PASS  Matrix 1024x600-200pct Application horizontal controls fit ()
+PASS  Matrix 1024x600-200pct Application named controls scroll into view
+PASS  Matrix 1024x600-200pct Application scroll reaches end
+PASS  Matrix 1280x720-100pct viewport 1280x672 DIP incl 48 DIP taskbar; form 524
+PASS  Matrix 1280x720-100pct category chooser and preview collapse
+PASS  Matrix 1280x720-100pct Appearance horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Appearance named controls scroll into view
+PASS  Matrix 1280x720-100pct Appearance scroll reaches end
+PASS  Matrix 1280x720-100pct Layout horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Layout named controls scroll into view
+PASS  Matrix 1280x720-100pct Layout scroll reaches end
+PASS  Matrix 1280x720-100pct Content horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Content named controls scroll into view
+PASS  Matrix 1280x720-100pct Content scroll reaches end
+PASS  Matrix 1280x720-100pct Controls horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Controls named controls scroll into view
+PASS  Matrix 1280x720-100pct Controls scroll reaches end
+PASS  Matrix 1280x720-100pct Audio horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Audio named controls scroll into view
+PASS  Matrix 1280x720-100pct Audio scroll reaches end
+PASS  Matrix 1280x720-100pct System horizontal controls fit ()
+PASS  Matrix 1280x720-100pct System named controls scroll into view
+PASS  Matrix 1280x720-100pct System scroll reaches end
+PASS  Matrix 1280x720-100pct Launch horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Launch named controls scroll into view
+PASS  Matrix 1280x720-100pct Launch scroll reaches end
+PASS  Matrix 1280x720-100pct Application horizontal controls fit ()
+PASS  Matrix 1280x720-100pct Application named controls scroll into view
+PASS  Matrix 1280x720-100pct Application scroll reaches end
+PASS  Matrix 1280x720-150pct viewport 853x432 DIP incl 48 DIP taskbar; form 266
+PASS  Matrix 1280x720-150pct category chooser and preview collapse
+PASS  Matrix 1280x720-150pct Appearance horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Appearance named controls scroll into view
+PASS  Matrix 1280x720-150pct Appearance scroll reaches end
+PASS  Matrix 1280x720-150pct Layout horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Layout named controls scroll into view
+PASS  Matrix 1280x720-150pct Layout scroll reaches end
+PASS  Matrix 1280x720-150pct Content horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Content named controls scroll into view
+PASS  Matrix 1280x720-150pct Content scroll reaches end
+PASS  Matrix 1280x720-150pct Controls horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Controls named controls scroll into view
+PASS  Matrix 1280x720-150pct Controls scroll reaches end
+PASS  Matrix 1280x720-150pct Audio horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Audio named controls scroll into view
+PASS  Matrix 1280x720-150pct Audio scroll reaches end
+PASS  Matrix 1280x720-150pct System horizontal controls fit ()
+PASS  Matrix 1280x720-150pct System named controls scroll into view
+PASS  Matrix 1280x720-150pct System scroll reaches end
+PASS  Matrix 1280x720-150pct Launch horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Launch named controls scroll into view
+PASS  Matrix 1280x720-150pct Launch scroll reaches end
+PASS  Matrix 1280x720-150pct Application horizontal controls fit ()
+PASS  Matrix 1280x720-150pct Application named controls scroll into view
+PASS  Matrix 1280x720-150pct Application scroll reaches end
+PASS  Matrix 1280x720-200pct viewport 640x312 DIP incl 48 DIP taskbar; form 129
+PASS  Matrix 1280x720-200pct category chooser and preview collapse
+PASS  Matrix 1280x720-200pct Appearance horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Appearance named controls scroll into view
+PASS  Matrix 1280x720-200pct Appearance scroll reaches end
+PASS  Matrix 1280x720-200pct Layout horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Layout named controls scroll into view
+PASS  Matrix 1280x720-200pct Layout scroll reaches end
+PASS  Matrix 1280x720-200pct Content horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Content named controls scroll into view
+PASS  Matrix 1280x720-200pct Content scroll reaches end
+PASS  Matrix 1280x720-200pct Controls horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Controls named controls scroll into view
+PASS  Matrix 1280x720-200pct Controls scroll reaches end
+PASS  Matrix 1280x720-200pct Audio horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Audio named controls scroll into view
+PASS  Matrix 1280x720-200pct Audio scroll reaches end
+PASS  Matrix 1280x720-200pct System horizontal controls fit ()
+PASS  Matrix 1280x720-200pct System named controls scroll into view
+PASS  Matrix 1280x720-200pct System scroll reaches end
+PASS  Matrix 1280x720-200pct Launch horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Launch named controls scroll into view
+PASS  Matrix 1280x720-200pct Launch scroll reaches end
+PASS  Matrix 1280x720-200pct Application horizontal controls fit ()
+PASS  Matrix 1280x720-200pct Application named controls scroll into view
+PASS  Matrix 1280x720-200pct Application scroll reaches end
+PASS  Matrix 1366x768-100pct viewport 1366x720 DIP incl 48 DIP taskbar; form 572
+PASS  Matrix 1366x768-100pct category chooser and preview collapse
+PASS  Matrix 1366x768-100pct Appearance horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Appearance named controls scroll into view
+PASS  Matrix 1366x768-100pct Appearance scroll reaches end
+PASS  Matrix 1366x768-100pct Layout horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Layout named controls scroll into view
+PASS  Matrix 1366x768-100pct Layout scroll reaches end
+PASS  Matrix 1366x768-100pct Content horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Content named controls scroll into view
+PASS  Matrix 1366x768-100pct Content scroll reaches end
+PASS  Matrix 1366x768-100pct Controls horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Controls named controls scroll into view
+PASS  Matrix 1366x768-100pct Controls scroll reaches end
+PASS  Matrix 1366x768-100pct Audio horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Audio named controls scroll into view
+PASS  Matrix 1366x768-100pct Audio scroll reaches end
+PASS  Matrix 1366x768-100pct System horizontal controls fit ()
+PASS  Matrix 1366x768-100pct System named controls scroll into view
+PASS  Matrix 1366x768-100pct System scroll reaches end
+PASS  Matrix 1366x768-100pct Launch horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Launch named controls scroll into view
+PASS  Matrix 1366x768-100pct Launch scroll reaches end
+PASS  Matrix 1366x768-100pct Application horizontal controls fit ()
+PASS  Matrix 1366x768-100pct Application named controls scroll into view
+PASS  Matrix 1366x768-100pct Application scroll reaches end
+PASS  Matrix 1366x768-150pct viewport 911x464 DIP incl 48 DIP taskbar; form 298
+PASS  Matrix 1366x768-150pct category chooser and preview collapse
+PASS  Matrix 1366x768-150pct Appearance horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Appearance named controls scroll into view
+PASS  Matrix 1366x768-150pct Appearance scroll reaches end
+PASS  Matrix 1366x768-150pct Layout horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Layout named controls scroll into view
+PASS  Matrix 1366x768-150pct Layout scroll reaches end
+PASS  Matrix 1366x768-150pct Content horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Content named controls scroll into view
+PASS  Matrix 1366x768-150pct Content scroll reaches end
+PASS  Matrix 1366x768-150pct Controls horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Controls named controls scroll into view
+PASS  Matrix 1366x768-150pct Controls scroll reaches end
+PASS  Matrix 1366x768-150pct Audio horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Audio named controls scroll into view
+PASS  Matrix 1366x768-150pct Audio scroll reaches end
+PASS  Matrix 1366x768-150pct System horizontal controls fit ()
+PASS  Matrix 1366x768-150pct System named controls scroll into view
+PASS  Matrix 1366x768-150pct System scroll reaches end
+PASS  Matrix 1366x768-150pct Launch horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Launch named controls scroll into view
+PASS  Matrix 1366x768-150pct Launch scroll reaches end
+PASS  Matrix 1366x768-150pct Application horizontal controls fit ()
+PASS  Matrix 1366x768-150pct Application named controls scroll into view
+PASS  Matrix 1366x768-150pct Application scroll reaches end
+PASS  Matrix 1366x768-200pct viewport 683x336 DIP incl 48 DIP taskbar; form 153
+PASS  Matrix 1366x768-200pct category chooser and preview collapse
+PASS  Matrix 1366x768-200pct Appearance horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Appearance named controls scroll into view
+PASS  Matrix 1366x768-200pct Appearance scroll reaches end
+PASS  Matrix 1366x768-200pct Layout horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Layout named controls scroll into view
+PASS  Matrix 1366x768-200pct Layout scroll reaches end
+PASS  Matrix 1366x768-200pct Content horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Content named controls scroll into view
+PASS  Matrix 1366x768-200pct Content scroll reaches end
+PASS  Matrix 1366x768-200pct Controls horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Controls named controls scroll into view
+PASS  Matrix 1366x768-200pct Controls scroll reaches end
+PASS  Matrix 1366x768-200pct Audio horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Audio named controls scroll into view
+PASS  Matrix 1366x768-200pct Audio scroll reaches end
+PASS  Matrix 1366x768-200pct System horizontal controls fit ()
+PASS  Matrix 1366x768-200pct System named controls scroll into view
+PASS  Matrix 1366x768-200pct System scroll reaches end
+PASS  Matrix 1366x768-200pct Launch horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Launch named controls scroll into view
+PASS  Matrix 1366x768-200pct Launch scroll reaches end
+PASS  Matrix 1366x768-200pct Application horizontal controls fit ()
+PASS  Matrix 1366x768-200pct Application named controls scroll into view
+PASS  Matrix 1366x768-200pct Application scroll reaches end
+PASS  Matrix 1920x1080-100pct viewport 1920x1032 DIP incl 48 DIP taskbar; form 884
+PASS  Matrix 1920x1080-100pct category chooser and preview collapse
+PASS  Matrix 1920x1080-100pct Appearance horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Appearance named controls scroll into view
+PASS  Matrix 1920x1080-100pct Appearance scroll reaches end
+PASS  Matrix 1920x1080-100pct Layout horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Layout named controls scroll into view
+PASS  Matrix 1920x1080-100pct Layout scroll reaches end
+PASS  Matrix 1920x1080-100pct Content horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Content named controls scroll into view
+PASS  Matrix 1920x1080-100pct Content scroll reaches end
+PASS  Matrix 1920x1080-100pct Controls horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Controls named controls scroll into view
+PASS  Matrix 1920x1080-100pct Controls scroll reaches end
+PASS  Matrix 1920x1080-100pct Audio horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Audio named controls scroll into view
+PASS  Matrix 1920x1080-100pct Audio scroll reaches end
+PASS  Matrix 1920x1080-100pct System horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct System named controls scroll into view
+PASS  Matrix 1920x1080-100pct System scroll reaches end
+PASS  Matrix 1920x1080-100pct Launch horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Launch named controls scroll into view
+PASS  Matrix 1920x1080-100pct Launch scroll reaches end
+PASS  Matrix 1920x1080-100pct Application horizontal controls fit ()
+PASS  Matrix 1920x1080-100pct Application named controls scroll into view
+PASS  Matrix 1920x1080-100pct Application scroll reaches end
+PASS  Matrix 1920x1080-150pct viewport 1280x672 DIP incl 48 DIP taskbar; form 524
+PASS  Matrix 1920x1080-150pct category chooser and preview collapse
+PASS  Matrix 1920x1080-150pct Appearance horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Appearance named controls scroll into view
+PASS  Matrix 1920x1080-150pct Appearance scroll reaches end
+PASS  Matrix 1920x1080-150pct Layout horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Layout named controls scroll into view
+PASS  Matrix 1920x1080-150pct Layout scroll reaches end
+PASS  Matrix 1920x1080-150pct Content horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Content named controls scroll into view
+PASS  Matrix 1920x1080-150pct Content scroll reaches end
+PASS  Matrix 1920x1080-150pct Controls horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Controls named controls scroll into view
+PASS  Matrix 1920x1080-150pct Controls scroll reaches end
+PASS  Matrix 1920x1080-150pct Audio horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Audio named controls scroll into view
+PASS  Matrix 1920x1080-150pct Audio scroll reaches end
+PASS  Matrix 1920x1080-150pct System horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct System named controls scroll into view
+PASS  Matrix 1920x1080-150pct System scroll reaches end
+PASS  Matrix 1920x1080-150pct Launch horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Launch named controls scroll into view
+PASS  Matrix 1920x1080-150pct Launch scroll reaches end
+PASS  Matrix 1920x1080-150pct Application horizontal controls fit ()
+PASS  Matrix 1920x1080-150pct Application named controls scroll into view
+PASS  Matrix 1920x1080-150pct Application scroll reaches end
+PASS  Matrix 1920x1080-200pct viewport 960x492 DIP incl 48 DIP taskbar; form 326
+PASS  Matrix 1920x1080-200pct category chooser and preview collapse
+PASS  Matrix 1920x1080-200pct Appearance horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Appearance named controls scroll into view
+PASS  Matrix 1920x1080-200pct Appearance scroll reaches end
+PASS  Matrix 1920x1080-200pct Layout horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Layout named controls scroll into view
+PASS  Matrix 1920x1080-200pct Layout scroll reaches end
+PASS  Matrix 1920x1080-200pct Content horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Content named controls scroll into view
+PASS  Matrix 1920x1080-200pct Content scroll reaches end
+PASS  Matrix 1920x1080-200pct Controls horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Controls named controls scroll into view
+PASS  Matrix 1920x1080-200pct Controls scroll reaches end
+PASS  Matrix 1920x1080-200pct Audio horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Audio named controls scroll into view
+PASS  Matrix 1920x1080-200pct Audio scroll reaches end
+PASS  Matrix 1920x1080-200pct System horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct System named controls scroll into view
+PASS  Matrix 1920x1080-200pct System scroll reaches end
+PASS  Matrix 1920x1080-200pct Launch horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Launch named controls scroll into view
+PASS  Matrix 1920x1080-200pct Launch scroll reaches end
+PASS  Matrix 1920x1080-200pct Application horizontal controls fit ()
+PASS  Matrix 1920x1080-200pct Application named controls scroll into view
+PASS  Matrix 1920x1080-200pct Application scroll reaches end
+PASS  Integration preference reset category chooser present
+RESULT: 0 failures

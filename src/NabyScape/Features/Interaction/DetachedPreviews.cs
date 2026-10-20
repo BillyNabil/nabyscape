@@ -87,6 +87,7 @@ internal sealed class DetachedPreviewWindow : Window
     private readonly string kind;
     private readonly DetachedPreviewView view;
     private readonly Border surface;
+    private readonly AmbientPresenter ambientPresenter;
     private readonly DispatcherTimer saveGeometry=new(){Interval=TimeSpan.FromMilliseconds(400)};
     private HwndSource? source;
     private bool clamping,restored,placed;
@@ -107,13 +108,17 @@ internal sealed class DetachedPreviewWindow : Window
         var handle=UI.Heading(NameFor(kind),13);handle.FontWeight=FontWeights.SemiBold;handle.Cursor=Cursors.SizeAll;handle.ToolTip="Drag to move · Alt+Space for window controls";header.Children.Add(handle);
         header.MouseLeftButtonDown+=(_,e)=>{if(e.OriginalSource is not DependencyObject target || IsControl(target,header))return;if(e.ClickCount==1){BeginPointerDrag();e.Handled=true;}};
         view=new(app,kind,openMain);layout.Children.Add(view.Content);
-        surface=new Border{Padding=new(10),CornerRadius=new(16),BorderThickness=new(1),Child=layout};surface.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");Content=surface;ApplySettings();
+        var lighting=new IslandSurface{Fill=Brushes.Transparent,IsHitTestVisible=false,Notch=false,Radius=16};
+        var layers=new Grid();layers.Children.Add(lighting);layout.Margin=new(10);layers.Children.Add(layout);
+        layers.SizeChanged+=(_,_)=>{lighting.SurfaceWidth=layers.ActualWidth;lighting.SurfaceHeight=layers.ActualHeight;};
+        ambientPresenter=new(app,lighting,kind);
+        surface=new Border{CornerRadius=new(16),BorderThickness=new(1),Child=layers};surface.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");Content=surface;ApplySettings();
         try{if(File.Exists(Path.Combine(app.Store.DirectoryPath,"detached-"+kind+".json"))){var stored=app.Store.Load<DetachedPreviewGeometry>("detached-"+kind);var rect=SafeRect(stored);Left=rect.Left;Top=rect.Top;Width=rect.Width;Height=rect.Height;restored=true;}}catch(Exception ex){app.Store.Log(ex);}
         saveGeometry.Tick+=(_,_)=>{ClampToMonitor();PersistGeometry();};LocationChanged+=(_,_)=>ScheduleSave();SizeChanged+=(_,_)=>ScheduleSave();
         IsVisibleChanged+=(_,_)=>{view.SetVisible(IsVisible && WindowState!=WindowState.Minimized);if(!IsVisible){view.Flush();PersistGeometry();}};
-        StateChanged+=(_,_)=>{view.SetVisible(IsVisible && WindowState!=WindowState.Minimized);if(WindowState==WindowState.Minimized){view.Flush();saveGeometry.Stop();}};
+        StateChanged+=(_,_)=>{view.SetVisible(IsVisible && WindowState!=WindowState.Minimized);ambientPresenter.Refresh();app.AmbientAudio.Reconcile();if(WindowState==WindowState.Minimized){view.Flush();saveGeometry.Stop();}};
         SourceInitialized+=(_,_)=>{Native.DarkTitleBar(this);source=HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);source?.AddHook(Messages);};
-        Closed+=(_,_)=>{view.Dispose();PersistGeometry();source?.RemoveHook(Messages);source=null;};
+        Closed+=(_,_)=>{ambientPresenter.Dispose();view.Dispose();PersistGeometry();source?.RemoveHook(Messages);source=null;};
         PreviewKeyDown+=(_,e)=>{if(e.SystemKey==Key.Space && (Keyboard.Modifiers&ModifierKeys.Alt)!=0){SystemCommands.ShowSystemMenu(this,PointToScreen(new Point(12,38)));e.Handled=true;}};
     }
     private static bool IsControl(DependencyObject target,DependencyObject header)
@@ -181,7 +186,7 @@ internal sealed class DetachedPreviewWindow : Window
             if(rect!=candidate)SetPhysicalBounds(rect,scale);
         }finally{clamping=false;}
     }
-    internal void ApplySettings(){surface.Background=UI.Brush(app.Settings.Background);surface.Opacity=app.Settings.Opacity;view?.ApplySettings();}
+    internal void ApplySettings(){surface.Background=UI.Brush(app.Settings.Background);surface.Opacity=app.Settings.Opacity;ambientPresenter.Refresh();view?.ApplySettings();}
     private void ScheduleSave(){if(clamping)return;saveGeometry.Stop();if(IsVisible)saveGeometry.Start();}
     private void PersistGeometry()
     {

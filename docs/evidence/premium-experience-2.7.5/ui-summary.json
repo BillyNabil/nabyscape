@@ -1,0 +1,37 @@
+[
+  {
+    "Suite": "premium-experience",
+    "Passed": 32,
+    "Failed": 0
+  },
+  {
+    "Suite": "premium-notifications",
+    "Passed": 32,
+    "Failed": 0
+  },
+  {
+    "Suite": "countdown-panel",
+    "Passed": 35,
+    "Failed": 0
+  },
+  {
+    "Suite": "media-ux",
+    "Passed": 29,
+    "Failed": 0
+  },
+  {
+    "Suite": "scroll-lyrics",
+    "Passed": 15,
+    "Failed": 0
+  },
+  {
+    "Suite": "visual-polish-matrix",
+    "Passed": 314,
+    "Failed": 0
+  },
+  {
+    "Suite": "assistant-character",
+    "Passed": 17,
+    "Failed": 0
+  }
+]

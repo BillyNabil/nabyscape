@@ -79,7 +79,7 @@ internal static class Stage4Diagnostics
         app.Notifications.Clear();failure.Invoke(app,new object[]{"Disabled folder failure"});settings.DownloadsEnabled=false;await Task.Delay(100);
         check("Stage4 disabling downloads rejects queued failure",app.Notifications.Count==0);
         island.DiagnosticPointerPresent=false;
-        island.Collapse();app.Notifications.Clear();settings.AlwaysTucked=true;app.ChangeSettings();app.PostNotice(new("timer","Timer finished","Time is up"));await Task.Delay(100);
+        island.Collapse();app.Notifications.Clear();settings.AlwaysTucked=true;app.ChangeSettings();app.PostNotice(new("timer","Timer finished","Time is up"));for(int frame=0;frame<80 && island.TuckMoving;frame++)await Task.Delay(25);
         check("Stage4 tucked arrival stays at edge",island.IsTucked && !island.IsPeeking && !island.IsExpanded && Math.Abs(island.VisibleBounds.Height-settings.TuckEdge)<1);
         Capture(island,"stage4-tucked");island.DiagnosticPointerPresent=true;island.RevealTuckedPreview();await Settled();check("Stage4 tucked hover reveals notice only",island.IsPeeking && !island.IsExpanded);island.DiagnosticPointerPresent=false;
         island.Collapse();app.Notifications.Clear();island.ToggleVisibility();app.PostNotice(new("failure","Fixture failure","Hidden fallback"));await Task.Delay(100);

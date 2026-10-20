@@ -1,0 +1,33 @@
+PASS  Stage4 arrival remains compact and does not take focus
+PASS  Stage4 compact indicator names arrivals
+PASS  Stage4 volume indication takes priority
+PASS  Stage4 notification preview waits for feedback
+PASS  Stage4 hover opens compact completion view (peeking=True, expanded=False, elapsed=728ms)
+PASS  Stage4 hover does not activate (before=4E311AA, after=4E311AA, island=1D1A56, ShowActivated=False)
+PASS  Stage4 keyboard action Show in folder
+PASS  Stage4 keyboard action Add to shelf
+PASS  Stage4 keyboard action Dismiss
+PASS  Stage4 completion card retains notch shoulder padding
+PASS  Stage4 minimum width actions remain inside padded card
+PASS  Stage4 shelf handoff dedupes originals
+PASS  Stage4 repeated shelf handoff remains deduped
+PASS  Stage4 outgoing drag retains displayed snapshot and queues later arrival
+PASS  Stage4 first displayed handoff contains A only
+PASS  Stage4 dismissing A preserves B for a second handoff
+PASS  Stage4 external drag takes notice priority and exposes shelf target
+PASS  Stage4 cancelled external drag restores pending notice and actions
+PASS  Stage4 accepted external drag exposes Files and retains pending notice
+PASS  Stage4 stale failure callback after folder change is suppressed
+PASS  Stage4 current configuration failure still notifies
+PASS  Stage4 disabling downloads rejects queued failure
+PASS  Stage4 tucked arrival stays at edge
+PASS  Stage4 tucked hover reveals notice only
+PASS  Stage4 manually hidden stays hidden with Windows fallback
+PASS  Stage4 arrival preserves editor, selection and expanded panel
+PASS  Stage4 requested notification replaces command panel with compact card
+PASS  Stage4 Both queues exactly one island notice
+PASS  Stage4 Off clears pending and suppresses notices
+PASS  Stage4 pending timeout leaves no history
+PASS  Stage4 distinct notification and download scenes
+PASS  Stage4 narrow folder controls contained
+RESULT: 0 failures

@@ -45,7 +45,7 @@ public sealed partial class OverlayWindow
     private void ApplyEnvironmentTuck(){if(TuckRequested && !userHidden && !expanded && !peeking)SetTucked(true);else if(!TuckRequested)SetTucked(false);}
     private void SetTucked(bool value)
     {
-        bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();
+        bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();UpdateAmbientMotion();
         double destination=value?AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge):0;
         // Manual hide must cancel an in-flight reveal even when its destination is already zero.
         if(userHidden){tuckDestination=destination;tuckMotion.Dispose();tuckSlide.Y=destination;return;}

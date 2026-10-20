@@ -23,13 +23,12 @@ public sealed partial class OverlayWindow : Window
     private readonly ScrollViewer scroll;
     private readonly TranslateTransform bodySlide=new(0,-8);
     private readonly TextBlock title=UI.Text("",20),artist=UI.Text("",12,UI.Muted),clock=UI.Text("",32),date=UI.Text("",11,UI.Muted);
-    private readonly TextBlock timerTime=UI.Text("00:00",29),focusTime=UI.Text("25:00",29),focusPhase=UI.Text("",11,UI.Muted);
     private readonly TextBlock cpu=UI.Text("",11),ram=UI.Text("",11),battery=UI.Text(""),volumeText=UI.Text("",11,UI.Muted);
     private readonly Image artwork=new(){Width=64,Height=64,Stretch=Stretch.UniformToFill};
     private readonly ComboBox sessions=new();
     private readonly Slider volume=new(){Minimum=0,Maximum=100,Height=22};
     private readonly ProgressBar cpuBar=new(){Maximum=100,Height=4,Margin=new(0,7,0,12)},ramBar=new(){Maximum=100,Height=4,Margin=new(0,7,0,0)};
-    private Button play=null!,next=null!,previous=null!,timerPause=null!,focusPause=null!,mute=null!;
+    private Button play=null!,next=null!,previous=null!,mute=null!;
     private Border? batteryCard;
     private OutsideClick? outside;
     private bool expanded,userHidden,environmentHidden,updating,positioning;
@@ -64,8 +63,8 @@ public sealed partial class OverlayWindow : Window
         root.RenderTransform=tuckSlide;root.MouseLeftButtonDown+=(_,e)=>{if(TuckRequested && !expanded && e.OriginalSource==surface){Reveal();e.Handled=true;}};root.Children.Add(surface);root.Children.Add(visuals);visuals.Children.Add(compact);visuals.Children.Add(scroll);Content=root;
         InitializeAssistantIsland(header);InitializeDockEditing();
         surface.ContourChanged+=()=>{visuals.Clip=surface.Contour;Position();};
-        foreach(var number in new[]{clock,compactClock,timerTime,focusTime,cpu,ram})Typography.SetNumeralAlignment(number,FontNumeralAlignment.Tabular);
-        title.FontWeight=FontWeights.SemiBold;timerTime.FontWeight=focusTime.FontWeight=FontWeights.SemiBold;clock.FontWeight=compactClock.FontWeight=FontWeights.Bold;
+        foreach(var number in new[]{clock,compactClock,cpu,ram})Typography.SetNumeralAlignment(number,FontNumeralAlignment.Tabular);
+        title.FontWeight=FontWeights.SemiBold;clock.FontWeight=compactClock.FontWeight=FontWeights.Bold;
         Typography.SetNumeralAlignment(compactClock,FontNumeralAlignment.Tabular);
         SourceInitialized+=(_,_)=> {hwnd=new WindowInteropHelper(this).Handle;Native.SetWindowLong(hwnd,-20,Native.GetWindowLong(hwnd,-20)|0x80);HwndSource.FromHwnd(hwnd)?.AddHook(WindowMessage);ApplySettings();};
         SizeChanged+=(_,_)=>Position();
@@ -83,6 +82,7 @@ public sealed partial class OverlayWindow : Window
     private void DisplayChanged(object? sender,EventArgs e)=>Dispatcher.BeginInvoke(()=> {if(DiagnosticRun)return;ApplySettings();ReflowDisplay();ConfigureDisplayFollow();CheckEnvironment();});
     private void Dimensions(bool contentChanged=false)
     {
+        UpdateAmbientMotion();
         var screen=Native.ChooseScreen(app.Settings);var scale=Native.Scale(screen);
         expandedWidth=MediaLyricsLayout.Width(app.Settings,screen.WorkingArea.Width/scale-24,ShowLyricsLayout);
         double available=screen.WorkingArea.Height/scale-16;
@@ -131,9 +131,9 @@ public sealed partial class OverlayWindow : Window
     {
         if(assistantOpen){MountAssistantView();return;}
         InvalidateSystemMonitor();
-        foreach(var control in new FrameworkElement[]{title,artist,clock,date,timerTime,focusTime,focusPhase,cpu,ram,battery,volumeText,artwork,sessions,volume,cpuBar,ramBar,timelinePanel})
+        foreach(var control in new FrameworkElement[]{title,artist,clock,date,cpu,ram,battery,volumeText,artwork,sessions,volume,cpuBar,ramBar,timelinePanel})
         {if(control.Parent is Panel p)p.Children.Remove(control);else if(control.Parent is Decorator d)d.Child=null;else if(control.Parent is ContentControl c)c.Content=null;}
-        body.Children.Clear();widgets.Children.Clear();compactPages.Clear();compactTabs.Clear();compactPageHost.Children.Clear();batteryCard=null;play=null!;timerPause=null!;focusPause=null!;mute=null!;
+        body.Children.Clear();widgets.Children.Clear();compactPages.Clear();compactTabs.Clear();compactPageHost.Children.Clear();batteryCard=null;play=null!;mute=null!;
         if(activitiesOpen){body.Children.Add(BuildActivitiesPage());return;}
         if(commandOpen){body.Children.Add(BuildCommandPage());return;}
         if(app.Settings.CompactLayout){BuildCompactBody();return;}
@@ -158,16 +158,8 @@ public sealed partial class OverlayWindow : Window
                     UI.Named(volume,"Windows volume");volume.Margin=new(12,0,10,0);mute=Icons.Button("volume","Mute or unmute",()=> {app.Audio.ToggleMute();Update();},false,30);mute.Background=Brushes.Transparent;mute.Padding=new(4);mute.Margin=new(0);muteIcon="";
                     var audioOutput=UI.Button("",OpenAudioMenu);audioOutput.Content=volumeText;audioOutput.MinHeight=28;audioOutput.Padding=new(5);UI.Named(audioOutput,"Audio devices and microphone");var audioRow=new DockPanel();DockPanel.SetDock(mute,Dock.Left);audioRow.Children.Add(mute);DockPanel.SetDock(audioOutput,Dock.Right);audioRow.Children.Add(audioOutput);audioRow.Children.Add(volume);card=UI.Card("Volume",audioRow);break;
                 case "stopwatch":card=UI.Card("Stopwatch",new StopwatchView(app));break;
-                case "timer":
-                    small=true;var minutes=UI.Input("Timer duration in minutes","5","0.1–1440 minutes");minutes.Width=46;minutes.Padding=new(7,3,7,3);minutes.Margin=new(0,3,6,4);
-                    timerPause=Icons.Button("pause","Pause or resume timer",()=> {if(app.Session.Timer.Running)app.Session.Timer.Pause(DateTimeOffset.UtcNow);else app.Session.Timer.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,30);
-                    var timerStart=Icons.Button("play","Start",()=> {if(!double.TryParse(minutes.Text,System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.CurrentCulture,out var n) || !double.IsFinite(n) || n<.1 || n>1440){app.Notify("Invalid duration","Enter a duration from 0.1 to 1440 minutes.");minutes.Focus();return;}app.Session.Timer.Start(n*60,DateTimeOffset.UtcNow);app.SaveSession();},true,30);
-                    var reset=UI.Button("Reset",()=> {app.Session.Timer.Reset();app.SaveSession();});reset.Padding=new(7,3,7,3);reset.FontSize=10;reset.MinHeight=28;
-                    card=UI.Card("Timer",timerTime,UI.Row(minutes,UI.Text("minutes",11,UI.Muted)),UI.Row(timerStart,timerPause,reset));break;
-                case "focus":
-                    small=true;focusPause=Icons.Button("pause","Pause or resume focus",()=> {if(app.Session.Focus.Running)app.Session.Focus.Pause(DateTimeOffset.UtcNow);else app.Session.Focus.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,30);
-                    var focusStart=Icons.Button("play","Start focus",()=> {app.Session.Focus.Start(app.Settings.FocusMinutes*60,DateTimeOffset.UtcNow,"work");app.SaveSession();},true,30);var focusReset=UI.Button("Reset",()=> {app.Session.Focus.Reset();app.SaveSession();});focusReset.Padding=new(7,3,7,3);focusReset.FontSize=10;focusReset.MinHeight=28;focusPhase.Height=34;focusPhase.Margin=new(0,4,0,4);
-                    card=UI.Card("Focus",focusTime,FocusDurationEditor(),focusPhase,UI.Row(focusStart,focusPause,focusReset));break;
+                case "timer":small=true;card=UI.Card("Timer",new CountdownView(app,false,false));break;
+                case "focus":small=true;card=UI.Card("Focus",new CountdownView(app,true,false));break;
                 case "clock":small=true;date.Margin=new(0,6,0,2);card=UI.Card("Local time",clock,date);break;
                 case "system":small=true;cpuBar.Foreground=ramBar.Foreground=Brushes.White;cpuBar.Background=ramBar.Background=UI.Brush("#3A3A3C");card=UI.Card("System",cpu,cpuBar,ram,ramBar);break;
                 case "battery":small=true;card=UI.Card("Battery",battery);batteryCard=card;break;
@@ -254,7 +246,7 @@ public sealed partial class OverlayWindow : Window
     private void Update()
     {
         if(!IsVisible || userHidden || IsTucked)return;
-        var change=app.CurrentUpdate;if(change is RuntimeChange.Productivity or RuntimeChange.Calendar){if(peeking)UpdatePeek();if(change==RuntimeChange.Calendar)UpdateSatellite();return;}var now=DateTimeOffset.Now;if((change&(RuntimeChange.Media|RuntimeChange.Countdown|RuntimeChange.Settings))!=0)CheckSmartActivities();if((change&(RuntimeChange.Media|RuntimeChange.Settings))!=0)UpdateAlbumTint();ConfigurePerformance();UpdateAudioFeedback();bool On(string id)=>app.Settings.Widgets.Any(w=>w.Id==id && w.Enabled);
+        var change=app.CurrentUpdate;if(change is RuntimeChange.Productivity or RuntimeChange.Calendar){if(peeking)UpdatePeek();if(change==RuntimeChange.Calendar)UpdateSatellite();return;}var now=DateTimeOffset.Now;if((change&(RuntimeChange.Media|RuntimeChange.Countdown|RuntimeChange.Settings))!=0)CheckSmartActivities();if((change&(RuntimeChange.Media|RuntimeChange.Settings))!=0)UpdateAlbumTint();ConfigurePerformance();UpdateAmbientMotion();UpdateAudioFeedback();bool On(string id)=>app.Settings.Widgets.Any(w=>w.Id==id && w.Enabled);
         UpdateSatellite();UpdateClosedMediaIcon();if((change&(RuntimeChange.Media|RuntimeChange.Settings))!=0)RefreshAssistantVisuals();Motion.Text(compactClock,now.ToString(app.Settings.Clock24Hour?"HH:mm":"h:mm tt"));UpdateRoadmapStatus(now);
         Motion.Text(summary,FeedbackVisible?feedbackText:app.Notifications.Current is InternalNotice notice?"● "+notice.Title:!ShowMediaPrimary && On("focus") && app.Session.Focus.Remaining(now)>0?(app.Session.Focus.Phase=="break"?"Break  ":"Focus  ")+app.Session.Focus.Display(now):!ShowMediaPrimary && On("timer") && app.Session.Timer.Remaining(now)>0?"Timer  "+app.Session.Timer.Display(now):On("media") && app.Media.Available?app.Media.Title:"");
         if(!liveRendering && !AudioVisualDemand){var session=ActiveCountdown();activity.Sample(0,1,session?.Progress(now)??0,session!=null,session==app.Session.Focus,false,0);}
@@ -267,9 +259,7 @@ public sealed partial class OverlayWindow : Window
             var key=string.Join("|",app.Media.Sessions.Select(s=>s.SourceAppUserModelId));bool sessionsChanged=key!=sessionKey;if(sessionsChanged){sessionKey=key;sessions.Items.Clear();foreach(var session in app.Media.Sessions)sessions.Items.Add(MediaService.SessionName(session));}sessions.SelectedIndex=app.Media.Sessions.FindIndex(s=>s.SourceAppUserModelId==app.Media.Selected?.SourceAppUserModelId);sessions.Visibility=app.Media.Sessions.Count>1?Visibility.Visible:Visibility.Collapsed;
             if(sessionsChanged && app.Settings.CompactLayout){Dimensions();motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));motion.OnComplete(()=>{});}
             }
-            clock.Text=now.ToString(app.Settings.Clock24Hour?(app.Settings.ClockSeconds?"HH:mm:ss":"HH:mm"):(app.Settings.ClockSeconds?"h:mm:ss tt":"h:mm tt"));date.Visibility=app.Settings.ShowDate?Visibility.Visible:Visibility.Collapsed;date.Text=now.ToString("ddd, dd MMM",System.Globalization.CultureInfo.GetCultureInfo("en-US"));timerTime.Text=app.Session.Timer.Display(now);focusTime.Text=app.Session.Focus.Remaining(now)>0?app.Session.Focus.Display(now):Countdown.FormatSeconds(app.Settings.FocusMinutes*60);
-            if(timerPause!=null){Motion.Icon(timerPause,app.Session.Timer.Running?"pause":"play",14);timerPause.IsEnabled=app.Session.Timer.Remaining(now)>0;}if(focusPause!=null){Motion.Icon(focusPause,app.Session.Focus.Running?"pause":"play",14);focusPause.IsEnabled=app.Session.Focus.Remaining(now)>0;}
-            focusPhase.Text=app.Session.Focus.Remaining(now)>0?(app.Session.Focus.Phase=="break"?"Break":"Focusing")+(app.Session.Focus.Running?"":" · paused"):$"{app.Settings.FocusMinutes} min focus\n{app.Settings.BreakMinutes} min break";
+            clock.Text=now.ToString(app.Settings.Clock24Hour?(app.Settings.ClockSeconds?"HH:mm:ss":"HH:mm"):(app.Settings.ClockSeconds?"h:mm:ss tt":"h:mm tt"));date.Visibility=app.Settings.ShowDate?Visibility.Visible:Visibility.Collapsed;date.Text=now.ToString("ddd, dd MMM",System.Globalization.CultureInfo.GetCultureInfo("en-US"));
             if((change&(RuntimeChange.System|RuntimeChange.Settings))!=0){cpu.Text=$"CPU  {app.Usage.cpu:0}%";ram.Text=$"RAM  {app.Usage.used:0.0}/{app.Usage.total:0.0} GB";Motion.Progress(cpuBar,app.Usage.cpu);Motion.Progress(ramBar,app.Usage.total>0?app.Usage.used/app.Usage.total*100:0);}
             if(!volume.IsMouseCaptureWithin && !volume.IsKeyboardFocusWithin)volume.Value=app.Audio.Volume*100;volume.IsEnabled=app.Audio.Available;volumeText.Text=app.Audio.Available?$"{app.Audio.Volume*100:0}%":"—";volume.ToolTip=app.Audio.Device;
             var currentMute=app.Audio.Muted?"muted":"volume";if(mute!=null && muteIcon!=currentMute){muteIcon=currentMute;mute.Content=Icons.Create(currentMute,18);}

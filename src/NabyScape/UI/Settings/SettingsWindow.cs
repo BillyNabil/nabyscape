@@ -81,7 +81,7 @@ public sealed partial class SettingsWindow : Window
         UI.Named(previewExpander,"Settings live preview");UI.Named(scroll,"Settings form viewport");UI.Named(rail,"Settings preview rail");UI.Named(navBorder,"Settings navigation");
         SizeChanged+=(_,_)=>Responsive();workspace.SizeChanged+=(_,_)=>Responsive();Loaded+=(_,_)=>Responsive();
         page.MaxWidth=660;page.HorizontalAlignment=HorizontalAlignment.Stretch;
-        Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);
+        Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);InitializeAmbientPreview();
         saveTimer.Tick+=(_,_)=>{saveTimer.Stop();try{applyingSettings=true;app.ChangeSettings();status.Text="Saved on this device";}catch(Exception ex){status.Text="Could not save changes. Try again.";app.Store.Log(ex);}finally{applyingSettings=false;}};
         app.Updates.Changed+=UpdateControls;
         app.SettingsChanged+=SettingsApplied;app.Updated+=UpdateFrameStatus;
@@ -97,6 +97,7 @@ public sealed partial class SettingsWindow : Window
     }
     private void RefreshPreview()
     {
+        RefreshAmbientPreview();
         int key=HashCode.Combine(HashCode.Combine(current,previewMode,previewContent,previewRevision),app.Media.Title,app.Media.Artist,app.Media.Playing,app.Media.Artwork,app.Audio.Volume,app.Audio.Muted);
         if(previewBuildKey!=key){previewBuildKey=key;RenderSettingsPreview();}SyncPreviewRendering();
     }
@@ -107,7 +108,7 @@ public sealed partial class SettingsWindow : Window
         var expanded=SettingTree(page).OfType<Expander>().Where(e=>e.IsExpanded).Select(e=>e.Header?.ToString()).ToHashSet();
         string focused=System.Windows.Input.Keyboard.FocusedElement is DependencyObject oldFocus?System.Windows.Automation.AutomationProperties.GetName(oldFocus):"";
         previewRevision++;settingExamples.Clear();current=name;if(categorySelector!=null && categorySelector.SelectedItem?.ToString()!=name)categorySelector.SelectedItem=name;previewFocus.Text=name+" overview";previewContent="Music";previewMode="Closed";if(name=="Launch"){previewContent="Launch";previewMode="Panel";}if(name=="Content"){previewContent="Navigation";previewMode="Panel";}if(name=="Controls"){previewContent="Music";previewMode="Hover";}if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}if(name=="AI"){previewContent="AI";previewMode="Panel";}if(name=="Application"){previewContent="Startup";previewMode="Panel";}if(!same)settingsScroll.ScrollToTop();page.Children.Clear();var heading=UI.Text(name,24);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,26);page.Children.Add(heading);
-        foreach(var entry in navigationButtons){entry.Value.Background=entry.Key==name?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==name?Brushes.White:UI.Muted;}
+        foreach(var entry in navigationButtons){entry.Value.FontWeight=entry.Key==name?FontWeights.SemiBold:FontWeights.Normal;entry.Value.Background=entry.Key==name?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==name?Brushes.White:UI.Muted;}
         switch(name){case "Appearance":Appearance();break;case "Layout":LayoutSettings();break;case "Content":ContentSettings();break;case "Launch":LaunchSettings();break;case "Controls":Interactions();break;case "Audio":AudioSettings();break;case "System":SystemSettings();break;case "AI":AiSettings();break;default:General();break;}if(PreferenceReset.Categories[current].Length>0)page.Children.Add(UI.Button("Reset this category",()=>ResetPreferences(current)));OrganizeSettings();if(same){foreach(var group in SettingTree(page).OfType<Expander>())group.IsExpanded=expanded.Contains(group.Header?.ToString());page.UpdateLayout();settingsScroll.ScrollToVerticalOffset(offset);Dispatcher.BeginInvoke(DispatcherPriority.Loaded,()=>{if(revision!=navigationRevision)return;var replacement=SettingTree(page).OfType<Control>().FirstOrDefault(c=>focused.Length>0 && System.Windows.Automation.AutomationProperties.GetName(c)==focused);replacement?.Focus();settingsScroll.ScrollToVerticalOffset(offset);});}RefreshPreview();
     }
     private Border Section(string title,params UIElement[] children)
@@ -141,11 +142,11 @@ public sealed partial class SettingsWindow : Window
         void Preset(string name){s.Preset=name;s.Top=name=="Mac"?0:Math.Max(8,s.Top);Save();Navigate(current);}
         page.Children.Add(Section("Shape",ShapeChoices(Preset)));
         MaterialControls();var colors=new StackPanel();ColorControl(colors,"Island color",s.Background,v=>s.Background=v,new[]{"#000000","#101114","#182028","#25221E"});ColorControl(colors,"Accent color",s.Accent,v=>s.Accent=v,new[]{"#FFFFFF","#E3D2AF","#A8C6F2","#B7D6BC"});AddSlider(colors,"Opacity",s.Opacity*100,65,100,v=>s.Opacity=v/100,"%",1);page.Children.Add(Section("Color & material",colors,Check("Black glass",s.GlassStyle,v=>s.GlassStyle=v),Check("Color from album artwork",s.AlbumAccent,v=>s.AlbumAccent=v)));
-        ControlColorSettings();
+        AmbientSettings();ControlColorSettings();
         var material=new StackPanel();AddSlider(material,"Glass intensity",s.GlassStrength*100,0,100,v=>s.GlassStrength=v/100,"%");page.Children.Add(Section("Surface",material));
         page.Children.Add(Section("Text and navigation",StyleChoice("Category appearance",s.CategoryStyle,v=>s.CategoryStyle=v),UI.Text("Choose how panel navigation is labeled.",11,UI.Muted)));
         page.Children.Add(Section("Typography",Check("Bold media titles",s.BoldMediaTitle,v=>s.BoldMediaTitle=v),Check("Bold panel and tool headings",s.BoldHeadings,v=>s.BoldHeadings=v),UI.Text("Use stronger titles without changing body text, timestamps or counters. Each option is independent; the adjacent preview shows both weights.",11,UI.Muted)));
-        var motion=new StackPanel();AddSlider(motion,"Animation duration",s.AnimationMs,0,600,v=>s.AnimationMs=v," ms",10);
+        var motion=new StackPanel();motion.Children.Add(UI.Text("Interaction feedback",11,UI.Muted));motion.Children.Add(PremiumChoice("Interaction feedback",s.InteractionMotion,new[]{"Off","Subtle","Expressive"},v=>s.InteractionMotion=v));AddSlider(motion,"Animation duration",s.AnimationMs,0,600,v=>s.AnimationMs=v," ms",10);
         motion.Children.Add(UI.Text("Animations follow the Windows compositor. Actual FPS depends on your display and GPU load.",11,UI.Muted));
         motion.Children.Add(Check("Live activity · audio, progress & focus breathing",s.LiveActivity,v=>s.LiveActivity=v));
 

@@ -1,0 +1,3430 @@
+[
+  {
+    "Page": "media",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Previous track",
+        "Type": "Button",
+        "X": 180.84,
+        "Y": 141.04,
+        "Width": 38,
+        "Height": 38
+      },
+      {
+        "Name": "Play or pause",
+        "Type": "Button",
+        "X": 239.08,
+        "Y": 136.88,
+        "Width": 46,
+        "Height": 46
+      },
+      {
+        "Name": "Next track",
+        "Type": "Button",
+        "X": 305.64,
+        "Y": 141.04,
+        "Width": 38,
+        "Height": 38
+      },
+      {
+        "Name": "Playback position",
+        "Type": "Slider",
+        "X": 32,
+        "Y": 242.96,
+        "Width": 444.23,
+        "Height": 24
+      },
+      {
+        "Name": "Open volume mixer",
+        "Type": "Button",
+        "X": 466.96,
+        "Y": 280.4,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Mute or unmute",
+        "Type": "Button",
+        "X": 32,
+        "Y": 280.4,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Audio devices and microphone",
+        "Type": "Button",
+        "X": 416,
+        "Y": 280.4,
+        "Width": 43,
+        "Height": 26
+      },
+      {
+        "Name": "Windows volume",
+        "Type": "Slider",
+        "X": 71.52,
+        "Y": 282.48,
+        "Width": 319.23,
+        "Height": 22
+      }
+    ]
+  },
+  {
+    "Page": "focus",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Timer duration in minutes",
+        "Type": "TextBox",
+        "X": 32,
+        "Y": 142.08,
+        "Width": 58,
+        "Height": 30
+      },
+      {
+        "Name": "Start",
+        "Type": "Button",
+        "X": 169.4,
+        "Y": 187.84,
+        "Width": 103,
+        "Height": 32
+      },
+      {
+        "Name": "Pause or resume timer",
+        "Type": "Button",
+        "X": 281.72,
+        "Y": 187.84,
+        "Width": 32,
+        "Height": 32
+      },
+      {
+        "Name": "Reset",
+        "Type": "Button",
+        "X": 315,
+        "Y": 187.84,
+        "Width": 40,
+        "Height": 32
+      },
+      {
+        "Name": "Start, pause or resume stopwatch",
+        "Type": "Button",
+        "X": 32,
+        "Y": 316.8,
+        "Width": 42,
+        "Height": 30
+      },
+      {
+        "Name": "Reset stopwatch",
+        "Type": "Button",
+        "X": 81.92,
+        "Y": 316.8,
+        "Width": 46,
+        "Height": 30
+      },
+      {
+        "Name": "Focus minutes",
+        "Type": "TextBox",
+        "X": 32,
+        "Y": 485.28,
+        "Width": 216.12,
+        "Height": 30
+      },
+      {
+        "Name": "Break minutes",
+        "Type": "TextBox",
+        "X": 269.24,
+        "Y": 485.28,
+        "Width": 216.12,
+        "Height": 30
+      },
+      {
+        "Name": "Start focus",
+        "Type": "Button",
+        "X": 169.4,
+        "Y": 571.6,
+        "Width": 103,
+        "Height": 32
+      },
+      {
+        "Name": "Pause or resume focus",
+        "Type": "Button",
+        "X": 281.72,
+        "Y": 571.6,
+        "Width": 32,
+        "Height": 32
+      },
+      {
+        "Name": "Reset",
+        "Type": "Button",
+        "X": 315,
+        "Y": 571.6,
+        "Width": 40,
+        "Height": 32
+      }
+    ]
+  },
+  {
+    "Page": "status",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Monitor Overview",
+        "Type": "Button",
+        "X": 32,
+        "Y": 127.52,
+        "Width": 54,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Hardware",
+        "Type": "Button",
+        "X": 91.28,
+        "Y": 127.52,
+        "Width": 55,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Network",
+        "Type": "Button",
+        "X": 151.6,
+        "Y": 127.52,
+        "Width": 50,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Storage",
+        "Type": "Button",
+        "X": 206.72,
+        "Y": 127.52,
+        "Width": 47,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Processes",
+        "Type": "Button",
+        "X": 258.72,
+        "Y": 127.52,
+        "Width": 56,
+        "Height": 28
+      },
+      {
+        "Name": "System details \u00B7 scroll or use Page Down",
+        "Type": "ScrollViewer",
+        "X": 32,
+        "Y": 170.16,
+        "Width": 444.23,
+        "Height": 169.42
+      }
+    ]
+  },
+  {
+    "Page": "access",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Search commands  \u00B7  Ctrl\u002BK",
+        "Type": "Button",
+        "X": 32,
+        "Y": 63.04,
+        "Width": 438.23,
+        "Height": 35
+      },
+      {
+        "Name": "Explorer",
+        "Type": "Button",
+        "X": 32,
+        "Y": 105.68,
+        "Width": 89,
+        "Height": 38
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 130.8,
+        "Y": 105.68,
+        "Width": 58,
+        "Height": 38
+      },
+      {
+        "Name": "Activities",
+        "Type": "Button",
+        "X": 32,
+        "Y": 151.44,
+        "Width": 438.23,
+        "Height": 35
+      }
+    ]
+  },
+  {
+    "Page": "files",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Add files\u2026  0/40",
+        "Type": "Button",
+        "X": 409.76,
+        "Y": 116.08,
+        "Width": 81,
+        "Height": 30
+      }
+    ]
+  },
+  {
+    "Page": "notes",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Quick notes",
+        "Type": "TextBox",
+        "X": 32,
+        "Y": 99.44,
+        "Width": 444.23,
+        "Height": 136
+      }
+    ]
+  },
+  {
+    "Page": "tasks",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Add task",
+        "Type": "Button",
+        "X": 458.64,
+        "Y": 99.96,
+        "Width": 34,
+        "Height": 34
+      },
+      {
+        "Name": "New task",
+        "Type": "TextBox",
+        "X": 32,
+        "Y": 99.44,
+        "Width": 403.23,
+        "Height": 35
+      },
+      {
+        "Name": "Remove task Review the cover artwork",
+        "Type": "Button",
+        "X": 463.84,
+        "Y": 152.48,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Review the cover artwork",
+        "Type": "CheckBox",
+        "X": 33.04,
+        "Y": 152.48,
+        "Width": 409.23,
+        "Height": 26
+      },
+      {
+        "Name": "Remove task Keep the next step clear",
+        "Type": "Button",
+        "X": 463.84,
+        "Y": 194.08,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Keep the next step clear",
+        "Type": "CheckBox",
+        "X": 33.04,
+        "Y": 194.08,
+        "Width": 409.23,
+        "Height": 26
+      }
+    ]
+  },
+  {
+    "Page": "clips",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Pause capture",
+        "Type": "CheckBox",
+        "X": 32,
+        "Y": 93.2,
+        "Width": 444.23,
+        "Height": 30
+      },
+      {
+        "Name": "Clear history",
+        "Type": "Button",
+        "X": 32,
+        "Y": 131.68,
+        "Width": 71,
+        "Height": 27
+      },
+      {
+        "Name": "Turn off",
+        "Type": "Button",
+        "X": 112.08,
+        "Y": 131.68,
+        "Width": 53,
+        "Height": 27
+      },
+      {
+        "Name": "Clipboard history",
+        "Type": "ScrollViewer",
+        "X": 32,
+        "Y": 168.08,
+        "Width": 444.23,
+        "Height": 220.96
+      },
+      {
+        "Name": "View Link",
+        "Type": "Button",
+        "X": 32,
+        "Y": 170.16,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 232.56,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 294.96,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 357.36,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 419.76,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 482.16,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 544.56,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 606.96,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 669.36,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 731.76,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 794.16,
+        "Width": 430.23,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 32,
+        "Y": 856.56,
+        "Width": 430.23,
+        "Height": 58
+      }
+    ]
+  },
+  {
+    "Page": "calendar",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Next calendar month",
+        "Type": "Button",
+        "X": 466.96,
+        "Y": 60.96,
+        "Width": 26,
+        "Height": 28
+      },
+      {
+        "Name": "Previous calendar month",
+        "Type": "Button",
+        "X": 435.76,
+        "Y": 60.96,
+        "Width": 26,
+        "Height": 28
+      },
+      {
+        "Name": "Toggle calendar month",
+        "Type": "Button",
+        "X": 32,
+        "Y": 59.92,
+        "Width": 384.23,
+        "Height": 30
+      },
+      {
+        "Name": "Today",
+        "Type": "Button",
+        "X": 448.24,
+        "Y": 105.68,
+        "Width": 44,
+        "Height": 27
+      },
+      {
+        "Name": "Add local event",
+        "Type": "Button",
+        "X": 376.48,
+        "Y": 105.68,
+        "Width": 65,
+        "Height": 27
+      }
+    ]
+  },
+  {
+    "Page": "awake",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake duration",
+        "Type": "ComboBox",
+        "X": 32,
+        "Y": 181.6,
+        "Width": 444.23,
+        "Height": 34
+      },
+      {
+        "Name": "Start keep awake",
+        "Type": "Button",
+        "X": 32,
+        "Y": 270,
+        "Width": 438.23,
+        "Height": 35
+      }
+    ]
+  },
+  {
+    "Page": "links",
+    "Width": 526,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 32,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 464.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 152.76,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 171.48,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 190.2,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 208.92,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 227.64,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 246.36,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 265.08,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 283.8,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 302.52,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 321.24,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 339.96,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Link to clean",
+        "Type": "TextBox",
+        "X": 32,
+        "Y": 117.12,
+        "Width": 444.23,
+        "Height": 36
+      },
+      {
+        "Name": "Cleaned link",
+        "Type": "TextBox",
+        "X": 32,
+        "Y": 190.96,
+        "Width": 444.23,
+        "Height": 44
+      },
+      {
+        "Name": "Copy cleaned link",
+        "Type": "Button",
+        "X": 32,
+        "Y": 244,
+        "Width": 438.23,
+        "Height": 35
+      }
+    ]
+  },
+  {
+    "Page": "media",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Previous track",
+        "Type": "Button",
+        "X": 92.84,
+        "Y": 141.04,
+        "Width": 38,
+        "Height": 38
+      },
+      {
+        "Name": "Play or pause",
+        "Type": "Button",
+        "X": 151.08,
+        "Y": 136.88,
+        "Width": 46,
+        "Height": 46
+      },
+      {
+        "Name": "Next track",
+        "Type": "Button",
+        "X": 217.64,
+        "Y": 141.04,
+        "Width": 38,
+        "Height": 38
+      },
+      {
+        "Name": "Playback position",
+        "Type": "Slider",
+        "X": 57,
+        "Y": 242.96,
+        "Width": 226.92,
+        "Height": 24
+      },
+      {
+        "Name": "Open volume mixer",
+        "Type": "Button",
+        "X": 265.96,
+        "Y": 280.4,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Mute or unmute",
+        "Type": "Button",
+        "X": 57,
+        "Y": 280.4,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Audio devices and microphone",
+        "Type": "Button",
+        "X": 215,
+        "Y": 280.4,
+        "Width": 43,
+        "Height": 26
+      },
+      {
+        "Name": "Windows volume",
+        "Type": "Slider",
+        "X": 96.52,
+        "Y": 282.48,
+        "Width": 101.92,
+        "Height": 22
+      }
+    ]
+  },
+  {
+    "Page": "focus",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Timer duration in minutes",
+        "Type": "TextBox",
+        "X": 57,
+        "Y": 142.08,
+        "Width": 58,
+        "Height": 30
+      },
+      {
+        "Name": "Start",
+        "Type": "Button",
+        "X": 81.4,
+        "Y": 187.84,
+        "Width": 103,
+        "Height": 32
+      },
+      {
+        "Name": "Pause or resume timer",
+        "Type": "Button",
+        "X": 193.72,
+        "Y": 187.84,
+        "Width": 32,
+        "Height": 32
+      },
+      {
+        "Name": "Reset",
+        "Type": "Button",
+        "X": 227,
+        "Y": 187.84,
+        "Width": 40,
+        "Height": 32
+      },
+      {
+        "Name": "Start, pause or resume stopwatch",
+        "Type": "Button",
+        "X": 57,
+        "Y": 338.64,
+        "Width": 42,
+        "Height": 30
+      },
+      {
+        "Name": "Reset stopwatch",
+        "Type": "Button",
+        "X": 106.92,
+        "Y": 338.64,
+        "Width": 46,
+        "Height": 30
+      },
+      {
+        "Name": "Focus minutes",
+        "Type": "TextBox",
+        "X": 57,
+        "Y": 507.12,
+        "Width": 107.46,
+        "Height": 30
+      },
+      {
+        "Name": "Break minutes",
+        "Type": "TextBox",
+        "X": 181.24,
+        "Y": 507.12,
+        "Width": 107.46,
+        "Height": 30
+      },
+      {
+        "Name": "Start focus",
+        "Type": "Button",
+        "X": 81.4,
+        "Y": 593.44,
+        "Width": 103,
+        "Height": 32
+      },
+      {
+        "Name": "Pause or resume focus",
+        "Type": "Button",
+        "X": 193.72,
+        "Y": 593.44,
+        "Width": 32,
+        "Height": 32
+      },
+      {
+        "Name": "Reset",
+        "Type": "Button",
+        "X": 227,
+        "Y": 593.44,
+        "Width": 40,
+        "Height": 32
+      }
+    ]
+  },
+  {
+    "Page": "status",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Monitor Overview",
+        "Type": "Button",
+        "X": 57,
+        "Y": 127.52,
+        "Width": 54,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Hardware",
+        "Type": "Button",
+        "X": 116.28,
+        "Y": 127.52,
+        "Width": 55,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Network",
+        "Type": "Button",
+        "X": 176.6,
+        "Y": 127.52,
+        "Width": 50,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Storage",
+        "Type": "Button",
+        "X": 231.72,
+        "Y": 127.52,
+        "Width": 47,
+        "Height": 28
+      },
+      {
+        "Name": "Monitor Processes",
+        "Type": "Button",
+        "X": 57,
+        "Y": 159.76,
+        "Width": 56,
+        "Height": 28
+      },
+      {
+        "Name": "System details \u00B7 scroll or use Page Down",
+        "Type": "ScrollViewer",
+        "X": 57,
+        "Y": 202.4,
+        "Width": 226.92,
+        "Height": 138.42
+      }
+    ]
+  },
+  {
+    "Page": "access",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Search commands  \u00B7  Ctrl\u002BK",
+        "Type": "Button",
+        "X": 57,
+        "Y": 63.04,
+        "Width": 220.92,
+        "Height": 35
+      },
+      {
+        "Name": "Explorer",
+        "Type": "Button",
+        "X": 57,
+        "Y": 105.68,
+        "Width": 89,
+        "Height": 38
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 155.8,
+        "Y": 105.68,
+        "Width": 89,
+        "Height": 38
+      },
+      {
+        "Name": "Activities",
+        "Type": "Button",
+        "X": 57,
+        "Y": 151.44,
+        "Width": 220.92,
+        "Height": 35
+      }
+    ]
+  },
+  {
+    "Page": "files",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Add files\u2026  0/40",
+        "Type": "Button",
+        "X": 208.76,
+        "Y": 131.68,
+        "Width": 81,
+        "Height": 30
+      }
+    ]
+  },
+  {
+    "Page": "notes",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Quick notes",
+        "Type": "TextBox",
+        "X": 57,
+        "Y": 99.44,
+        "Width": 226.92,
+        "Height": 136
+      }
+    ]
+  },
+  {
+    "Page": "tasks",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Add task",
+        "Type": "Button",
+        "X": 257.64,
+        "Y": 99.96,
+        "Width": 34,
+        "Height": 34
+      },
+      {
+        "Name": "New task",
+        "Type": "TextBox",
+        "X": 57,
+        "Y": 99.44,
+        "Width": 185.92,
+        "Height": 35
+      },
+      {
+        "Name": "Remove task Review the cover artwork",
+        "Type": "Button",
+        "X": 262.84,
+        "Y": 152.48,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Review the cover artwork",
+        "Type": "CheckBox",
+        "X": 58.04,
+        "Y": 152.48,
+        "Width": 191.92,
+        "Height": 26
+      },
+      {
+        "Name": "Remove task Keep the next step clear",
+        "Type": "Button",
+        "X": 262.84,
+        "Y": 194.08,
+        "Width": 26,
+        "Height": 26
+      },
+      {
+        "Name": "Keep the next step clear",
+        "Type": "CheckBox",
+        "X": 58.04,
+        "Y": 194.08,
+        "Width": 191.92,
+        "Height": 26
+      }
+    ]
+  },
+  {
+    "Page": "clips",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 86.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 104.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 123.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 142.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 161,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 179.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 198.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 217.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 235.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 254.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 273.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Pause capture",
+        "Type": "CheckBox",
+        "X": 57,
+        "Y": 93.2,
+        "Width": 226.92,
+        "Height": 30
+      },
+      {
+        "Name": "Clear history",
+        "Type": "Button",
+        "X": 57,
+        "Y": 131.68,
+        "Width": 71,
+        "Height": 27
+      },
+      {
+        "Name": "Turn off",
+        "Type": "Button",
+        "X": 137.08,
+        "Y": 131.68,
+        "Width": 53,
+        "Height": 27
+      },
+      {
+        "Name": "Clipboard history",
+        "Type": "ScrollViewer",
+        "X": 57,
+        "Y": 168.08,
+        "Width": 226.92,
+        "Height": 220.96
+      },
+      {
+        "Name": "View Link",
+        "Type": "Button",
+        "X": 57,
+        "Y": 170.16,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 232.56,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 294.96,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 357.36,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 419.76,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 482.16,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 544.56,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 606.96,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 669.36,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 731.76,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 794.16,
+        "Width": 212.92,
+        "Height": 58
+      },
+      {
+        "Name": "View Text",
+        "Type": "Button",
+        "X": 57,
+        "Y": 856.56,
+        "Width": 212.92,
+        "Height": 58
+      }
+    ]
+  },
+  {
+    "Page": "calendar",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 80.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 99.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 118.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 137,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 155.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 174.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 193.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 211.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 230.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 249.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 268.04,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Next calendar month",
+        "Type": "Button",
+        "X": 265.96,
+        "Y": 60.96,
+        "Width": 26,
+        "Height": 28
+      },
+      {
+        "Name": "Previous calendar month",
+        "Type": "Button",
+        "X": 234.76,
+        "Y": 60.96,
+        "Width": 26,
+        "Height": 28
+      },
+      {
+        "Name": "Toggle calendar month",
+        "Type": "Button",
+        "X": 57,
+        "Y": 59.92,
+        "Width": 166.92,
+        "Height": 30
+      },
+      {
+        "Name": "Today",
+        "Type": "Button",
+        "X": 247.24,
+        "Y": 105.68,
+        "Width": 44,
+        "Height": 27
+      },
+      {
+        "Name": "Add local event",
+        "Type": "Button",
+        "X": 175.48,
+        "Y": 105.68,
+        "Width": 65,
+        "Height": 27
+      }
+    ]
+  },
+  {
+    "Page": "awake",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 62.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 80.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 99.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 118.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 137,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 155.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 174.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 193.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 211.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 230.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 249.32,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake duration",
+        "Type": "ComboBox",
+        "X": 57,
+        "Y": 198.24,
+        "Width": 226.92,
+        "Height": 34
+      },
+      {
+        "Name": "Start keep awake",
+        "Type": "Button",
+        "X": 57,
+        "Y": 286.64,
+        "Width": 220.92,
+        "Height": 35
+      }
+    ]
+  },
+  {
+    "Page": "links",
+    "Width": 300,
+    "Controls": [
+      {
+        "Name": "AI companion",
+        "Type": "Button",
+        "X": 57,
+        "Y": 10,
+        "Width": 28,
+        "Height": 30
+      },
+      {
+        "Name": "Settings",
+        "Type": "Button",
+        "X": 263.88,
+        "Y": 11.04,
+        "Width": 28,
+        "Height": 28
+      },
+      {
+        "Name": "Media",
+        "Type": "Button",
+        "X": 43.4,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Focus",
+        "Type": "Button",
+        "X": 62.12,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Status",
+        "Type": "Button",
+        "X": 80.84,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Launch",
+        "Type": "Button",
+        "X": 99.56,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "File shelf",
+        "Type": "Button",
+        "X": 118.28,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Notes",
+        "Type": "Button",
+        "X": 137,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Tasks",
+        "Type": "Button",
+        "X": 155.72,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clipboard",
+        "Type": "Button",
+        "X": 174.44,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Calendar",
+        "Type": "Button",
+        "X": 193.16,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Keep awake",
+        "Type": "Button",
+        "X": 211.88,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Clean links",
+        "Type": "Button",
+        "X": 230.6,
+        "Y": 10,
+        "Width": 18,
+        "Height": 30
+      },
+      {
+        "Name": "Link to clean",
+        "Type": "TextBox",
+        "X": 57,
+        "Y": 132.72,
+        "Width": 226.92,
+        "Height": 36
+      },
+      {
+        "Name": "Cleaned link",
+        "Type": "TextBox",
+        "X": 57,
+        "Y": 206.56,
+        "Width": 226.92,
+        "Height": 44
+      },
+      {
+        "Name": "Copy cleaned link",
+        "Type": "Button",
+        "X": 57,
+        "Y": 259.6,
+        "Width": 220.92,
+        "Height": 35
+      }
+    ]
+  }
+]

@@ -104,7 +104,7 @@ public sealed partial class OverlayWindow
     }
     private FrameworkElement WrapArtwork(Image current)
     {
-        var grid=new Grid();var old=new Image{Width=current.Width,Height=current.Height,Stretch=current.Stretch,Opacity=0,IsHitTestVisible=false};previousArtwork[current]=old;grid.Children.Add(old);grid.Children.Add(current);return grid;
+        var grid=new Grid();var old=new Image{Width=current.Width,Height=current.Height,Stretch=current.Stretch,Opacity=0,IsHitTestVisible=false};previousArtwork[current]=old;grid.Children.Add(old);grid.Children.Add(current);ControlFeedback.Artwork(grid);return grid;
     }
     private void SwapArtwork(Image current,ImageSource? source)
     {
@@ -123,17 +123,26 @@ public sealed partial class OverlayWindow
         if(previousText.TryGetValue(text,out var old)){old.FontWeight=text.FontWeight;old.Text=text.Text;old.BeginAnimation(OpacityProperty,null);old.Opacity=1;Motion.Fade(old,0,220);text.BeginAnimation(OpacityProperty,null);text.Opacity=Motion.Enabled?0:1;}
         if(marqueeLabels.TryGetValue(text,out var label))label.Reset();text.Text=value;Motion.Fade(text,1,220);
     }
+    private CoverPalette coverPalette;
+    private void UpdateAmbientMotion()
+    {
+        var s=app.Settings;
+        bool Includes(string id)=>AmbientPolicy.Includes(s,id);
+        bool allowed=!noticeShowing && (assistantOpen || assistantPeeking?Includes("ai"):commandOpen || activitiesOpen?Includes("shortcuts"):expanded?
+            PanelWidgets.Any(w=>(!s.CompactLayout || PageFor(w.Id)==activePage) && Includes(w.Id)):
+            peeking?Includes(peekId):Includes("closed"));
+        bool moving=app.Media.Playing && s.LiveActivity && !IsTucked && !userHidden && IsVisible && WindowState!=WindowState.Minimized;
+        surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving);
+        app.AmbientAudio.Set(surface,allowed && moving);
+    }
     private void UpdateAlbumTint()
     {
-        if(!app.Settings.AlbumAccent){surface.AlbumTint=Colors.Transparent;return;}
-        if(ReferenceEquals(tintedArtwork,app.Media.Artwork))return;tintedArtwork=app.Media.Artwork;
-        if(tintedArtwork is not BitmapSource source){surface.AlbumTint=Colors.Transparent;return;}
-        try
+        if(!ReferenceEquals(tintedArtwork,app.Media.Artwork))
         {
-            var bitmap=new FormatConvertedBitmap(source,PixelFormats.Bgra32,null,0);int stride=bitmap.PixelWidth*4;var pixels=new byte[stride*bitmap.PixelHeight];bitmap.CopyPixels(pixels,stride,0);double r=0,g=0,b=0,n=0;
-            for(int i=0;i<pixels.Length;i+=64){if(pixels[i+3]<180)continue;double max=Math.Max(pixels[i],Math.Max(pixels[i+1],pixels[i+2])),min=Math.Min(pixels[i],Math.Min(pixels[i+1],pixels[i+2]));if(max<40 || min>220)continue;double weight=1+(max-min)/64;r+=pixels[i+2]*weight;g+=pixels[i+1]*weight;b+=pixels[i]*weight;n+=weight;}
-            surface.AlbumTint=n>0?Color.FromArgb(24,(byte)(r/n),(byte)(g/n),(byte)(b/n)):Colors.Transparent;
+            tintedArtwork=app.Media.Artwork;
+            coverPalette=app.AmbientAudio.CoverColors;
         }
-        catch(Exception ex){app.Store.Log(ex);surface.AlbumTint=Colors.Transparent;}
+        var tint=coverPalette.Primary;surface.AlbumTint=app.Settings.AlbumAccent && tint.A>0?Color.FromArgb(24,tint.R,tint.G,tint.B):Colors.Transparent;
+        UpdateAmbientMotion();
     }
 }

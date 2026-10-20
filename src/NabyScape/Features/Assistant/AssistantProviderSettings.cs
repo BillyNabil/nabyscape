@@ -15,6 +15,7 @@ internal sealed class AssistantProviderSettings : UserControl
     private readonly TextBox name=UI.Input("Provider name",""),url=UI.Input("API base URL",""),model=UI.Input("Chat model",""),realtimeUrl=UI.Input("Realtime WebSocket URL",""),realtimeModel=UI.Input("Realtime model",""),voiceName=UI.Input("Voice name",""),instructions=UI.Input("Assistant instructions","");
     private readonly PasswordBox key=new(){MaxLength=2000};
     private readonly TextBlock status=UI.Text("",11,UI.Muted),keyStatus=UI.Text("",11,UI.Muted);
+    private readonly TextBlock hermesHelp=UI.Text("Hermes Agent runs in its own gateway (default localhost:8642). Enter its API_SERVER_KEY and use model hermes-agent. Its tools run with their own permissions, independently of Naby approvals. Clear starts a new chat without deleting server memory. Live voice uses a separate provider.",11,UI.Muted);
     private readonly Button enable,vision,tools;
     private bool syncing,imageInput,toolInput;
     private readonly Expander connectionEditor=new(){Header="Provider connection",IsExpanded=true,Margin=new(0,14,0,8)};
@@ -34,6 +35,7 @@ Label(page,"Edit a saved provider",list);UI.Named(list,"Saved AI providers");lis
         var connection=new StackPanel();
         Label(connection,"Name",name);name.MaxLength=60;Label(connection,"Chat API protocol",protocol);Label(connection,"API base URL",url);url.MaxLength=2048;Label(connection,"Chat model ID",model);model.MaxLength=160;
         Label(connection,"API key · Windows Credential Manager",key);UI.Named(key,"API key");connection.Children.Add(keyStatus);
+        hermesHelp.Margin=new(0,10,0,10);connection.Children.Add(hermesHelp);
         connection.Children.Add(UI.Text("The key is never written to settings or exported layouts. Changing a server clears its saved key unless you enter a new one. Local providers can leave this blank.",11,UI.Muted));
         vision=AssistantWindow.Pill("",()=>{imageInput=!imageInput;RefreshCapabilities();});tools=AssistantWindow.Pill("",()=>{toolInput=!toolInput;RefreshCapabilities();});var flags=new WrapPanel{Margin=new(0,10,0,8)};flags.Children.Add(vision);flags.Children.Add(tools);connection.Children.Add(flags);connection.Children.Add(UI.Text("Enable these only if your chosen model supports image input and function tools. A compatible chat API does not imply realtime voice support.",11,UI.Muted));
         var realtime=new StackPanel();Label(realtime,"Voice protocol",realtimeProtocol);Label(realtime,"Realtime WebSocket URL",realtimeUrl);realtimeUrl.MaxLength=2048;realtime.Children.Add(AssistantWindow.Pill("Use protocol URL",()=>realtimeUrl.Text=AssistantVoiceSession.DefaultUrl(realtimeProtocol.SelectedItem?.ToString()??"OpenAIRealtime")));Label(realtime,"Realtime model ID",realtimeModel);realtimeModel.MaxLength=160;Label(realtime,"Provider voice name",voiceName);voiceName.MaxLength=60;realtime.Children.Add(UI.Text("OpenAI Realtime and Gemini Live use different protocols. Model access and charges depend on your provider. No microphone or screen is opened by saving.",11,UI.Muted));connection.Children.Add(new Expander{Header="Live voice configuration",Content=realtime,Margin=new(0,14,0,8)});
@@ -42,7 +44,7 @@ Label(page,"Edit a saved provider",list);UI.Named(list,"Saved AI providers");lis
 
         var prompt=new StackPanel();Label(prompt,"Assistant instructions",instructions);instructions.AcceptsReturn=true;instructions.TextWrapping=TextWrapping.Wrap;instructions.Height=92;instructions.MaxLength=8000;instructions.Text=ai.Options.Instructions;prompt.Children.Add(AssistantWindow.Pill("Save instructions",()=>{ai.Options.Instructions=instructions.Text;SaveConfiguration();}));page.Children.Add(new Expander{Header="Assistant instructions",Content=prompt,Margin=new(0,14,0,8)});
         status.Margin=new(0,12,0,0);page.Children.Add(status);
-        page.Children.Add(UI.Text("Chat lives in memory until Clear or exit. Microphone, screen sharing and computer control are separate session choices. AI-generated text never executes as a shell command.",11,UI.Muted));
+        page.Children.Add(UI.Text("Naby keeps chat in memory. Providers may retain conversations; Clear removes local chat only. Microphone, screen sharing and Naby computer control are separate session choices.",11,UI.Muted));
         Content=page;
         Reload();RefreshEnabled();
     }
@@ -60,6 +62,7 @@ Label(page,"Edit a saved provider",list);UI.Named(list,"Saved AI providers");lis
     {
         var selected=Selected;key.Clear();connectionEditor.Visibility=selected==null?Visibility.Collapsed:Visibility.Visible;
         list.IsEnabled=chatProvider.IsEnabled=voiceProvider.IsEnabled=ai.Options.Providers.Count>0;
+        hermesHelp.Visibility=selected?.Backend=="Hermes"?Visibility.Visible:Visibility.Collapsed;tools.IsEnabled=selected?.Backend!="Hermes";
         if(selected==null){status.Text="Choose a preset and Add provider to get started.";keyStatus.Text="";RefreshCapabilities();return;}
         name.Text=selected.Name;url.Text=selected.BaseUrl;model.Text=selected.Model;protocol.SelectedItem=selected.Protocol;realtimeProtocol.SelectedItem=selected.RealtimeProtocol;realtimeUrl.Text=selected.RealtimeUrl;realtimeModel.Text=selected.RealtimeModel;voiceName.Text=selected.Voice;key.Clear();imageInput=selected.Vision;toolInput=selected.Tools;RefreshCapabilities();
         try{keyStatus.Text=ai.Keys.Exists(selected.Id)?"A key is saved for this Windows user. Leave blank to keep it.":"No key saved.";}catch{keyStatus.Text="Windows credential storage is unavailable.";}
@@ -78,6 +81,7 @@ Label(page,"Edit a saved provider",list);UI.Named(list,"Saved AI providers");lis
         var candidate=JsonSerializer.Deserialize<AssistantProvider>(JsonSerializer.Serialize(original))!;
         candidate.Name=name.Text.Trim();candidate.BaseUrl=url.Text.Trim();candidate.Model=model.Text.Trim();candidate.Protocol=protocol.SelectedItem?.ToString()??"ChatCompletions";candidate.Vision=imageInput;candidate.Tools=toolInput;candidate.RealtimeUrl=realtimeUrl.Text.Trim();candidate.RealtimeModel=realtimeModel.Text.Trim();candidate.RealtimeProtocol=realtimeProtocol.SelectedItem?.ToString()??"OpenAIRealtime";candidate.Voice=voiceName.Text.Trim();
         if(candidate.Name.Length==0)throw new InvalidOperationException("Enter a provider name.");
+        if(candidate.Backend=="Hermes"){candidate.Tools=false;if(candidate.Protocol!="ChatCompletions")throw new InvalidOperationException("Select ChatCompletions for Hermes Agent.");}
         if(candidate.BaseUrl.Length>0)AssistantTransport.ValidateEndpoint(candidate.BaseUrl);
         if(candidate.Model.Length==0 && candidate.RealtimeModel.Length==0)throw new InvalidOperationException("Enter a chat model or realtime model ID.");
         if(candidate.Model.Length>0 && candidate.BaseUrl.Length==0)throw new InvalidOperationException("Enter an API base URL for chat.");

@@ -1,0 +1,36 @@
+PASS  Timer and Focus retain their side-by-side layout
+PASS  Only one main action and Reset exist per countdown
+PASS  Timer starts with a clear Start action
+PASS  Timer uses the entered duration
+PASS  Timer changes Start to Pause immediately
+PASS  Timer locks duration during the session
+PASS  Timer pauses rather than restarting
+PASS  Timer resumes the same session
+PASS  Timer keeps its controls across shared heartbeats
+PASS  Focus starts with a clear Start action
+PASS  Focus uses the entered duration
+PASS  Focus changes Start to Pause immediately
+PASS  Focus locks duration during the session
+PASS  Focus pauses rather than restarting
+PASS  Focus resumes the same session
+PASS  Focus keeps its controls across shared heartbeats
+PASS  Timer Reset restores editable ready state
+PASS  Timer rejects invalid duration inline
+PASS  Focus Reset restores editable ready state
+PASS  Focus rejects invalid duration inline
+PASS  Heartbeat preserves duration draft and selection
+PASS  Audio and media updates do not refresh countdown controls
+PASS  Progress reflects elapsed session time
+PASS  Timer started from another surface shows its actual duration
+PASS  Finished timer displays completion and can restart
+PASS  Focus transitions to break with the same Pause action
+PASS  Hidden countdown releases its heartbeat subscription
+PASS  Reopening countdown resumes visible updates
+PASS  Timer actions fit at 300 DIP
+PASS  Focus actions fit at 300 DIP
+PASS  Narrow panels stack Timer and Focus
+PASS  Timer actions fit at 526 DIP
+PASS  Focus actions fit at 526 DIP
+PASS  Classic Timer uses the same state-driven action
+PASS  Classic Focus uses the same state-driven action
+RESULT: 0 failures

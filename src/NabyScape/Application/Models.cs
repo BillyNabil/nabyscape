@@ -174,7 +174,7 @@ public sealed partial class Settings
         // Legacy availability also gates hover pages. Hiding a main-panel widget
         // must not remove an independently enabled hover page.
         foreach(var tool in Tools)tool.Enabled|=Widgets.Any(w=>w.Id==tool.Id && w.Enabled);
-        NormalizeMediaUx();
+        NormalizeMediaUx();NormalizePremium();
         Shortcuts=(Shortcuts ?? new()).Where(s=>s!=null && !string.IsNullOrWhiteSpace(s.Name) && !string.IsNullOrWhiteSpace(s.Target)).Take(40).ToList();
         Monitor ??= "";
         if(DisplayMode is not ("Primary" or "Selected" or "Follow"))DisplayMode=Monitor.Length>0?"Selected":"Primary";

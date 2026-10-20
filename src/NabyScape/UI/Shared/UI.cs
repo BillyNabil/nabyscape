@@ -20,9 +20,9 @@ internal static class UI
     {var c=Brush(color).Color;return c.R*.2126+c.G*.7152+c.B*.0722>150?Brush("#111317"):Brushes.White;}
     public static void ApplyControlTheme(Settings settings)
     {if(Application.Current==null)return;foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})ResourceBrush(entry.Item1,Brush(entry.Item2));ResourceBrush("ControlText",ContrastText(settings.ControlFill));ResourceBrush("SelectionText",ContrastText(settings.SelectionFill)); }
-    public static readonly Brush Muted=Brush("#A1A1A6");
+    public static readonly Brush Muted=Brush("#A6ABB4");
     public static TextBlock Text(string text,double size=13,Brush? color=null)
-        =>new(){Text=text,FontSize=size,Foreground=color ?? Brushes.White,VerticalAlignment=VerticalAlignment.Center,TextWrapping=TextWrapping.Wrap};
+        =>new(){Text=text,FontSize=size,Foreground=color ?? Brush("#F2F3F5"),VerticalAlignment=VerticalAlignment.Center,TextWrapping=TextWrapping.Wrap};
     private static readonly object HeadingTag=new();
     public static TextBlock Heading(string text,double size=13,Brush? color=null)
     {var heading=Text(text,size,color);heading.Tag=HeadingTag;heading.FontWeight=App.Current is App app && app.Settings?.BoldHeadings==true?FontWeights.SemiBold:FontWeights.Normal;return heading;}
@@ -32,7 +32,7 @@ internal static class UI
     public static Button Button(string text,Action action,bool primary=false)
     {
         var b=new Button{Content=text,Tag=new CornerRadius(8)};AutomationProperties.SetName(b,text);
-        if(primary) { b.SetResourceReference(Control.BackgroundProperty,"Accent");b.Foreground=Brushes.Black;b.BorderThickness=new(0); }
+        if(primary) { b.SetResourceReference(Control.BackgroundProperty,"Accent");b.Foreground=Brushes.Black;b.FontWeight=FontWeights.SemiBold;b.BorderThickness=new(0); }
         Motion.Button(b);b.Click+=(_,_)=>action();return b;
     }
     public static StackPanel Row(params UIElement[] elements)

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/evidence/scroll-lyrics-2.7.2/lyrics-right-200.png" alt="Actual NabyScape v2.7.2: music controls on the left and synced lyrics in a dedicated right column. Original sample text in the real WPF interface." width="100%">
+  <img src="docs/evidence/premium-experience-2.7.5/ambient-cool.png" alt="Actual NabyScape music panel with cover-colored ambient light, playback controls and measured waveform. Original sample artwork." width="620">
 </p>
 
 <h1 align="center">NabyScape</h1>
@@ -20,9 +20,24 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-252c36?style=flat-square" alt="MIT license"></a>
 </p>
 
-**Latest release: v2.7.2.** Synced Spotify lyrics beside your player, a more responsive measured spectrum, simpler Naby chat, individual tool panels and clipboard scrolling that keeps navigation in place. [Download the installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/NabyScape-win-x64-Setup.exe) · [What's changed](docs/releases/v2.7.2.md)
+**Latest release: v2.7.6.** Audio-reactive ambient across your widgets, clearer Timer/Focus controls, refined interactions, notification options and a Hermes Agent connection preset. [Download the installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/NabyScape-win-x64-Setup.exe) · [What's changed](docs/releases/v2.7.6.md)
 
-The preview above is the actual v2.7.2 WPF interface with original sample content. The optional AI companion uses your own provider; API keys are stored in Windows Credential Manager and are never bundled.
+The preview above is the actual WPF interface captured during the cover-ambient update, with original sample content. The optional AI companion uses your own provider; API keys are stored in Windows Credential Manager and are never bundled.
+
+## A little light, wherever you work
+
+Music colors the surface. Notes, Tasks, Clipboard, Calendar, Focus and the other widgets can share that glow, including detached mini windows. The light stays beneath your content; the familiar compact layout stays in place.
+
+<table>
+  <tr><th align="left">Your notes, with a quieter glow</th><th align="left">The same light, on your desktop</th></tr>
+  <tr><td width="62%"><img src="docs/evidence/reactive-ambient-2.7.6/notes-audio-high.png" alt="Actual Notes widget with blue ambient light responding to a synthetic measured audio level"></td><td><img src="docs/evidence/reactive-ambient-2.7.6/notes-mini.png" alt="Actual detached Notes window using the same ambient settings"></td></tr>
+</table>
+
+In **Settings → Appearance → Ambient light**, choose **All widgets**, **Music only**, or individual widgets. Use the album cover, your accent, or a custom color; adjust intensity and spread. Audio response offers **Off / Soft / Responsive / Punchy** with sensitivity, independently of **Still / Breathe / Drift** movement.
+
+Ambient follows measured audio from the selected media app, with no invented beats during silence. It shares the audio sampler with waveforms; ambient alone does not start spectrum capture. Reactive work stops when playback pauses or the surface is hidden or tucked. Reduce motion and Live activity controls are respected.
+
+[See the controls](docs/evidence/reactive-ambient-2.7.6/settings-ambient.png) · [Audio response options](docs/evidence/reactive-ambient-2.7.6/settings-audio-response.png) · [480 logic checks and 462 UI checks](docs/verification-reactive-ambient-2.7.6.md). Captures use synthetic content and audio levels; they are actual app renders, not concept art.
 
 ## Music, with room for the words
 
@@ -42,17 +57,21 @@ The animation uses a synthetic test signal. During normal use, frequency bands c
 
 <table>
   <tr><th align="left">A quieter place to ask</th><th align="left">Your next session, your duration</th></tr>
-  <tr><td width="58%"><img src="docs/evidence/media-ux-2.7.0/naby-chat-526.png" alt="Actual simplified Naby chat with sample conversation, inline composer and session controls"></td><td><img src="docs/evidence/media-ux-2.7.0/focus-editable.png" alt="Actual Focus panel with directly editable Focus and Break durations"></td></tr>
+  <tr><td width="58%"><img src="docs/evidence/media-ux-2.7.0/naby-chat-526.png" alt="Actual simplified Naby chat with sample conversation, inline composer and session controls"></td><td><img src="docs/evidence/countdown-ui-2.7.4/running.png" alt="Actual Timer and Focus panel with running states, editable durations and a single Pause action"></td></tr>
 </table>
 
 - **Naby chat:** a simpler composer with voice and screen-sharing controls. Configure providers in the app's Settings; microphone, screen sharing and reviewed actions remain explicit choices.
 - **Your tools, in your order:** Shelf, Notes, Tasks, Clipboard, Calendar, Keep awake and Clean links each have their own panel. Use icons, labels or minimal dots.
 - **Scroll with intent:** wheel over navigation to change panels; scroll inside Clipboard to move only its history. Headers stay put, and the list remembers its position. Shift+wheel or a horizontal gesture can leave a list.
 - **Move and resize:** enable **Settings → Layout → Move & resize**, then use the top grip and lower corners. Closed, hover and open-panel sizes remain independent; Escape cancels a drag.
-- **Focus that fits:** edit Focus and Break minutes in the panel. Choose Chime, Bell, your own WAV or Off for completion feedback, with separate volume.
+- **Focus that fits:** edit Focus and Break minutes before starting. One action changes from Start to Pause to Resume, with a separate Reset. Choose Chime, Bell, your own WAV or Off for completion feedback.
 - **Optional browser previews:** switch off automatic browser-media previews in **Settings → Controls** if YouTube's hover playback interrupts your flow.
 
 These are real WPF previews with sample content. [Media and interaction verification](docs/verification-media-ux-2.7.0.md) · [Clipboard and side-lyrics checks](docs/verification-scroll-lyrics-2.7.2.md)
+
+**Hermes Agent:** connect an existing Nous Research Hermes gateway from **Settings → AI → Hermes Agent**. Hermes runs its own backend tools under its own permissions; live voice can use a separate provider. [Connection guide](docs/hermes-agent.md).
+
+**Interaction and notices:** choose Off, Subtle or Expressive feedback; select notification entrances, lifetime, scheduled quiet hours and snooze. Naby notifications keep a bounded, temporary queue. [Presentation options](docs/releases/v2.7.5.md).
 
 ## Glance. Hover. Open.
 
@@ -121,9 +140,9 @@ The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel
 
 **Windows 11 x64.** The self-contained builds include .NET; no SDK is needed to run the app.
 
-- **[Download the v2.7.2 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
-- **[Download the v2.7.2 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
-- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.2/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.2) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+- **[Download the v2.7.6 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
+- **[Download the v2.7.6 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
+- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.6) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
 
 The installer is currently unsigned. Download from the official repository and review the version and checksums before running. Portable mode still stores data in your Windows user profile. Starting with Windows is optional and off by default. Closing Settings keeps NabyScape running; choose **Quit** from the tray to exit.
 
@@ -141,7 +160,7 @@ Global shortcuts are configurable. With cover gestures enabled, click closed art
 
 No NabyScape account or cloud sync is required. Notes, tasks, events, preferences and optional clipboard history stay in your Windows profile. Clipboard history starts off; turning it off clears its saved history and images. Lyrics lookup is an opt-in request to LRCLIB using track metadata. The AI companion is optional and uses a provider you configure. API keys are not bundled; Windows Credential Manager stores them for your Windows user. The app does not automatically fetch link previews.
 
-**AI companion · v2.6.3:** a character in the top island, with hover greetings, inline chat, live voice, selected-display context and reviewed app/desktop actions using your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Initial provider verification →](docs/verification-assistant-2.6.0.md) · [Interactive character preview →](docs/verification-assistant-character-2.6.2.md) · [Settings and chat layout →](docs/verification-ai-settings-2.6.3.md). API keys are not bundled; they are stored in Windows Credential Manager on your PC.
+**AI companion:** a character in the top island, with hover greetings, inline chat, live voice, selected-display context and reviewed app/desktop actions using your own provider. AI starts off; microphone, screen and control are explicit session choices. When enabled, the selected context goes to your configured provider. [Setup, provider support and privacy →](docs/assistant.md) · [Initial provider verification →](docs/verification-assistant-2.6.0.md) · [Interactive character preview →](docs/verification-assistant-character-2.6.2.md) · [Settings and chat layout →](docs/verification-ai-settings-2.6.3.md). API keys are not bundled; they are stored in Windows Credential Manager on your PC.
 
 **v2.5.0** stores local data in `%LOCALAPPDATA%\NabyScape`. Upgrades copy and validate legacy data from `%LOCALAPPDATA%\LumaIsland`, preserving the original folder. The per-user install path and `luma.layout.v1` layout format remain compatible. [Privacy, migration and reset preservation rules →](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/#privacy)
 

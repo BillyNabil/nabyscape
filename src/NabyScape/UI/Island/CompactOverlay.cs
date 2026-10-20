@@ -124,7 +124,7 @@ public sealed partial class OverlayWindow
     private void BuildCompactBody()
     {
         if(timelinePanel.Parent is Panel old)old.Children.Remove(timelinePanel);
-        title.FontSize=18;artist.FontSize=12;artwork.Width=artwork.Height=56;timerTime.FontSize=focusTime.FontSize=27;clock.FontSize=26;
+        title.FontSize=18;artist.FontSize=12;artwork.Width=artwork.Height=56;clock.FontSize=26;
         var navigation=new Grid{Tag="panel-navigation",Margin=new(0,0,0,app.Settings.SectionGap)};
         navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});navigation.ColumnDefinitions.Add(new());navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
         navigation.Children.Add(AssistantLauncher());
@@ -204,22 +204,7 @@ public sealed partial class OverlayWindow
             foreach(var widget in PanelWidgets.Where(w=>PageFor(w.Id)=="focus"))
             {
                 if(widget.Id=="stopwatch"){var watchModule=new Border{Child=new StopwatchView(app),Margin=new(0,12,0,4)};if(stacked)Grid.SetRow(watchModule,column++);else Grid.SetColumn(watchModule,column++);row.Children.Add(watchModule);continue;}
-                bool timer=widget.Id=="timer";var contents=new StackPanel();var heading=UI.Heading(timer?"Timer":"Focus",13);heading.FontWeight=FontWeights.SemiBold;contents.Children.Add(heading);
-                var number=timer?timerTime:focusTime;number.Margin=new(0,10,0,8);contents.Children.Add(number);
-                if(timer)
-                {
-                    var minutes=UI.Input("Timer duration in minutes","5","0.1–1440 minutes");minutes.Width=58;minutes.Height=30;minutes.FontSize=12;minutes.Padding=new(8,0,8,0);minutes.Margin=new(0,0,7,0);var input=UI.Row(minutes,UI.Text("minutes",11,UI.Muted));input.Height=38;contents.Children.Add(input);
-                    var start=Icons.Button("play","Start",()=>{if(!double.TryParse(minutes.Text,out var n) || !double.IsFinite(n) || n<.1 || n>1440){app.Notify("Invalid duration","Enter a duration from 0.1 to 1440 minutes.");return;}app.Session.Timer.Start(n*60,DateTimeOffset.UtcNow);app.SaveSession();},true,26);
-                    timerPause=Icons.Button("pause","Pause or resume timer",()=>{if(app.Session.Timer.Running)app.Session.Timer.Pause(DateTimeOffset.UtcNow);else app.Session.Timer.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,26);
-                    var reset=UI.Button("Reset",()=>{app.Session.Timer.Reset();app.SaveSession();});contents.Children.Add(CountdownActions(start,timerPause,reset));
-                }
-                else
-                {
-                    contents.Children.Add(FocusDurationEditor());focusPhase.Height=double.NaN;focusPhase.FontSize=11;focusPhase.Margin=new(0,0,0,4);contents.Children.Add(focusPhase);
-                    var start=Icons.Button("play","Start focus",()=>{app.Session.Focus.Start(app.Settings.FocusMinutes*60,DateTimeOffset.UtcNow,"work");app.SaveSession();},true,26);
-                    focusPause=Icons.Button("pause","Pause or resume focus",()=>{if(app.Session.Focus.Running)app.Session.Focus.Pause(DateTimeOffset.UtcNow);else app.Session.Focus.Resume(DateTimeOffset.UtcNow);app.SaveSession();},false,26);
-                    var reset=UI.Button("Reset",()=>{app.Session.Focus.Reset();app.SaveSession();});contents.Children.Add(CountdownActions(start,focusPause,reset));
-                }
+                var contents=new CountdownView(app,widget.Id=="focus");
                 var module=new Border{BorderBrush=UI.Brush(app.Settings.ControlBorder),BorderThickness=stacked?new Thickness(0,column==0?0:1,0,0):new Thickness(column==0?0:1,0,0,0),Padding=stacked?new Thickness(0,column==0?4:16,0,4):new Thickness(column==0?0:8,4,0,4),Margin=stacked?new Thickness(0,column==0?0:16,0,0):new Thickness(column==0?0:8,0,0,0),Child=contents};if(stacked)Grid.SetRow(module,column++);else Grid.SetColumn(module,column++);row.Children.Add(module);module.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");
             }
             bodyReflow.Add(()=>
@@ -249,13 +234,6 @@ public sealed partial class OverlayWindow
         }
         if(app.Settings.ActivitiesEnabled)launch.Children.Add(UI.Button("Activities",()=>ShowActivities()));
         if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Text("Add shortcuts in Settings.",12,UI.Muted));return launch;
-    }
-    private static FrameworkElement CountdownActions(Button start,Button pause,Button reset)
-    {
-        var row=new Grid{Margin=new(0,10,0,0),MaxWidth=180,HorizontalAlignment=HorizontalAlignment.Stretch};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(32)});row.ColumnDefinitions.Add(new(){Width=new GridLength(40)});
-        start.Content="Start";start.Width=double.NaN;start.Height=32;start.MinHeight=32;start.Padding=new(5,0,5,0);start.FontSize=11;start.FontWeight=FontWeights.SemiBold;start.Tag=new CornerRadius(7);start.Margin=new(0,0,5,0);row.Children.Add(start);
-        pause.Width=pause.Height=pause.MinHeight=32;pause.Padding=new(7);pause.Margin=new(0);pause.Tag=new CornerRadius(7);Grid.SetColumn(pause,1);row.Children.Add(pause);
-        reset.MinHeight=32;reset.Padding=new(2);reset.FontSize=10;reset.Background=Brushes.Transparent;reset.Margin=new(0);Grid.SetColumn(reset,2);row.Children.Add(reset);return row;
     }
     private void UpdateTimeline()
     {

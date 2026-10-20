@@ -1,0 +1,1 @@
+Original drawn covers and synthetic messages only. No real Hermes gateway request, API key, microphone, clipboard or screen capture. Scaled WPF raster exports do not replace physical monitor DPI testing.

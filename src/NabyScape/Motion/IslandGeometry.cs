@@ -31,7 +31,7 @@ internal static class IslandGeometry
     }
 }
 
-internal sealed class IslandSurface : FrameworkElement
+internal sealed partial class IslandSurface : FrameworkElement
 {
     public static readonly DependencyProperty GlassLiftProperty=DependencyProperty.Register(nameof(GlassLift),typeof(double),typeof(IslandSurface),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
     public double GlassLift {get=>(double)GetValue(GlassLiftProperty);set=>SetValue(GlassLiftProperty,value);}
@@ -82,13 +82,14 @@ internal sealed class IslandSurface : FrameworkElement
     protected override void OnRender(DrawingContext context)
     {
         context.DrawGeometry(Fill,null,Contour);
-        if(!GlassStyle)return;
-        context.PushClip(Contour);context.PushOpacity((.45+.55*GlassLift)*GlassStrength);
+        context.PushClip(Contour);
+        if(GlassStyle){context.PushOpacity((.45+.55*GlassLift)*GlassStrength);
         context.DrawGeometry(material,null,Contour);
         if(albumBrush!=null)context.DrawRectangle(albumBrush,null,new Rect(Math.Max(0,(ActualWidth-SurfaceWidth)/2),0,SurfaceWidth,SurfaceHeight));
         reflection.Center=reflection.GradientOrigin=new Point(lightX,lightY);
         context.DrawRectangle(reflection,null,new Rect(Math.Max(0,(ActualWidth-SurfaceWidth)/2),0,SurfaceWidth,SurfaceHeight));
-        context.DrawGeometry(null,edge,Contour);context.Pop();context.Pop();
+        context.DrawGeometry(null,edge,Contour);context.Pop();}
+        DrawAmbient(context);context.Pop();
     }
     protected override HitTestResult? HitTestCore(PointHitTestParameters parameters)
         =>Contour.FillContains(parameters.HitPoint)?new PointHitTestResult(this,parameters.HitPoint):null;

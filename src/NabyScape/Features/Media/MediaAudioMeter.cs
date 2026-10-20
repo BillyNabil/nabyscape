@@ -38,11 +38,20 @@ public sealed partial class AudioService
     internal MediaLevelSnapshot MediaLevel {get;private set;}
     internal Func<float>? DiagnosticPeak;
     internal long DiagnosticMeterReads {get;private set;}
-    internal float MediaPeak(string? source)
+    internal long DiagnosticSpectrumSamples {get;private set;}
+    private long spectrumSequence;
+    internal float MediaPeak(string? source,bool includeSpectrum=true)
     {
         long stamp=Stopwatch.GetTimestamp();
-        if(!mediaSampleGate.Accept(source,stamp))return MediaLevel.Peak;
-        float peak=ReadMediaPeak(source);SampleSpectrum(source);MediaLevel=new(mediaSampleGate.Sequence,stamp,peak,MediaMeterMuted,meterSessions,meterAudible);return peak;
+        if(mediaSampleGate.Accept(source,stamp))
+        {
+            float peak=ReadMediaPeak(source);MediaLevel=new(mediaSampleGate.Sequence,stamp,peak,MediaMeterMuted,meterSessions,meterAudible);
+        }
+        // An ambient-only consumer needs the session envelope, not output capture/FFT.
+        // A later waveform can still request bands from this same shared sample.
+        if(includeSpectrum && spectrumSequence!=MediaLevel.Sequence)
+        {spectrumSequence=MediaLevel.Sequence;DiagnosticSpectrumSamples++;SampleSpectrum(source);}
+        return MediaLevel.Peak;
     }
     private float ReadMediaPeak(string? source)
     {

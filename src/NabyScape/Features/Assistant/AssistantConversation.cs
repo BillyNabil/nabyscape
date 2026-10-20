@@ -12,6 +12,7 @@ internal sealed class AssistantConversation : IDisposable
     private readonly List<AssistantMessage> messages=new();
     private CancellationTokenSource? current;
     private int busy,epoch;
+    private string hermesSession=Guid.NewGuid().ToString("N");
     internal bool LastTurnHasActionResults {get;private set;}
     internal bool Busy=>Volatile.Read(ref busy)!=0;
     internal int Epoch=>epoch;
@@ -19,7 +20,7 @@ internal sealed class AssistantConversation : IDisposable
     internal event Action<AssistantMessage>? Added;
     internal AssistantConversation(IAssistantTransport transport)=>this.transport=transport;
     internal void Stop()=>current?.Cancel();
-    internal void Clear(){Stop();epoch++;messages.Clear();LastTurnHasActionResults=false;}
+    internal void Clear(){Stop();epoch++;messages.Clear();hermesSession=Guid.NewGuid().ToString("N");LastTurnHasActionResults=false;}
     internal void Record(string role,string text)
     {if(!Busy && text.Length<=16000 && role is "user" or "assistant"){if(messages.Count>48)messages.Clear();Add(new(role,text));}}
     internal void RecordVoiceOutcome(int generation,AssistantCall call,string result)
@@ -42,6 +43,7 @@ internal sealed class AssistantConversation : IDisposable
         if(Interlocked.CompareExchange(ref busy,1,0)!=0)throw new InvalidOperationException("Wait for the current reply, or stop it first.");
         LastTurnHasActionResults=false;var outcomes=new List<string>();
         int generation=epoch;
+        if(provider.Backend=="Hermes")provider.HermesSessionId=hermesSession;
         using var run=CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);current=run;
         int turnStart=messages.Count;
         try

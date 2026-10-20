@@ -12,6 +12,8 @@ public sealed partial class OverlayWindow
     private Border? noticeCard;
     private bool noticeShowing;
     private Border? noticeEdge;
+    private TextBlock? noticeQueue;
+    private Button? noticeNext;
     private void RefreshNoticeEdge()
     {
         if(noticeEdge==null){noticeEdge=new(){Width=18,Height=2,CornerRadius=new(1),Background=Brushes.White,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,IsHitTestVisible=false};visuals.Children.Add(noticeEdge);}
@@ -23,6 +25,8 @@ public sealed partial class OverlayWindow
     {
         if(!IsLoaded)return;
         RefreshNoticeEdge();
+        if(noticeQueue!=null)noticeQueue.Text=app.Notifications.Count>1?app.Notifications.Count+" queued":"";
+        if(noticeNext!=null)noticeNext.IsEnabled=app.Notifications.Count>1;
         if(app.Notifications.Current==null && noticeShowing)Collapse();
         // Never replace controls under a pointer, keyboard editor, or active drag.
         app.PublishUpdate(RuntimeChange.Clock);
@@ -36,8 +40,16 @@ public sealed partial class OverlayWindow
         if(peeking && !noticeShowing)return;
         if(noticeCard!=null)visuals.Children.Remove(noticeCard);
         app.Notifications.MarkDisplayed();
-        StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;peekPanel.Visibility=Visibility.Collapsed;
-        var content=new StackPanel();content.Children.Add(UI.Text(notice.Title,16));content.Children.Add(UI.Text(notice.Detail,11,UI.Muted));
+        StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;peekPanel.Visibility=Visibility.Collapsed;SyncAssistantVisibility();
+        var content=new StackPanel();
+        var header=new DockPanel{Margin=new(0,0,0,12)};
+        noticeQueue=UI.Text(app.Notifications.Count>1?app.Notifications.Count+" queued":"",10,UI.Muted);DockPanel.SetDock(noticeQueue,Dock.Right);header.Children.Add(noticeQueue);
+        var kind=UI.Text(notice.Kind switch{"timer"=>"TIMER","focus"=>"FOCUS","downloads"=>"DOWNLOADS","updates"=>"UPDATE",_=>"NABYSCAPE"},10,UI.Muted);
+        var icon=new Border{Width=28,Height=28,CornerRadius=new(9),Background=UI.Brush("#19FFFFFF"),Margin=new(0,0,9,0),Child=Icons.Create(notice.Kind switch{"timer"=>"timer","focus"=>"focus","downloads"=>"shelf","updates"=>"settings",_=>"nav-status"},14)};
+        header.Children.Add(icon);header.Children.Add(kind);content.Children.Add(header);
+        var noticeTitle=UI.Heading(notice.Title,18);noticeTitle.FontWeight=FontWeights.SemiBold;noticeTitle.Margin=new(0,0,0,6);content.Children.Add(noticeTitle);
+        var detail=UI.Text(notice.Detail,12,UI.Muted);detail.LineHeight=18;content.Children.Add(detail);
+        var accent=new LinearGradientBrush(UI.Brush("#C4C9D2").Color,UI.Brush("#30343C").Color,0);accent.Freeze();content.Children.Add(new Border{Height=2,CornerRadius=new(1),Background=accent,Margin=new(0,15,0,4)});
         string[] paths=(notice.Files??Array.Empty<string>()).Where(File.Exists).Take(40).ToArray();
         if(paths.Length>0)
         {
@@ -61,12 +73,19 @@ public sealed partial class OverlayWindow
         }
         else if(notice.Kind=="downloads")content.Children.Add(UI.Text("These files are no longer available.",11,UI.Muted));
         if(notice.Kind=="updates")content.Children.Add(UI.Button("Open Settings",app.ShowSettings));
-        content.Children.Add(UI.Button("Dismiss",()=>{Collapse();app.Notifications.Dismiss();}));
-        double width=Math.Min(370,app.Settings.HoverWidth);
-        noticeCard=new(){Child=content,Width=width-(surface.Notch?64:32),Margin=new(0,16,0,0),VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Center};
+        var actions=new WrapPanel{Margin=new(0,10,0,0)};
+        var dismiss=UI.Button("Dismiss",()=>{Collapse();app.Notifications.Dismiss();});
+        noticeNext=UI.Button("Next",()=>{Collapse();app.Notifications.Dismiss();OpenNotice(true);});noticeNext.IsEnabled=app.Notifications.Count>1;
+        var clear=UI.Button("Clear all",()=>{Collapse();app.Notifications.Clear();});
+        foreach(var action in new[]{dismiss,noticeNext,clear}){action.FontSize=11;action.MinHeight=30;action.Padding=new(9,4,9,4);action.Margin=new(0,0,6,0);actions.Children.Add(action);}content.Children.Add(actions);
+        var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);
+        double width=Math.Min(Math.Min(370,app.Settings.HoverWidth),Math.Max(180,screen.WorkingArea.Width/scale-24));
+        var viewport=new ScrollViewer{Content=content,MaxHeight=Math.Max(100,Math.Min(370,screen.WorkingArea.Height/scale-48)),VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
+        noticeCard=new(){Child=viewport,Width=width-(surface.Notch?64:32),Margin=new(0,16,0,0),VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Center};
         visuals.Children.Add(noticeCard);compact.IsHitTestVisible=false;compact.Opacity=0;Show();Dimensions();
-        content.Measure(new Size(noticeCard.Width,double.PositiveInfinity));
+        viewport.Measure(new Size(noticeCard.Width,double.PositiveInfinity));
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,width,app.Settings.AnimationMs);
-        motion.Go(surface,IslandSurface.SurfaceHeightProperty,Math.Min(340,content.DesiredSize.Height+32),app.Settings.AnimationMs);
+        motion.Go(surface,IslandSurface.SurfaceHeightProperty,viewport.DesiredSize.Height+32,app.Settings.AnimationMs);
+        ControlFeedback.Notice(noticeCard,app.Settings.NotificationAnimation);
     }
 }

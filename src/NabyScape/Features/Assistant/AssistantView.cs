@@ -167,9 +167,9 @@ internal sealed class AssistantView : UserControl,IDisposable
             for(int i=rendered;i<history.Count;i++)
             {
                 var message=history[i];if(message.Role is not ("user" or "assistant") || string.IsNullOrWhiteSpace(message.Text) || message.Text.StartsWith("Updated shared screen after"))continue;
-                var text=UI.Text(message.Text,13);text.Margin=message.Role=="user"?new Thickness(12,9,12,9):new Thickness(2,10,2,10);
+                var text=UI.Text(message.Text,13);text.LineHeight=19;text.Margin=message.Role=="user"?new Thickness(12,9,12,9):new Thickness(2,10,2,10);
                 var menu=new ContextMenu();var copy=new MenuItem{Header="Copy message"};copy.Click+=(_,_)=>{try{Clipboard.SetText(message.Text);}catch{}};menu.Items.Add(copy);text.ContextMenu=menu;
-                var bubble=new Border{Child=text,CornerRadius=new(11),Background=message.Role=="user"?UI.Brush("#25282E"):Brushes.Transparent,Margin=new(message.Role=="user"?42:0,3,message.Role=="user"?0:12,5)};messages.Children.Add(bubble);
+                var bubble=new Border{Child=text,CornerRadius=new(11),Background=message.Role=="user"?UI.Brush("#22252B"):Brushes.Transparent,Margin=new(message.Role=="user"?42:0,3,message.Role=="user"?0:12,5)};messages.Children.Add(bubble);
                 if(IsLoaded && !app.Settings.ReduceMotion)Motion.Fade(bubble,1,180);
             }
             rendered=history.Count;firstRendered=history.FirstOrDefault();restoreScroll=false;

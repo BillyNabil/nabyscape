@@ -13,9 +13,10 @@ internal static class Motion
     public static bool Enabled {get;set;}=true;
     public static double Duration {get;set;}=420;
     internal static int FrameLimit {get;set;}=180;
+    internal static string Interaction {get;private set;}="Subtle";
     public static void Configure(Settings s)
     {
-        Enabled=!s.ReduceMotion && SystemParameters.ClientAreaAnimation && s.AnimationMs>0;Duration=s.AnimationMs;
+        Enabled=!s.ReduceMotion && SystemParameters.ClientAreaAnimation && s.AnimationMs>0;Duration=s.AnimationMs;Interaction=s.InteractionMotion;
         if(Application.Current!=null)Application.Current.Resources["PopupMotion"]=Enabled?System.Windows.Controls.Primitives.PopupAnimation.Fade:System.Windows.Controls.Primitives.PopupAnimation.None;
     }
     public static void To(Animatable target,DependencyProperty property,double value,double milliseconds=180,double delay=0)
@@ -57,15 +58,18 @@ internal static class Motion
     private static readonly DependencyProperty IconKeyProperty=DependencyProperty.RegisterAttached("IconKey",typeof(string),typeof(Motion));
     public static void Button(Button button)
     {
-        var scale=new ScaleTransform(1,1);button.RenderTransformOrigin=new(.5,.5);button.RenderTransform=scale;
-        void State(double value) {if(!Enabled)value=1;To(scale,ScaleTransform.ScaleXProperty,value,180);To(scale,ScaleTransform.ScaleYProperty,value,180);}
-        button.MouseEnter+=(_,_)=>State(1.025);
-        button.MouseLeave+=(_,_)=>State(1);
-        button.PreviewMouseLeftButtonDown+=(_,_)=>State(.955);
-        button.PreviewMouseLeftButtonUp+=(_,_)=>State(button.IsMouseOver?1.025:1);
-        button.LostMouseCapture+=(_,_)=>State(button.IsMouseOver?1.025:1);
-        button.PreviewKeyDown+=(_,e)=> {if(e.Key is Key.Space or Key.Enter)State(.955);};
-        button.PreviewKeyUp+=(_,_)=>State(1);
+        var scale=new ScaleTransform(1,1);var lift=new TranslateTransform();button.RenderTransformOrigin=new(.5,.5);button.RenderTransform=new TransformGroup{Children={scale,lift}};
+        void State(bool hover,bool pressed=false)
+        {
+            bool active=Enabled && Interaction!="Off" && button.IsEnabled;bool expressive=Interaction=="Expressive";
+            double value=!active?1:pressed?(expressive?.94:.965):hover?(expressive?1.035:1.018):1;
+            To(scale,ScaleTransform.ScaleXProperty,value,pressed?100:220);To(scale,ScaleTransform.ScaleYProperty,value,pressed?100:220);To(lift,TranslateTransform.YProperty,active && hover && !pressed?(expressive?-1.5:-.6):0,180);
+        }
+        button.MouseEnter+=(_,_)=>State(true);button.MouseLeave+=(_,_)=>State(false);
+        button.PreviewMouseLeftButtonDown+=(_,_)=>State(false,true);button.PreviewMouseLeftButtonUp+=(_,_)=>State(button.IsMouseOver);
+        button.LostMouseCapture+=(_,_)=>State(button.IsMouseOver);button.IsEnabledChanged+=(_,_)=>State(button.IsMouseOver);
+        button.PreviewKeyDown+=(_,e)=>{if(e.Key is Key.Space or Key.Enter)State(false,true);};button.PreviewKeyUp+=(_,_)=>State(false);
+        button.Unloaded+=(_,_)=>State(false);
     }
     public static void Progress(System.Windows.Controls.Primitives.RangeBase bar,double value)
     {

@@ -41,13 +41,13 @@ internal static class AssistantProviderTests
 
     internal static void Run(Action<string, Action> test)
     {
-        test("Assistant provider presets require an explicit model and capability choices", () =>
+        test("Assistant provider presets retain explicit capabilities and a Hermes agent alias", () =>
         {
-            Assert(AssistantProviderCatalog.Presets.Count == 10);
+            Assert(AssistantProviderCatalog.Presets.Count == 11);
             foreach (string name in AssistantProviderCatalog.Presets)
             {
                 var provider = AssistantProviderCatalog.Create(name);
-                Assert(provider.Model == "" && !provider.Vision && !provider.Tools && provider.Name == name);
+                Assert(provider.Model == (name=="Hermes Agent"?"hermes-agent":"") && !provider.Vision && !provider.Tools && provider.Name == name);
                 if (!name.StartsWith("Custom", StringComparison.Ordinal)) AssistantTransport.ValidateEndpoint(provider.BaseUrl);
             }
             Reject<ArgumentException>(() => AssistantProviderCatalog.Create("unrecognized"));

@@ -1,0 +1,30 @@
+PASS  Existing page groups and dot navigation are retained
+PASS  media fits horizontal viewport at 526 DIP
+PASS  focus fits horizontal viewport at 526 DIP
+PASS  status fits horizontal viewport at 526 DIP
+PASS  access fits horizontal viewport at 526 DIP
+PASS  files fits horizontal viewport at 526 DIP
+PASS  notes fits horizontal viewport at 526 DIP
+PASS  tasks fits horizontal viewport at 526 DIP
+PASS  clips fits horizontal viewport at 526 DIP
+PASS  calendar fits horizontal viewport at 526 DIP
+PASS  awake fits horizontal viewport at 526 DIP
+PASS  links fits horizontal viewport at 526 DIP
+PASS  media fits horizontal viewport at 300 DIP
+PASS  focus fits horizontal viewport at 300 DIP
+PASS  status fits horizontal viewport at 300 DIP
+PASS  access fits horizontal viewport at 300 DIP
+PASS  files fits horizontal viewport at 300 DIP
+PASS  notes fits horizontal viewport at 300 DIP
+PASS  tasks fits horizontal viewport at 300 DIP
+PASS  clips fits horizontal viewport at 300 DIP
+PASS  calendar fits horizontal viewport at 300 DIP
+PASS  awake fits horizontal viewport at 300 DIP
+PASS  links fits horizontal viewport at 300 DIP
+PASS  Notes keeps the original editor height and its text inset
+PASS  Visual updates preserve the Notes editor and selection
+PASS  All nine Settings categories remain in their original order
+PASS  Navigation menu retains its four existing presentation options
+PASS  Themed tooltips wrap within a bounded readable surface
+PASS  Visual fixtures keep voice and screen sharing off
+RESULT: 0 failures

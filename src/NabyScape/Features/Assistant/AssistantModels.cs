@@ -13,6 +13,8 @@ internal sealed class AssistantProvider
     public string Id {get;set;}=Guid.NewGuid().ToString("N");
     public string Name {get;set;}="Custom provider";
     public string Protocol {get;set;}="ChatCompletions";
+    public string Backend {get;set;}="";
+    [System.Text.Json.Serialization.JsonIgnore] public string HermesSessionId {get;set;}="";
     public string BaseUrl {get;set;}="https://api.openai.com/v1/";
     public string Model {get;set;}="";
     public bool Vision {get;set;}

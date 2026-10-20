@@ -146,6 +146,10 @@ public sealed partial class OverlayWindow
         var settings=app.Settings;double width=SatelliteWidth,height=settings.Height;
         satelliteWindow.Width=width;satelliteWindow.Height=height;
         satelliteSurface!.SurfaceWidth=width;satelliteSurface.SurfaceHeight=height;satelliteSurface.Radius=settings.Radius;satelliteSurface.Notch=surface.Notch;satelliteSurface.Fill=surface.Fill;satelliteSurface.GlassStyle=surface.GlassStyle;satelliteSurface.SetMaterial(settings.Background,settings.GlassStrength);satelliteSurface.AlbumTint=surface.AlbumTint;satelliteSurface.Refresh();
+        bool ambientAllowed=AmbientPolicy.Includes(settings,satelliteKind is "cpu" or "ram"?"system":satelliteKind??"clock");
+        bool ambientMoving=app.Media.Playing && settings.LiveActivity;
+        satelliteSurface.SetAmbient(AmbientPolicy.ColorsFor(settings,app.AmbientAudio.CoverColors),ambientAllowed?settings.AmbientStrength:0,settings.AmbientSpread,settings.AmbientMotion,ambientMoving);
+        app.AmbientAudio.Set(satelliteSurface,ambientAllowed && ambientMoving);
         satelliteRoot!.Clip=satelliteSurface.Contour;
         satelliteButton.Padding=new Thickness(SatelliteShoulder+6,0,SatelliteShoulder+6,0);
         var p=SatelliteAnchor;var dpi=VisualTreeHelper.GetDpi(this);satelliteWindow.Left=p.X/dpi.DpiScaleX;satelliteWindow.Top=p.Y/dpi.DpiScaleY;

@@ -12,6 +12,7 @@ public sealed partial class SettingsWindow
             Check("Timer finished",s.NotifyTimer,v=>s.NotifyTimer=v),Check("Focus finished",s.NotifyFocus,v=>s.NotifyFocus=v),Check("Downloads ready",s.NotifyDownloads,v=>s.NotifyDownloads=v),Check("Update available",s.NotifyUpdates,v=>s.NotifyUpdates=v),Check("Important app failures",s.NotifyFailures,v=>s.NotifyFailures=v),
             UI.Text("Notch shows a compact indicator. Hover or click for details. Manually hidden islands use Windows instead. Volume and brightness take priority; panels and editors stay undisturbed. Pending notices expire; no history is saved.",11,UI.Muted),
             UI.Button("View pending notifications",app.OpenNotifications),UI.Text("Keyboard: open the island, press Ctrl+K, choose Notifications, then Enter. Windows delivery follows your Windows notification preferences.",11,UI.Muted)));
+        NotificationPresentationSettings();
         var folder=UI.Text(s.DownloadsFolder.Length==0?"Windows Downloads known folder (including relocated folders)":s.DownloadsFolder,11,UI.Muted);
         page.Children.Add(Section("Downloads",Check("Infer completed arrivals in a download folder",s.DownloadsEnabled,v=>s.DownloadsEnabled=v),folder,
             UI.Button("Choose folder…",()=>{var dialog=new Microsoft.Win32.OpenFolderDialog{Title="Monitor folder arrivals"};if(dialog.ShowDialog(this)==true){s.DownloadsFolder=dialog.FolderName;folder.Text=dialog.FolderName;Save();}}),

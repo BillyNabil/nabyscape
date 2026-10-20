@@ -1,0 +1,18 @@
+PASS  Visible idle character animates retained transforms without a managed render callback
+PASS  Idle float progresses without pointer or session input
+PASS  Hover takes over the idle transforms immediately
+PASS  Pointer tracking eases to bounded eye coordinates
+PASS  Nonfinite pointer coordinates safely return the face to center
+PASS  Press feedback preserves the click gesture without starting a session
+PASS  Release settles and clears the pressed state
+PASS  Resting silhouette has equal width and height
+PASS  Music costume does not open a voice or screen session
+PASS  Listening character wakes the existing paced render callback
+PASS  Reduce Motion stops idle/live animation and scheduled blinks
+PASS  Reduced-motion pointer feedback stays finite and static
+PASS  Disabling app animations also stops character frames and sparse blinks
+PASS  Hidden character releases idle/live animation and blink scheduling
+PASS  Visible idle character resumes retained motion and sparse blinking
+PASS  Closing character view releases all visual scheduling
+PASS  Character interaction never enables microphone, sharing or actions
+RESULT: 0 failures
