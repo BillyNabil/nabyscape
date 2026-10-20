@@ -111,9 +111,9 @@ Actual v2.5 Settings capture. The original gallery and silent film retain their 
 
 <img src="Assets/showcase/settings.png" alt="Actual v2.4.2 Appearance settings with categories, visual examples and a live island preview" width="100%">
 
-Choose a notch or floating pill. Tune dimensions, spacing, surface colors, typography and motion. Enable the tools and hover pages you use. Eight categories keep Appearance, Layout, Content, Controls, Audio, System, Launch and Application organized. Changes save automatically; the preview follows what you are exploring.
+Choose a notch or floating pill. Tune dimensions, spacing, surface colors, typography and motion. Enable the tools and hover pages you use. Nine categories keep Appearance, Layout, Content, Controls, Audio, System, Launch, AI and Application organized. Changes save automatically; provider connection fields use Save provider. The preview follows what you are exploring.
 
-**[Download Midnight Notch](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/Midnight-Notch.json)**, then open **Settings → Layout → Layout profile → Import layout**. [View the preset](docs/presets/midnight-notch.json) · [Explore all eight Settings pages](docs/showcase.md#settings-gallery)
+**[Download Midnight Notch](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/Midnight-Notch.json)**, then open **Settings → Layout → Layout profile → Import layout**. [View the preset](docs/presets/midnight-notch.json) · [Original Settings gallery](docs/showcase.md#settings-gallery)
 
 The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel, black surface, white accent, artwork + waveform, bold headings and 420 ms transitions. It includes visual/interaction preferences and enabled tools, excluding personal content, clipboard capture/history, app targets, startup and saved positions. Importing never enables clipboard capture.
 
