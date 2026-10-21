@@ -13,7 +13,7 @@ internal readonly record struct OverlaySettingsState(int Content,int Reflow,int 
         var content=new HashCode();content.Add(s.CompactLayout);content.Add(s.CategoryStyle);content.Add(s.LaunchStyle);content.Add(s.ActivitiesEnabled);content.Add(s.LiveActivity);content.Add(s.MonitorNetwork);content.Add(s.MonitorStorage);content.Add(s.MonitorProcesses);
         foreach(var widget in s.Widgets){content.Add(widget.Id);content.Add(widget.Enabled);}foreach(var tool in s.Tools){content.Add(tool.Id);content.Add(tool.Enabled);}foreach(var shortcut in s.Shortcuts){content.Add(shortcut.Name);content.Add(shortcut.Target);content.Add(shortcut.AppId);}
         int reflow=HashCode.Combine(s.PanelWidth,s.PanelPadding,s.PanelScale,s.SectionGap);
-        int geometry=HashCode.Combine(HashCode.Combine(s.Width,s.Height,s.Radius,s.Preset,s.Horizontal,s.Top,s.Monitor),s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.DisplayMode,s.PanelAutoHeight);
+        int geometry=HashCode.Combine(HashCode.Combine(s.Width,s.Height,s.Radius,s.Preset,s.Horizontal,s.Top,s.Monitor),s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.DisplayMode,HashCode.Combine(s.PanelAutoHeight,s.DockEdge,s.DockVertical,s.DockInset));
         int hotkeys=HashCode.Combine(HashCode.Combine(s.TuckHotkeyEnabled,s.TuckHotkeyModifiers,s.TuckHotkeyKey),HashCode.Combine(s.HotkeyEnabled,s.HotkeyModifiers,s.HotkeyKey,s.VisibilityHotkeyEnabled,s.VisibilityHotkeyModifiers,s.VisibilityHotkeyKey));
         return new(content.ToHashCode(),reflow,geometry,hotkeys);
     }
@@ -74,7 +74,7 @@ public sealed partial class OverlayWindow
         if(previous.Content!=next.Content || classicMixerOpen){bodyDirty=true;return false;}
         var s=app.Settings;
         if(previous.Hotkeys!=next.Hotkeys)ConfigureHotkey();
-        Motion.Configure(s);Opacity=s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac";surface.Radius=s.Radius;
+        Motion.Configure(s);Opacity=s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac" && s.DockEdge=="Top";surface.Radius=s.Radius;
         hoverDelay.Interval=TimeSpan.FromMilliseconds(s.HoverDelayMs);detailDelay.Interval=TimeSpan.FromMilliseconds(s.HoverDetailDelayMs);
         ApplyHeadingTypography(body);ApplyMediaTypography(title,s.BoldMediaTitle);
         foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));

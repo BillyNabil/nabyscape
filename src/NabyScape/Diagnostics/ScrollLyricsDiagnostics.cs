@@ -47,6 +47,12 @@ internal static class ScrollLyricsDiagnostics
             s.PanelWidth=width;s.PanelMaxHeight=300;app.ChangeSettings();await Task.Delay(100);island.UpdateLayout();inner=Field<ScrollViewer>("clipboardScroll");
             check("Clipboard stays within its viewport at "+width+" DIP and short height",inner.ViewportHeight>30 && inner.ScrollableHeight>0 && outer.ScrollableHeight<1);Capture("clipboard-"+width+"-short");
         }
+        s.PanelWidth=526;s.PanelMaxHeight=417;s.PanelScale=1;app.ChangeSettings();island.SelectPage("focus",false);await Task.Delay(100);
+        var countdown=Diagnostics.Descendants(island).OfType<CountdownView>().First(v=>v.IsVisible);
+        var minute=Diagnostics.Descendants(countdown).OfType<TextBox>().First();
+        var increase=Diagnostics.Descendants(countdown).OfType<Button>().First(b=>AutomationProperties.GetName(b).StartsWith("Increase "));
+        minute.Text="5";increase.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));check("Duration stepper changes editable minutes",minute.Text=="6");
+        Field<PeekWheelAccumulator>("panelWheel").Reset();Wheel(minute,-120);await Task.Delay(80);check("Countdown minute field wheel advances the widget instead of nudging content",island.ActivePage!="focus");
         s.PanelWidth=526;s.PanelMaxHeight=480;app.ChangeSettings();island.SelectPage("media",false);await Task.Delay(100);
         var lyrics=Field<LyricsView>("mediaLyrics");var result=new LyricResult(new[]{new LyricLine(0,"A little closer to the music"),new LyricLine(4,"One line, right on time"),new LyricLine(8,"Let the next moment arrive")},"Synced lyrics · original sample");
         lyrics.SetFixture(result,5.6,12);lyrics.Visibility=Visibility.Visible;Call("ResizeToolPanel");await Task.Delay(150);island.UpdateLayout();

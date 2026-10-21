@@ -25,13 +25,13 @@ public sealed partial class Settings
     private void NormalizePremium()
     {
         AmbientStrength=double.IsFinite(AmbientStrength)?Math.Clamp(AmbientStrength,0,1):.5;
-        AmbientSpread=double.IsFinite(AmbientSpread)?Math.Clamp(AmbientSpread,.25,1):.75;
+        AmbientSpread=double.IsFinite(AmbientSpread)?Math.Clamp(AmbientSpread,.25,2.5):.75;
         NotificationSeconds=double.IsFinite(NotificationSeconds)?Math.Clamp(NotificationSeconds,4,30):12;
         QuietStart=Math.Clamp(QuietStart,0,23);QuietEnd=Math.Clamp(QuietEnd,0,23);
         if(AmbientMotion is not ("Still" or "Breathe" or "Drift"))AmbientMotion="Drift";
         if(AmbientScope is not ("All widgets" or "Music only" or "Selected widgets"))AmbientScope="All widgets";
         AmbientWidgets=(AmbientWidgets??new()).Where(id=>id!=null && (id is "closed" or "ai" || Names.ContainsKey(id) && id!="tools")).Distinct().ToList();
-        if(AmbientColorSource is not ("Album cover" or "Accent color" or "Custom color"))AmbientColorSource="Album cover";
+        if(AmbientColorSource is not ("Album cover" or "Accent color" or "Custom color" or "Custom blend"))AmbientColorSource="Album cover";
         if(AmbientCustomColor==null || AmbientCustomColor.Length!=7 || AmbientCustomColor[0]!='#' || !uint.TryParse(AmbientCustomColor.AsSpan(1),System.Globalization.NumberStyles.HexNumber,null,out _))AmbientCustomColor="#7AA8DC";
         if(AmbientAudioResponse is not ("Off" or "Soft" or "Responsive" or "Punchy"))AmbientAudioResponse="Responsive";
         AmbientSensitivity=double.IsFinite(AmbientSensitivity)?Math.Clamp(AmbientSensitivity,.5,3):1.4;
@@ -41,7 +41,7 @@ public sealed partial class Settings
 }
 internal static class PremiumPreferences
 {
-    internal static readonly string[] Keys="CoverAmbient AmbientStrength AmbientSpread AmbientMotion AmbientScope AmbientWidgets AmbientColorSource AmbientCustomColor AmbientAudioResponse AmbientSensitivity InteractionMotion NotificationSeconds NotificationAnimation QuietHours QuietStart QuietEnd NotificationsSnoozedUntil".Split(' ');
+    internal static readonly string[] Keys="CoverAmbient ClosedAmbient AmbientStrength AmbientSpread AmbientMotion AmbientScope AmbientWidgets AmbientColorSource AmbientCustomColor AmbientSecondaryColor AmbientPalette AmbientDirection AmbientHeight AmbientBalance AmbientSoftness AmbientAudioResponse AmbientSensitivity InteractionMotion NotificationSeconds NotificationAnimation QuietHours QuietStart QuietEnd NotificationsSnoozedUntil".Split(' ');
 }
 
 internal static class NotificationPolicy

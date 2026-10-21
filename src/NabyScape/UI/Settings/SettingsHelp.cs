@@ -4,10 +4,11 @@ public sealed partial class SettingsWindow
 {
     private static readonly Dictionary<string,string> SettingDescriptions=new()
     {
-        ["Ambient light"]="Adds light beneath the content on your chosen widgets, independently of Black glass.",
-        ["Ambient intensity"]="Maximum brightness of the ambient light. Audio response varies within this limit; zero removes the layer.",
+        ["Show ambience on closed dock"]="Keep album light on the compact dock. Tucking always turns it black. The main ambient switch must also be on.",
+        ["Ambient light"]="Add soft colored light behind your widgets.",
+        ["Ambient intensity"]="Set the brightest the light can be. Music can make it pulse below this level.",
         ["Ambient sensitivity"]="Amplifies the visual response to measured media audio without changing playback volume. 100% uses the original level.",
-        ["Ambient spread"]="How far the light reaches into the panel; the upper content stays dark.",
+        ["Ambient spread"]="Make the light fill more or less of the panel.",
         ["Notification lifetime"]="Time before an unopened indicator expires. Open details and active interaction pause expiry.",
         ["Scheduled quiet hours"]="Silences Naby notifications and completion sounds during the selected local hours.",
         ["Stopwatch"]="Tracks elapsed time in Focus with Start, Pause, Resume and Reset. Sleep is counted; the same saved session appears in hover and detached previews.",

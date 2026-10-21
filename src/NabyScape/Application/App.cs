@@ -20,6 +20,7 @@ public sealed partial class App : Application
     private bool quitting;
     internal InternalNotifications Notifications {get;}=new();
     internal LyricsService Lyrics {get;}=new();
+    internal WeatherService Weather {get;private set;}=null!;
     internal CountdownAudio CountdownAudio {get;}=new();
     internal DownloadArrivals? Downloads {get;private set;}
     private bool diagnosticMode;
@@ -95,7 +96,8 @@ public sealed partial class App : Application
     {
         base.OnStartup(e);
         bool assistantFixture=Array.Exists(e.Args,a=>a=="--assistant-only") && Array.Exists(e.Args,a=>a=="--diagnostics");
-        string instance=assistantFixture?"Local\\LumaIsland.AssistantDiagnostics":"Local\\LumaIsland";
+        bool showcaseFixture=Array.Exists(e.Args,a=>a=="--showcase") && Array.Exists(e.Args,a=>a=="--diagnostics");
+        string instance=showcaseFixture?"Local\\LumaIsland.Showcase":assistantFixture?"Local\\LumaIsland.AssistantDiagnostics":"Local\\LumaIsland";
         mutex=new Mutex(true,instance+".Desktop",out var created);
         if(!created) {try {using var signal=EventWaitHandle.OpenExisting(instance+".OpenSettings");signal.Set();}catch(WaitHandleCannotBeOpenedException){}Shutdown();return; }
         openEvent=new EventWaitHandle(false,EventResetMode.AutoReset,instance+".OpenSettings");
@@ -115,7 +117,7 @@ public sealed partial class App : Application
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();Session.Stopwatch??=new();Session.Stopwatch.Recover();
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
         Audio=new(Store.Log){SpectrumEnabled=Settings.WaveformSource=="Spectrum"};Media=new(Store.Log);Productivity=new(Store,Store.Log,diagnosticPath==null);Productivity.SetClipboardEnabled(Settings.ClipboardHistory);
-        AmbientAudio=new(this);
+        AmbientAudio=new(this);Weather=new(Store);
         Brightness=new();Brightness.Start(diagnosticPath==null);
         Calendar=new(Store);Awake=new();Activities=new(Store,Session.Focus,Awake,SaveSession,Store.Log);
         Assistant=new(this,diagnosticPath!=null?new AssistantMemoryKeys():null);
@@ -157,6 +159,7 @@ public sealed partial class App : Application
                 if(system)changed|=RuntimeChange.System;
                 overlay.CheckEnvironment();
             }
+            if(counter%10==0)Productivity.DisplayThumbnails.TrimIdle();
             PublishUpdate(changed);
         };
         tick.Start();CheckCountdowns();
@@ -214,7 +217,7 @@ public sealed partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Assistant?.Dispose();assistantWindow?.Close();
-        tick?.Stop();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();Updates?.Dispose();
+        tick?.Stop();Weather?.Dispose();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();Updates?.Dispose();
         Microsoft.Win32.SystemEvents.PowerModeChanged-=PowerChanged;
         if(Session!=null) SaveSession();
         Previews?.Dispose();Activities?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();

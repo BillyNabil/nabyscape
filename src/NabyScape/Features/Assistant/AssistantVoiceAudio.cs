@@ -57,7 +57,7 @@ internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
         lock (gate)
         {
             if (disposed) return;
-            disposed = true; mic = input; input = null; speaker = output; output = null; pcm?.Clear();
+            disposed = true; mic = input; input = null; speaker = output; output = null; pcm?.Clear(); pcm = null;
         }
         try { mic?.StopRecording(); } finally
         {
@@ -73,29 +73,55 @@ internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
     internal sealed class MeteredPcm(Action<float> level) : IWaveProvider
     {
         private readonly object sync = new();
-        // Providers commonly stream many seconds of speech faster than playback.
-        // Two minutes of mono PCM16 is bounded to 5.76MB and supports ordinary replies.
-        private readonly BufferedWaveProvider buffer = new(new WaveFormat(24000, 16, 1)) { BufferDuration = TimeSpan.FromSeconds(120), ReadFully = true, DiscardOnBufferOverflow = false };
+        // Grow with queued audio instead of reserving two minutes for a short reply.
+        // The same 120-second limit, ordering, silence fill and overflow contract apply.
+        private const int MaximumBytes=24000*2*120;
+        private byte[] buffer=Array.Empty<byte>();
+        private int head,buffered;
+        internal int CapacityBytes {get{lock(sync)return buffer.Length;}}
         private long consumed;
         private int generation;
-        public WaveFormat WaveFormat => buffer.WaveFormat;
+        public WaveFormat WaveFormat {get;}=new(24000,16,1);
         // WaveOut can have 100ms pending in native buffers. Report only conservatively heard audio.
         public int PlayedMilliseconds => Math.Max(0, (int)(Interlocked.Read(ref consumed) / 48) - 100);
         public bool Append(byte[] bytes)
         {
             lock (sync)
             {
-                if (buffer.BufferedBytes + bytes.Length > buffer.BufferLength) return false;
-                buffer.AddSamples(bytes, 0, bytes.Length); return true;
+                if(bytes.Length>MaximumBytes-buffered)return false;
+                int needed=buffered+bytes.Length;
+                if(needed>buffer.Length)
+                {
+                    var grown=new byte[Math.Min(MaximumBytes,Math.Max(needed,Math.Max(48000,buffer.Length*2)))];
+                    int first=Math.Min(buffered,buffer.Length-head);
+                    if(first>0)Buffer.BlockCopy(buffer,head,grown,0,first);
+                    if(buffered>first)Buffer.BlockCopy(buffer,0,grown,first,buffered-first);
+                    buffer=grown;head=0;
+                }
+                if(bytes.Length>0)
+                {
+                    int tail=(head+buffered)%buffer.Length,first=Math.Min(bytes.Length,buffer.Length-tail);
+                    Buffer.BlockCopy(bytes,0,buffer,tail,first);
+                    if(bytes.Length>first)Buffer.BlockCopy(bytes,first,buffer,0,bytes.Length-first);
+                }
+                buffered=needed;return true;
             }
         }
-        public void Clear() { lock (sync) { generation++; buffer.ClearBuffer(); Interlocked.Exchange(ref consumed, 0); } }
+        public void Clear() { lock (sync) { generation++; buffer=Array.Empty<byte>();head=buffered=0;Interlocked.Exchange(ref consumed, 0); } }
         public int Read(byte[] bytes, int offset, int count)
         {
             int actual, epoch;
             lock (sync)
             {
-                epoch = generation; actual = Math.Min(count, buffer.BufferedBytes); buffer.Read(bytes, offset, count); Interlocked.Add(ref consumed, actual);
+                epoch=generation;actual=Math.Min(count,buffered);
+                if(actual>0)
+                {
+                    int first=Math.Min(actual,buffer.Length-head);Buffer.BlockCopy(buffer,head,bytes,offset,first);
+                    if(actual>first)Buffer.BlockCopy(buffer,0,bytes,offset+first,actual-first);
+                    head=(head+actual)%buffer.Length;buffered-=actual;
+                }
+                if(actual<count)Array.Clear(bytes,offset+actual,count-actual);
+                Interlocked.Add(ref consumed,actual);
             }
             // Never invoke app code on WaveOut's playback thread; Stop may join that thread.
             float peak = 0;

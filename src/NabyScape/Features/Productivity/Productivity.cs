@@ -54,6 +54,7 @@ public sealed class ProductivityService : IDisposable
     private readonly bool _nativeClipboard;
     private readonly string _cache;
     private readonly ThumbnailCache thumbnails=new();
+    internal ThumbnailCache DisplayThumbnails=>thumbnails;
     private bool clipboardConfigured;
     private readonly Dictionary<string,string> _imageHashes=new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string,(long Length,DateTime Modified)> _validatedImages=new(StringComparer.OrdinalIgnoreCase);
@@ -193,8 +194,7 @@ public sealed class ProductivityService : IDisposable
             using var stream=File.OpenRead(clip.ImagePath);
             if(decodeWidth>0)
             {
-                var thumbnail=new BitmapImage();thumbnail.BeginInit();thumbnail.CacheOption=BitmapCacheOption.OnLoad;
-                thumbnail.DecodePixelWidth=decodeWidth;thumbnail.StreamSource=stream;thumbnail.EndInit();thumbnail.Freeze();thumbnails.Add(thumbnailKey,thumbnail);return thumbnail;
+                var thumbnail=DisplayThumbnail.Decode(stream,decodeWidth);thumbnails.Add(thumbnailKey,thumbnail);return thumbnail;
             }
             var decoder=new PngBitmapDecoder(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad);
             var bitmap=decoder.Frames[0]; bitmap.Freeze(); return bitmap;

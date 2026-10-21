@@ -1,0 +1,17 @@
+{
+  "UiChecks": {
+    "media-footer": 33,
+    "reactive-ambient": 37,
+    "scroll-lyrics": 17,
+    "countdown-panel": 35,
+    "assistant-character": 17,
+    "interaction-tuck-hide": 3,
+    "performance-checks": 16,
+    "minimal-widgets": 48,
+    "assistant-island": 50
+  },
+  "UiTotal": 256,
+  "ProviderRequests": false,
+  "PhysicalTrackpadTested": false,
+  "PhysicalMixedDpiTested": false
+}

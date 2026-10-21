@@ -33,6 +33,10 @@ internal static class Icons
     // Lucide icons, ISC license in LUCIDE-LICENSE.txt. Consistent 24px canvas.
     private static readonly Dictionary<string,string> NavigationPaths=new()
     {
+        ["search"]="M10.5,3 A7.5,7.5 0 1 1 10.49,3 M16,16 L21,21",
+        ["reset"]="M4,10 A8,8 0 1 1 5,18 M4,4 V10 H10",
+        ["plus"]="M5,12 H19 M12,5 V19",
+        ["weather"]="M12,3 V1 M5,5 L3,3 M19,5 L21,3 M3,12 H1 M5,17 L3,19 M7,12 A5,5 0 1 1 17,12 M9,20 H19 A4,4 0 0 0 19,12 A5,5 0 0 0 9,13 A3.5,3.5 0 0 0 9,20",
         ["folder"]="M3,7 H10 L12,9 H21 V20 H3 Z M3,7 V4 H10 L12,6 H21 V9",
         ["notes"]="M14,2 H6 Q4,2 4,4 V20 Q4,22 6,22 H18 Q20,22 20,20 V8 Z M14,2 V8 H20 M8,13 H16 M8,17 H14",
         ["clipboard"]="M9,5 H5 V21 H19 V5 H15 M9,3 H15 V7 H9 Z",

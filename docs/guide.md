@@ -2,9 +2,17 @@
 
 [Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable user guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Interactive island preview](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience)
 
-**Current release: v2.7.2.** [Download and release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.2). The original showcase film remains labeled v2.4.2.
+**Current release: v2.10.0.** [Download and release notes](releases/v2.10.0.md). The new demo shows actual v2.10 controls with sample content.
 
 New installations use the **Daily Notch** layout: 327 × 36 closed island, 526 px panel, 447 × 207 hover, 420 ms motion and icon navigation. [Default layout](presets/default-layout.json). Existing settings are never replaced on upgrade; explicit preference reset uses this default while preserving personal content, startup and clipboard consent.
+
+## Find your setup
+
+Press **Ctrl+F** in Settings to search. **Position & size → Move & resize** has a draggable screen map, numeric coordinates, percentage sliders and a Center action. Left / Right placement uses vertical alignment; top and bottom use horizontal alignment. Pixels are Windows layout pixels (DIPs); the screen's scaling is shown.
+
+In **Widgets & tools**, drag a grip to reorder. Alt+Up / Alt+Down works from the keyboard. Hover includes every active widget in that order by default. Turn off **Show all active widgets in hover** to use a separate hover order. With **Screen → Follow cursor**, the dock slides after the pointer settles on another display; **Reduce motion** disables the slide.
+
+**Ambience** has its own category. The closed dock can have ambience too; tucked always stays black. **Weather** lets you search a city and choose Celsius or Fahrenheit. The widget keeps its forecast and metrics together in a compact card.
 
 ## Get NabyScape
 

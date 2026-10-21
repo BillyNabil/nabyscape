@@ -20,7 +20,7 @@ public sealed partial class OverlayWindow
             BitmapSource? source=null;
             if(new[]{".png",".jpg",".jpeg",".bmp",".gif",".tif",".tiff"}.Contains(Path.GetExtension(path).ToLowerInvariant()) && info.Exists && info.Length<10*1024*1024)
             {
-                try{source=await Task.Run(()=>{using var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);var image=new BitmapImage();image.BeginInit();image.CacheOption=BitmapCacheOption.OnLoad;image.DecodePixelWidth=pixels;image.StreamSource=stream;image.EndInit();image.Freeze();return image;});}catch{}
+                try{source=await Task.Run(()=>{using var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);return DisplayThumbnail.Decode(stream,pixels);});}catch{}
             }
             source??=pixels>64?await AppIconCache.Thumbnail(path,pixels):await AppIconCache.GetAsync(new(){Target=path});
             if(source!=null)shelfThumbnails.Add(key,source);return source;

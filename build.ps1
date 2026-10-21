@@ -9,7 +9,9 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $islandProject = Join-Path $PSScriptRoot 'src\NabyScape\NabyScape.csproj'
 $outputPath = [IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $outputPath | Out-Null
-& $Dotnet publish $islandProject -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -o $outputPath --nologo
+# Leave assemblies file-backed at runtime. ZIP delivery still compresses the download;
+# internal bundle compression would decompress the runtime assemblies into private RAM.
+& $Dotnet publish $islandProject -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=false -p:DebugType=None -o $outputPath --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 $executable = Join-Path $outputPath 'NabyScape.exe'
 Copy-Item -LiteralPath $executable -Destination (Join-Path $outputPath 'NabyScape-Setup.exe') -Force

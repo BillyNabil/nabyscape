@@ -32,7 +32,7 @@ The island preview is a browser illustration made from actual WPF state captures
 
 ## Asset provenance
 
-Stable views and the 26-second silent film come from the isolated actual v2.4.2 WPF showcase in `Assets/showcase/`. Artwork, note text, tasks and filenames are original sample content; amplitude input is synthetic. The movie has no recorded music. System readings are from the capture machine. Captions and desktop backgrounds are original presentation artwork.
+Current views and the 29-second silent film come from the isolated actual v2.10 WPF showcase. Original sample artwork, notes, tasks, filenames and illustrative weather are used. Audio input is synthetic; the movie has no music. System readings are from the capture machine. The background and captions are presentation artwork. Older assets retain historical provenance below.
 
 `tools/render_marketing.py` composes the new `marketing-hero.png` (1600 × 900), `marketing-social.png` (1280 × 640) and `marketing-video-poster.jpg` (1280 × 800). The icon comes from the app's own `src/NabyScape/Assets/island.ico`. Gallery WebPs crop the committed stable posters and remove only the connected presentation background outside the black panel. No controls or content are generated. `settings.webp` is the stable Appearance capture. `settings-source-preview.webp` derives from `docs/evidence/integration-2.5.0/native-mica-wgc.jpg`, explicitly labeled as actual composed v2.5 source Settings evidence. The scene inside Settings is schematic.
 
@@ -47,6 +47,10 @@ See `docs/showcase.md` and `docs/verification-2.5.0.md` for capture and verifica
 
 ## Version truth
 
-Public stable is **v2.6.3**. Its installer, portable ZIP, checksums and release notes are published in the [GitHub release](https://github.com/BillyNabil/nabyscape/releases/tag/v2.6.3). The optional AI companion has no bundled provider key; users provide their own, stored per Windows user in Credential Manager. The site itself does not store or handle API keys.
+Public stable is **v2.10.0**. Its installer, portable ZIP, checksums and release notes are published in the [GitHub release](https://github.com/BillyNabil/nabyscape/releases/tag/v2.10.0). The optional AI companion has no bundled provider key; users provide their own, stored per Windows user in Credential Manager. The site itself does not store or handle API keys.
 
 Hosting identity, credentials and publishing state are managed separately and are not included in this source snapshot. Public hosted URL: https://nabyscape.sigma-bw-0740.chatgpt.site/.
+
+## 2.10 update
+
+Cover-inspired stage ambience has three local palette choices. Motion pauses when the tab or stage is hidden and respects reduced motion. Updated actual 2.10 captures, a 29-second film, compact weather, current downloads, search guidance and the refreshed default layout are included. Assets use original sample content and an illustrative forecast. Tests were not run for this requested update.

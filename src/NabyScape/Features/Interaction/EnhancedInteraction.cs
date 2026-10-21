@@ -131,8 +131,12 @@ public sealed partial class OverlayWindow
         bool allowed=!noticeShowing && (assistantOpen || assistantPeeking?Includes("ai"):commandOpen || activitiesOpen?Includes("shortcuts"):expanded?
             PanelWidgets.Any(w=>(!s.CompactLayout || PageFor(w.Id)==activePage) && Includes(w.Id)):
             peeking?Includes(peekId):Includes("closed"));
+        allowed &= (expanded || peeking || s.ClosedAmbient) && !IsTucked && !userHidden;
+        bool quiet=IsTucked || !expanded && !peeking;
+        surface.Fill=quiet?Brushes.Black:UI.Brush(s.Background);surface.GlassStyle=!quiet && s.GlassStyle;
+        if(quiet)surface.AlbumTint=Colors.Transparent;
         bool moving=app.Media.Playing && s.LiveActivity && !IsTucked && !userHidden && IsVisible && WindowState!=WindowState.Minimized;
-        surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving);
+        surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving,AmbientLook.From(s));
         app.AmbientAudio.Set(surface,allowed && moving);
     }
     private void UpdateAlbumTint()

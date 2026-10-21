@@ -15,17 +15,22 @@ internal sealed class AssistantOrb : FrameworkElement
     private AssistantState state;
     private bool rendering,reduceMotion,live,hovered,pressed,idleAnimating,music;
     private readonly ScaleTransform headphonesReveal=new(0,0,50,50);
-    private readonly TranslateTransform idleFloat=new();
-    private readonly ScaleTransform idleBreath=new(1,1,50,50);
-    private readonly RotateTransform idleSway=new(0,50,50);
+    private readonly MatrixTransform idlePose=new();
+    private AnimationClock? idleClock;
     private readonly TranslateTransform gaze=new(),lift=new();
     private readonly RotateTransform lean=new(0,50,50);
     private readonly ScaleTransform squash=new(1,1,50,50),expression=new(1,1,50,41),leftLid=new(1,1,35,41),rightLid=new(1,1,65,41);
     private readonly DispatcherTimer blinkTimer=new(){Interval=TimeSpan.FromSeconds(1.6)};
     private readonly FramePacer pacer=new();
     private double phase,level,displayLevel,last,lookX;
+    private double requestedX=double.NaN,requestedY=double.NaN;
+    private readonly MatrixTransform viewportTransform=new();
+    private readonly RotateTransform thinkingTilt=new(0,50,50),leftTilt=new(),rightTilt=new();
+    private readonly Pen outline=new(edge,1),liveOutline=new(body,2);
+    private static Pen Stroke(Brush brush,double width){var pen=new Pen(brush,width);pen.Freeze();return pen;}
     private int blinks;
     private static readonly Brush body=Ink("#23262D"),eyes=Ink("#FAFBFC"),edge=Ink("#777D88"),errorEdge=Ink("#D79696"),approvalEdge=Ink("#CDBB8E");
+    private static readonly Pen headphonePen=Stroke(eyes,5),cupPen=Stroke(eyes,1.5);
     private static readonly Geometry headphoneBand=Band();
     private static Geometry Band(){var geometry=Geometry.Parse("M12,50 L12,43 C12,-3 88,-3 88,43 L88,50");geometry.Freeze();return geometry;}
     private static Brush Ink(string color){var brush=UI.Brush(color);brush.Freeze();return brush;}
@@ -75,7 +80,7 @@ internal sealed class AssistantOrb : FrameworkElement
     internal double Level {get=>level;set=>level=Math.Clamp(double.IsFinite(value)?value:0,0,1);}
     internal bool Rendering=>rendering;
     internal bool IdleAnimating=>idleAnimating;
-    internal double IdleOffset=>idleFloat.Y;
+    internal double IdleOffset=>AssistantIdleMotion.Float(idleClock?.CurrentTime?.TotalSeconds??0,music);
     internal bool BlinkScheduled=>blinkTimer.IsEnabled;
     internal bool Pressed=>pressed;
     internal bool TrackPointerLocally {get;set;}=true;
@@ -84,6 +89,7 @@ internal sealed class AssistantOrb : FrameworkElement
     internal void LookAt(double x,double y)
     {
         x=Math.Clamp(double.IsFinite(x)?x:0,-1,1);y=Math.Clamp(double.IsFinite(y)?y:0,-1,1);lookX=x;
+        if(x==requestedX && y==requestedY)return;requestedX=x;requestedY=y;
         Move(gaze,TranslateTransform.XProperty,x*6,120);Move(gaze,TranslateTransform.YProperty,y*4,120);Move(lean,RotateTransform.AngleProperty,x*5,180);
     }
     internal void SetHover(bool value)
@@ -130,7 +136,7 @@ internal sealed class AssistantOrb : FrameworkElement
         squash.BeginAnimation(ScaleTransform.ScaleXProperty,null);squash.BeginAnimation(ScaleTransform.ScaleYProperty,null);leftLid.BeginAnimation(ScaleTransform.ScaleYProperty,null);rightLid.BeginAnimation(ScaleTransform.ScaleYProperty,null);
         expression.BeginAnimation(ScaleTransform.ScaleYProperty,null);expression.ScaleY=EyeScale;
         headphonesReveal.BeginAnimation(ScaleTransform.ScaleXProperty,null);headphonesReveal.BeginAnimation(ScaleTransform.ScaleYProperty,null);headphonesReveal.ScaleX=headphonesReveal.ScaleY=music?1:0;
-        gaze.X=gaze.Y=lift.Y=lean.Angle=0;squash.ScaleX=squash.ScaleY=leftLid.ScaleY=rightLid.ScaleY=1;
+        gaze.X=gaze.Y=lift.Y=lean.Angle=0;requestedX=requestedY=double.NaN;squash.ScaleX=squash.ScaleY=leftLid.ScaleY=rightLid.ScaleY=1;
     }
     private void Refresh()
     {
@@ -147,25 +153,15 @@ internal sealed class AssistantOrb : FrameworkElement
         if(!animate){StopIdle();return;}
         if(idleAnimating)return;
         idleAnimating=true;
-        void Loop(Animatable target,DependencyProperty property,double from,double to,double seconds)
-        {
-            target.BeginAnimation(property,new DoubleAnimation(from,to,TimeSpan.FromSeconds(seconds))
-            {AutoReverse=true,RepeatBehavior=RepeatBehavior.Forever,EasingFunction=new SineEase{EasingMode=EasingMode.EaseInOut}});
-        }
         // Uniform breathing preserves the round silhouette. Independent transforms
         // leave pointer, hover and press feedback free to interrupt immediately.
-        Loop(idleBreath,ScaleTransform.ScaleXProperty,1,1.035,music?.7:2.4);
-        Loop(idleBreath,ScaleTransform.ScaleYProperty,1,1.035,music?.7:2.4);
-        Loop(idleFloat,TranslateTransform.YProperty,0,-3.5,music?.65:2.1);
-        Loop(idleSway,RotateTransform.AngleProperty,0,music?-5:-3,music?1.1:3.4);
+        idleClock=AssistantIdleMotion.For(music).CreateClock();idlePose.ApplyAnimationClock(MatrixTransform.MatrixProperty,idleClock);
     }
     private void StopIdle()
     {
         if(!idleAnimating)return;
         idleAnimating=false;
-        idleBreath.BeginAnimation(ScaleTransform.ScaleXProperty,null);idleBreath.BeginAnimation(ScaleTransform.ScaleYProperty,null);
-        idleFloat.BeginAnimation(TranslateTransform.YProperty,null);idleSway.BeginAnimation(RotateTransform.AngleProperty,null);
-        idleBreath.ScaleX=idleBreath.ScaleY=1;idleFloat.Y=idleSway.Angle=0;
+        idlePose.BeginAnimation(MatrixTransform.MatrixProperty,null);idlePose.Matrix=Matrix.Identity;idleClock=null;
     }
     private void Detach(){if(rendering)CompositionTarget.Rendering-=Frame;rendering=false;last=0;}
     private void Frame(object? sender,EventArgs args)
@@ -178,26 +174,30 @@ internal sealed class AssistantOrb : FrameworkElement
         double size=Math.Min(ActualWidth,ActualHeight);if(size<=0)return;
         bool moving=rendering && !reduceMotion && Motion.Enabled;double t=moving?phase:0,energy=moving && state is AssistantState.Listening or AssistantState.Speaking?displayLevel:0;
         double bob=moving?Math.Sin(t*(state==AssistantState.Thinking?3:2))*1.2:0;
-        dc.PushTransform(new MatrixTransform(size/100,0,0,size/100,(ActualWidth-size)/2,(ActualHeight-size)/2));dc.PushTransform(idleFloat);dc.PushTransform(idleSway);dc.PushTransform(idleBreath);dc.PushTransform(lift);dc.PushTransform(lean);dc.PushTransform(squash);
-        dc.PushTransform(new RotateTransform(state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*5:0,50,50));
+        var matrix=new Matrix(size/100,0,0,size/100,(ActualWidth-size)/2,(ActualHeight-size)/2);if(viewportTransform.Matrix!=matrix)viewportTransform.Matrix=matrix;
+        thinkingTilt.Angle=state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*5:0;
+        dc.PushTransform(viewportTransform);dc.PushTransform(idlePose);dc.PushTransform(lift);dc.PushTransform(lean);dc.PushTransform(squash);
+        dc.PushTransform(thinkingTilt);
         // Keep a circular silhouette in every resting/live state. Expression lives in
         // the eyes and posture; only an intentional press briefly compresses it.
         double radius=43*(1+energy*.018);
-        dc.DrawEllipse(body,new Pen(state==AssistantState.Error?errorEdge:state==AssistantState.Approval?approvalEdge:edge,Math.Max(.85,65/size)),new(50,50+bob),radius,radius);
+        outline.Brush=state==AssistantState.Error?errorEdge:state==AssistantState.Approval?approvalEdge:edge;outline.Thickness=Math.Max(.85,65/size);
+        dc.DrawEllipse(body,outline,new(50,50+bob),radius,radius);
         dc.PushTransform(headphonesReveal);
-        dc.DrawGeometry(null,new Pen(eyes,5),headphoneBand);
-        dc.DrawRoundedRectangle(edge,new Pen(eyes,1.5),new Rect(5,43,14,27),6,6);
-        dc.DrawRoundedRectangle(edge,new Pen(eyes,1.5),new Rect(81,43,14,27),6,6);
+        dc.DrawGeometry(null,headphonePen,headphoneBand);
+        dc.DrawRoundedRectangle(edge,cupPen,new Rect(5,43,14,27),6,6);
+        dc.DrawRoundedRectangle(edge,cupPen,new Rect(81,43,14,27),6,6);
         dc.Pop();dc.PushTransform(gaze);dc.PushTransform(expression);
         double searching=state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*4:0,height=30;
         for(int i=0;i<2;i++)
         {
             double x=i==0?35:65,y=41+bob+(state==AssistantState.Approval?(i==0?-3:3):0),h=height+(state==AssistantState.Speaking && moving?Math.Sin(t*11+i*.9)*energy*8+energy*5:0);
-            dc.PushTransform(i==0?leftLid:rightLid);dc.PushTransform(new RotateTransform(state==AssistantState.Error?(i==0?-18:18):-8+(state==AssistantState.Thinking?searching:0),x,y));
+            var tilt=i==0?leftTilt:rightTilt;tilt.Angle=state==AssistantState.Error?(i==0?-18:18):-8+(state==AssistantState.Thinking?searching:0);tilt.CenterX=x;tilt.CenterY=y;
+            dc.PushTransform(i==0?leftLid:rightLid);dc.PushTransform(tilt);
             dc.DrawRoundedRectangle(eyes,null,new(x-8+searching,y-h/2,16,h),8,8);dc.Pop();dc.Pop();
         }
         dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();
-        if(live)dc.DrawEllipse(eyes,new Pen(body,Math.Max(2,110/size)),new(83,83),6.5,6.5);
-        dc.Pop();dc.Pop();dc.Pop();dc.Pop();
+        if(live){liveOutline.Thickness=Math.Max(2,110/size);dc.DrawEllipse(eyes,liveOutline,new(83,83),6.5,6.5);}
+        dc.Pop();dc.Pop();
     }
 }

@@ -16,7 +16,7 @@ public sealed partial class OverlayWindow
 {
     private readonly TranslateTransform tuckSlide=new();
     private readonly SurfaceMotion tuckMotion=new();
-    private double tuckDestination;
+    private double tuckDestination,tuckDestinationX;
     internal bool TuckMoving=>tuckMotion.Active;
     private bool tucked,tuckPreview,manualTuck;
     private bool TuckRequested=>manualTuck || app.Settings.AlwaysTucked || environmentHidden;
@@ -36,21 +36,26 @@ public sealed partial class OverlayWindow
     {
         get
         {
-            var translated=surface.Contour.Clone();translated.Transform=new TranslateTransform(0,tuckSlide.Y);
-            return Geometry.Combine(translated,new RectangleGeometry(new Rect(0,0,Math.Max(0,ActualWidth),Math.Max(0,ActualHeight))),GeometryCombineMode.Intersect,null);
+            var translated=surface.Contour.Clone();translated.Transform=new TranslateTransform(tuckSlide.X,tuckSlide.Y);
+            return Geometry.Combine(translated,dockBoundary,GeometryCombineMode.Intersect,null);
         }
     }
     internal Rect VisibleBounds=>VisibleContour.Bounds;
-    internal bool VisiblePoint(Point point)=>point.X>=0 && point.Y>=0 && point.X<ActualWidth && point.Y<ActualHeight && surface.Contour.FillContains(new Point(point.X,point.Y-tuckSlide.Y));
+    internal bool VisiblePoint(Point point)=>point.X>=0 && point.Y>=0 && point.X<ActualWidth && point.Y<ActualHeight && dockBoundary.FillContains(point) && surface.Contour.FillContains(new Point(point.X-tuckSlide.X,point.Y-tuckSlide.Y));
     private void ApplyEnvironmentTuck(){if(TuckRequested && !userHidden && !expanded && !peeking)SetTucked(true);else if(!TuckRequested)SetTucked(false);}
     private void SetTucked(bool value)
     {
         bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();UpdateAmbientMotion();
-        double destination=value?AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge):0;
+        double destination=0,destinationX=0;
+        if(value)
+        {
+            if(app.Settings.DockEdge is "Left" or "Right")destinationX=(app.Settings.Width-app.Settings.TuckEdge)*(app.Settings.DockEdge=="Left"?-1:1);
+            else destination=AutoTuckPolicy.Offset(app.Settings.Height,app.Settings.TuckEdge)*(app.Settings.DockEdge=="Bottom"?-1:1);
+        }
         // Manual hide must cancel an in-flight reveal even when its destination is already zero.
-        if(userHidden){tuckDestination=destination;tuckMotion.Dispose();tuckSlide.Y=destination;return;}
-        if(!changed && Math.Abs(destination-tuckDestination)<.001 && (Motion.Enabled || !tuckMotion.Active))return;
-        tuckDestination=destination;
+        if(userHidden){tuckDestination=destination;tuckDestinationX=destinationX;tuckMotion.Dispose();tuckSlide.X=destinationX;tuckSlide.Y=destination;return;}
+        if(!changed && Math.Abs(destination-tuckDestination)<.001 && Math.Abs(destinationX-tuckDestinationX)<.001 && (Motion.Enabled || !tuckMotion.Active))return;
+        tuckDestination=destination;tuckDestinationX=destinationX;
         if(value && changed)
         {
             // Contract and translate from the current display state, including a rapid reversal.
@@ -61,8 +66,8 @@ public sealed partial class OverlayWindow
             compact.BeginAnimation(OpacityProperty,null);compact.Opacity=1;compact.IsHitTestVisible=true;
             InvalidateSystemMonitor();StopLiveRendering();liveTick.Stop();ClearFeedback();
         }
-        if(!Motion.Enabled){tuckMotion.Dispose();tuckSlide.Y=destination;}
-        else tuckMotion.Go(tuckSlide,TranslateTransform.YProperty,destination,app.Settings.AnimationMs);
+        if(!Motion.Enabled){tuckMotion.Dispose();tuckSlide.X=destinationX;tuckSlide.Y=destination;}
+        else {tuckMotion.Go(tuckSlide,TranslateTransform.YProperty,destination,app.Settings.AnimationMs);tuckMotion.Go(tuckSlide,TranslateTransform.XProperty,destinationX,app.Settings.AnimationMs);}
         if(changed && !value)ConfigureLiveActivity();
     }
     internal void RevealTuckedPreview()

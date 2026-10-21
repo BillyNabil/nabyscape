@@ -16,39 +16,9 @@ public sealed partial class SettingsWindow
     {foreach(var child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>()){yield return child;foreach(var item in SettingTree(child))yield return item;}}
     private void OrganizeSettings()
     {
-        var descriptions=new System.Collections.Generic.Dictionary<string,string>
-        {
-            ["Appearance"]="Colors, text and animation.",
-            ["Layout"]="Display, position and sizes for each island state.",
-            ["Content"]="Widget and tool order, hover pages, focus and clipboard capture.",
-            ["Controls"]="Hover timing, mouse gestures, keyboard shortcuts and auto-hide.",
-            ["Audio"]="Closed media display, waveform and sound controls.",
-            ["System"]="Status readings and clock format.",
-            ["Launch"]="Your app shortcuts and activity routines.",
-            ["AI"]="Providers, models, voice and companion preferences.",
-            ["Application"]="Startup, local data and app information."
-        };
-        var intro=UI.Text(descriptions[current],12,UI.Muted);intro.Margin=new(0,-14,0,18);page.Children.Insert(1,intro);
+        var intro=UI.Text(Category(current).Description,12,UI.Muted);intro.Margin=new(0,-10,0,20);page.Children.Insert(1,intro);
         var sections=page.Children.OfType<Border>().Where(b=>b.Tag is string).ToArray();
-        sectionIndexHost.Visibility=sections.Length>1?Visibility.Visible:Visibility.Collapsed;
-        var links=new ComboBox{HorizontalAlignment=HorizontalAlignment.Stretch};UI.Named(links,"Settings section index");
-        links.Items.Add(new ComboBoxItem{Content="Jump to a section…",IsEnabled=false});links.SelectedIndex=0;
-        foreach(var section in sections)links.Items.Add(new ComboBoxItem{Content=(string)section.Tag,Tag=section});
-        sectionIndexHost.Child=links;
-        links.SelectionChanged+=(_,_)=>
-        {
-            if(links.SelectedItem is not ComboBoxItem {Tag:Border section})return;
-            links.Focus();int revision=++navigationRevision;
-            // Wait for the popup to return focus, then align the heading, not the entire section.
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,()=>
-            {
-                if(revision!=navigationRevision || !page.Children.Contains(section))return;
-                settingsScroll.UpdateLayout();
-                settingsScroll.ScrollToVerticalOffset(section.TranslatePoint(new Point(),page).Y+page.Margin.Top);
-                ConfigurePreviewForSection((string)section.Tag);RefreshPreview();
-                links.SelectedIndex=0;settingsScroll.UpdateLayout();
-            });
-        };
+        sectionIndexHost.Child=null;sectionIndexHost.Visibility=Visibility.Collapsed;
         foreach(var box in SettingTree(page).OfType<ComboBox>())
         {
             string name=AutomationProperties.GetName(box);if(name.Length==0)continue;

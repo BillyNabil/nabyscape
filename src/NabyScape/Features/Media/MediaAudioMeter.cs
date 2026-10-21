@@ -16,6 +16,8 @@ public sealed partial class AudioService
     internal float CurrentMediaPeak {get;private set;}
     private sealed record MediaEndpoint(MMDevice Device,List<AudioSessionControl> Sessions) : IDisposable
     {
+        private string? id;
+        internal string Id=>id??=Device.ID;
         public void Dispose(){try{foreach(var session in Sessions)try{session.Dispose();}catch{}}finally{Device.Dispose();}}
     }
     private float ReadMediaEndpoint(MediaEndpoint endpoint)
@@ -25,7 +27,7 @@ public sealed partial class AudioService
         {
             meterSessions++;
             if(outputMuted || session.SimpleAudioVolume.Mute || session.SimpleAudioVolume.Volume<=0)continue;
-            meterAudible++;mediaOutputs.Add(endpoint.Device.ID);peak=Math.Max(peak,session.AudioMeterInformation.MasterPeakValue);
+            meterAudible++;mediaOutputs.Add(endpoint.Id);peak=Math.Max(peak,session.AudioMeterInformation.MasterPeakValue);
         }
         return peak;
     }

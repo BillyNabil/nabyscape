@@ -1,0 +1,18 @@
+PASS  Clipboard list has its own bounded viewport while the panel fits
+PASS  Wheel inside clipboard scrolls only the history
+PASS  Fast trackpad deltas accumulate within a single layout frame
+PASS  Clipboard bottom consumes vertical wheel without moving the panel or changing page
+PASS  Wheel on panel navigation changes slide even with a long clipboard history
+PASS  Returning to clipboard retains its own list position
+PASS  Horizontal gesture can still leave the clipboard list
+PASS  Notes keep their editor wheel instead of switching slides
+PASS  Clipboard stays within its viewport at 300 DIP and short height
+PASS  Clipboard stays within its viewport at 526 DIP and short height
+PASS  Duration stepper changes editable minutes
+PASS  Countdown minute field wheel advances the widget instead of nudging content
+PASS  Visible lyrics use a dedicated column to the right of music controls
+PASS  Lyrics column and player fit the expanded contour
+PASS  Hiding lyrics restores the original panel width
+PASS  Small lyric layouts remain readable with a stacked fallback
+PASS  Fixture checks never start microphone or screen sharing
+RESULT: 0 failures

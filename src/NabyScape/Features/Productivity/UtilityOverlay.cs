@@ -16,7 +16,7 @@ public sealed partial class OverlayWindow
     private string toolsMode="home";
     private string taskDraft="";
     private bool utilityMutating;
-    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links") };
+    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("weather","Weather") };
     private bool ToolOn(string id)=>app.Settings.ToolEnabled(id) || app.Settings.HoverViews.Any(view=>view.Id==id && view.Enabled && HoverPagePolicy.Available(app.Settings,id));
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private ContextMenu? audioMenu;
@@ -117,6 +117,7 @@ public sealed partial class OverlayWindow
         {
             BuildNotes();
         }
+        else if(toolsMode=="weather")toolsContent.Children.Add(new WeatherView(app));
         else if(toolsMode=="calendar")BuildCalendar(toolsContent);
         else if(toolsMode=="awake")BuildAwake(toolsContent);
         else if(toolsMode=="links")BuildCleanLinks(toolsContent);

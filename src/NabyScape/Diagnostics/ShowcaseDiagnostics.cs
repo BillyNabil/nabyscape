@@ -62,6 +62,10 @@ internal static class ShowcaseDiagnostics
             await Scene("closed","Your music. A little closer.",2.5,()=>island.Collapse());
             await Scene("hover-music","Hover for the essentials.",3.5,()=>{island.SelectPeek("media");island.PreviewActivity();});
             await Scene("media","Click for the full picture.",3.5,()=>{island.Reveal(false);island.SelectPage("media",false);});
+            app.Settings.WeatherCity="Demo City";app.Settings.WeatherLatitude=0;app.Settings.WeatherLongitude=0;
+            var weather=new WeatherSnapshot{Key=WeatherService.Key(app.Settings),Updated=DateTimeOffset.UtcNow,Temperature=26,FeelsLike=27,High=28,Low=21,Humidity=65,Wind=8,RainChance=10,Code=1,Day=true,Sunrise="2026-10-21T05:40",Sunset="2026-10-21T18:10",Hours=Enumerable.Range(0,6).Select(i=>new WeatherHour{Time=(14+i).ToString()+":00",Temperature=26-i*.7,Code=i<3?1:2,Day=i<4,RainChance=i*5}).ToList()};
+            typeof(WeatherService).GetProperty("Cached",flags|BindingFlags.Public)!.SetValue(app.Weather,weather);
+            await Scene("weather","Your forecast. One quiet card.",3,()=>island.ShowTools("weather",false));
             await Scene("system","A quick look at your PC.",3,()=>{island.SelectPage("status",false);island.SelectMonitorTab("overview");});
             await Scene("notes","Keep a thought within reach.",3,()=>island.ShowTools("notes",false));
             await Scene("tasks","Small tasks. Less switching.",2.5,()=>island.ShowTools("tasks",false));
@@ -70,10 +74,10 @@ internal static class ShowcaseDiagnostics
             island.ShowTools("home",false);await Task.Delay(650);Snapshot("tools");
             island.SelectPage("focus",false);await Task.Delay(650);Snapshot("focus");
             app.Previews.OpenAt("notes",new Point(120,160),false);await Task.Delay(400);
-            var mini=Application.Current.Windows.OfType<DetachedPreviewWindow>().Single();Snapshot("detached-notes",mini);mini.Close();
+            var mini=Application.Current.Windows.OfType<DetachedPreviewWindow>().FirstOrDefault();if(mini!=null){Snapshot("detached-notes",mini);mini.Close();}
             await Scene("return","And back to your desktop.",2.5,()=>island.Collapse());
             settings=new SettingsWindow(app){Width=1100,Height=780};settings.Show();
-            foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
+            foreach(string category in new[]{"Appearance","Ambience","Layout","Content","Controls","Audio","System","Launch","Application"})
             {
                 typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(settings,new object[]{category});
                 await Task.Delay(450);Snapshot("settings-"+category.ToLowerInvariant(),settings);

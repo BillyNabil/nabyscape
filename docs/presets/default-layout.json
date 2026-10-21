@@ -33,6 +33,10 @@
         "Enabled": true
       },
       {
+        "Id": "volume",
+        "Enabled": true
+      },
+      {
         "Id": "timer",
         "Enabled": true
       },
@@ -41,7 +45,31 @@
         "Enabled": true
       },
       {
-        "Id": "calendar",
+        "Id": "clock",
+        "Enabled": true
+      },
+      {
+        "Id": "weather",
+        "Enabled": true
+      },
+      {
+        "Id": "system",
+        "Enabled": true
+      },
+      {
+        "Id": "battery",
+        "Enabled": true
+      },
+      {
+        "Id": "shortcuts",
+        "Enabled": true
+      },
+      {
+        "Id": "stopwatch",
+        "Enabled": false
+      },
+      {
+        "Id": "files",
         "Enabled": true
       },
       {
@@ -49,24 +77,24 @@
         "Enabled": true
       },
       {
-        "Id": "files",
+        "Id": "tasks",
         "Enabled": true
       },
       {
-        "Id": "system",
-        "Enabled": false
-      },
-      {
         "Id": "clips",
-        "Enabled": false
+        "Enabled": true
       },
       {
-        "Id": "tasks",
-        "Enabled": false
+        "Id": "calendar",
+        "Enabled": true
       },
       {
-        "Id": "stopwatch",
-        "Enabled": false
+        "Id": "awake",
+        "Enabled": true
+      },
+      {
+        "Id": "links",
+        "Enabled": true
       }
     ],
     "Widgets": [
@@ -91,6 +119,10 @@
         "Enabled": true
       },
       {
+        "Id": "weather",
+        "Enabled": true
+      },
+      {
         "Id": "system",
         "Enabled": true
       },
@@ -104,10 +136,34 @@
       },
       {
         "Id": "stopwatch",
+        "Enabled": false
+      },
+      {
+        "Id": "files",
         "Enabled": true
       },
       {
-        "Id": "tools",
+        "Id": "notes",
+        "Enabled": true
+      },
+      {
+        "Id": "tasks",
+        "Enabled": true
+      },
+      {
+        "Id": "clips",
+        "Enabled": true
+      },
+      {
+        "Id": "calendar",
+        "Enabled": true
+      },
+      {
+        "Id": "awake",
+        "Enabled": true
+      },
+      {
+        "Id": "links",
         "Enabled": true
       }
     ],
@@ -119,7 +175,7 @@
     "LiveActivity": true,
     "ClosedMediaIcon": "Artwork",
     "ClosedMediaContent": "Waveform",
-    "Performance": "Maksimal",
+    "Performance": "Auto",
     "WheelAction": "pages",
     "MiddleAction": "toggle",
     "VolumeStep": 2,
@@ -173,10 +229,37 @@
       {
         "Id": "links",
         "Enabled": true
+      },
+      {
+        "Id": "weather",
+        "Enabled": true
       }
     ],
     "ActivitiesEnabled": false,
     "HideFullscreen": true,
-    "HideMaximized": true
+    "HideMaximized": true,
+    "HoverFollowsWidgets": true,
+    "FollowMonitorAnimation": true,
+    "FollowMonitorDuration": 360,
+    "ClosedAmbient": false,
+    "DockEdge": "Top",
+    "DockVertical": 50,
+    "DockInset": 8,
+    "CoverAmbient": true,
+    "AmbientScope": "All widgets",
+    "AmbientPalette": "Cover blend",
+    "AmbientDirection": "Bottom",
+    "AmbientStrength": 0.55,
+    "AmbientSpread": 1.55,
+    "AmbientHeight": 1.1,
+    "AmbientBalance": 0.5,
+    "AmbientSoftness": 0.55,
+    "AmbientSecondaryColor": "#CB72D9",
+    "AmbientAudioResponse": "Responsive",
+    "AmbientSensitivity": 1.0,
+    "InteractionMotion": "Subtle",
+    "DockUnlocked": false,
+    "PanelAutoHeight": true,
+    "BrowserMediaPreviews": false
   }
 }

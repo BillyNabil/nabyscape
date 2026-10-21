@@ -57,7 +57,7 @@ public sealed partial class OverlayWindow
         if(clips.Length==0){var empty=UI.Text("Your next copied item will appear here.",12,UI.Muted);empty.Margin=new(0,12,0,0);content.Children.Add(empty);return;}
         var selected=clips.FirstOrDefault(c=>c.Id==selectedClipId);if(selected==null)return;
         var detail=SmartClipboard.Classify(selected);
-        var section=new StackPanel{Tag="clip-detail",Margin=new(0,12,0,0)};content.Children.Add(section);
+        var section=new StackPanel{Tag="clip-detail",Margin=new(0,12,0,0)};content.Children.Insert(0,section);
         section.Children.Add(UI.Text(detail.Kind+" · "+selected.Timestamp.ToLocalTime().ToString("g"),10,UI.Muted));
         var status=UI.Text("",10,UI.Muted);var actions=new WrapPanel{Margin=new(0,5,0,0)};
         void Copy(string? variant=null){status.Text=p.TryCopyClip(selected,variant)?"Copied.":"Could not copy. The clipboard may be busy; try again.";ResizeToolPanel();}
@@ -98,7 +98,11 @@ public sealed partial class OverlayWindow
             }
         }
         actions.Children.Add(ActionButton(selected.Pinned?"Unpin":"Pin",()=>MutateUtility(()=>p.ToggleClipPin(selected.Id))));
-        actions.Children.Add(ActionButton("Remove",()=>MutateUtility(()=>p.RemoveClip(selected.Id))));section.Children.Add(actions);section.Children.Add(status);
+        actions.Children.Add(ActionButton("Remove",()=>MutateUtility(()=>p.RemoveClip(selected.Id))));var selectedTools=new StackPanel();
+        var selectedHeader=new DockPanel();var close=Icons.Button("x","Close clipboard selection",()=>{selectedClipId=null;RefreshTools();ResizeToolPanel();},false,24);close.Background=Brushes.Transparent;close.Margin=new(0);DockPanel.SetDock(close,Dock.Right);selectedHeader.Children.Add(close);selectedHeader.Children.Add(UI.Text("Selected "+detail.Kind.ToString().ToLowerInvariant(),10,UI.Muted));selectedTools.Children.Add(selectedHeader);
+        selectedTools.Children.Add(actions);selectedTools.Children.Add(status);
+        var selectedBar=new Border{Child=selectedTools,Background=UI.Brush("#14171C"),BorderBrush=UI.Brush("#2D333D"),BorderThickness=new(.7),CornerRadius=new(10),Padding=new(9,5,9,5),Margin=new(0,7,0,5)};UI.Named(selectedBar,"Clipboard selection actions");
+        panel.Children.Insert(panel.Children.IndexOf(clipboardScroll),selectedBar);selectedBar.SizeChanged+=(_,_)=>{if(clipboardHeader==panel){SizeClipboardViewport();Dispatcher.BeginInvoke(()=>{if(expanded && toolsMode=="clips")ResizeToolPanel();});}};SizeClipboardViewport();
     }
     internal bool ScrollClipboardWheel(int delta)
     {

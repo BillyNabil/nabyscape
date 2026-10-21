@@ -1,0 +1,34 @@
+PASS  Default media has two compact footer actions
+PASS  Default hides the full-width selector and slider
+PASS  Volume mounts the original Windows slider
+PASS  Mute, mixer, devices and microphone remain accessible
+PASS  Volume disclosure opens below the footer without covering playback
+PASS  Open popover defers cursor following
+PASS  Escape dismisses before collapsing the dock
+PASS  The same footer button toggles closed
+PASS  Only the most recently chosen popover is open
+PASS  Duplicate external click notifications do not collapse the dock
+PASS  Current media source is marked
+PASS  Source selection runs exactly once and closes
+PASS  Disappearing sessions dismiss stale choices
+PASS  No sessions gives useful guidance
+PASS  volume fits below its footer at 526 DIP
+PASS  volume wheel cannot switch widgets at 526 DIP
+PASS  source fits below its footer at 526 DIP
+PASS  Long source lists scroll internally at 526 DIP
+PASS  source wheel cannot switch widgets at 526 DIP
+PASS  volume fits below its footer at 300 DIP
+PASS  volume wheel cannot switch widgets at 300 DIP
+PASS  source fits below its footer at 300 DIP
+PASS  Long source lists scroll internally at 300 DIP
+PASS  source wheel cannot switch widgets at 300 DIP
+PASS  Popover has a finite animated entrance
+PASS  Entrance settles without a render subscription
+PASS  Reduce motion skips entrance animation
+PASS  Changing widgets closes the popover
+PASS  Collapsing releases the popover
+PASS  Disabling volume hides its footer action
+PASS  Volume-only mode keeps its popover within the surface
+PASS  Classic layout retains its inline volume slider
+PASS  Fixture leaves voice and screen sharing off
+RESULT: 0 failures

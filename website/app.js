@@ -1,14 +1,20 @@
 'use strict';
 (() => {
+  const shell=document.querySelector('.demo-shell');
+  const awake=()=>document.body.classList.toggle('site-awake',!document.hidden);awake();document.addEventListener('visibilitychange',awake);
+  if(shell){
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>shell.classList.toggle('in-view',entry.isIntersecting)),{threshold:.1});observer.observe(shell);
+    const choices=[...document.querySelectorAll('[data-ambience]')];choices.forEach(button=>button.addEventListener('click',()=>{shell.dataset.ambience=button.dataset.ambience;choices.forEach(choice=>choice.setAttribute('aria-pressed',String(choice===button)));}));
+  }
   const stage = document.querySelector('.desktop-stage');
   if (stage) {
     const preview = document.querySelector('.island-preview');
     const image = document.querySelector('#island-image');
     const stateButtons = [...document.querySelectorAll('[data-state-button]')];
     const states = {
-      closed: {src: 'closed-raw.png', width:324, height:38, alt:'Closed NabyScape island showing sample artwork, waveform and clock'},
-      hover: {src:'hover-music-raw.png', width:500, height:202, alt:'Actual music hover preview with sample artwork, playback and volume controls'},
-      open: {src:'media-raw.png', width:546, height:312, alt:'Actual expanded Music panel with sample track, playback, waveform, timeline and volume'}
+      closed: {src: 'closed-raw.png', width:328, height:36, alt:'Closed NabyScape island showing sample artwork, waveform and clock'},
+      hover: {src:'hover-music-raw.png', width:448, height:207, alt:'Actual music hover preview with sample artwork, playback and volume controls'},
+      open: {src:'media-raw.png', width:526, height:334, alt:'Actual expanded Music panel with sample track, playback, waveform, timeline and volume'}
     };
     let pinned = false;
     const setState = (name, persist = true) => {

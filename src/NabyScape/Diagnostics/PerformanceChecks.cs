@@ -20,6 +20,9 @@ internal static class PerformanceChecks
         try
         {
             var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=true;s.ReduceMotion=false;s.AnimationMs=420;s.PanelWidth=514;s.PanelMaxHeight=504;s.CompactLayout=true;
+            // This suite isolates waveform demand. Audio-reactive ambient has its
+            // own sampler-demand tests and legitimately reads an otherwise quiet UI.
+            s.CoverAmbient=false;
             foreach(var widget in s.Widgets)widget.Enabled=true;app.ChangeSettings();
             app.Audio.DiagnosticPeak=()=>.3f;app.Media.DiagnosticPlayback(false);await Task.Delay(1600);
             Check("closed startup defers expanded panel controls",island.BodyBuilds==0);
@@ -36,7 +39,11 @@ internal static class PerformanceChecks
             settings=new SettingsWindow(app);settings.Show();typeof(SettingsWindow).GetMethod("Navigate",Private)!.Invoke(settings,new object[]{"Audio"});typeof(SettingsWindow).GetField("previewMode",Private)!.SetValue(settings,"Panel");typeof(SettingsWindow).GetMethod("RefreshPreview",Private)!.Invoke(settings,null);await Task.Delay(1000);
             reads=app.Audio.DiagnosticMeterReads;await Task.Delay(2100);long shared=app.Audio.DiagnosticMeterReads-reads;
             Check("Settings and island share one audio sample stream",shared>30 && shared<=65 && shared<=single+8);
-            settings.Width=480;settings.Height=380;foreach(var expander in Diagnostics.Descendants(settings).OfType<Expander>().ToArray())expander.IsExpanded=true;await Task.Delay(180);settings.UpdateLayout();
+            settings.Width=480;settings.Height=380;await Task.Delay(180);settings.UpdateLayout();
+            // The responsive preview is now an expander too. Keep it collapsed
+            // while exposing form controls, rather than reopening the preview.
+            foreach(var expander in Diagnostics.Descendants(settings).OfType<Expander>().ToArray())expander.IsExpanded=AutomationProperties.GetName(expander)!="Settings live preview";
+            await Task.Delay(180);settings.UpdateLayout();
             var signal=(ActivityVisual)typeof(SettingsWindow).GetField("audioSignalWave",Private)!.GetValue(settings)!;signal.BringIntoView();await Task.Delay(180);
             var stage=(Border)typeof(SettingsWindow).GetField("previewStage",Private)!.GetValue(settings)!;
             Check("visible audio signal keeps rendering when the narrow preview rail is hidden",!stage.IsVisible && (bool)typeof(SettingsWindow).GetProperty("AudioSignalVisible",Private)!.GetValue(settings)! && (bool)typeof(SettingsWindow).GetField("previewRendering",Private)!.GetValue(settings)!);

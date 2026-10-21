@@ -88,5 +88,5 @@ public sealed partial class OverlayWindow
         else if(dragWasPeeking){SelectPeek(dragPreviousPeek);}
         else Collapse();
     }
-    private readonly ThumbnailCache shelfThumbnails=new();
+    private ThumbnailCache shelfThumbnails=>app.Productivity.DisplayThumbnails;
 }

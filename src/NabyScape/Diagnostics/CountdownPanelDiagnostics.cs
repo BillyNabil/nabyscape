@@ -29,7 +29,7 @@ internal static class CountdownPanelDiagnostics
             var crop=new CroppedBitmap(bitmap,new Int32Rect(Math.Max(0,(bitmap.PixelWidth-w)/2),0,w,h));var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(crop));using var file=File.Create(Path.Combine(directory,name+".png"));png.Save(file);
         }
         check("Timer and Focus retain their side-by-side layout",Math.Abs(View(false).TranslatePoint(new Point(),island).Y-View(true).TranslatePoint(new Point(),island).Y)<1);
-        check("Only one main action and Reset exist per countdown",new[]{false,true}.All(f=>Diagnostics.Descendants(View(f)).OfType<Button>().Count()==2));
+        check("Only one main action and Reset exist per countdown",new[]{false,true}.All(f=>Diagnostics.Descendants(View(f)).OfType<Button>().Count(b=>AutomationProperties.GetAutomationId(b).EndsWith("-primary") || AutomationProperties.GetAutomationId(b).EndsWith("-reset"))==2));
         Capture("ready");
         foreach(bool focus in new[]{false,true})
         {

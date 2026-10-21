@@ -47,6 +47,34 @@ internal static class PerformanceTests
             var cache=new ThumbnailCache(1024);var pixels=new byte[8*8*4];var bitmap=BitmapSource.Create(8,8,96,96,PixelFormats.Bgra32,null,pixels,32);bitmap.Freeze();
             for(int i=0;i<100;i++)cache.Add(i.ToString(),bitmap);Assert(cache.Count==4 && cache.Bytes==1024 && cache.Get("0")==null && cache.Get("99")!=null);cache.Clear();Assert(cache.Count==0 && cache.Bytes==0);
         });
+        test("Thumbnail LRU keeps recent entries and expires only unused cache references",()=>
+        {
+            long now=0;var cache=new ThumbnailCache(512,()=>now);var pixels=new byte[256];var bitmap=BitmapSource.Create(8,8,96,96,PixelFormats.Bgra32,null,pixels,32);bitmap.Freeze();
+            cache.Add("clip",bitmap);cache.Add("shelf",bitmap);now=10;Assert(ReferenceEquals(cache.Get("clip"),bitmap));cache.Add("new",bitmap);
+            Assert(cache.Get("shelf")==null && cache.Get("clip")!=null);now=30005;cache.TrimIdle();Assert(cache.Count==2);
+            now=30010;cache.TrimIdle();Assert(cache.Count==0 && cache.Bytes==0 && bitmap.PixelWidth==8);
+        });
+        test("Portrait and landscape previews bound the long edge without modifying originals",()=>
+        {
+            foreach(var size in new[]{(16,2048),(2048,16),(128,128)})
+            {
+                var source=BitmapSource.Create(size.Item1,size.Item2,96,96,PixelFormats.Bgra32,null,new byte[size.Item1*size.Item2*4],size.Item1*4);
+                var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(source));using var stream=new System.IO.MemoryStream();encoder.Save(stream);byte[] original=stream.ToArray();
+                stream.Position=0;var preview=DisplayThumbnail.Decode(stream,64);Assert(preview.IsFrozen && preview.PixelWidth<=64 && preview.PixelHeight<=64 && Math.Max(preview.PixelWidth,preview.PixelHeight)==64);
+                Assert(System.Linq.Enumerable.SequenceEqual(original,stream.ToArray()));stream.Position=0;var full=new PngBitmapDecoder(stream,BitmapCreateOptions.PreservePixelFormat,BitmapCacheOption.OnLoad).Frames[0];Assert(full.PixelWidth==size.Item1 && full.PixelHeight==size.Item2);
+            }
+        });
+        test("Single-clock mascot pose matches the original four sine channels",()=>
+        {
+            var ease=new System.Windows.Media.Animation.SineEase{EasingMode=System.Windows.Media.Animation.EasingMode.EaseInOut};
+            double Wave(double seconds,double period){double phase=seconds%(period*2)/period;return ease.Ease(phase>1?2-phase:phase);}
+            foreach(bool music in new[]{false,true})for(int i=0;i<500;i++)
+            {
+                double t=i*.137,scale=1+.035*Wave(t,music?.7:2.4),angle=(music?-5:-3)*Wave(t,music?1.1:3.4),y=-3.5*Wave(t,music?.65:2.1);
+                var original=new TransformGroup{Children={new ScaleTransform(scale,scale,50,50),new RotateTransform(angle,50,50),new TranslateTransform(0,y)}};
+                var pose=AssistantIdleMotion.Pose(t,music);foreach(var point in new[]{new Point(0,0),new Point(50,50),new Point(83,83)})Assert((pose.Transform(point)-original.Transform(point)).Length<1e-9);
+            }
+        });
         test("CPU overview queries GPU counters without sensor or process metadata",()=>
         {
             var queries=new List<string>();var reader=new HardwareMonitor.Reader((scope,query)=>{queries.Add(scope+"|"+query);return new();},()=>0);reader.Read(0,true);

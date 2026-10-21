@@ -12,16 +12,15 @@ namespace NabyScape;
 
 internal sealed record MediaSourceChoice(string Id,string Name,Action Select);
 
-// An in-surface overlay: Canvas contributes no desired size, so opening a control
-// never grows the island or displaces transport/timeline/lyrics.
+// A bounded disclosure below the footer keeps playback unobscured. The island
+// measures it as content, including when a short screen needs vertical scrolling.
 internal sealed class MediaControls : Grid
 {
-    private readonly Canvas layer=new(){ClipToBounds=true};
-    private readonly Border popover=new(){Tag="media-popover",Background=UI.Brush("#111216"),BorderBrush=UI.Brush("#53565D"),BorderThickness=new(.7),CornerRadius=new(12),Padding=new(10),Visibility=Visibility.Collapsed};
+    private readonly Border popover=new(){Tag="media-popover",Background=UI.Brush("#111216"),BorderBrush=UI.Brush("#53565D"),BorderThickness=new(.7),CornerRadius=new(10),Padding=new(8),Margin=new(0,6,0,0),Visibility=Visibility.Collapsed};
     private readonly Grid footer=new(){Margin=new(0,8,0,0)};
     private readonly Button source,level;
-    private readonly TextBlock sourceName=UI.Text("Media",12),levelText=UI.Text("—",11,UI.Muted);
-    private readonly Grid sourceIcon=new(){Width=18,Height=18,Margin=new(0,0,8,0)},levelIcon=new(){Width=18,Height=18,Margin=new(0,0,8,0)};
+    private readonly TextBlock sourceName=UI.Text("Media",11),levelText=UI.Text("—",11,UI.Muted);
+    private readonly Grid sourceIcon=new(){Width=16,Height=16,Margin=new(0,0,6,0)},levelIcon=new(){Width=16,Height=16,Margin=new(0,0,6,0)};
     private readonly Func<IReadOnlyList<MediaSourceChoice>> sources;
     private readonly Func<string?> selected;
     private readonly Func<FrameworkElement> volumeContent;
@@ -41,7 +40,7 @@ internal sealed class MediaControls : Grid
         var chevron=Icons.Create("chevron",8,UI.Muted);chevron.Margin=new(7,0,0,0);source.Content=UI.Row(sourceIcon,sourceName,chevron);source.HorizontalAlignment=HorizontalAlignment.Left;source.Visibility=media?Visibility.Visible:Visibility.Collapsed;source.ToolTip="Choose media source · Enter or Space to open";footer.Children.Add(source);
         level=FooterButton("Volume controls",()=>Toggle("volume"));level.Content=UI.Row(levelIcon,levelText);level.HorizontalAlignment=HorizontalAlignment.Right;level.Visibility=volume?Visibility.Visible:Visibility.Collapsed;level.ToolTip="Volume, mute, mixer and audio devices · Enter or Space to open";Grid.SetColumn(level,1);footer.Children.Add(level);
         if(!media){content.MinHeight=144;var heading=UI.Heading("Volume",18);content.Children.Add(heading);}
-        if(media)content.Children.Add(footer);Children.Add(content);if(!media){footer.VerticalAlignment=VerticalAlignment.Bottom;Children.Add(footer);}Children.Add(layer);layer.Children.Add(popover);Panel.SetZIndex(layer,10);
+        content.Children.Add(footer);RowDefinitions.Add(new(){Height=GridLength.Auto});RowDefinitions.Add(new(){Height=GridLength.Auto});Children.Add(content);Grid.SetRow(popover,1);Children.Add(popover);
         KeyboardNavigation.SetTabNavigation(popover,KeyboardNavigationMode.Cycle);
         SizeChanged+=(_,_)=>Place();popover.SizeChanged+=(_,_)=>Place();
         Unloaded+=(_,_)=>Close(false);IsVisibleChanged+=(_,_)=>{if(!IsVisible)Close(false);};
@@ -51,12 +50,12 @@ internal sealed class MediaControls : Grid
     }
     private static Button FooterButton(string name,Action run)
     {
-        var button=UI.Button(name,run);button.MinHeight=32;button.Padding=new(7,4,7,4);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);return button;
+        var button=UI.Button(name,run);button.MinHeight=28;button.Padding=new(5,3,5,3);button.Margin=new(0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);return button;
     }
     internal void Refresh(double value,bool muted,bool available,bool refreshSources=true)
     {
         levelText.Text=available?$"{value:0}%":"—";string levelKey=muted?"muted":"volume";
-        if(levelKey!=levelIconKey){levelIconKey=levelKey;levelIcon.Children.Clear();levelIcon.Children.Add(Icons.Create(levelKey,18));}
+        if(levelKey!=levelIconKey){levelIconKey=levelKey;levelIcon.Children.Clear();levelIcon.Children.Add(Icons.Create(levelKey,16));}
         if(!refreshSources)return;
         var choices=sources();string? id=selected();var current=choices.FirstOrDefault(item=>item.Id==id);
         string signature=string.Join("\n",choices.Select(item=>item.Id+"\t"+item.Name))+"\nselected:"+id;
@@ -102,22 +101,17 @@ internal sealed class MediaControls : Grid
     }
     private void Place()
     {
-        sourceName.MaxWidth=Math.Max(48,ActualWidth-145);if(!IsOpen || ActualWidth<=0 || ActualHeight<=0)return;
-        popover.Width=Math.Min(kind=="volume"?280:260,ActualWidth);popover.MaxHeight=Math.Max(40,ActualHeight-footer.ActualHeight-12);
-        popover.Measure(new Size(popover.Width,popover.MaxHeight));double height=Math.Min(popover.DesiredSize.Height,popover.MaxHeight);
-        Canvas.SetLeft(popover,kind=="volume"?Math.Max(0,ActualWidth-popover.Width):0);Canvas.SetTop(popover,Math.Max(0,ActualHeight-footer.ActualHeight-height-10));
+        sourceName.MaxWidth=Math.Max(48,ActualWidth-145);if(!IsOpen || ActualWidth<=0)return;
+        popover.Width=Math.Min(kind=="volume"?240:224,ActualWidth);popover.MaxHeight=kind=="volume"?100:146;
+        popover.HorizontalAlignment=kind=="volume"?HorizontalAlignment.Right:HorizontalAlignment.Left;
     }
     private static FrameworkElement SourceGlyph(string id)
     {
         if(id.Contains("spotify",StringComparison.OrdinalIgnoreCase))
         {
-            var grid=new Grid{Width=18,Height=18};grid.Children.Add(new Ellipse{Fill=UI.Brush("#1ED760")});
-            grid.Children.Add(new System.Windows.Shapes.Path{Data=Geometry.Parse("M4,6 Q9,4 14,7 M5,9 Q9,7.5 13,10 M6,12 Q9,11 12,13"),Stroke=UI.Brush("#101312"),StrokeThickness=1.3,StrokeStartLineCap=PenLineCap.Round,StrokeEndLineCap=PenLineCap.Round});return grid;
+            var grid=new Canvas{Width=18,Height=18};grid.Children.Add(new Ellipse{Width=18,Height=18,Fill=UI.Brush("#C5C8CD")});
+            grid.Children.Add(new System.Windows.Shapes.Path{Data=Geometry.Parse("M4,6 Q9,4 14,7 M5,9 Q9,7.5 13,10 M6,12 Q9,11 12,13"),Stroke=UI.Brush("#101312"),StrokeThickness=1.3,StrokeStartLineCap=PenLineCap.Round,StrokeEndLineCap=PenLineCap.Round});return new Viewbox{Width=16,Height=16,Child=grid};
         }
-        if(id.Contains("chrome",StringComparison.OrdinalIgnoreCase))
-        {
-            var grid=new Grid{Width=18,Height=18};grid.Children.Add(new Ellipse{Fill=UI.Brush("#EAC446")});grid.Children.Add(new System.Windows.Shapes.Path{Data=Geometry.Parse("M9,9 L1.2,4.5 A9,9 0 0 1 16.8,4.5 L9,4.5 Z"),Fill=UI.Brush("#E25950")});grid.Children.Add(new System.Windows.Shapes.Path{Data=Geometry.Parse("M9,9 L9,18 A9,9 0 0 1 1.2,4.5 L5.1,11.2 Z"),Fill=UI.Brush("#5BA76F")});grid.Children.Add(new Ellipse{Width=8,Height=8,Fill=UI.Brush("#4E9BDD"),Stroke=UI.Brush("#E7E9EA"),StrokeThickness=1});return grid;
-        }
-        return Icons.Create("music",18,UI.Muted);
+        return Icons.Create("music",16,UI.Muted);
     }
 }

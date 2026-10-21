@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
+    internal static readonly string[] Sections={"Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -87,6 +87,10 @@ internal sealed class SettingsScene : FrameworkElement
                 Box(23,28,68,22,Brushes.Black);Text("Music",34,33,9);Line(108,40,176,40);Box(193,16,135,63,Brushes.Black);Cover(203,25,22);Text("Song title",234,28,10,true);Bar(204,65,112,.4);Text(s.ReduceMotion?"Instant state change":$"{s.AnimationMs:0} ms transition",23,78,11);Text("Closed → open",193,87,11,false,muted);break;
             case "Animation performance":
                 Text("Eco",24,16,12,true);Text("Auto",24,42,12,true);Text("Maximum",24,68,12,true);for(int row=0;row<3;row++)for(int i=0;i<(row+1)*8;i++)Box(120+i*10,20+row*26,3,12,white,1);Note("Illustrative update cadence · your display sets the visible limit");break;
+            case "Dock placement":
+                Box(110,12,205,76,UI.Brush("#14171D"),7);dc.DrawRoundedRectangle(null,line,new Rect(110,12,205,76),7,7);
+                var marker=s.DockEdge switch{"Left"=>new Rect(111,36,10,30),"Right"=>new Rect(304,36,10,30),"Bottom"=>new Rect(182,77,62,9),"Floating"=>new Rect(182,45,62,12),_=>new Rect(182,14,62,9)};
+                dc.DrawRoundedRectangle(white,null,marker,4,4);Note(s.DockEdge+" · "+s.DockInset.ToString("0")+" px inset · panels remain upright");break;
             case "Display":
                 dc.DrawRoundedRectangle(null,line,new Rect(24,17,166,67),5,5);dc.DrawRoundedRectangle(null,line,new Rect(220,17,166,67),5,5);Box(s.DisplayMode is "Follow" or "Selected"?266:70,18,76,12,white,3);if(s.DisplayMode=="Follow"){Line(318,39,332,48);Line(318,39,321,54);Text("250 ms",242,39,10);}
                 Text("Primary display",50,66,11);Text("Other display",250,66,11);Note(s.DisplayMode=="Follow"?"Follow cursor · move after 250 ms · waits during interaction":s.DisplayMode=="Selected"?"Selected display: "+s.Monitor:"Primary display");break;
@@ -174,8 +178,8 @@ internal sealed class SettingsScene : FrameworkElement
             case "Ambient light":
                 Box(36,12,348,82,Brushes.Black,16);dc.PushClip(new RectangleGeometry(new Rect(36,12,348,82),16,16));
                 var ambientPalette=(System.Windows.Application.Current as App)?.AmbientAudio?.CoverColors??default;
-                var glow=AmbientPolicy.ColorsFor(s,ambientPalette).Primary;glow.A=(byte)(s.AmbientStrength*200);
-                if(s.CoverAmbient)dc.DrawRectangle(new RadialGradientBrush(glow,Colors.Transparent){Center=new(.45,1.05),GradientOrigin=new(.45,1.05),RadiusX=.3+s.AmbientSpread*.6,RadiusY=1},null,new Rect(36,12,348,82));dc.Pop();Cover(51,28,36);Text(s.AmbientScope,102,30,15,true);Text(s.AmbientAudioResponse+" · "+(int)(s.AmbientStrength*100)+"%",102,56,11);Note(s.AmbientColorSource+" · "+s.AmbientMotion+" · audio-reactive");break;
+                var ambientColors=AmbientPolicy.ColorsFor(s,ambientPalette);
+                if(s.CoverAmbient){var light=new DrawingGroup{OpacityMask=AmbientPaint.BottomFade(s.AmbientSpread,AmbientLook.From(s))};light.Children.Add(new GeometryDrawing(AmbientPaint.ColorBand(ambientColors,s.AmbientStrength,AmbientLook.From(s)),null,new RectangleGeometry(new Rect(36,12,348,82))));dc.DrawDrawing(light);}dc.Pop();Cover(51,28,36);Text(s.AmbientScope,102,30,15,true);Text(s.AmbientAudioResponse+" · "+(int)(s.AmbientStrength*100)+"%",102,56,11);Note(s.AmbientColorSource+" · "+s.AmbientMotion+" · audio-reactive");break;
             case "Notification presentation":
                 Box(46,10,328,77,Brushes.Black,16);Text("Focus complete",68,25,16,true);Text("Time for a short break",68,52,11,false,muted);Text("2 queued",286,28,10,false,muted);Bar(68,73,280,.65);Note(s.NotificationAnimation+" · "+s.NotificationSeconds+" sec · "+(s.QuietHours?"quiet hours on":"quiet hours off"));break;
             case "Notifications":

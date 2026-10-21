@@ -1,0 +1,17 @@
+PASS  Performance: closed startup defers expanded panel controls
+PASS  Performance: paused closed island has no meter reads or continuous rendering
+PASS  Performance: music with cover and title does not sample an invisible waveform
+PASS  Performance: visible waveform keeps its live render loop and 30 Hz sample ceiling
+PASS  Performance: Auto frame policy retains shared CPU sampling during visible animation
+PASS  Performance: Settings and island share one audio sample stream
+PASS  Performance: visible audio signal keeps rendering when the narrow preview rail is hidden
+PASS  Performance: offscreen audio signal and hidden preview rail release the Settings render callback
+PASS  Performance: geometry edits preserve the preview control tree
+PASS  Performance: minimized Settings unsubscribes continuous preview rendering
+PASS  Performance: theme and responsive dimensions preserve editor identity, text and selection
+PASS  Performance: static System panel does not sample hidden media or retain a render loop
+PASS  Performance: system updates retain existing metric controls
+PASS  Performance: Notes mini window retains its document and editor across clock ticks
+PASS  Performance: manual hide stops visual sampling and hides mini windows
+PASS  Performance: manual show restores existing mini windows
+RESULT: 0 failures

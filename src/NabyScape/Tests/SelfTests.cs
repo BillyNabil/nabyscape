@@ -21,7 +21,7 @@ internal static class SelfTests
             Assert(s.Width==327 && s.Height==36 && s.PanelWidth==526 && s.PanelMaxHeight==417 && s.PanelScale==1.04 && s.HoverWidth==447 && s.HoverHeight==207);
             Assert(s.GlassStrength==.58 && s.CategoryStyle=="Icons" && s.LaunchStyle=="Icons" && s.Performance=="Maksimal" && s.WheelAction=="pages" && s.HideMaximized && s.TuckEdge==9);
             Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews && !s.ActivitySatellite && !s.ActivitiesEnabled);
-            Assert(string.Join(",",HoverPagePolicy.Pages(s))=="media,timer,focus,calendar,notes,files");
+            Assert(HoverPagePolicy.Pages(s).SequenceEqual(s.Widgets.Where(w=>w.Enabled && HoverPagePolicy.Ids.Contains(w.Id)).Select(w=>w.Id)));
             Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links" && s.Widgets.All(w=>w.Enabled));
             Assert(!s.ClipboardHistory && !s.AutoStart && !s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
             Assert(s.Shortcuts.Count==2 && s.Shortcuts[0].Target=="explorer.exe" && s.Shortcuts[1].Target=="ms-settings:");
@@ -62,7 +62,7 @@ internal static class SelfTests
         Test("Invalid customization profile does not mutate current preferences",()=>
         {var target=new Settings{Width=331};bool failed=false;try{CustomizationProfile.Import("{\"format\":\"luma.layout.v1\",\"values\":{}}",target);}catch{failed=true;}Assert(failed && target.Width==331);});
         Test("Layout settings repair non-finite geometry and preserve unique hover order",()=>
-        {var s=new Settings{PanelWidth=double.NaN,PanelScale=9,HoverHeight=-1,SwipeDistance=0,HoverDelayMs=0,HoverViews=new(){new(){Id="notes",Enabled=false},new(){Id="notes"},new(){Id="unknown"}}};s.Normalize();Assert(s.PanelWidth==384 && s.PanelScale==1.25 && s.HoverHeight==184 && s.SwipeDistance==24 && s.HoverDelayMs==80 && s.HoverViews.Count==10 && s.HoverViews[0].Id=="notes" && !s.HoverViews[0].Enabled);});
+        {var s=new Settings{PanelWidth=double.NaN,PanelScale=9,HoverHeight=-1,SwipeDistance=0,HoverDelayMs=0,HoverViews=new(){new(){Id="notes",Enabled=false},new(){Id="notes"},new(){Id="unknown"}}};s.Normalize();Assert(s.PanelWidth==384 && s.PanelScale==1.25 && s.HoverHeight==184 && s.SwipeDistance==24 && s.HoverDelayMs==80 && s.HoverViews.Count==HoverPagePolicy.Ids.Length && s.HoverViews[0].Id=="notes" && !s.HoverViews[0].Enabled);});
         Test("Mixer includes paused sessions and rejects expired sessions",()=>Assert(AudioMixer.IsControllableSession(0) && AudioMixer.IsControllableSession(1) && !AudioMixer.IsControllableSession(2) && !AudioMixer.IsControllableSession(-1)));
         var now=new DateTimeOffset(2026,10,14,0,0,0,TimeSpan.Zero);
         Test("Timer keeps its absolute deadline while UI is closed",()=> {var c=new Countdown();c.Start(120,now);Assert(c.Remaining(now.AddSeconds(70))==50);});

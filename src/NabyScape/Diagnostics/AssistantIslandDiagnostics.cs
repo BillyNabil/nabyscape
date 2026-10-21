@@ -88,7 +88,7 @@ internal static class AssistantIslandDiagnostics
         {
             s.PanelWidth=width;app.ChangeSettings();await Task.Delay(250);island.UpdateLayout();
             check("Inline editor stays inside island bounds at "+width,editor.ActualWidth>150 && editor.ActualWidth<=island.PaintedWidth-20);
-            Capture("island-ai-chat-"+width);
+            check("Scaled AI content fits the panel viewport at "+width,view.ActualHeight*s.PanelScale<=viewport.ViewportHeight+.5);Capture("island-ai-chat-"+width);
         }
         island.CloseAssistant();await Task.Delay(300);
         ai.Options.Enabled=true;ai.Conversation.Record("user","Hello from my island");ai.Conversation.Record("assistant","I'm right here. We can chat or talk without leaving your island.");
@@ -96,6 +96,8 @@ internal static class AssistantIslandDiagnostics
         check("A new reply can emerge from the closed island without opening a window",island.AssistantPeeking && app.Windows.Count==windows && !island.IsExpanded);
         Capture("island-ai-reply");
         ai.Options.Providers.Add(new(){Name="Fixture",Model="fixture",Tools=true});ai.Options.SelectedProvider=ai.Options.Providers[0].Id;ai.SetActions(true);island.OpenAssistant(false);await Task.Delay(150);
+        var send=Button("Send");string retainedDraft=editor.Text;editor.Clear();check("Empty messages keep Send disabled",!send.IsEnabled);editor.Text=retainedDraft;check("Typing enables Send without changing the draft",send.IsEnabled);
+        check("Composer removes the redundant keyboard hint",!Diagnostics.Descendants(view).OfType<TextBlock>().Any(t=>t.Text.StartsWith("Enter ")));Capture("island-ai-refined-composer");
         var approval=ai.Execute(new("inline-review","nabyscape","{\"action\":\"timer_start\",\"seconds\":60}"),default);await Task.Delay(200);
         check("Reviewed actions stay inside the island without a dialog",ai.Pending?.Id=="inline-review" && Button("Run once").IsVisible && app.Windows.Count==windows && !app.Session.Timer.Running);
         Capture("island-ai-review");ai.Decide(false);await approval;

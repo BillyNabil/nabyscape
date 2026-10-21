@@ -108,7 +108,7 @@ internal sealed class AssistantDesktopNative : IAssistantDesktopBackend
         }
         finally{graphics.ReleaseHdc(destination);if(source!=IntPtr.Zero)ReleaseDC(IntPtr.Zero,source);}
         using var output=new MemoryStream();bitmap.Save(output,ImageFormat.Jpeg);
-        return new(target,width,height,"data:image/jpeg;base64,"+Convert.ToBase64String(output.ToArray()));
+        return new(target,width,height,"data:image/jpeg;base64,"+Convert.ToBase64String(output.GetBuffer(),0,checked((int)output.Length)));
     }
     internal static Point Map(AssistantScreenFrame frame,int x,int y)
     {

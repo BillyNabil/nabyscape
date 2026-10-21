@@ -10,21 +10,33 @@ internal static class PreferenceReset
 {
     internal static readonly Dictionary<string,string[]> Categories=new()
     {
-        ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength CoverAmbient AmbientStrength AmbientSpread AmbientMotion AmbientScope AmbientWidgets AmbientColorSource AmbientCustomColor AmbientAudioResponse AmbientSensitivity InteractionMotion AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings AnimationMs ReduceMotion LiveActivity Performance RecentColors".Split(' '),
-        ["Layout"]="DockUnlocked PanelAutoHeight Width Height Horizontal Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
-        ["Content"]="Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
-        ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource SmartActivities BrowserMediaPreviews WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers HideFullscreen HideMaximized VisibilityHotkeyEnabled VisibilityHotkeyKey VisibilityHotkeyModifiers AlwaysTucked TuckEdge TuckHotkeyEnabled TuckHotkeyKey TuckHotkeyModifiers".Split(' '),
+        ["Ambience"]="CoverAmbient ClosedAmbient AmbientStrength AmbientSpread AmbientMotion AmbientScope AmbientWidgets AmbientColorSource AmbientCustomColor AmbientSecondaryColor AmbientPalette AmbientDirection AmbientHeight AmbientBalance AmbientSoftness AmbientAudioResponse AmbientSensitivity".Split(' '),
+        ["Motion"]="InteractionMotion AnimationMs ReduceMotion LiveActivity Performance".Split(' '),
+        ["Clipboard"]="ClipboardHistory".Split(' '),
+        ["Weather"]="WeatherCity WeatherLatitude WeatherLongitude WeatherUnits".Split(' '),
+        ["Visibility"]="HideFullscreen HideMaximized AlwaysTucked TuckEdge TuckHotkeyEnabled TuckHotkeyKey TuckHotkeyModifiers VisibilityHotkeyEnabled VisibilityHotkeyKey VisibilityHotkeyModifiers SmartActivities BrowserMediaPreviews".Split(' '),
+        ["Notifications"]="CountdownSound CountdownSoundVolume CountdownSoundFile NotificationSeconds NotificationAnimation QuietHours QuietStart QuietEnd NotificationsSnoozedUntil NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' '),
+        ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings RecentColors".Split(' '),
+        ["Layout"]="FollowMonitorAnimation FollowMonitorDuration DockUnlocked PanelAutoHeight Width Height Horizontal DockEdge DockVertical DockInset Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
+        ["Content"]="HoverFollowsWidgets Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
+        ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers".Split(' '),
         ["Audio"]="WaveformSource WaveformSensitivity LyricsEnabled LyricsAnimation LyricsOffset ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
         ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
         ["AI"]=Array.Empty<string>(),
-        ["Application"]="CountdownSound CountdownSoundVolume CountdownSoundFile AutoCheckUpdates NotificationSeconds NotificationAnimation QuietHours QuietStart QuietEnd NotificationsSnoozedUntil NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' ')
+        ["Application"]="AutoCheckUpdates".Split(' ')
     };
     internal static string Summary(string? category)
     {
         string Detail(string name)=>name switch
         {
-            "Appearance"=>"shape, colors, text weights, motion and performance",
+            "Appearance"=>"dock shape, colors and text style",
+            "Ambience"=>"ambient colors, light shape, audio response and closed-dock glow",
+            "Motion"=>"animation, reduced motion and performance preferences",
+            "Clipboard"=>"clipboard capture preferences",
+            "Weather"=>"weather city and temperature units",
+            "Visibility"=>"hide, tuck, automatic previews and visibility shortcuts",
+            "Notifications"=>"notification delivery, sounds, quiet hours and download alerts",
             "Layout"=>"island position, display and panel sizes",
             "Content"=>"widget/tool order, hover pages and focus durations",
             "Controls"=>"hover timing, gestures, tuck rules and global shortcuts",

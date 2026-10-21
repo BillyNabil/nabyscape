@@ -9,7 +9,7 @@ namespace NabyScape;
 
 internal static class AmbientPolicy
 {
-    internal static bool Includes(Settings s,string widget)=>s.CoverAmbient && s.AmbientStrength>0 && (s.AmbientScope switch
+    internal static bool Includes(Settings s,string widget)=>s.CoverAmbient && s.AmbientStrength>0 && (widget=="closed"?s.ClosedAmbient:s.AmbientScope switch
     {
         "Music only"=>widget is "media" or "volume" or "closed",
         "Selected widgets"=>s.AmbientWidgets.Contains(widget),
@@ -17,7 +17,8 @@ internal static class AmbientPolicy
     });
     internal static CoverPalette ColorsFor(Settings s,CoverPalette cover)
     {
-        if(s.AmbientColorSource=="Album cover" && cover.Primary.A>0)return cover;
+        if(s.AmbientColorSource=="Album cover" && cover.Primary.A>0)return s.AmbientPalette=="Single color"?new(cover.Primary,cover.Primary):cover;
+        if(s.AmbientColorSource=="Custom blend")return new(UI.Brush(s.AmbientCustomColor).Color,UI.Brush(s.AmbientSecondaryColor).Color);
         Color color=UI.Brush(s.AmbientColorSource=="Custom color"?s.AmbientCustomColor:s.Accent).Color;
         return new(color,color);
     }
@@ -142,7 +143,7 @@ internal sealed class AmbientPresenter : IDisposable
     {
         var s=app.Settings;bool allowed=AmbientPolicy.Includes(s,widget);
         bool moving=app.Media.Playing && s.LiveActivity && surface.IsVisible && Window.GetWindow(surface)?.WindowState!=WindowState.Minimized;
-        surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving);
+        surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving,AmbientLook.From(s));
         app.AmbientAudio.Set(surface,allowed && moving);
     }
     public void Dispose(){Unloaded(surface,new());surface.Loaded-=Loaded;surface.Unloaded-=Unloaded;surface.IsVisibleChanged-=VisibilityChanged;app.AmbientAudio.Remove(surface);}

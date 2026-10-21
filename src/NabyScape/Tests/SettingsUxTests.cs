@@ -87,7 +87,7 @@ internal static class SettingsUxTests
         test("Tool preferences migrate without deleting old data or enabling new hover pages",()=>
         {
             var s=new Settings{Widgets=new(){new(){Id="tools"}},Tools=new(){new(){Id="files",Enabled=false},new(){Id="files"},new(){Id="bad"}}};s.Normalize();
-            Assert(s.Tools.Count==7 && !s.ToolEnabled("files") && s.ToolEnabled("notes") && s.ActivitiesEnabled && s.HoverViews.Count==10 && !s.HoverViews.Single(v=>v.Id=="clips").Enabled && !s.HoverViews.Single(v=>v.Id=="tasks").Enabled);
+            Assert(s.Tools.Count==Settings.ToolNames.Count && !s.ToolEnabled("files") && s.ToolEnabled("notes") && s.ActivitiesEnabled && s.HoverViews.Count==HoverPagePolicy.Ids.Length && !s.HoverViews.Single(v=>v.Id=="clips").Enabled && !s.HoverViews.Single(v=>v.Id=="tasks").Enabled);
             s.ActivitiesEnabled=false;var target=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(s),target);Assert(!target.ActivitiesEnabled && !target.ToolEnabled("files") && target.ToolEnabled("tasks"));
         });
         test("Leaving a scrolling media title restores its bounded ellipsis layout",()=>

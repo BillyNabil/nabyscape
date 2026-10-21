@@ -38,7 +38,7 @@ public sealed partial class SettingsWindow
 
     private void LayoutSettings()
     {
-        DisplaySettings();DockEditingSettings();var s=app.Settings;var geometry=new StackPanel();AddSlider(geometry,"Closed width",s.Width,180,400,v=>s.Width=v,"px");AddSlider(geometry,"Closed height",s.Height,28,72,v=>s.Height=v,"px");AddSlider(geometry,"Corner radius",s.Radius,0,40,v=>s.Radius=v,"px");AddSlider(geometry,"Horizontal position",s.Horizontal,0,100,v=>s.Horizontal=v,"%");if(s.Preset!="Mac")AddSlider(geometry,"Top offset",s.Top,0,Math.Max(150,SystemParameters.WorkArea.Height-72),v=>s.Top=v,"px");page.Children.Add(Section("Closed island",geometry));
+        DisplaySettings();DockPlacementSettings();DockEditingSettings();var s=app.Settings;var geometry=new StackPanel();AddSlider(geometry,"Closed width",s.Width,180,400,v=>s.Width=v,"px");AddSlider(geometry,"Closed height",s.Height,28,72,v=>s.Height=v,"px");AddSlider(geometry,"Corner radius",s.Radius,0,40,v=>s.Radius=v,"px");AddSlider(geometry,"Horizontal position",s.Horizontal,0,100,v=>s.Horizontal=v,"%");if(s.Preset!="Mac" || s.DockEdge=="Floating")AddSlider(geometry,"Top offset",s.Top,0,Math.Max(150,SystemParameters.WorkArea.Height-72),v=>s.Top=v,"px");page.Children.Add(Section("Closed island",geometry));
         var panel=new StackPanel();AddSlider(panel,"Panel width",s.PanelWidth,300,960,v=>s.PanelWidth=v,"px");AddSlider(panel,"Maximum panel height",s.PanelMaxHeight,240,1100,v=>s.PanelMaxHeight=v,"px");AddSlider(panel,"Content inset",s.PanelPadding,16,40,v=>s.PanelPadding=v,"px");AddSlider(panel,"Content size",s.PanelScale*100,85,125,v=>s.PanelScale=v/100,"%");AddSlider(panel,"Section spacing",s.SectionGap,8,28,v=>s.SectionGap=v,"px");page.Children.Add(Section("Open panel",Check("Compact panel with tabs",s.CompactLayout,v=>s.CompactLayout=v),Check("Fit panel height to content",s.PanelAutoHeight,v=>s.PanelAutoHeight=v),UI.Text("Dragging a lower panel corner sets a manual height. With Fit height off, the height limit becomes the fixed panel height; content scrolls inside it.",11,UI.Muted),Advanced("Panel dimensions and spacing",panel)));
         var hover=new StackPanel();AddSlider(hover,"Preview width",s.HoverWidth,300,760,v=>s.HoverWidth=v,"px");AddSlider(hover,"Preview height",s.HoverHeight,184,440,v=>s.HoverHeight=v,"px");page.Children.Add(Section("Hover preview",hover));
         page.Children.Add(Section("Layout profile",UI.Row(UI.Button("Export layout",ExportCustomization),UI.Button("Import layout",ImportCustomization)),UI.Text("Includes appearance, layout, widget order and gestures. Personal notes, shortcuts and startup settings are excluded.",11,UI.Muted)));
@@ -64,31 +64,17 @@ public sealed partial class SettingsWindow
     private void HoverPageSettings()
     {
         var s=app.Settings;
-        var availability=UI.Text("",11,UI.Muted);
-        void CountPages()=>availability.Text=$"{HoverPagePolicy.Pages(s).Length} available pages · independent of main-panel widgets. Disabled individual tools are excluded. Clipboard capture has its own switch.";
-        CountPages();
-        var views=new StackPanel{MaxWidth=600,HorizontalAlignment=HorizontalAlignment.Stretch};
-        for(int i=0;i<s.HoverViews.Count;i++)
-        {
-            int index=i;var item=s.HoverViews[i];string title=item.Id switch{"media"=>"Music","notes"=>"Note","files"=>"Shelf","clips"=>"Clipboard","tasks"=>"Tasks",_=>char.ToUpperInvariant(item.Id[0])+item.Id[1..]};
-            var row=new Grid{Margin=new(0,3,0,3)};row.ColumnDefinitions.Add(new(){Width=new GridLength(26)});row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(56)});row.ColumnDefinitions.Add(new(){Width=new GridLength(64)});
-            row.Children.Add(UI.Text((i+1).ToString(),11,UI.Muted));
-            var show=UI.Button(title,()=>{previewMode="Hover";previewContent=title=="Clipboard"?"Smart clipboard":title;RefreshPreview();});show.Content=title;show.Background=Brushes.Transparent;show.HorizontalContentAlignment=HorizontalAlignment.Stretch;show.Padding=new(4,6,4,6);show.Margin=new(0);show.MinHeight=32;show.FontSize=12;show.ToolTip="Preview "+title;Grid.SetColumn(show,1);row.Children.Add(show);
-            if(!HoverPagePolicy.Available(s,item.Id)){show.Content=title+" · tool off";show.ToolTip="Enable "+Settings.ToolNames[item.Id]+" in Individual tools to use this hover page.";}
-            var enabled=new CheckBox{IsChecked=item.Enabled,VerticalAlignment=VerticalAlignment.Center,MinHeight=32,Height=32,Margin=new(0,0,10,0)};UI.Named(enabled,"Show "+title+" in hover previews");enabled.ToolTip="Show "+title;enabled.Click+=(_,_)=>{item.Enabled=enabled.IsChecked==true;Save();CountPages();};Grid.SetColumn(enabled,2);row.Children.Add(enabled);
-            var controls=UI.Row(UI.Button("Move up "+title,()=>Move(s.HoverViews,index,-1)),UI.Button("Move down "+title,()=>Move(s.HoverViews,index,1)));controls.VerticalAlignment=VerticalAlignment.Center;
-            for(int k=0;k<2;k++){var button=(Button)controls.Children[k];var icon=Icons.Create("chevron",10);icon.RenderTransformOrigin=new(.5,.5);icon.RenderTransform=new RotateTransform(k==0?180:0);button.Content=icon;button.Width=28;button.MinHeight=28;button.Padding=new(0);button.Margin=new(2,0,0,0);button.Tag=new CornerRadius(7);button.ToolTip=k==0?"Earlier in the swipe order":"Later in the swipe order";}
-            ((Button)controls.Children[0]).IsEnabled=i>0;((Button)controls.Children[1]).IsEnabled=i<s.HoverViews.Count-1;Grid.SetColumn(controls,3);row.Children.Add(controls);views.Children.Add(row);
-        }
-        page.Children.Add(Section("Hover pages",UI.Text("Scroll through these pages in this order. Click a name to preview it; use the arrows to reorder. Switch off pages you do not need.",11,UI.Muted),availability,views));
-
+        var views=new StackPanel{Visibility=s.HoverFollowsWidgets?Visibility.Collapsed:Visibility.Visible};
+        views.Children.Add(WidgetOrder(s.HoverViews,"hover"));
+        page.Children.Add(Section("Hover pages",Check("Show all active widgets in hover",s.HoverFollowsWidgets,v=>{s.HoverFollowsWidgets=v;views.Visibility=v?Visibility.Collapsed:Visibility.Visible;}),UI.Text("Uses the same order as Your widgets. Turn this off to choose a separate hover order below.",11,UI.Muted),views));
     }
+
     private void RenderSettingsPreview()
     {
         if(preview==null)return;if(previewExamples!=null && previewExamples.Items.Contains(previewContent) && previewExamples.SelectedItem?.ToString()!=previewContent)previewExamples.SelectedItem=previewContent;var s=app.Settings;bool closed=previewMode=="Closed",hover=previewMode=="Hover";double width=closed?s.Width:hover?Math.Min(s.HoverWidth,s.PanelWidth):s.PanelWidth;double height=closed?s.Height:hover?s.HoverHeight:s.PanelMaxHeight;
         bool detailExample=!closed && ((!hover && current!="Layout") || previewContent is "Control colors" or "Typography" or "Panel navigation" or "Drop zone" or "Detached preview" or "Cover gestures" or "Two activities" or "Activities" or "Smart clipboard" or "Shelf" or "Visibility");
         if(detailExample){closed=false;hover=false;width=300;height=previewContent switch{"Control colors"=>330,"Smart clipboard"=>320,"Detached preview"=>260,"Typography"=>220,"Shelf"=>260,"Music"=>250,"System"=>210,"Navigation"=>160,_=>230};}
-        AnimatePreviewSize(width,height);preview.Opacity=s.Opacity;preview.Background=UI.Brush(s.Background);RefreshPreviewClip();preview.Margin=new(0,s.Preset=="Mac"?0:s.Top,0,0);
+        AnimatePreviewSize(width,height);preview.Opacity=s.Opacity;preview.Background=previewMode=="Closed"?Brushes.Black:UI.Brush(s.Background);RefreshPreviewClip();preview.Margin=new(0,s.Preset=="Mac"?0:s.Top,0,0);
         var inset=new Thickness(closed?18:hover?32:s.PanelPadding,closed?0:15,closed?18:hover?32:s.PanelPadding,0);
         previewDimensions.Text=detailExample?"Detail preview \u00b7 your current appearance":$"{width:0} \u00d7 {height:0} px \u00b7 {s.Preset switch{"Mac"=>"Notch",_=>"Pill"}}";
         int settingsKey=previewContent is "Music" or "Timer" or "Focus" or "System"?HashCode.Combine(s.ClosedMediaContent,s.ClosedMediaIcon,s.LiveActivity,s.BoldMediaTitle,s.BoldHeadings,s.FocusMinutes,s.BreakMinutes):previewRevision;

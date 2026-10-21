@@ -1,0 +1,48 @@
+PASS  rose ambient keeps the top dark and the base vivid
+PASS  rose cover color survives large neutral artwork areas
+PASS  teal ambient keeps the top dark and the base vivid
+PASS  teal cover color survives large neutral artwork areas
+PASS  blue ambient keeps the top dark and the base vivid
+PASS  blue cover color survives large neutral artwork areas
+PASS  green ambient keeps the top dark and the base vivid
+PASS  green cover color survives large neutral artwork areas
+PASS  All-widgets ambient appears on media
+PASS  All-widgets ambient appears on focus
+PASS  All-widgets ambient appears on status
+PASS  All-widgets ambient appears on notes
+PASS  All-widgets ambient appears on tasks
+PASS  All-widgets ambient appears on clips
+PASS  All-widgets ambient appears on calendar
+PASS  All-widgets ambient appears on files
+PASS  All-widgets ambient appears on access
+PASS  Notes ambient reacts to actual high and low audio levels
+PASS  Silence returns ambient to its quiet floor
+PASS  Still movement retains audio response without a decorative loop
+PASS  Ambient adjustments preserve controls and text selection
+PASS  Unselected widgets keep their existing surface
+PASS  Selected Notes retains ambient
+PASS  Music-only scope removes ambient from Notes
+PASS  Music-only retains Media ambient
+PASS  Hover navigation immediately applies the active widget scope
+PASS  Hover Media immediately restores its ambient
+PASS  Accent source applies to actual surface
+PASS  Missing cover falls back to accent on other widgets
+PASS  Drift animates the fade even with one custom color
+PASS  Still releases the drift animation
+PASS  Audio Off stops the ambient sampler and restores static intensity
+PASS  Notes and System mini windows share ambient
+PASS  Three ambient consumers stay within the shared 30 Hz sampling budget
+PASS  Ambient-only Notes and System do not request output spectrum capture
+PASS  Hidden mini windows release their audio demand
+PASS  Closing mini windows releases their audio consumers
+PASS  Repeated mini open/close does not accumulate consumers or registered surfaces
+PASS  Tucked island stops reactive sampling
+PASS  Hidden island performs no ambient audio reads
+PASS  Paused playback stops sampling and keeps a static glow
+PASS  Reduce motion stops ambient sampling and all ambient clocks
+PASS  Live activity Off releases audio demand
+PASS  Ambient master Off stops light and sampling
+PASS  Appearance exposes ambient scope, colors, response and movement
+PASS  Widget choices stay available within a collapsible selector
+PASS  Ambient has a dedicated settings illustration
+RESULT: 0 failures

@@ -15,12 +15,21 @@ internal sealed class SpectrumTransform
     private readonly float[] ring=new float[Size];
     private readonly Complex[] fft=new Complex[Size];
     private readonly float[] window=new float[Size];
+    private readonly int[] firstBin=new int[25],lastBin=new int[25];
     private readonly int rate;
     private int cursor,filled,since;
     internal readonly float[] Bands=new float[25];
     internal long Sequence {get;private set;}
     internal SpectrumTransform(int rate)
-    {this.rate=rate;for(int i=0;i<Size;i++)window[i]=(float)(.5-.5*Math.Cos(2*Math.PI*i/(Size-1)));}
+    {
+        this.rate=rate;for(int i=0;i<Size;i++)window[i]=(float)(.5-.5*Math.Cos(2*Math.PI*i/(Size-1)));
+        for(int band=0;band<25;band++)
+        {
+            double low=40*Math.Pow(400,band/25d),high=40*Math.Pow(400,(band+1)/25d);
+            firstBin[band]=Math.Clamp((int)Math.Floor(low*Size/rate),1,Size/2-1);
+            lastBin[band]=Math.Clamp((int)Math.Ceiling(high*Size/rate),firstBin[band]+1,Size/2);
+        }
+    }
     internal void Add(float sample)
     {
         ring[cursor]=float.IsFinite(sample)?Math.Clamp(sample,-1,1):0;cursor=(cursor+1)%Size;filled=Math.Min(Size,filled+1);since++;
@@ -29,8 +38,7 @@ internal sealed class SpectrumTransform
         FastFourierTransform.FFT(true,11,fft);
         for(int band=0;band<25;band++)
         {
-            double low=40*Math.Pow(400,band/25d),high=40*Math.Pow(400,(band+1)/25d);
-            int first=Math.Clamp((int)Math.Floor(low*Size/rate),1,Size/2-1),last=Math.Clamp((int)Math.Ceiling(high*Size/rate),first+1,Size/2);
+            int first=firstBin[band],last=lastBin[band];
             double energy=0;for(int i=first;i<last;i++)energy+=fft[i].X*fft[i].X+fft[i].Y*fft[i].Y;
             double db=20*Math.Log10(Math.Max(1e-9,Math.Sqrt(energy)));
             Bands[band]=(float)Math.Clamp((db+68)/60,0,1);

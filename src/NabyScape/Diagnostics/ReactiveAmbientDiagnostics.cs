@@ -17,7 +17,7 @@ internal static class ReactiveAmbientDiagnostics
         const BindingFlags flags=BindingFlags.NonPublic|BindingFlags.Instance;
         var surface=(IslandSurface)typeof(OverlayWindow).GetField("surface",flags)!.GetValue(island)!;
         var s=app.Settings;
-        s.ReduceMotion=false;s.CoverAmbient=true;s.AmbientScope="All widgets";s.AmbientMotion="Still";s.AmbientColorSource="Custom color";s.AmbientCustomColor="#64A6DE";s.AmbientAudioResponse="Responsive";s.AmbientStrength=.7;s.LiveActivity=true;s.CompactLayout=true;s.PanelWidth=526;s.PanelMaxHeight=550;s.SmartActivities=false;s.HideFullscreen=s.HideMaximized=s.AlwaysTucked=false;s.DetachablePreviews=true;
+        s.ReduceMotion=false;s.CoverAmbient=true;s.AmbientScope="All widgets";s.AmbientMotion="Still";s.AmbientColorSource="Custom color";s.AmbientCustomColor="#64A6DE";s.AmbientAudioResponse="Responsive";s.AmbientStrength=.7;s.LiveActivity=true;s.GlassStyle=false;s.CategoryStyle="Dots";s.PanelPadding=32;s.CompactLayout=true;s.PanelWidth=526;s.PanelMaxHeight=550;s.SmartActivities=false;s.HideFullscreen=s.HideMaximized=s.AlwaysTucked=false;s.DetachablePreviews=true;
         foreach(var w in s.Widgets)w.Enabled=true;
         float peak=.02f;app.Audio.DiagnosticPeak=()=>peak;app.Media.DiagnosticPlayback(true);app.ChangeSettings();
         void Capture(FrameworkElement element,string name,double scale=1,bool crop=false)
@@ -26,6 +26,20 @@ internal static class ReactiveAmbientDiagnostics
             BitmapSource result=bitmap;
             if(crop){int width=Math.Min(bitmap.PixelWidth,(int)Math.Ceiling(island.PaintedWidth*scale)),height=Math.Min(bitmap.PixelHeight,(int)Math.Ceiling(island.PaintedHeight*scale));result=new CroppedBitmap(bitmap,new Int32Rect((bitmap.PixelWidth-width)/2,0,width,height));}
             var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(result));using var stream=File.Create(Path.Combine(directory,name+".png"));encoder.Save(stream);
+        }
+        foreach(var sample in new[]{("rose","#F00085"),("teal","#00BFA3"),("blue","#008FD5"),("green","#32D10A")})
+        {
+            var color=UI.Brush(sample.Item2).Color;
+            var swatch=new IslandSurface{Fill=Brushes.Black,GlassStyle=false,Notch=false,Radius=22,SurfaceWidth=400,SurfaceHeight=220,Width=400,Height=220};
+            swatch.SetAmbient(new(color,color),1,1,"Still",false);swatch.Measure(new Size(400,220));swatch.Arrange(new Rect(0,0,400,220));swatch.UpdateLayout();
+            var pixels=new RenderTargetBitmap(400,220,96,96,PixelFormats.Pbgra32);pixels.Render(swatch);var bytes=new byte[400*220*4];pixels.CopyPixels(bytes,1600,0);
+            int top=(20*400+200)*4,bottom=(205*400+200)*4;
+            check(sample.Item1+" ambient keeps the top dark and the base vivid",bytes[top]+bytes[top+1]+bytes[top+2]<8 && Math.Max(bytes[bottom],Math.Max(bytes[bottom+1],bytes[bottom+2]))>150);
+            Capture(swatch,"ambient-band-"+sample.Item1);
+            var art=new DrawingVisual();using(var dc=art.RenderOpen()){dc.DrawRectangle(Brushes.LightGray,null,new Rect(0,0,100,100));dc.DrawRectangle(UI.Brush(sample.Item2),null,new Rect(0,65,100,35));}
+            var cover=new RenderTargetBitmap(100,100,96,96,PixelFormats.Pbgra32);cover.Render(art);cover.Freeze();var palette=CoverPalette.Extract(cover);
+            double max=Math.Max(palette.Primary.R,Math.Max(palette.Primary.G,palette.Primary.B)),min=Math.Min(palette.Primary.R,Math.Min(palette.Primary.G,palette.Primary.B));
+            check(sample.Item1+" cover color survives large neutral artwork areas",max-min>140);
         }
         island.Reveal(false);
         foreach(string page in new[]{"media","focus","status","notes","tasks","clips","calendar","files","access"})
@@ -44,10 +58,20 @@ internal static class ReactiveAmbientDiagnostics
         check("Ambient adjustments preserve controls and text selection",island.BodyBuilds==builds && (entry==null || entry.SelectionStart==2 && entry.SelectionLength==5));
         s.AmbientScope="Selected widgets";s.AmbientWidgets=new(){"notes"};app.ChangeSettings();island.SelectPage("focus",false);check("Unselected widgets keep their existing surface",!surface.AmbientVisible);island.SelectPage("notes",false);check("Selected Notes retains ambient",surface.AmbientVisible);
         s.AmbientScope="Music only";app.ChangeSettings();check("Music-only scope removes ambient from Notes",!surface.AmbientVisible);island.SelectPage("media",false);check("Music-only retains Media ambient",surface.AmbientVisible);
+        var savedArtwork=app.Media.Artwork;double savedStrength=s.AmbientStrength;string savedSource=s.AmbientColorSource,savedMotion=s.AmbientMotion,savedResponse=s.AmbientAudioResponse;
+        s.AmbientColorSource="Album cover";s.AmbientStrength=.85;s.AmbientMotion="Still";s.AmbientAudioResponse="Off";
+        foreach(var sample in new[]{("rose","#F00085"),("teal","#00BFA3"),("blue","#008FD5"),("green","#32D10A")})
+        {
+            var drawing=new DrawingVisual();using(var dc=drawing.RenderOpen()){dc.DrawRectangle(UI.Brush(sample.Item2),null,new Rect(0,0,96,96));dc.DrawRectangle(UI.Brush("#10131A"),null,new Rect(0,60,96,36));dc.DrawEllipse(Brushes.White,null,new Point(48,40),16,16);}
+            var cover=new RenderTargetBitmap(96,96,96,96,PixelFormats.Pbgra32);cover.Render(drawing);cover.Freeze();typeof(MediaService).GetProperty(nameof(MediaService.Artwork))!.SetValue(app.Media,cover);
+            app.PublishUpdate(RuntimeChange.Media);app.ChangeSettings();await Task.Delay(100);Capture(island,"media-bottom-glow-"+sample.Item1,1,true);
+        }
+        typeof(MediaService).GetProperty(nameof(MediaService.Artwork))!.SetValue(app.Media,savedArtwork);s.AmbientStrength=savedStrength;s.AmbientColorSource=savedSource;s.AmbientMotion=savedMotion;s.AmbientAudioResponse=savedResponse;app.PublishUpdate(RuntimeChange.Media);app.ChangeSettings();
         island.Collapse();island.PreviewActivity();island.SelectPeek("notes");check("Hover navigation immediately applies the active widget scope",!surface.AmbientVisible);island.SelectPeek("media");check("Hover Media immediately restores its ambient",surface.AmbientVisible);island.Reveal(false);
         s.AmbientScope="All widgets";s.AmbientColorSource="Accent color";s.Accent="#AF80DA";app.ChangeSettings();check("Accent source applies to actual surface",surface.AmbientColor==UI.Brush(s.Accent).Color);
         s.AmbientColorSource="Album cover";typeof(MediaService).GetProperty(nameof(MediaService.Artwork))!.SetValue(app.Media,null);app.PublishUpdate(RuntimeChange.Media);check("Missing cover falls back to accent on other widgets",surface.AmbientColor==UI.Brush(s.Accent).Color);
         s.AmbientColorSource="Custom color";app.ChangeSettings();island.SelectPage("notes",false);
+        s.AmbientMotion="Drift";app.ChangeSettings();await Task.Delay(100);check("Drift animates the fade even with one custom color",surface.AmbientAnimating);s.AmbientMotion="Still";app.ChangeSettings();check("Still releases the drift animation",!surface.AmbientAnimating);
         s.AmbientAudioResponse="Off";app.ChangeSettings();await Task.Delay(100);check("Audio Off stops the ambient sampler and restores static intensity",!app.AmbientAudio.Running && surface.AmbientAudioGain==1);
         s.AmbientAudioResponse="Punchy";app.ChangeSettings();peak=.5f;await Task.Delay(150);
         app.Previews.Open("notes");app.Previews.Open("system");await Task.Delay(200);

@@ -91,8 +91,10 @@ public sealed partial class SettingsWindow
     private void ConfigurePreviewForSetting(string name)
     {
         previewFocus.Text=name;
-        if(name=="Enable Activities"){previewMode="Panel";previewContent="Activities";}
+        if(name=="Show ambience on closed dock"){previewMode="Closed";previewContent="Music";}
+        else if(name=="Enable Activities"){previewMode="Panel";previewContent="Activities";}
         else if(name.EndsWith(" tool")){previewMode="Hover";previewContent=name[..^5] switch{"File shelf"=>"Shelf","Notes"=>"Note","Clipboard"=>"Smart clipboard","Tasks"=>"Tasks","Calendar"=>"Calendar",_=>"Tools"};}
+        else if(current=="Ambience"){previewMode="Panel";previewContent="Music";}
         else if(current=="AI"){previewMode="Panel";previewContent="AI";}
         else if(current=="Application"){previewMode="Panel";previewContent="Startup";}
         else if(name.Contains("Tuck",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Visibility";}

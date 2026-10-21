@@ -17,7 +17,7 @@ internal static class LauncherPresentation
     {current.FontWeight=bold?FontWeights.SemiBold:FontWeights.Normal;if(outgoing!=null)outgoing.FontWeight=current.FontWeight;}
     internal static bool ShowIcon(string mode)=>mode!="Text";
     internal static bool ShowLabel(string mode)=>mode!="Icons";
-    internal static string CategoryIcon(string page)=>page switch{"media"=>"nav-media","focus"=>"nav-focus","status"=>"nav-status","tools"=>"nav-tools","files"=>"folder","notes" or "tasks"=>"notes","clips"=>"clipboard","calendar"=>"calendar","awake"=>"coffee","links"=>"link",_=>"nav-launch"};
+    internal static string CategoryIcon(string page)=>page switch{"media"=>"nav-media","focus"=>"nav-focus","status"=>"nav-status","tools"=>"nav-tools","files"=>"folder","notes" or "tasks"=>"notes","clips"=>"clipboard","calendar"=>"calendar","weather"=>"weather","awake"=>"coffee","links"=>"link",_=>"nav-launch"};
 }
 public sealed partial class OverlayWindow
 {

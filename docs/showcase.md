@@ -1,18 +1,24 @@
-# NabyScape · the visual tour
+# NabyScape · release 2.10 visual tour
 
-[← README](../README.md) · [Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Download](https://github.com/BillyNabil/nabyscape/releases/latest) · [Midnight Notch preset](presets/midnight-notch.json)
+[Latest silent film](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/NabyScape-demo.mp4) · [Repository movie](../Assets/showcase/nabyscape-demo.mp4) · [README](../README.md)
 
-![NabyScape with the Midnight Notch layout: actual v2.4.2 interface in a new desktop composition](../Assets/showcase/marketing-hero.png)
+![Actual NabyScape 2.10 music and compact dock](../Assets/showcase/release-hero.png)
 
-The original gallery and film below show **public v2.4.2** with the Midnight Notch layout. The [interactive website](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience) reuses these actual state captures; its browser controls simulate switching views and do not connect to Windows or play audio. New dark hero, social image and video poster are presentation compositions, not new app captures.
+The 29-second film was captured from actual WPF controls using the refreshed Daily Notch default. It includes closed, hover, music, compact Weather, System, Notes, Tasks, Shelf and Calendar views. Settings images are actual 2.10 windows. Browser state buttons switch these captures and do not connect to Windows.
 
-**Current release: v2.5.0.** [Download and release notes](releases/v2.5.0.md). Native Settings materials, updates, download activity, stopwatch, follow-cursor placement, migration/reset and the interaction hotfixes are included. [Actual v2.5 Settings evidence](verification-2.5.0.md) is separate from the original v2.4.2 gallery below.
+`tools/render_release_media.py` composes a 1280 × 800, 30 fps silent film from the capture frames. Backgrounds and captions are presentation artwork. Album art, note text, task names and filenames are original samples. Audio amplitude is synthetic, no song is recorded, and the weather forecast is illustrative. System readings are from the capture computer. No personal clipboard, notes, provider keys or city are captured.
+
+The capture-only showcase uses an isolated temporary data profile and its own single-instance name. It does not invoke the test suite. Images and film are documentation, not a benchmark of presented GPU frames or RAM use.
+
+## Historical 2.4.2 gallery
+
+The older images and GIF below remain historical references. Their version labels apply only to those historical captures; the current MP4 has been replaced by the 2.10 film.
 
 ## The moving preview
 
 [![Actual app animation: compact, hover, Music, System, Notes, Tasks, Shelf and Calendar](../Assets/showcase/demo.gif)](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-demo.mp4)
 
-**[26-second MP4, 1280 × 800, silent](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-demo.mp4)** · [Repository copy](../Assets/showcase/nabyscape-demo.mp4)
+**[26-second MP4, 1280 × 800, silent](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-demo.mp4)** · [Historical release copy](https://github.com/BillyNabil/nabyscape/releases/download/v2.4.2/NabyScape-demo.mp4)
 
 | Time | View |
 | --- | --- |

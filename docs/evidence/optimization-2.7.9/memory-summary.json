@@ -1,0 +1,74 @@
+[
+  {
+    "version": "2.7.8",
+    "scenario": "closed-paused",
+    "samples": 30,
+    "medianPrivateWorkingMiB": 144.0,
+    "minPrivateWorkingMiB": 136.53,
+    "maxPrivateWorkingMiB": 146.39,
+    "meanCpuPercent": 1.035,
+    "meanAllocatedKiBPerSecond": 896.7,
+    "meanTotalWorkingMiB": 332.8,
+    "meanPrivateCommitMiB": 192.1
+  },
+  {
+    "version": "2.7.8",
+    "scenario": "hidden",
+    "samples": 30,
+    "medianPrivateWorkingMiB": 142.18,
+    "minPrivateWorkingMiB": 123.75,
+    "maxPrivateWorkingMiB": 154.16,
+    "meanCpuPercent": 0.165,
+    "meanAllocatedKiBPerSecond": 114.9,
+    "meanTotalWorkingMiB": 323.2,
+    "meanPrivateCommitMiB": 184.7
+  },
+  {
+    "version": "2.7.8",
+    "scenario": "panel-media",
+    "samples": 30,
+    "medianPrivateWorkingMiB": 150.55,
+    "minPrivateWorkingMiB": 146.11,
+    "maxPrivateWorkingMiB": 154.51,
+    "meanCpuPercent": 2.434,
+    "meanAllocatedKiBPerSecond": 1508.6,
+    "meanTotalWorkingMiB": 342.9,
+    "meanPrivateCommitMiB": 224.3
+  },
+  {
+    "version": "2.7.9",
+    "scenario": "closed-paused",
+    "samples": 30,
+    "medianPrivateWorkingMiB": 58.57,
+    "minPrivateWorkingMiB": 50.5,
+    "maxPrivateWorkingMiB": 63.21,
+    "meanCpuPercent": 1.002,
+    "meanAllocatedKiBPerSecond": 709.7,
+    "meanTotalWorkingMiB": 173.8,
+    "meanPrivateCommitMiB": 130.8
+  },
+  {
+    "version": "2.7.9",
+    "scenario": "hidden",
+    "samples": 30,
+    "medianPrivateWorkingMiB": 56.98,
+    "minPrivateWorkingMiB": 38.86,
+    "maxPrivateWorkingMiB": 69.6,
+    "meanCpuPercent": 0.097,
+    "meanAllocatedKiBPerSecond": 97.1,
+    "meanTotalWorkingMiB": 163.3,
+    "meanPrivateCommitMiB": 122.6
+  },
+  {
+    "version": "2.7.9",
+    "scenario": "panel-media",
+    "samples": 29,
+    "medianPrivateWorkingMiB": 66.0,
+    "minPrivateWorkingMiB": 61.89,
+    "maxPrivateWorkingMiB": 68.42,
+    "meanCpuPercent": 2.401,
+    "meanAllocatedKiBPerSecond": 1459.2,
+    "meanTotalWorkingMiB": 184.6,
+    "meanPrivateCommitMiB": 151.5
+  }
+]

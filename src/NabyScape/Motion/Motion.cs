@@ -10,6 +10,9 @@ namespace NabyScape;
 
 internal static class Motion
 {
+    private static readonly ExponentialEase easeOut=Frozen(new ExponentialEase{Exponent=5,EasingMode=EasingMode.EaseOut});
+    private static readonly CubicEase fadeOut=Frozen(new CubicEase{EasingMode=EasingMode.EaseOut});
+    private static T Frozen<T>(T value) where T:Freezable {value.Freeze();return value;}
     public static bool Enabled {get;set;}=true;
     public static double Duration {get;set;}=420;
     internal static int FrameLimit {get;set;}=180;
@@ -19,20 +22,21 @@ internal static class Motion
         Enabled=!s.ReduceMotion && SystemParameters.ClientAreaAnimation && s.AnimationMs>0;Duration=s.AnimationMs;Interaction=s.InteractionMotion;
         if(Application.Current!=null)Application.Current.Resources["PopupMotion"]=Enabled?System.Windows.Controls.Primitives.PopupAnimation.Fade:System.Windows.Controls.Primitives.PopupAnimation.None;
     }
-    public static void To(Animatable target,DependencyProperty property,double value,double milliseconds=180,double delay=0)
+    public static void To(Animatable target,DependencyProperty property,double value,double milliseconds=180,double delay=0,Action? completed=null)
     {
         var current=(double)target.GetValue(property);
         target.BeginAnimation(property,null);target.SetValue(property,value);
-        if(!Enabled || Math.Abs(current-value)<.001)return;
-        target.BeginAnimation(property,new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds))
-        {BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=new ExponentialEase{Exponent=5,EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop});
+        if(!Enabled || Math.Abs(current-value)<.001){completed?.Invoke();return;}
+        var animation=new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds))
+        {BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=easeOut,FillBehavior=FillBehavior.Stop};
+        if(completed!=null)animation.Completed+=(_,_)=>completed();else animation.Freeze();target.BeginAnimation(property,animation);
     }
     public static void Fade(UIElement element,double value,double milliseconds=150,double delay=0,Action? completed=null)
     {
         double current=element.Opacity;element.BeginAnimation(UIElement.OpacityProperty,null);element.Opacity=value;
         if(Enabled && Math.Abs(current-value)>.001)
         {
-            var animation=new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds)){BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=new CubicEase{EasingMode=EasingMode.EaseOut},FillBehavior=FillBehavior.Stop};
+            var animation=new DoubleAnimation(current,value,TimeSpan.FromMilliseconds(milliseconds)){BeginTime=TimeSpan.FromMilliseconds(delay),EasingFunction=fadeOut,FillBehavior=FillBehavior.Stop};
             if(completed!=null)animation.Completed+=(_,_)=>completed();element.BeginAnimation(UIElement.OpacityProperty,animation);
         }
         else completed?.Invoke();

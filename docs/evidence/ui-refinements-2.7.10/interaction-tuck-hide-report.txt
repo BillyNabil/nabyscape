@@ -1,0 +1,4 @@
+PASS  Interaction hotfix: manual-hide regression begins during animated downward reveal
+PASS  Interaction hotfix: hiding an animated reveal cancels its unchanged zero destination immediately
+PASS  Interaction hotfix: manually hidden island retains no tuck callback
+RESULT: 0 failures

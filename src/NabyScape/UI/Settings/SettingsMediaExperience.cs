@@ -27,7 +27,7 @@ public sealed partial class SettingsWindow
     }
     private void DockEditingSettings()
     {
-        page.Children.Add(Section("Move & resize",Check("Show island move and resize handles",app.Settings.DockUnlocked,value=>app.Settings.DockUnlocked=value),UI.Text("Drag the top grip to reposition the island. Drag either lower corner to resize the current state: closed, hover or open panel. Position and each size are saved separately. Hold Alt while the island is focused to reveal handles temporarily; Esc cancels a drag. Dragging down detaches a notch into a pill; a drag that begins as a notch can snap back to the top edge.",11,UI.Muted)));
+        page.Children.Add(Section("Move & resize",new DockPositionEditor(app,Save),Check("Show island move and resize handles",app.Settings.DockUnlocked,value=>app.Settings.DockUnlocked=value),UI.Text("Drag the top grip to reposition the island. Drag either lower corner to resize the current state: closed, hover or open panel. Position and each size are saved separately. Hold Alt while the island is focused to reveal handles temporarily; Esc cancels a drag. Dragging down detaches a notch into a pill; a drag that begins as a notch can snap back to the top edge.",11,UI.Muted)));
     }
     private void CompletionSoundSettings()
     {

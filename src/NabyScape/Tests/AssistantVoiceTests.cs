@@ -461,5 +461,19 @@ internal static class AssistantVoiceTests
             buffer.Clear(); Assert(buffer.Append(new byte[] { 64, 0 })); buffer.Read(heard, 0, heard.Length);
             Assert(heard[0] == 64 && heard.Skip(1).All(value => value == 0));
         });
+        test("Voice PCM grows on demand and preserves wrapped data across growth and clear",()=>
+        {
+            var pcm=new AssistantVoiceAudio.MeteredPcm(_=>{});Assert(pcm.CapacityBytes==0);
+            var expected=new System.Collections.Generic.Queue<byte>();var random=new Random(5921);
+            for(int turn=0;turn<160;turn++)
+            {
+                var input=new byte[random.Next(1,10000)*2];random.NextBytes(input);Assert(pcm.Append(input));foreach(byte b in input)expected.Enqueue(b);
+                int count=random.Next(1,8000)*2;var output=new byte[count+8];Array.Fill(output,(byte)231);Assert(pcm.Read(output,4,count)==count);
+                for(int i=0;i<count;i++)Assert(output[i+4]==(expected.Count>0?expected.Dequeue():0));
+                Assert(output.Take(4).All(b=>b==231) && output.Skip(count+4).All(b=>b==231));
+                if(turn%35==34){pcm.Clear();expected.Clear();Assert(pcm.CapacityBytes==0 && pcm.PlayedMilliseconds==0);}
+            }
+            pcm.Clear();Assert(pcm.Append(new byte[48000]) && pcm.CapacityBytes==48000);pcm.Clear();Assert(pcm.CapacityBytes==0);
+        });
     }
 }

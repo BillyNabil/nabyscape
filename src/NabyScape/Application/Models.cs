@@ -69,7 +69,7 @@ public sealed partial class Settings
     public bool ClipboardHistory { get; set; }
     public bool ActivitiesEnabled {get;set;}=true;
     public List<WidgetSetting> Tools {get;set;}=ToolNames.Keys.Select(id=>new WidgetSetting{Id=id}).ToList();
-    public static readonly Dictionary<string,string> ToolNames=new(){["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links"};
+    public static readonly Dictionary<string,string> ToolNames=new(){["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["weather"]="Weather"};
     public bool ToolEnabled(string id)=>Widgets.FirstOrDefault(t=>t.Id==id)?.Enabled ?? (Widgets.Any(w=>w.Id=="tools" && w.Enabled) && Tools.Any(t=>t.Id==id && t.Enabled));
     public string Performance { get; set; } = "Auto";
     public string WheelAction { get; set; } = "volume";
@@ -123,7 +123,7 @@ public sealed partial class Settings
     {
         ["media"]="Media", ["volume"]="Volume", ["timer"]="Timer", ["stopwatch"]="Stopwatch", ["focus"]="Focus mode",
         ["clock"]="Clock & date", ["system"]="System monitor", ["battery"]="Battery", ["shortcuts"]="Shortcuts",["tools"]="Everyday tools",
-        ["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links"
+        ["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["weather"]="Weather"
     };
     public static List<WidgetSetting> Defaults() => Names.Keys.Where(id=>id!="tools").Select(id => new WidgetSetting { Id=id,Enabled=id!="stopwatch" }).ToList();
     public void Normalize()
@@ -140,7 +140,7 @@ public sealed partial class Settings
         AnimationMs=Clamp(AnimationMs,0,600,420);
         PanelWidth=Clamp(PanelWidth,300,960,384);PanelMaxHeight=Clamp(PanelMaxHeight,240,1100,408);PanelPadding=Clamp(PanelPadding,16,40,32);PanelScale=Clamp(PanelScale,.85,1.25,1);SectionGap=Clamp(SectionGap,8,28,18);
         HoverWidth=Clamp(HoverWidth,300,760,350);HoverHeight=Clamp(HoverHeight,184,440,192);HoverDelayMs=Math.Clamp(HoverDelayMs,80,900);HoverDetailDelayMs=Math.Clamp(HoverDetailDelayMs,200,1200);SwipeDistance=Clamp(SwipeDistance,24,100,48);GlassStrength=Clamp(GlassStrength,0,1,1);
-        var hoverIds=new[]{"media","timer","focus","calendar","notes","files","system","clips","tasks","stopwatch"};HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id is not ("system" or "clips" or "tasks" or "stopwatch")});
+        var hoverIds=HoverPagePolicy.Ids;HoverViews=(HoverViews??new()).Where(v=>v!=null && hoverIds.Contains(v.Id)).DistinctBy(v=>v.Id).ToList();foreach(var id in hoverIds)if(!HoverViews.Any(v=>v.Id==id))HoverViews.Add(new(){Id=id,Enabled=id is not ("system" or "clips" or "tasks" or "stopwatch")});
         Tools=(Tools??new()).Where(t=>t!=null && ToolNames.ContainsKey(t.Id)).DistinctBy(t=>t.Id).ToList();foreach(var id in ToolNames.Keys)if(!Tools.Any(t=>t.Id==id))Tools.Add(new(){Id=id});
         if(Performance is not ("Auto" or "Hemat" or "Maksimal"))Performance="Auto";
         if(WheelAction is not ("volume" or "pages" or "none"))WheelAction="volume";
@@ -170,11 +170,11 @@ public sealed partial class Settings
             bool enabled=Widgets[legacy].Enabled;Widgets.RemoveAt(legacy);
             foreach(var tool in Tools)if(!Widgets.Any(w=>w.Id==tool.Id))Widgets.Insert(legacy++,new(){Id=tool.Id,Enabled=enabled && tool.Enabled});
         }
-        foreach(var id in Names.Keys.Where(id=>id!="tools")) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id!="stopwatch" && !ToolNames.ContainsKey(id)});
+        foreach(var id in Names.Keys.Where(id=>id!="tools")) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id=="weather" || id!="stopwatch" && !ToolNames.ContainsKey(id)});
         // Legacy availability also gates hover pages. Hiding a main-panel widget
         // must not remove an independently enabled hover page.
         foreach(var tool in Tools)tool.Enabled|=Widgets.Any(w=>w.Id==tool.Id && w.Enabled);
-        NormalizeMediaUx();NormalizePremium();
+        NormalizeMediaUx();NormalizePremium();NormalizeFlexible();
         Shortcuts=(Shortcuts ?? new()).Where(s=>s!=null && !string.IsNullOrWhiteSpace(s.Name) && !string.IsNullOrWhiteSpace(s.Target)).Take(40).ToList();
         Monitor ??= "";
         if(DisplayMode is not ("Primary" or "Selected" or "Follow"))DisplayMode=Monitor.Length>0?"Selected":"Primary";

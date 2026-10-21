@@ -1,0 +1,49 @@
+PASS  media remains within its horizontal content bounds
+PASS  media keeps a real bottom inset
+PASS  focus remains within its horizontal content bounds
+PASS  focus keeps a real bottom inset
+PASS  access remains within its horizontal content bounds
+PASS  access keeps a real bottom inset
+PASS  tasks remains within its horizontal content bounds
+PASS  tasks keeps a real bottom inset
+PASS  files remains within its horizontal content bounds
+PASS  files keeps a real bottom inset
+PASS  clips remains within its horizontal content bounds
+PASS  clips keeps a real bottom inset
+PASS  calendar remains within its horizontal content bounds
+PASS  calendar keeps a real bottom inset
+PASS  Album artwork is a larger visual anchor
+PASS  Media removes the empty session-selector gap
+PASS  Playback and waveform share the same horizontal center
+PASS  Countdowns use two thin progress instruments
+PASS  Ring countdown retains state-driven primary action
+PASS  The same action pauses the original session
+PASS  Task summary reflects saved completion without rebuilding rows
+PASS  Task draft and selection survive unrelated updates
+PASS  Shelf secondary actions remain keyboard-accessible
+PASS  Open tool menus retain ownership of the island
+PASS  Closing tool menus releases their registry
+PASS  Preview selection keeps the original file reference
+PASS  Clipboard uses a two-column visual gallery
+PASS  Clipboard clear and disable actions remain available
+PASS  Clipboard originals and pin/remove actions remain in details
+PASS  Large clipboard textures are limited to the nearby viewport
+PASS  Leaving the gallery releases its image textures
+PASS  media fits 300 DIP
+PASS  focus fits 300 DIP
+PASS  access fits 300 DIP
+PASS  tasks fits 300 DIP
+PASS  files fits 300 DIP
+PASS  clips fits 300 DIP
+PASS  Narrow clipboard becomes one readable column
+PASS  calendar fits 300 DIP
+PASS  media fits 526 DIP
+PASS  focus fits 526 DIP
+PASS  access fits 526 DIP
+PASS  tasks fits 526 DIP
+PASS  files fits 526 DIP
+PASS  clips fits 526 DIP
+PASS  calendar fits 526 DIP
+PASS  Calendar provides seven accessible dates
+PASS  Fixtures do not start microphone or screen sharing
+RESULT: 0 failures

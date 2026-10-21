@@ -8,10 +8,10 @@ using Forms=System.Windows.Forms;
 
 namespace NabyScape;
 
-internal readonly record struct DockLayout(double Horizontal,double Top,double Width,double Height,double PanelWidth,double PanelHeight,double HoverWidth,double HoverHeight,string Preset,string Monitor,string Mode,bool AutoHeight)
+internal readonly record struct DockLayout(double Horizontal,double Top,double Width,double Height,double PanelWidth,double PanelHeight,double HoverWidth,double HoverHeight,string Preset,string Monitor,string Mode,bool AutoHeight,string Edge,double Vertical,double Inset)
 {
-    internal static DockLayout From(Settings s)=>new(s.Horizontal,s.Top,s.Width,s.Height,s.PanelWidth,s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.Preset,s.Monitor,s.DisplayMode,s.PanelAutoHeight);
-    internal void Restore(Settings s){s.Horizontal=Horizontal;s.Top=Top;s.Width=Width;s.Height=Height;s.PanelWidth=PanelWidth;s.PanelMaxHeight=PanelHeight;s.HoverWidth=HoverWidth;s.HoverHeight=HoverHeight;s.Preset=Preset;s.Monitor=Monitor;s.DisplayMode=Mode;s.PanelAutoHeight=AutoHeight;}
+    internal static DockLayout From(Settings s)=>new(s.Horizontal,s.Top,s.Width,s.Height,s.PanelWidth,s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.Preset,s.Monitor,s.DisplayMode,s.PanelAutoHeight,s.DockEdge,s.DockVertical,s.DockInset);
+    internal void Restore(Settings s){s.Horizontal=Horizontal;s.Top=Top;s.Width=Width;s.Height=Height;s.PanelWidth=PanelWidth;s.PanelMaxHeight=PanelHeight;s.HoverWidth=HoverWidth;s.HoverHeight=HoverHeight;s.Preset=Preset;s.Monitor=Monitor;s.DisplayMode=Mode;s.PanelAutoHeight=AutoHeight;s.DockEdge=Edge;s.DockVertical=Vertical;s.DockInset=Inset;}
 }
 
 public sealed partial class OverlayWindow
@@ -34,7 +34,7 @@ public sealed partial class OverlayWindow
             {
                 if(IsAnimating || IsTucked){handle.CancelDrag();return;}
                 dockEditing=true;editingOrigin=DockLayout.From(app.Settings);editingPointer=PointToScreen(Mouse.GetPosition(this));var screen=IslandScreen;double scale=Native.Scale(screen),compact=app.Settings.Width*scale;
-                editingCenter=screen.Bounds.Left+(screen.Bounds.Width-compact)*app.Settings.Horizontal/100+compact/2;editingTop=PointToScreen(new Point()).Y;editingHeight=PaintedHeight;StopHoverTimers();leaveDelay.Stop();
+                editingCenter=PointToScreen(new Point(ActualWidth/2,0)).X;editingTop=PointToScreen(new Point()).Y;editingHeight=PaintedHeight;StopHoverTimers();leaveDelay.Stop();
             };
             handle.DragDelta+=(_,_)=>
             {
@@ -43,9 +43,10 @@ public sealed partial class OverlayWindow
                 if(move)
                 {
                     var screen=Forms.Screen.FromPoint(new System.Drawing.Point((int)(editingCenter+delta.X),(int)pointer.Y));double scale=Native.Scale(screen),compact=s.Width*scale;
-                    s.Monitor=screen.DeviceName;s.DisplayMode="Selected";s.Horizontal=Math.Clamp((editingCenter+delta.X-screen.Bounds.Left-compact/2)/Math.Max(1,screen.Bounds.Width-compact)*100,0,100);
-                    double top=Math.Clamp((editingTop+delta.Y-screen.Bounds.Top)/scale,0,Math.Max(0,(screen.WorkingArea.Bottom-screen.Bounds.Top)/scale-PaintedHeight));
-                    s.Preset=original.Preset=="Mac" && top<=8?"Mac":"iPhone";s.Top=s.Preset=="Mac"?0:top;surface.Notch=s.Preset=="Mac";
+                    s.Monitor=screen.DeviceName;s.DisplayMode="Selected";s.Horizontal=Math.Clamp((editingCenter+delta.X-screen.WorkingArea.Left-compact/2)/Math.Max(1,screen.WorkingArea.Width-compact)*100,0,100);
+                    double top=Math.Clamp((editingTop+delta.Y-screen.WorkingArea.Top)/scale,0,Math.Max(0,screen.WorkingArea.Height/scale-PaintedHeight));
+                    if(Math.Abs(s.Horizontal-50)<.7)s.Horizontal=50;
+                    s.DockEdge=original.Preset=="Mac" && top<=8?"Top":"Floating";s.Preset=original.Preset=="Mac" && top<=8?"Mac":"iPhone";s.Top=s.Preset=="Mac"?0:top;surface.Notch=s.Preset=="Mac" && s.DockEdge=="Top";
                 }
                 else
                 {
@@ -66,7 +67,7 @@ public sealed partial class OverlayWindow
                 if(e.Key==Key.Escape && dockEditing){handle.CancelDrag();e.Handled=true;return;}
                 if(e.Key is not (Key.Left or Key.Right or Key.Up or Key.Down))return;
                 double dx=e.Key==Key.Left?-2:e.Key==Key.Right?2:0,dy=e.Key==Key.Up?-2:e.Key==Key.Down?2:0;var s=app.Settings;
-                if(move){s.Horizontal=Math.Clamp(s.Horizontal+dx/2,0,100);if(s.Preset!="Mac")s.Top=Math.Max(0,s.Top+dy);}
+                if(move){if(s.DockEdge is "Left" or "Right"){s.DockVertical=Math.Clamp(s.DockVertical+dy/2,0,100);s.DockInset=Math.Clamp(s.DockInset+(s.DockEdge=="Left"?dx:-dx),0,200);}else{s.Horizontal=Math.Clamp(s.Horizontal+dx/2,0,100);if(s.DockEdge=="Bottom")s.DockInset=Math.Clamp(s.DockInset-dy,0,200);else if(s.Preset!="Mac" || s.DockEdge=="Floating")s.Top=Math.Max(0,s.Top+dy);}}
                 else if(expanded){s.PanelWidth+=dx;if(dy!=0){s.PanelAutoHeight=false;s.PanelMaxHeight=PaintedHeight+dy;}}
                 else if(peeking){s.HoverWidth+=dx;s.HoverHeight+=dy;}
                 else{s.Width+=dx;s.Height+=dy;}

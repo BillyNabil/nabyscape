@@ -48,7 +48,7 @@ internal sealed class CountdownView : StackPanel
         reset=UI.Button("Reset",()=>{State.Reset();app.SaveSession();});UI.Named(reset,"Reset "+id);AutomationProperties.SetAutomationId(reset,id+"-reset");
         var actions=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center,Margin=new(0,0,0,18)};
         foreach(var button in new[]{primary,reset}){button.Width=button.Height=36;button.MinHeight=36;button.Margin=new(0);button.Padding=new(9);button.Tag=new CornerRadius(18);button.ToolTip="Tab to select; Space or Enter to activate";}
-        primary.Margin=new(0,0,12,0);reset.Background=Brushes.Transparent;reset.Foreground=UI.Muted;reset.BorderThickness=new(1);reset.BorderBrush=UI.Brush("#3C4048");reset.Content=UI.Text("↺",21,UI.Muted);actions.Children.Add(primary);actions.Children.Add(reset);Children.Add(actions);
+        primary.Margin=new(0,0,12,0);reset.Background=Brushes.Transparent;reset.Foreground=UI.Muted;reset.BorderThickness=new(1);reset.BorderBrush=UI.Brush("#3C4048");reset.Content=Icons.Create("reset",17,UI.Muted);actions.Children.Add(primary);actions.Children.Add(reset);Children.Add(actions);
         Children.Add(fields);hint.MinHeight=20;hint.Margin=new(0,10,0,0);hint.VerticalAlignment=VerticalAlignment.Top;Children.Add(hint);
         foreach(var input in new[]{minutes,breaks})
         {
@@ -63,8 +63,19 @@ internal sealed class CountdownView : StackPanel
 
     private static StackPanel Field(string label,TextBox input)
     {
-        var panel=new StackPanel();var text=UI.Text(label,10,UI.Muted);text.Margin=new(0,0,0,6);panel.Children.Add(text);
-        MinimalWidgets.Underline(input);input.Height=32;input.FontSize=12;input.MaxLength=8;panel.Children.Add(input);return panel;
+        var panel=new StackPanel();var text=UI.Text(label,10,UI.Muted);text.Margin=new(0,0,0,7);panel.Children.Add(text);
+        input.Height=32;input.MinHeight=32;input.FontSize=12;input.MaxLength=8;input.Padding=new(0,5,0,5);input.Margin=new(0);input.BorderThickness=new(0);input.Background=Brushes.Transparent;input.HorizontalContentAlignment=HorizontalAlignment.Center;
+        input.GotKeyboardFocus+=(_,_)=>input.SelectAll();
+        double maximum=label.StartsWith("Break")?120:label.StartsWith("Focus")?240:1440;
+        var controls=new Grid();controls.ColumnDefinitions.Add(new(){Width=new GridLength(28)});controls.ColumnDefinitions.Add(new());controls.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
+        Grid.SetColumn(input,1);controls.Children.Add(input);
+        void Step(int direction){if(double.TryParse(input.Text,NumberStyles.Float,CultureInfo.CurrentCulture,out double value)){input.Text=Math.Clamp(value+direction,label.StartsWith("Duration")?.1:1,maximum).ToString("0.###",CultureInfo.CurrentCulture);}}
+        foreach(int direction in new[]{-1,1})
+        {
+            var button=Icons.Button(direction<0?"minus":"plus",(direction<0?"Decrease ":"Increase ")+label,()=>Step(direction),false,28);button.Content=Icons.Create(direction<0?"minus":"plus",12,UI.Muted);button.Margin=new(0);button.Padding=new(7);button.Background=Brushes.Transparent;
+            button.SetBinding(IsEnabledProperty,new System.Windows.Data.Binding("IsEnabled"){Source=input});Grid.SetColumn(button,direction<0?0:2);controls.Children.Add(button);
+        }
+        panel.Children.Add(new Border{Background=UI.Brush("#14161A"),BorderBrush=UI.Brush("#30343B"),BorderThickness=new(.7),CornerRadius=new(8),Child=controls});return panel;
     }
 
     private void Subscribe(){if(!IsLoaded || !IsVisible || subscribed)return;app.Updated+=OnUpdate;subscribed=true;Refresh();}

@@ -37,7 +37,7 @@ internal static class MediaFooterDiagnostics
         Click(controls.VolumeButton);await Task.Delay(70);island.UpdateLayout();
         check("Volume mounts the original Windows slider",Field<Slider>("volume").IsVisible && Diagnostics.Descendants(controls.Popover).Contains(Field<Slider>("volume")));
         check("Mute, mixer, devices and microphone remain accessible",new[]{"Mute or unmute","Open volume mixer","Audio devices and microphone"}.All(name=>Diagnostics.Descendants(controls.Popover).OfType<Button>().Any(button=>AutomationProperties.GetName(button)==name)));
-        check("Volume does not change dock height",Math.Abs(island.PaintedHeight-closedHeight)<1);Capture("media-volume-integrated");
+        check("Volume disclosure opens below the footer without covering playback",controls.Popover.TransformToAncestor(controls).Transform(new Point()).Y>=controls.VolumeButton.TransformToAncestor(controls).Transform(new Point(0,controls.VolumeButton.ActualHeight)).Y);Capture("media-volume-integrated");
         check("Open popover defers cursor following",(bool)typeof(OverlayWindow).GetProperty("FollowInteraction",flags)!.GetValue(island)!);
         Escape();check("Escape dismisses before collapsing the dock",!controls.IsOpen && island.IsExpanded);
         Click(controls.VolumeButton);Click(controls.VolumeButton);check("The same footer button toggles closed",!controls.IsOpen);
@@ -64,7 +64,7 @@ internal static class MediaFooterDiagnostics
         Click(Diagnostics.Descendants(controls.Popover).OfType<Button>().Single(button=>AutomationProperties.GetName(button)=="Use media source Google Chrome"));controls.Refresh(63,false,true);
         check("Source selection runs exactly once and closes",current=="chrome.exe" && selections==1 && !controls.IsOpen);
         Click(controls.SourceButton);choices.RemoveAt(1);controls.Refresh(63,false,true);check("Disappearing sessions dismiss stale choices",!controls.IsOpen);
-        choices.Clear();Click(controls.SourceButton);check("No sessions gives useful guidance",Diagnostics.Descendants(controls.Popover).OfType<TextBlock>().Any(text=>text.Text.StartsWith("No active media sessions")));controls.Close(false);
+        choices.Clear();Click(controls.SourceButton);await Task.Delay(50);check("No sessions gives useful guidance",Diagnostics.Descendants(controls.Popover).OfType<TextBlock>().Any(text=>text.Text.StartsWith("No active media sessions")));controls.Close(false);
         foreach(double width in new[]{526d,300d})
         {
             s.PanelWidth=width;app.ChangeSettings();island.SelectPage("media",false);await Task.Delay(120);ResetChoices();controls=Inject();await Task.Delay(70);closedHeight=island.PaintedHeight;
@@ -72,7 +72,7 @@ internal static class MediaFooterDiagnostics
             foreach(string mode in new[]{"volume","source"})
             {
                 controls.Toggle(mode);await Task.Delay(60);island.UpdateLayout();var popup=controls.Popover;var bounds=popup.TransformToAncestor(controls).TransformBounds(new Rect(popup.RenderSize));
-                check(mode+" fits the unchanged "+width+" DIP media surface",bounds.Left>=-.5 && bounds.Top>=-.5 && bounds.Right<=controls.ActualWidth+.5 && bounds.Bottom<=controls.ActualHeight+.5 && Math.Abs(island.PaintedHeight-closedHeight)<1);
+                check(mode+" fits below its footer at "+width+" DIP",bounds.Left>=-.5 && bounds.Top>=-.5 && bounds.Right<=controls.ActualWidth+.5 && bounds.Bottom<=controls.ActualHeight+.5);
                 if(mode=="source")check("Long source lists scroll internally at "+width+" DIP",popup.Child is ScrollViewer viewer && viewer.ScrollableHeight>0);
                 check(mode+" wheel cannot switch widgets at "+width+" DIP",!island.RoutePanelWheel(-120,false,popup) && !island.RoutePanelWheel(120,true,popup) && island.ActivePage=="media");
                 Capture("media-"+mode+"-"+width);controls.Close(false);

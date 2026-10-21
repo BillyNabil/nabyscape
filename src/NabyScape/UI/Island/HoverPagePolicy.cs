@@ -1,10 +1,9 @@
 using System.Linq;
-
 namespace NabyScape;
-
 internal static class HoverPagePolicy
 {
-    internal static bool IsTool(string id)=>id is "calendar" or "notes" or "files" or "clips" or "tasks";
-    internal static bool Available(Settings settings,string id)=>!IsTool(id) || settings.ToolEnabled(id) || settings.Tools.Any(tool=>tool.Id==id && tool.Enabled);
-    internal static string[] Pages(Settings settings)=>settings.HoverViews.Where(v=>v.Enabled && Available(settings,v.Id)).Select(v=>v.Id).ToArray();
+    internal static readonly string[] Ids={"media","volume","timer","focus","calendar","notes","files","system","clips","tasks","stopwatch","weather","clock","battery","shortcuts","awake","links"};
+    internal static bool IsTool(string id)=>Settings.ToolNames.ContainsKey(id);
+    internal static bool Available(Settings s,string id)=>s.HoverFollowsWidgets?s.Widgets.Any(w=>w.Id==id && w.Enabled):!IsTool(id) || s.ToolEnabled(id) || s.Tools.Any(t=>t.Id==id && t.Enabled);
+    internal static string[] Pages(Settings s)=>s.HoverFollowsWidgets?s.Widgets.Where(w=>w.Enabled && Ids.Contains(w.Id)).Select(w=>w.Id).ToArray():s.HoverViews.Where(v=>v.Enabled && Available(s,v.Id)).Select(v=>v.Id).ToArray();
 }
