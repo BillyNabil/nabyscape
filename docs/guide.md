@@ -2,7 +2,7 @@
 
 [Website](https://nabyscape.sigma-bw-0740.chatgpt.site/) · [Searchable user guide](https://nabyscape.sigma-bw-0740.chatgpt.site/docs/) · [Interactive island preview](https://nabyscape.sigma-bw-0740.chatgpt.site/#experience)
 
-**Current release: v2.10.0.** [Download and release notes](releases/v2.10.0.md). The new demo shows actual v2.10 controls with sample content.
+**Current release: v2.10.1.** [Download and release notes](releases/v2.10.1.md). The new demo shows actual v2.10 controls with sample content.
 
 New installations use the **Daily Notch** layout: 327 × 36 closed island, 526 px panel, 447 × 207 hover, 420 ms motion and icon navigation. [Default layout](presets/default-layout.json). Existing settings are never replaced on upgrade; explicit preference reset uses this default while preserving personal content, startup and clipboard consent.
 

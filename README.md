@@ -2,8 +2,10 @@
 
 <h1 align="center">NabyScape</h1>
 <p align="center">Music, a little company, and everyday tools.<br>A quiet island for Windows 11. Placed your way.</p>
-<p align="center"><a href="https://nabyscape.sigma-bw-0740.chatgpt.site/">Website</a> · <a href="https://github.com/BillyNabil/nabyscape/releases/tag/v2.10.0">Download v2.10.0</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/NabyScape-demo.mp4">Watch the demo</a></p>
+<p align="center"><a href="https://nabyscape.sigma-bw-0740.chatgpt.site/">Website</a> · <a href="https://github.com/BillyNabil/nabyscape/releases/tag/v2.10.1">Download v2.10.1</a> · <a href="docs/guide.md">User guide</a> · <a href="https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/NabyScape-demo.mp4">Watch the demo</a></p>
 <p align="center"><img src="https://img.shields.io/badge/Windows_11-x64-34465c?style=flat-square" alt="Windows 11 x64"> <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-34465c?style=flat-square" alt="MIT license"></a> <a href="https://github.com/BillyNabil/nabyscape/releases/latest"><img src="https://img.shields.io/github/v/release/BillyNabil/nabyscape?style=flat-square&label=release&color=34465c" alt="Latest release"></a></p>
+
+**Latest patch: v2.10.1.** Fixes the Weather panel being clipped after its forecast loads. [Patch notes](docs/releases/v2.10.1.md)
 
 **New in 2.10:** precise dock placement, compact Weather, drag-and-drop widget order, every active widget in hover, and smooth monitor following. Includes the ambient, Settings and efficiency improvements since 2.7.8. [Release notes](docs/releases/v2.10.0.md)
 
@@ -51,7 +53,7 @@ The film uses original artwork, notes, tasks and filenames, synthetic audio inpu
 
 ## Install
 
-[**Windows installer ↓**](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/NabyScape-win-x64-Setup.exe) · [Portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/NabyScape-win-x64-Portable.zip) · [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/SHA256SUMS)
+[**Windows installer ↓**](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.1/NabyScape-win-x64-Setup.exe) · [Portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.1/NabyScape-win-x64-Portable.zip) · [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.1/SHA256SUMS)
 
 Requires **Windows 11 x64**. The runtime is included. The installer is unsigned and installs for your Windows user; portable use still saves data in your Windows profile. Start with Windows is optional. Quit from the tray to exit.
 

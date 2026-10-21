@@ -13,6 +13,28 @@ namespace NabyScape;
 public sealed partial class OverlayWindow
 {
     private readonly StackPanel toolsContent=new();
+    private bool weatherLayoutPending;
+    private FrameworkElement BuildWeatherPage()
+    {
+        var weather=new WeatherView(app);
+        weather.ContentSizeChanged+=()=>QueueWeatherPanelResize(weather);
+        weather.Loaded+=(_,_)=>QueueWeatherPanelResize(weather);
+        return weather;
+    }
+    private void QueueWeatherPanelResize(WeatherView weather)
+    {
+        if(weatherLayoutPending || !expanded || toolsMode!="weather" || !toolsContent.Children.Contains(weather))return;
+        weatherLayoutPending=true;
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,()=>
+        {
+            try
+            {
+                if(expanded && weather.IsLoaded && weather.IsVisible && toolsMode=="weather" && toolsContent.Children.Contains(weather) && !assistantOpen && !commandOpen && !activitiesOpen)
+                    ResizeToolPanel();
+            }
+            finally{weatherLayoutPending=false;}
+        });
+    }
     private string toolsMode="home";
     private string taskDraft="";
     private bool utilityMutating;
@@ -117,7 +139,7 @@ public sealed partial class OverlayWindow
         {
             BuildNotes();
         }
-        else if(toolsMode=="weather")toolsContent.Children.Add(new WeatherView(app));
+        else if(toolsMode=="weather")toolsContent.Children.Add(BuildWeatherPage());
         else if(toolsMode=="calendar")BuildCalendar(toolsContent);
         else if(toolsMode=="awake")BuildAwake(toolsContent);
         else if(toolsMode=="links")BuildCleanLinks(toolsContent);
