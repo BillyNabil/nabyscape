@@ -54,7 +54,7 @@ public sealed partial class OverlayWindow
         }
         if(!pointerCheck.IsEnabled){followPolicy.Reset();ResolveFollow(true);pointerCheck.Start();}
     }
-    private bool FollowInteraction=>fileDragActive || PeekInteractionActive || SatellitePointerInside || IsMouseOver || IsKeyboardFocusWithin || Mouse.Captured!=null || Mouse.LeftButton==MouseButtonState.Pressed || Mouse.RightButton==MouseButtonState.Pressed || app.Windows.Cast<Window>().Any(w=>w.IsKeyboardFocusWithin && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
+    private bool FollowInteraction=>mediaControls?.IsOpen==true || MinimalWidgets.MenuOpen(this) || fileDragActive || PeekInteractionActive || SatellitePointerInside || IsMouseOver || IsKeyboardFocusWithin || Mouse.Captured!=null || Mouse.LeftButton==MouseButtonState.Pressed || Mouse.RightButton==MouseButtonState.Pressed || app.Windows.Cast<Window>().Any(w=>w.IsKeyboardFocusWithin && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
     private void ResolveFollow(bool immediate=false)
     {
         if(DiagnosticRun || app.Settings.DisplayMode!="Follow")return;

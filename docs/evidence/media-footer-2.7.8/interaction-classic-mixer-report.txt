@@ -1,0 +1,7 @@
+PASS  Interaction hotfix: classic hidden media opens independently of enabled volume widget
+PASS  Interaction hotfix: classic mixer takes precedence over hidden media route
+PASS  Interaction hotfix: classic mixer Back restores the hidden media route
+PASS  Interaction hotfix: reopening the same hidden target exits classic mixer
+PASS  Interaction hotfix: a different hidden target exits classic mixer
+PASS  Interaction hotfix: classic mixer Back retains the selected timer route
+RESULT: 0 failures

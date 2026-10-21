@@ -27,7 +27,8 @@ internal static class AppIconCache
             var task=ShellWorker.Run(()=>Extract(path));cache[path]=task;order.Enqueue(path);return task;
         }
     }
-    private static BitmapSource? Extract(string path)
+    internal static Task<BitmapSource?> Thumbnail(string path,int pixels)=>!LocalPath(path)?Task.FromResult<BitmapSource?>(null):ShellWorker.Run(()=>Extract(path,Math.Clamp(pixels,64,768),true));
+    private static BitmapSource? Extract(string path,int pixels=32,bool thumbnail=false)
     {
         IShellItemImageFactory? factory=null;IntPtr bitmap=IntPtr.Zero;
         try
@@ -39,7 +40,7 @@ internal static class AppIconCache
                 if(!LocalPath(path))return null;
             }
             var iid=typeof(IShellItemImageFactory).GUID;if(SHCreateItemFromParsingName(path,IntPtr.Zero,ref iid,out factory)!=0 || factory==null)return null;
-            if(factory.GetImage(new SizeNative{Width=32,Height=32},0x104, out bitmap)!=0 || bitmap==IntPtr.Zero)return null;
+            if(factory.GetImage(new SizeNative{Width=pixels,Height=pixels},thumbnail?1u:0x104u, out bitmap)!=0 || bitmap==IntPtr.Zero)return null;
             var source=Imaging.CreateBitmapSourceFromHBitmap(bitmap,IntPtr.Zero,Int32Rect.Empty,BitmapSizeOptions.FromEmptyOptions());source.Freeze();return source;
         }
         catch{return null;}

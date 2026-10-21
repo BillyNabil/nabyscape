@@ -47,6 +47,8 @@ internal static class Diagnostics
         try
         {
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--media-footer-only")){await MediaFooterDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--minimal-widgets-only")){await MinimalWidgetsDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--reactive-ambient-only")){await ReactiveAmbientDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--premium-experience-only")){await PremiumExperienceDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--premium-notifications-only")){await Stage4Diagnostics.Run(app,overlay,directory,Check);return;}
@@ -58,7 +60,6 @@ internal static class Diagnostics
             if(Environment.GetCommandLineArgs().Contains("--media-ux-only")){await MediaExperienceDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--assistant-character-only")){await AssistantCharacterDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--assistant-island-only")){await AssistantIslandDiagnostics.Run(app,overlay,directory,Check);return;}
-            if(Environment.GetCommandLineArgs().Contains("--assistant-only")){await AssistantDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--interaction-classic-mixer-only")){await InteractionHotfixDiagnostics.RunClassicMixer(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--interaction-tuck-hide-only")){await InteractionHotfixDiagnostics.RunTuckHide(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--interaction-hotfix-only")){await InteractionHotfixDiagnostics.Run(app,overlay,directory,Check);return;}
@@ -113,6 +114,8 @@ internal static class Diagnostics
             {await Task.Delay(500);await InteractionDiagnostics.Run(app,overlay,directory,Check);await RefinementDiagnostics.Run(app,overlay,directory,Check);await PremiumDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--review-regressions"))
             {await Task.Delay(500);await InteractionDiagnostics.RunReviewRegressions(app,overlay,directory,Check);return;}
+            // The assistant isolation flag must not shadow a targeted suite.
+            if(Environment.GetCommandLineArgs().Contains("--assistant-only")){await AssistantDiagnostics.Run(app,overlay,directory,Check);return;}
             await Task.Delay(2500);
             Check("Overlay starts without taking focus",Native.GetForegroundWindow()!=new WindowInteropHelper(overlay).Handle);
             Check("Collapsed painted contour matches configured dimensions",Math.Abs(overlay.PaintedWidth-app.Settings.Width)<1 && Math.Abs(overlay.PaintedHeight-app.Settings.Height)<1);

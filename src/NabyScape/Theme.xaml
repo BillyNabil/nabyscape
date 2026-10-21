@@ -78,4 +78,11 @@
       <ContentPresenter x:Name="ExpandSite" ContentSource="Content" Margin="0" Visibility="Collapsed"/>
     </StackPanel><ControlTemplate.Triggers><Trigger Property="IsExpanded" Value="True"><Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
   </Style>
+  <Style x:Key="MinimalSessionSelector" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox"><Grid>
+      <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" ClickMode="Press"><ToggleButton.Template><ControlTemplate><Border Background="Transparent" BorderBrush="{DynamicResource ControlBorder}" BorderThickness="0,0,0,1"><Path Data="M1,1 L4,4 7,1" Width="7" Height="4" Stroke="{DynamicResource ControlText}" StrokeThickness="1.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Margin="0,0,8,0" HorizontalAlignment="Right" VerticalAlignment="Center"/></Border></ControlTemplate></ToggleButton.Template></ToggleButton>
+      <ContentPresenter Margin="4,6,26,6" VerticalAlignment="Center" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"/>
+      <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="{DynamicResource PopupMotion}"><Border MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" MaxHeight="240" Background="{DynamicResource ControlFill}" BorderBrush="{DynamicResource ControlBorder}" BorderThickness="1" CornerRadius="8" Padding="4"><ScrollViewer><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer></Border></Popup>
+    </Grid><ControlTemplate.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+  </Style>
 </ResourceDictionary>

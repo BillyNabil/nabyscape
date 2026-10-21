@@ -36,23 +36,23 @@ internal static class CountdownPanelDiagnostics
             string label=focus?"Focus":"Timer";var state=focus?app.Session.Focus:app.Session.Timer;
             var entry=Entry(focus,focus?"Focus minutes":"Timer duration in minutes");var view=View(focus);
             entry.Text=focus?"31":"1.5";if(focus)entry.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(island),0,Key.Enter){RoutedEvent=Keyboard.PreviewKeyDownEvent});
-            check(label+" starts with a clear Start action",Equals(Button(focus).Content,"Start") && Button(focus).IsEnabled);
+            check(label+" starts with a clear Start action",AutomationProperties.GetItemStatus(Button(focus))=="Start" && Button(focus).IsEnabled);
             Click(Button(focus));double expected=focus?1860:90;var run=state.RunId;
             check(label+" uses the entered duration",state.Running && Math.Abs(state.DurationSeconds-expected)<.01 && (!focus || s.FocusMinutes==31));
-            check(label+" changes Start to Pause immediately",Equals(Button(focus).Content,"Pause") && AutomationProperties.GetName(Button(focus))=="Pause "+label.ToLowerInvariant());
+            check(label+" changes Start to Pause immediately",AutomationProperties.GetItemStatus(Button(focus))=="Pause" && AutomationProperties.GetName(Button(focus))=="Pause "+label.ToLowerInvariant());
             check(label+" locks duration during the session",!entry.IsEnabled);
             Click(Button(focus));double paused=state.Remaining(DateTimeOffset.UtcNow);await Task.Delay(160);
-            check(label+" pauses rather than restarting",!state.Running && state.RunId==run && state.DurationSeconds==expected && state.Remaining(DateTimeOffset.UtcNow)==paused && Equals(Button(focus).Content,"Resume"));
+            check(label+" pauses rather than restarting",!state.Running && state.RunId==run && state.DurationSeconds==expected && state.Remaining(DateTimeOffset.UtcNow)==paused && AutomationProperties.GetItemStatus(Button(focus))=="Resume");
             if(!focus)Capture("timer-paused");
             Click(Button(focus));
-            check(label+" resumes the same session",state.Running && state.RunId==run && state.DurationSeconds==expected && state.Remaining(DateTimeOffset.UtcNow)<=paused && Equals(Button(focus).Content,"Pause"));
+            check(label+" resumes the same session",state.Running && state.RunId==run && state.DurationSeconds==expected && state.Remaining(DateTimeOffset.UtcNow)<=paused && AutomationProperties.GetItemStatus(Button(focus))=="Pause");
             check(label+" keeps its controls across shared heartbeats",ReferenceEquals(view,View(focus)) && ReferenceEquals(entry,Entry(focus,focus?"Focus minutes":"Timer duration in minutes")));
         }
         Capture("running");Capture("running-150",1.5);Capture("running-200",2);
         foreach(bool focus in new[]{false,true})
         {
             Click(Button(focus,"reset"));var entry=Entry(focus,focus?"Focus minutes":"Timer duration in minutes");
-            check((focus?"Focus":"Timer")+" Reset restores editable ready state",Equals(Button(focus).Content,"Start") && !Button(focus,"reset").IsEnabled && entry.IsEnabled);
+            check((focus?"Focus":"Timer")+" Reset restores editable ready state",AutomationProperties.GetItemStatus(Button(focus))=="Start" && !Button(focus,"reset").IsEnabled && entry.IsEnabled);
             entry.Text=focus?"0":"NaN";check((focus?"Focus":"Timer")+" rejects invalid duration inline",!Button(focus).IsEnabled);
             entry.Text=focus?"25":"5";
         }
@@ -62,13 +62,13 @@ internal static class CountdownPanelDiagnostics
         check("Audio and media updates do not refresh countdown controls",View(false).Refreshes==unchanged);
         app.Session.Timer.Start(90,DateTimeOffset.UtcNow.AddSeconds(-30));app.SaveSession();
         check("Progress reflects elapsed session time",Diagnostics.Descendants(View(false)).OfType<ProgressBar>().Single().Value is >.33 and <.35);
-        check("Timer started from another surface shows its actual duration",Entry(false,"Timer duration in minutes").Text=="1.5" && Equals(Button(false).Content,"Pause"));
+        check("Timer started from another surface shows its actual duration",Entry(false,"Timer duration in minutes").Text=="1.5" && AutomationProperties.GetItemStatus(Button(false))=="Pause");
         Click(Button(false,"reset"));
         // Expiration uses the existing absolute-deadline service, without real notifications.
         app.Session.Timer.Start(60,DateTimeOffset.UtcNow.AddSeconds(-61));app.CheckCountdowns();
-        check("Finished timer displays completion and can restart",Equals(Button(false).Content,"Start") && Button(false,"reset").IsEnabled && Diagnostics.Descendants(View(false)).OfType<TextBlock>().Any(t=>t.Text=="Complete"));
+        check("Finished timer displays completion and can restart",AutomationProperties.GetItemStatus(Button(false))=="Start" && Button(false,"reset").IsEnabled && Diagnostics.Descendants(View(false)).OfType<TextBlock>().Any(t=>t.Text=="Complete"));
         app.Session.Focus.Start(1,DateTimeOffset.UtcNow.AddSeconds(-2),"work");var focusRun=app.Session.Focus.RunId;app.CheckCountdowns();
-        check("Focus transitions to break with the same Pause action",app.Session.Focus.Phase=="break" && app.Session.Focus.Running && app.Session.Focus.RunId==focusRun && Equals(Button(true).Content,"Pause"));Capture("break");
+        check("Focus transitions to break with the same Pause action",app.Session.Focus.Phase=="break" && app.Session.Focus.Running && app.Session.Focus.RunId==focusRun && AutomationProperties.GetItemStatus(Button(true))=="Pause");Capture("break");
         app.Session.Focus.Reset();app.Session.Timer.Reset();app.SaveSession();
         var previous=View(false);island.SelectPage("media",false);await Task.Delay(80);int refreshes=previous.Refreshes;app.SaveSession();
         check("Hidden countdown releases its heartbeat subscription",!previous.Subscribed && previous.Refreshes==refreshes);
@@ -85,7 +85,7 @@ internal static class CountdownPanelDiagnostics
             Capture("ready-"+width);
         }
         s.CompactLayout=false;app.ChangeSettings();await Task.Delay(100);island.Reveal(false);
-        foreach(bool focus in new[]{false,true}){Click(Button(focus));check("Classic "+(focus?"Focus":"Timer")+" uses the same state-driven action",Equals(Button(focus).Content,"Pause"));Click(Button(focus,"reset"));}
+        foreach(bool focus in new[]{false,true}){Click(Button(focus));check("Classic "+(focus?"Focus":"Timer")+" uses the same state-driven action",AutomationProperties.GetItemStatus(Button(focus))=="Pause");Click(Button(focus,"reset"));}
         Capture("classic");
         File.WriteAllText(Path.Combine(directory,"capture-notes.txt"),"Isolated synthetic profile. No personal notes, clipboard, provider keys or network AI requests. 150/200% captures are WPF raster exports, not physical monitor DPI tests. Countdown completion delivery and sound disabled only in this fixture.");
     }

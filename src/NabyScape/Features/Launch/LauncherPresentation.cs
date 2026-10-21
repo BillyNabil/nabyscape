@@ -24,7 +24,7 @@ public sealed partial class OverlayWindow
     private Button LaunchButton(Shortcut shortcut)
     {
         var button=UI.Button(shortcut.Name,()=>{try{ShortcutService.Open(shortcut);Collapse();}catch(Exception ex){app.Notify("Could not open shortcut",ex.Message);}});
-        button.ToolTip=shortcut.Name+"\n"+shortcut.Target;button.MinHeight=34;button.Padding=new(9,7,9,7);
+        button.ToolTip=shortcut.Name+"\n"+shortcut.Target;button.MinHeight=44;button.Padding=new(9);button.Margin=new(0,0,10,10);button.Background=Brushes.Transparent;button.BorderThickness=new(0);
         var row=new StackPanel{Orientation=Orientation.Horizontal};
         ShortcutIcon? icon=null;
         if(LauncherPresentation.ShowIcon(app.Settings.LaunchStyle)){icon=new ShortcutIcon(shortcut){Margin=new(0,0,LauncherPresentation.ShowLabel(app.Settings.LaunchStyle)?7:0,0)};row.Children.Add(icon);}

@@ -68,7 +68,7 @@ public sealed partial class OverlayWindow
     }
     private void BuildNotes()
     {
-        var p=app.Productivity;var heading=UI.Heading(toolsMode=="tasks"?"Tasks":"Notes",19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
+        if(toolsMode=="tasks"){BuildVisualTasks();return;}var p=app.Productivity;var heading=UI.Heading(toolsMode=="tasks"?"Tasks":"Notes",19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
         var write=new StackPanel();var tasks=new StackPanel();toolsContent.Children.Add(toolsMode=="notes"?write:tasks);
         mainNoteEditor=null;
         if(toolsMode=="notes")
@@ -80,19 +80,6 @@ public sealed partial class OverlayWindow
             note.TextChanged+=(_,_)=>{if(!syncingNote)p.Note=note.Text;Placeholder();noteSave.Stop();noteSave.Start();};
             return;
         }
-        var addRow=new DockPanel{Margin=new(0,0,0,9)};var input=UI.Input("New task",taskDraft);input.MaxLength=240;input.MinHeight=34;input.Margin=new(0);input.Padding=new(11,8,11,8);input.TextChanged+=(_,_)=>taskDraft=input.Text;
-        void Add(){if(string.IsNullOrWhiteSpace(input.Text))return;string text=input.Text;MutateUtility(()=>{if(p.AddTask(text))taskDraft="";else app.Notify("Task limit reached","Remove a task before adding another. Your draft is still here.");});}
-        var add=UI.Button("Add task",Add);add.Content="+";add.FontSize=18;add.Width=34;add.Height=34;add.MinHeight=34;add.Padding=new(0);add.Margin=new(7,0,0,0);DockPanel.SetDock(add,Dock.Right);addRow.Children.Add(add);addRow.Children.Add(input);tasks.Children.Add(addRow);
-        input.KeyDown+=(_,e)=>{if(e.Key==Key.Enter){Add();e.Handled=true;}};
-        foreach(var item in p.Tasks.ToArray())
-        {
-            var row=new DockPanel{MinHeight=38,Margin=new(1,1,3,1)};var remove=UI.Button("×",()=>MutateUtility(()=>p.RemoveTask(item.Id)));remove.Padding=new(0);remove.Width=26;remove.Height=26;remove.MinHeight=26;remove.Background=Brushes.Transparent;remove.BorderThickness=new(0);remove.Margin=new(5,0,0,0);remove.Opacity=.25;UI.Named(remove,"Remove task "+item.Text);DockPanel.SetDock(remove,Dock.Right);row.Children.Add(remove);
-            row.MouseEnter+=(_,_)=>Motion.Fade(remove,.85);row.MouseLeave+=(_,_)=>Motion.Fade(remove,.25);remove.GotKeyboardFocus+=(_,_)=>Motion.Fade(remove,1);
-            var label=UI.Text(item.Text,12,item.Done?UI.Muted:Brushes.White);label.MaxWidth=240;if(item.Done)label.TextDecorations=TextDecorations.Strikethrough;
-            var check=new CheckBox{Style=(Style)FindResource("TaskToggle"),IsChecked=item.Done,Content=label,Margin=new(0,6,0,6)};UI.Named(check,item.Text);
-            check.Click+=(_,_)=>{item.Done=check.IsChecked==true;label.TextDecorations=item.Done?TextDecorations.Strikethrough:null;label.Foreground=item.Done?UI.Muted:Brushes.White;utilityMutating=true;try{p.Save();}finally{utilityMutating=false;}};row.Children.Add(check);tasks.Children.Add(row);
-        }
-        if(p.Tasks.Count==0){var empty=UI.Text("Make room for what matters.\nAdd your first task above.",12,UI.Muted);empty.Margin=new(2,16,0,18);tasks.Children.Add(empty);}
     }
 
     private void InitializeUtilities()
@@ -144,6 +131,7 @@ public sealed partial class OverlayWindow
     internal void OpenAudioMenu()
     {
         audioMenu=new ContextMenu{Background=UI.Brush("#191A1E"),Foreground=Brushes.White,BorderBrush=UI.Brush("#42434B"),Padding=new(5),HasDropShadow=false};
+        if(mediaControls?.IsVisible==true){audioMenu.PlacementTarget=mediaControls.VolumeButton;audioMenu.Placement=System.Windows.Controls.Primitives.PlacementMode.Top;}
         var mixerItem=new MenuItem{Header="Volume mixer",Foreground=Brushes.White};mixerItem.Click+=(_,_)=>OpenMixer();audioMenu.Items.Add(mixerItem);audioMenu.Items.Add(new Separator{Style=(Style)FindResource(typeof(Separator))});
         foreach(var device in app.Audio.Outputs())
         {

@@ -106,10 +106,7 @@ public sealed partial class OverlayWindow
     private void BuildCalendar(StackPanel panel)
     {
         if(calendarEditing){BuildEventEditor(panel);return;}
-        var heading=new DockPanel();
-        var next=UI.Button("Next month",()=>{if(calendarMonth.Year==9999 && calendarMonth.Month==12)return;calendarMonth=calendarMonth.AddMonths(1);calendarMonthExpanded=true;RefreshTools();});var previous=UI.Button("Previous month",()=>{if(calendarMonth==DateTime.MinValue)return;calendarMonth=calendarMonth.AddMonths(-1);calendarMonthExpanded=true;RefreshTools();});previous.IsEnabled=calendarMonth>DateTime.MinValue;next.IsEnabled=calendarMonth.Year<9999 || calendarMonth.Month<12;UI.Named(previous,"Previous calendar month");UI.Named(next,"Next calendar month");
-        foreach(var pair in new[]{(next,-90d),(previous,90d)}){var b=pair.Item1;b.Template=(ControlTemplate)FindResource("ToolRowTemplate");b.Content=Icons.Create("chevron",10);((FrameworkElement)b.Content).RenderTransformOrigin=new(.5,.5);((FrameworkElement)b.Content).RenderTransform=new RotateTransform(pair.Item2);b.Width=26;b.Height=b.MinHeight=28;b.Padding=new(5);b.Margin=new(4,0,0,0);DockPanel.SetDock(b,Dock.Right);heading.Children.Add(b);}
-        var month=UI.Button(calendarMonth.ToString("MMMM yyyy"),()=>{calendarMonthExpanded=!calendarMonthExpanded;RefreshTools();});month.Template=(ControlTemplate)FindResource("ToolRowTemplate");month.FontSize=17;month.MinHeight=30;month.Padding=new(0);month.Margin=new(0);month.HorizontalContentAlignment=HorizontalAlignment.Left;var monthContent=UI.Row(UI.Heading(calendarMonth.ToString("MMMM yyyy"),17),Icons.Create("chevron",9,UI.Muted));((FrameworkElement)monthContent.Children[1]).Margin=new(9,0,0,0);month.Content=monthContent;UI.Named(month,"Toggle calendar month");heading.Children.Add(month);panel.Children.Add(heading);
+        panel.Children.Add(CalendarToolbar());
         var grid=new Grid{Margin=new(0,10,0,10),Visibility=calendarMonthExpanded?Visibility.Visible:Visibility.Collapsed};for(int i=0;i<7;i++)grid.ColumnDefinitions.Add(new());for(int i=0;i<7;i++)grid.RowDefinitions.Add(new(){Height=new GridLength(i==0?20:24)});
         for(int i=0;i<7;i++){var label=UI.Text(new[]{"Mon","Tue","Wed","Thu","Fri","Sat","Sun"}[i],10,UI.Muted);label.HorizontalAlignment=HorizontalAlignment.Center;Grid.SetColumn(label,i);grid.Children.Add(label);}
         int offset=((int)calendarMonth.DayOfWeek+6)%7;
@@ -118,14 +115,9 @@ public sealed partial class OverlayWindow
             long ticks=calendarMonth.Ticks+(long)(i-offset)*TimeSpan.TicksPerDay;if(ticks<DateTime.MinValue.Ticks || ticks>DateTime.MaxValue.Ticks)continue;
             DateTime day=new(ticks);var button=UI.Button(day.Day.ToString(),()=>{calendarDay=day;calendarMonth=new(day.Year,day.Month,1);calendarMonthExpanded=false;RefreshTools();});button.FontSize=10;button.MinHeight=0;button.Padding=new(0);button.Margin=new(1);button.Tag=new CornerRadius(7);button.Foreground=day==calendarDay?Brushes.Black:day.Month==calendarMonth.Month?Brushes.White:UI.Muted;button.Background=day==calendarDay?Brushes.White:DayEvents(day).Any()?UI.Brush("#2BFFFFFF"):Brushes.Transparent;UI.Named(button,day.ToString("dddd, MMMM d, yyyy"));Grid.SetColumn(button,i%7);Grid.SetRow(button,1+i/7);grid.Children.Add(button);
         }
-        var dayRow=new DockPanel{Margin=new(0,14,0,12)};var today=UI.Button("Today",()=>{calendarDay=DateTime.Today;calendarMonth=new(calendarDay.Year,calendarDay.Month,1);RefreshTools();});today.Template=(ControlTemplate)FindResource("ToolRowTemplate");today.FontSize=11;today.MinHeight=27;today.Padding=new(8,3,8,3);today.Margin=new(4,0,0,0);DockPanel.SetDock(today,Dock.Right);dayRow.Children.Add(today);var add=UI.Button("Add event",()=>{calendarEditing=true;RefreshTools();});UI.Named(add,"Add local event");add.FontSize=11;add.Tag=new CornerRadius(7);add.MinHeight=27;add.Padding=new(8,3,8,3);add.Margin=new(4,0,0,0);DockPanel.SetDock(add,Dock.Right);dayRow.Children.Add(add);dayRow.Children.Add(UI.Text(calendarDay.ToString("ddd, MMM d"),12,UI.Muted));panel.Children.Add(dayRow);panel.Children.Add(grid);
+        panel.Children.Add(grid);if(!calendarMonthExpanded)panel.Children.Add(CalendarWeek());
         var events=DayEvents(calendarDay).ToArray();if(events.Length==0)panel.Children.Add(UI.Text("No events for this day.",12,UI.Muted));
-        foreach(var item in events)
-        {
-            var card=new StackPanel();var title=UI.Text(item.Title,13);title.TextWrapping=TextWrapping.Wrap;card.Children.Add(title);card.Children.Add(UI.Text(item.Start.ToLocalTime().ToString("MMM d, HH:mm")+" – "+item.End.ToLocalTime().ToString("MMM d, HH:mm"),10,UI.Muted));var actions=new WrapPanel();
-            if(item.MeetingUrl.Length>0){var join=UI.Button("Open meeting",()=>{try{ShortcutService.Open(new(){Target=item.MeetingUrl});}catch(Exception ex){app.Notify("Could not open meeting",ex.Message);}});join.FontSize=10;join.MinHeight=26;join.Padding=new(9,4,9,4);actions.Children.Add(join);}
-            var remove=UI.Button("Delete",()=>MutateUtility(()=>app.Calendar.Remove(item.Id)));UI.Named(remove,"Delete event "+item.Title);remove.FontSize=10;remove.MinHeight=26;remove.Padding=new(9,4,9,4);actions.Children.Add(remove);card.Children.Add(actions);panel.Children.Add(new Border{Child=card,Padding=new(0,10,0,10),BorderBrush=UI.Brush("#28FFFFFF"),BorderThickness=new(0,1,0,0),Margin=new(0,0,0,8)});
-        }
+        foreach(var item in events)panel.Children.Add(CalendarAgendaEvent(item));
     }
     private IEnumerable<CalendarEvent> DayEvents(DateTime day)
     {

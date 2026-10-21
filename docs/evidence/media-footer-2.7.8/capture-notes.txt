@@ -1,0 +1,1 @@
+Actual WPF renders with original artwork/title, injected Spotify/Chrome enumeration and a sample volume slider for screenshots. Actual Windows slider identity checked without modifying its value. No playback, volume/mute/device write, microphone, capture, API key or provider request.

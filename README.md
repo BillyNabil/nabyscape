@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-252c36?style=flat-square" alt="MIT license"></a>
 </p>
 
-**Latest release: v2.7.6.** Audio-reactive ambient across your widgets, clearer Timer/Focus controls, refined interactions, notification options and a Hermes Agent connection preset. [Download the installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/NabyScape-win-x64-Setup.exe) · [What's changed](docs/releases/v2.7.6.md)
+**Latest release: v2.7.8.** Compact media-source and volume controls, a more visual set of everyday widgets, and calmer Timer, Tasks, Shelf, Clipboard and Calendar panels. [Download the installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.8/NabyScape-win-x64-Setup.exe) · [What's changed](docs/releases/v2.7.8.md)
 
 The preview above is the actual WPF interface captured during the cover-ambient update, with original sample content. The optional AI companion uses your own provider; API keys are stored in Windows Credential Manager and are never bundled.
 
@@ -140,9 +140,11 @@ The preset uses a 324 × 38 closed notch, 500 × 202 hover preview, 546 px panel
 
 **Windows 11 x64.** The self-contained builds include .NET; no SDK is needed to run the app.
 
-- **[Download the v2.7.6 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
-- **[Download the v2.7.6 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
-- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.6/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.6) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+- **[Download the v2.7.8 installer](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.8/NabyScape-win-x64-Setup.exe)** — install for your Windows user.
+- **[Download the v2.7.8 portable ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.8/NabyScape-win-x64-Portable.zip)** — extract the entire archive, then run `NabyScape.exe`.
+- [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.7.8/SHA256SUMS) · [Release notes](https://github.com/BillyNabil/nabyscape/releases/tag/v2.7.8) · [Latest public release](https://github.com/BillyNabil/nabyscape/releases/latest)
+
+The music panel keeps source selection and output volume one tap away in compact popovers. The seven everyday widgets use stronger visual anchors and less persistent chrome while retaining their existing actions and saved data. [2.7.7 widget refresh](docs/releases/v2.7.7.md) · [2.7.8 media controls](docs/releases/v2.7.8.md)
 
 The installer is currently unsigned. Download from the official repository and review the version and checksums before running. Portable mode still stores data in your Windows user profile. Starting with Windows is optional and off by default. Closing Settings keeps NabyScape running; choose **Quit** from the tray to exit.
 

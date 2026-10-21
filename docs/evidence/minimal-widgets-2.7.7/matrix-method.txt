@@ -1,0 +1,1 @@
+12 synthetic logical viewports: pixels / DPI, then subtract 48 DIP taskbar. RenderTargetBitmap at target DPI. Real-monitor containment frozen through existing private fittingBounds only inside fixture. No physical DPI, hotplug, native backdrop or modal reset keyboard claim.

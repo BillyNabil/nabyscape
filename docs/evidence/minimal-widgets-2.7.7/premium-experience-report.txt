@@ -1,0 +1,33 @@
+PASS  Cover ambient samples a warm dominant color
+PASS  Ambient slider updates preserve the existing island controls
+PASS  Changing cover changes the dominant ambient color
+PASS  Ambient can be disabled independently of glass
+PASS  Visible playing artwork starts the retained drift clock
+PASS  Other panels retain their dark surface
+PASS  Artwork reacts to hover without changing playback
+PASS  Pausing playback stops ambient motion
+PASS  Still mode keeps color without an animation clock
+PASS  Breathe starts a retained opacity animation
+PASS  Tucking stops continuous ambient animation
+PASS  Manual hide releases ambient clocks
+PASS  Reduce motion removes all ambient clocks
+PASS  Appearance exposes ambient and interaction settings
+PASS  New sections have dedicated visual examples
+PASS  Sliders provide hover feedback without changing their value
+PASS  Checkboxes animate their selection feedback
+PASS  Interaction Off restores the neutral thumb
+PASS  Application exposes notification presentation and quiet schedule
+PASS  Hermes preset fills its agent alias and local gateway
+PASS  Hermes connection UI distinguishes backend permissions
+PASS  Notification queue is visible and action names stay clear
+PASS  Notifications stay on a clean dark surface
+PASS  Notification details hide the closed companion to avoid overlap
+PASS  Arrivals retain the displayed card instead of rebuilding under the pointer
+PASS  Next advances to the next queued notification
+PASS  Clear all empties the ephemeral notification queue
+PASS  An explicitly requested preview remains available during snooze
+PASS  Lift starts a finite notification entrance
+PASS  Fade starts a finite notification entrance
+PASS  Soft scale starts a finite notification entrance
+PASS  Fixtures keep microphone and screen sharing inactive
+RESULT: 0 failures
