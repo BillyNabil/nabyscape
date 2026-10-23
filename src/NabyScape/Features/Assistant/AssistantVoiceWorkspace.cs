@@ -10,6 +10,7 @@ internal sealed partial class AssistantProviderSettings
     private void BuildVoiceWorkspace(StackPanel host)
     {
         voiceSetupSummary=UI.Text("",13,UI.Muted);voiceSetupSummary.Margin=new(0,0,0,16);host.Children.Add(voiceSetupSummary);
+        host.Children.Add(MicrophoneSettings());
         var navigation=new WrapPanel{Margin=new(0,0,0,20)};host.Children.Add(navigation);
         var pages=new Dictionary<string,FrameworkElement>();var buttons=new Dictionary<string,Button>();
         void Select(string id)

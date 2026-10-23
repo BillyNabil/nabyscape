@@ -65,18 +65,11 @@ internal static class VisualPolishDiagnostics
         try
         {
             var nav=(Dictionary<string,Button>)typeof(SettingsWindow).GetField("navigationButtons",flags)!.GetValue(window)!;
-            check("All fifteen Settings categories retain the expected order",nav.Keys.SequenceEqual(new[]{"Appearance","Ambience","Motion","Layout","Visibility","Controls","Content","Audio","Clipboard","Weather","System","Launch","AI","Notifications","Application"}));
+            check("All sixteen Settings categories retain the expected order",nav.Keys.SequenceEqual(new[]{"Home","Appearance","Ambience","Motion","Layout","Visibility","Controls","Content","Audio","Clipboard","Weather","System","Launch","AI","Notifications","Application"}));
             var navigate=typeof(SettingsWindow).GetMethod("Navigate",flags)!;
             foreach(string category in nav.Keys){navigate.Invoke(window,new object[]{category});await Task.Delay(40);Capture(window,"settings-"+category.ToLowerInvariant());}
             navigate.Invoke(window,new object[]{"Appearance"});await Task.Delay(40);
-            var choices=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Category appearance");
-            choices.IsDropDownOpen=true;await Task.Delay(80);
-            var popup=(System.Windows.Controls.Primitives.Popup)choices.Template.FindName("PART_Popup",choices);
-            check("Navigation menu retains its four existing presentation options",choices.Items.Count==4 && popup.IsOpen && popup.Child is FrameworkElement {ActualHeight:>40});
-            Capture((FrameworkElement)popup.Child,"navigation-menu");choices.IsDropDownOpen=false;
-            var hint=new ToolTip{Content="Keyboard: Ctrl+Tab changes panels. Shift+wheel also switches panels while long lists keep their own scrolling.",PlacementTarget=choices,IsOpen=true};await Task.Delay(70);
-            check("Themed tooltips wrap within a bounded readable surface",hint.IsVisible && hint.ActualWidth<=300.5 && hint.ActualHeight>30);
-            Capture(hint,"navigation-tooltip");hint.IsOpen=false;
+            check("Panel navigation uses dots with no obsolete style selector",app.Settings.CategoryStyle=="Dots" && !Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Category appearance"));
             navigate.Invoke(window,new object[]{"Layout"});window.Width=600;window.Height=520;await Task.Delay(60);Capture(window,"settings-compact");
         }
         finally{window.Close();}

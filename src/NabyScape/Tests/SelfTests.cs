@@ -69,6 +69,7 @@ internal static class SelfTests
         PersistenceTests.Run(Test);
         ProductionFoundationTests.Run(Test);
         UpdateTests.Run(Test);
+        InstallationInputTests.Run(Test);
         NotificationDownloadTests.Run(Test);
         Test("Customization profiles round-trip without personal data or startup changes",()=>
         {

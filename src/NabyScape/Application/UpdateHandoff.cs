@@ -92,6 +92,7 @@ internal static class UpdateHandoff
         var start=new ProcessStartInfo(path){UseShellExecute=false,CreateNoWindow=true};
         if(recovery)start.ArgumentList.Add("--install");
         start.ArgumentList.Add("--silent");
+        start.ArgumentList.Add("--install-dir");start.ArgumentList.Add(Installer.InstallDirectory);
         using var installer=Process.Start(start)??throw new IOException("Could not start setup.");
         try
         {

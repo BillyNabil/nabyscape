@@ -5,7 +5,7 @@ using NAudio.Wave;
 namespace NabyScape;
 
 /// <summary>Windows default input/output; constructed without opening devices. PCM never leaves memory.</summary>
-internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
+internal sealed class AssistantVoiceAudio(string microphoneId="") : IAssistantVoiceAudio
 {
     private readonly object gate = new();
     private WaveInEvent? input;
@@ -23,7 +23,7 @@ internal sealed class AssistantVoiceAudio : IAssistantVoiceAudio
             output = new WaveOutEvent { DeviceNumber = -1, DesiredLatency = 100, NumberOfBuffers = 2 };
             output.PlaybackStopped += (_, e) => { if (e.Exception != null && !Volatile.Read(ref disposed)) ThreadPool.QueueUserWorkItem(_ => failure()); };
             output.Init(pcm); output.Play();
-            input = new WaveInEvent { DeviceNumber = -1, WaveFormat = new WaveFormat(inputRate, 16, 1), BufferMilliseconds = 50, NumberOfBuffers = 3 };
+            input = new WaveInEvent { DeviceNumber = AssistantMicrophones.Resolve(microphoneId), WaveFormat = new WaveFormat(inputRate, 16, 1), BufferMilliseconds = 50, NumberOfBuffers = 3 };
             input.DataAvailable += (_, e) =>
             {
                 if (Volatile.Read(ref disposed)) return;

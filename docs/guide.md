@@ -122,12 +122,13 @@ No account or cloud service is required. Preferences, timers, notes, tasks, shor
 
 The v2.6.3 development [AI companion](assistant.md) lives in the top island. Hover its character for a greeting and **Chat here / Talk**, or click it to chat inside the island. AI connections start off; simply hovering never starts a microphone or provider request. If enabled, your chosen messages and explicitly enabled audio/screen context go to your configured provider; approved note-reading can send note contents. Provider keys live in Windows Credential Manager, chat history stays in memory, and screen/control permissions last only for the session. **Back to island** keeps a live conversation running; **Stop**, **Esc**, manual hide or Alt+F4 ends it. The public v2.5.1 download does not yet include this candidate feature.
 
-**v2.5.0** stores local content and preferences in `%LOCALAPPDATA%\NabyScape`, migrating legacy LumaIsland data as described below. Existing installations retain their install path and internal identifiers for compatibility:
+**v2.5.0** stores local content and preferences in `%LOCALAPPDATA%\NabyScape`, migrating legacy LumaIsland data as described below. As of v2.22, new installations use a NabyScape folder and setup can choose another dedicated folder. Silent upgrades retain their registered installation location:
 
 ```text
 %LOCALAPPDATA%\NabyScape\              v2.5 local preferences and content
 %LOCALAPPDATA%\LumaIsland\             v2.4.2 data; preserved legacy copy after v2.5 migration
-%LOCALAPPDATA%\Programs\LumaIsland\    Per-user installation
+%LOCALAPPDATA%\Programs\NabyScape\     Default per-user installation
+%LOCALAPPDATA%\Programs\LumaIsland\    Legacy installation (preserved by silent updates)
 luma.layout.v1                         Existing layout-profile format
 ```
 
@@ -267,3 +268,16 @@ New installations offer Music, Productivity, AI or Custom as a starting point. M
 **Start here → Your setup** shows music, chat, voice, lyrics and weather status with a next-action button. Saved connections are distinguished from connections checked successfully; installed local models are not advertised as verified speech. These statuses use local state and do not initiate API requests or microphone checks.
 
 After a saved appearance, dock layout or widget change, **Undo** appears beside the Settings save feedback. It restores the last saved batch of those preferences. Slider movements within one autosave batch count as one change. Undo preserves saved content, provider credentials, microphone permissions, clipboard history and background-service switches. It is available for the current Settings window; it is not a full application rollback.
+
+
+### Microphone input (2.22)
+
+Open **Settings → Naby AI → Voice**. Choose your microphone at the top; the selection saves immediately and is used by realtime voice, local speech, wake detection and audio checks. **Windows default microphone** follows the Windows default input. **Refresh inputs** detects newly connected devices. If a saved device is unavailable, choose another input; Naby does not silently switch to a different microphone.
+
+Choose **Test microphone** to see input levels during a four-second check. This check stays on your PC and does not contact a provider. **Cancel test** stops it early. Wake listening temporarily releases the microphone during a test and resumes afterward if it was armed. Transcription checks are separate and use your configured speech service.
+
+### Installation folder (2.22)
+
+Setup includes **Browse…** and a folder field. Select a parent directory and setup adds a dedicated **NabyScape** folder, or type a full path ending in NabyScape. Your account must have write access. Preferences remain in `%LOCALAPPDATA%\NabyScape`, separately from the installed files. Close the running app from its tray menu before updating or moving it.
+
+For unattended installation: `NabyScape-win-x64-Setup.exe --silent --install-dir "D:\Apps\NabyScape"`. Without `--install-dir`, silent upgrades use the registered folder, including legacy LumaIsland installations. Run interactive setup to move a legacy installation. Uninstall removes shipped files only and keeps personal preferences and unrelated files. After restoring a pre-2.22 app into a custom folder, use the latest official setup manually to update it again; that old app cannot discover custom installations.

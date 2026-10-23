@@ -126,8 +126,15 @@ internal static class UpdateRecovery
     {
         OfficialUpdates.RequireAutomaticInstallPath(installed);
         var snapshot=Read(id);string directory=DirectoryFor(id);
-        // The previous executable uses the same normal installer path, including licenses and uninstall metadata.
-        UpdateHandoff.RunInstaller(Path.Combine(directory,"NabyScape-Previous.exe"),recovery:true);
+        // Pre-2.22 installers ignore custom directories. Restore their verified
+        // binary in place instead of executing a setup that writes to LumaIsland.
+        if(Version.Parse(snapshot.Version)<new Version(2,22,0) && !string.Equals(Path.GetDirectoryName(installed),InstallPaths.Legacy,StringComparison.OrdinalIgnoreCase))
+        {
+            RestoreLegacyBinary(Path.Combine(directory,"NabyScape-Previous.exe"),installed,snapshot.Hash);
+            using var registration=Microsoft.Win32.Registry.CurrentUser.OpenSubKey(InstallPaths.RegistryKey,true);
+            registration?.SetValue("DisplayVersion",snapshot.Version);
+        }
+        else UpdateHandoff.RunInstaller(Path.Combine(directory,"NabyScape-Previous.exe"),recovery:true);
         OfficialUpdates.VerifyFile(installed,snapshot.Hash);
         string profile=ProfileDirectory(snapshot.ProfileDirectory);
         foreach(var entry in snapshot.Profiles)
@@ -151,6 +158,12 @@ internal static class UpdateRecovery
                 || document.RootElement.EnumerateObject().Any(property=>property.Name is not ("SchemaVersion" or "PendingSchemaVersion")))throw new IOException("Recovery schema metadata is invalid; the recovery copy is preserved.");
             File.Delete(path);
         }
+    }
+    internal static void RestoreLegacyBinary(string source,string installed,string hash)
+    {
+        string staged=installed+".restore-"+Guid.NewGuid().ToString("N");
+        try{File.Copy(source,staged);OfficialUpdates.VerifyFile(staged,hash);File.Move(staged,installed,true);}
+        finally{if(File.Exists(staged))File.Delete(staged);}
     }
     internal static void Prune(string keep)
     {

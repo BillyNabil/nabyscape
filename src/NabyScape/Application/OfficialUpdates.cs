@@ -164,8 +164,8 @@ internal sealed class OfficialUpdates : IDisposable
         UpdateSignature.VerifyIfPresent(path);
         var version=FileVersionInfo.GetVersionInfo(path);if(new Version(version.FileMajorPart,version.FileMinorPart,version.FileBuildPart)!=expected)throw new InvalidDataException("Setup version does not match the release.");
     }
-    internal static bool IsInstalled(string path)=>new[]{"NabyScape.exe","LumaIsland.exe","BillyNabilaIsland.exe"}.Any(name=>string.Equals(Path.GetFullPath(path),Path.Combine(Installer.InstallDirectory,name),StringComparison.OrdinalIgnoreCase));
-    internal static bool IsAutomaticInstallPath(string path)=>string.Equals(Path.GetFullPath(path),Path.Combine(Installer.InstallDirectory,"NabyScape.exe"),StringComparison.OrdinalIgnoreCase);
+    internal static bool IsInstalled(string path)=>InstallPaths.OwnsExecutable(path);
+    internal static bool IsAutomaticInstallPath(string path)=>IsInstalled(path) && string.Equals(Path.GetFileName(path),"NabyScape.exe",StringComparison.OrdinalIgnoreCase);
     internal static void RequireAutomaticInstallPath(string path)
     {
         if(!IsInstalled(path))throw new IOException("Portable copy: quit and replace the portable files manually.");

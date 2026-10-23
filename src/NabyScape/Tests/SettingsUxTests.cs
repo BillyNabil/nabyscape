@@ -160,7 +160,7 @@ internal static class SettingsUxTests
         test("Presentation settings normalize safely and retain independent choices",()=>
         {
             var s=new Settings{ClosedMediaContent="invalid",ClosedMediaIcon="invalid",CategoryStyle="invalid",LaunchStyle="Icons",VisibilityHotkeyKey="?",VisibilityHotkeyModifiers="bad",RecentColors=new(){"bad","#182028","#182028"},BoldMediaTitle=false,BoldHeadings=true};s.Normalize();
-            Assert(s.ClosedMediaContent=="Title" && s.ClosedMediaIcon=="Waveform" && s.CategoryStyle=="IconsLabels" && s.LaunchStyle=="Icons" && s.VisibilityHotkeyKey=="H" && s.VisibilityHotkeyModifiers=="Ctrl+Alt" && s.RecentColors.Count==1 && !s.BoldMediaTitle && s.BoldHeadings && !s.HideMaximized);
+            Assert(s.ClosedMediaContent=="Title" && s.ClosedMediaIcon=="Waveform" && s.CategoryStyle=="Dots" && s.LaunchStyle=="Icons" && s.VisibilityHotkeyKey=="H" && s.VisibilityHotkeyModifiers=="Ctrl+Alt" && s.RecentColors.Count==1 && !s.BoldMediaTitle && s.BoldHeadings && !s.HideMaximized);
         });
         test("Control colors validate and profile preferences preserve navigation",()=>
         {
@@ -172,7 +172,7 @@ internal static class SettingsUxTests
         test("Presentation profiles exclude personal application identities and machine hotkeys",()=>
         {
             var s=new Settings{ClosedMediaContent="Waveform",ClosedMediaIcon="Artwork",CategoryStyle="Icons",LaunchStyle="Text",VisibilityHotkeyKey="Q",HotkeyKey="Z",Shortcuts=new(){new(){Name="Private",Target="explorer.exe",AppId="PrivateAppId"}}};var encoded=CustomizationProfile.Export(s);
-            Assert(!encoded.Contains("Private") && !encoded.Contains("Hotkey"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.ClosedMediaContent=="Waveform" && target.ClosedMediaIcon=="Artwork" && target.CategoryStyle=="Icons" && target.LaunchStyle=="Text" && target.VisibilityHotkeyKey=="H" && target.HotkeyKey=="I");
+            Assert(!encoded.Contains("Private") && !encoded.Contains("Hotkey"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.ClosedMediaContent=="Waveform" && target.ClosedMediaIcon=="Artwork" && target.CategoryStyle=="Dots" && target.LaunchStyle=="Text" && target.VisibilityHotkeyKey=="H" && target.HotkeyKey=="I");
         });
     }
 }

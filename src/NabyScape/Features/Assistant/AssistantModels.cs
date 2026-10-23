@@ -31,6 +31,7 @@ internal sealed class AssistantProvider
 internal sealed class AssistantOptions
 {
     public AssistantLocalVoiceOptions LocalVoice {get;set;}=new();
+    public string MicrophoneId {get;set;}="";
     public AssistantWakeOptions WakeWord {get;set;}=new();
     public bool WidgetNavigation {get;set;}=true;
     public bool Enabled {get;set;}

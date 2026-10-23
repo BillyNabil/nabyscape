@@ -32,30 +32,13 @@ public sealed partial class OverlayWindow
         if(icon!=null && !LauncherPresentation.ShowLabel(app.Settings.LaunchStyle))icon.AvailabilityChanged+=available=>label.Visibility=available?Visibility.Collapsed:Visibility.Visible;
         button.Content=row;return button;
     }
-    private static readonly DependencyProperty CategoryAppearanceKeyProperty=DependencyProperty.RegisterAttached("CategoryAppearanceKey",typeof(object),typeof(OverlayWindow));
     private (bool Media,bool Summary,bool Headings,bool Motion)? titleAppearance;
     private bool? bodyHeadingWeight;
     private void StyleCategory(Button button,string page,bool selected=false)
     {
-        bool dots=app.Settings.CategoryStyle=="Dots";
-        var selectedText=Accessibility.HighContrast?SystemColors.HighlightTextBrush:UI.ContrastText(app.Settings.SelectionFill);
-        var normalText=Accessibility.HighContrast?SystemColors.WindowTextBrush:UI.Muted;
-        if(dots)
-        {
-            button.Background=Brushes.Transparent;button.MinWidth=18;button.MinHeight=30;button.Padding=new(5);button.Margin=new(0);
-            button.Content=new System.Windows.Shapes.Rectangle{Width=selected?13:5,Height=5,RadiusX=2.5,RadiusY=2.5,Fill=Accessibility.HighContrast?SystemColors.WindowTextBrush:selected?Brushes.White:UI.Muted,Opacity=Accessibility.HighContrast || selected?1:.5};
-            button.ToolTip=PageName(page);UI.Named(button,PageName(page));System.Windows.Automation.AutomationProperties.SetItemStatus(button,selected?Localization.Text("Selected"):"");button.ClearValue(CategoryAppearanceKeyProperty);return;
-        }
-        bool iconsOnly=app.Settings.CategoryStyle=="Icons" || app.Settings.CategoryStyle=="IconsLabels" && bodyWidth<300;
-        button.Background=selected?(Accessibility.HighContrast?SystemColors.HighlightBrush:UI.Brush(app.Settings.SelectionFill)):Brushes.Transparent;button.Foreground=selected?selectedText:normalText;
-        var key=(page,app.Settings.CategoryStyle,iconsOnly,selected,app.Settings.SelectionFill,Accessibility.HighContrast);
-        if(button.GetValue(CategoryAppearanceKeyProperty) is ValueTuple<string,string,bool,bool,string,bool> previous && previous==key)return;button.SetValue(CategoryAppearanceKeyProperty,key);
-        button.MinWidth=iconsOnly?32:0;button.MinHeight=iconsOnly?32:30;button.Padding=iconsOnly?new Thickness(8):new Thickness(5,5,5,5);button.Tag=new CornerRadius(iconsOnly?10:15);
-        bool combined=!iconsOnly && LauncherPresentation.ShowIcon(app.Settings.CategoryStyle) && LauncherPresentation.ShowLabel(app.Settings.CategoryStyle);
-        var row=new StackPanel{Orientation=combined?Orientation.Vertical:Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center};
-        if(LauncherPresentation.ShowIcon(app.Settings.CategoryStyle)){var icon=Icons.Create(LauncherPresentation.CategoryIcon(page),iconsOnly?16:15,selected?selectedText:normalText);icon.Margin=combined?new Thickness(0,0,0,3):new Thickness(0);row.Children.Add(icon);}
-        if(!iconsOnly && LauncherPresentation.ShowLabel(app.Settings.CategoryStyle)){var label=UI.Text(PageName(page),10.5,selected?selectedText:normalText);label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;row.Children.Add(label);}
-        button.Content=row;button.ToolTip=PageName(page);UI.Named(button,PageName(page));System.Windows.Automation.AutomationProperties.SetItemStatus(button,selected?Localization.Text("Selected"):"");
+        button.Background=Brushes.Transparent;button.MinWidth=18;button.MinHeight=30;button.Padding=new(5);button.Margin=new(0);
+        button.Content=new System.Windows.Shapes.Rectangle{Width=selected?13:5,Height=5,RadiusX=2.5,RadiusY=2.5,Fill=Accessibility.HighContrast?SystemColors.WindowTextBrush:selected?Brushes.White:UI.Muted,Opacity=Accessibility.HighContrast || selected?1:.5};
+        button.ToolTip=PageName(page);UI.Named(button,PageName(page));System.Windows.Automation.AutomationProperties.SetItemStatus(button,selected?Localization.Text("Selected"):"");
     }
     private void ApplyTitleTypography(bool mediaSummary)
     {

@@ -45,6 +45,7 @@ internal sealed class AssistantLocalVoiceOptions
 internal sealed partial class LocalAssistantVoice : IAssistantVoice
 {
     private readonly AssistantLocalVoiceOptions options;
+    private readonly string microphoneId;
     private readonly Func<string,Func<string,CancellationToken,Task>,Action<string>,CancellationToken,Task<string>> reply;
     private readonly object captureGate=new();
     private readonly MemoryStream utterance=new();
@@ -66,8 +67,8 @@ internal sealed partial class LocalAssistantVoice : IAssistantVoice
     public event Action<float,bool>? Level;
     public event Action<string,string>? Transcript {add{}remove{}}
     public event Action<AssistantCall>? ToolCall {add{}remove{}}
-    internal LocalAssistantVoice(AssistantLocalVoiceOptions options,Func<string,Func<string,CancellationToken,Task>,Action<string>,CancellationToken,Task<string>> reply,AssistantSpeechInstall? assets=null)
-    {this.options=JsonSerializer.Deserialize<AssistantLocalVoiceOptions>(JsonSerializer.Serialize(options))!;this.reply=reply;this.assets=assets;}
+    internal LocalAssistantVoice(AssistantLocalVoiceOptions options,Func<string,Func<string,CancellationToken,Task>,Action<string>,CancellationToken,Task<string>> reply,AssistantSpeechInstall? assets=null,string microphoneId="")
+    {this.microphoneId=microphoneId;this.options=JsonSerializer.Deserialize<AssistantLocalVoiceOptions>(JsonSerializer.Serialize(options))!;this.reply=reply;this.assets=assets;}
     internal static Uri Endpoint(string value)
     {
         var uri=AssistantTransport.ValidateEndpoint(value);
@@ -82,7 +83,7 @@ internal sealed partial class LocalAssistantVoice : IAssistantVoice
             managed=new AssistantManagedSpeech(assets??throw new IOException("Managed speech is unavailable."),options);await managed.Start(message=>Status?.Invoke(message),sessionToken);sessionToken.ThrowIfCancellationRequested();if(managed.AsrUrl!=null){options.AsrProtocol="WhisperCpp";options.AsrUrl=managed.AsrUrl.AbsoluteUri;}
         }
         else{Endpoint(options.AsrUrl);if(options.TtsEngine!="Windows voice")Endpoint(options.TtsUrl);}
-        sessionToken.ThrowIfCancellationRequested();audio=new();connected=true;
+        sessionToken.ThrowIfCancellationRequested();audio=new(microphoneId);connected=true;
         try{audio.Start(16000,Capture,(peak,speaking)=>{if(connected && Processing)Level?.Invoke(peak,speaking);},()=>Fail("The local voice audio device stopped. End voice and check Windows sound settings."));}
         catch{connected=false;audio.Dispose();audio=null;throw;}
         Phase?.Invoke(AssistantState.Listening);Status?.Invoke("Listening locally · speak, then pause. ASR/TTS stay on this PC; chat uses the selected chat provider.");

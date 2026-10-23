@@ -12,6 +12,7 @@ internal sealed class AssistantWakeWord
 {
     private readonly SemaphoreSlim transition=new(1,1);
     private SpeechRecognitionEngine? engine;
+    private AssistantWakeInput? selectedInput;
     private int generation;
     private volatile bool listening;
     internal bool Listening=>listening;
@@ -26,7 +27,7 @@ internal sealed class AssistantWakeWord
         string phrase=string.Join(" ",(value??"").Split((char[]?)null,StringSplitOptions.RemoveEmptyEntries));
         if(phrase.Length is <3 or >64 || phrase.Any(c=>!char.IsLetter(c) && c is not (' ' or '-' or '\'')))throw new InvalidOperationException("Use a wake phrase of 3–64 letters, spaces, apostrophes or hyphens.");return phrase;
     }
-    internal async Task Start(AssistantWakeOptions options,Action detected,Action<string> failed)
+    internal async Task Start(AssistantWakeOptions options,Action detected,Action<string> failed,string microphoneId="")
     {
         int version=Interlocked.Increment(ref generation);await transition.WaitAsync();
         try
@@ -45,10 +46,12 @@ internal sealed class AssistantWakeWord
                     candidate.SpeechRecognized+=(_,e)=>{if(version!=Volatile.Read(ref generation) || !listening || e.Result.Confidence<Math.Clamp(options.Confidence,.55,.95) || Interlocked.CompareExchange(ref fired,1,0)!=0)return;listening=false;detected();};
                     candidate.RecognizeCompleted+=(_,e)=>{if(version==Volatile.Read(ref generation) && listening){listening=false;failed(e.Error==null?"Wake listening stopped. Resume it to listen again.":"Windows speech recognition stopped. Check the microphone and selected speech language, then resume wake listening.");}};
                     if(version!=Volatile.Read(ref generation)){candidate.Dispose();return;}
-                    candidate.SetInputToDefaultAudioDevice();engine=candidate;listening=true;candidate.RecognizeAsync(RecognizeMode.Multiple);
+                    if(string.IsNullOrEmpty(microphoneId))candidate.SetInputToDefaultAudioDevice();
+                    else{selectedInput=new AssistantWakeInput(microphoneId);candidate.SetInputToAudioStream(selectedInput,new System.Speech.AudioFormat.SpeechAudioFormatInfo(16000,System.Speech.AudioFormat.AudioBitsPerSample.Sixteen,System.Speech.AudioFormat.AudioChannel.Mono));}
+                    engine=candidate;listening=true;candidate.RecognizeAsync(RecognizeMode.Multiple);
                     if(version!=Volatile.Read(ref generation)){listening=false;Release(candidate);engine=null;}
                 }
-                catch{listening=false;engine=null;candidate.Dispose();throw;}
+                catch{listening=false;engine=null;selectedInput?.Dispose();selectedInput=null;candidate.Dispose();throw;}
             });
         }
         finally{transition.Release();}
@@ -63,6 +66,6 @@ internal sealed class AssistantWakeWord
         }
         finally{transition.Release();}
     }
-    private static void Release(SpeechRecognitionEngine engine)
-    {try{engine.RecognizeAsyncCancel();}catch{}try{engine.SetInputToNull();}catch{}engine.Dispose();}
+    private void Release(SpeechRecognitionEngine engine)
+    {selectedInput?.Dispose();selectedInput=null;try{engine.RecognizeAsyncCancel();}catch{}try{engine.SetInputToNull();}catch{}engine.Dispose();}
 }

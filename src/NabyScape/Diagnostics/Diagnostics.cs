@@ -752,7 +752,7 @@ internal static class Diagnostics
 
             for(int revisit=0;revisit<3;revisit++)foreach(string section in new[]{"Controls","Appearance","Controls","System","Appearance"})NavigateSettings(settings,section);
 
-            Check("Settings status labels safely reattach on repeated Appearance and Controls visits",CurrentSettingsCategory(settings)=="Appearance" && Descendants(settings).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Category appearance"));
+            Check("Settings status labels safely reattach on repeated Appearance and Controls visits",CurrentSettingsCategory(settings)=="Appearance" && !Descendants(settings).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Category appearance"));
 
             settings.UpdateLayout();Check("Appearance switches have visible concrete explanations",Descendants(settings).OfType<TextBlock>().Any(t=>t.Text==SettingsWindow.SettingDescription("Black glass")));
 

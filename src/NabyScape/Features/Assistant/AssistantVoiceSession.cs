@@ -70,7 +70,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         internal int StopThread;
         internal long LastImage;
     }
-    internal AssistantVoiceSession() : this(() => new AssistantVoiceSocket(), () => new AssistantVoiceAudio()) { }
+    internal AssistantVoiceSession(string microphoneId="") : this(() => new AssistantVoiceSocket(), () => new AssistantVoiceAudio(microphoneId)) { }
     internal AssistantVoiceSession(Func<IAssistantVoiceSocket> socketFactory, Func<IAssistantVoiceAudio> audioFactory)
     { this.socketFactory = socketFactory; this.audioFactory = audioFactory; }
     public bool Connected { get { lock (gate) return current?.Connected == true; } }

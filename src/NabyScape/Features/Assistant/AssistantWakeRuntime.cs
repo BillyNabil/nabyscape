@@ -64,7 +64,7 @@ internal sealed partial class AssistantRuntime
             await wakeClosing;await voiceClosing;long delay=wakeNotBefore-Environment.TickCount64;if(delay>0)await Task.Delay((int)Math.Min(delay,2000));
             if(version!=wakeVersion || disposed || !wakeWanted || !Options.Enabled || !Options.WakeWord.Enabled || SpeechCheckBusy || Speech.Busy || Busy || VoiceConnected)return;
             var options=JsonSerializer.Deserialize<AssistantWakeOptions>(JsonSerializer.Serialize(Options.WakeWord))!;
-            await wake.Start(options,()=>Dispatch(()=>_=WakeDetected(version)),message=>Dispatch(()=>{if(version==wakeVersion){wakeFailed=true;WakeStatus=message;wakeClosing=wake.Stop();Notify();}}));
+            await wake.Start(options,()=>Dispatch(()=>_=WakeDetected(version)),message=>Dispatch(()=>{if(version==wakeVersion){wakeFailed=true;WakeStatus=message;wakeClosing=wake.Stop();Notify();}}),Options.MicrophoneId);
             if(version==wakeVersion && wakeWanted && WakeListening)WakeStatus="Wake microphone on · say “"+options.Phrase+"”. Detection stays on this PC.";
         }
         catch(Exception ex){if(version==wakeVersion){wakeFailed=true;WakeStatus="Wake word unavailable: "+ex.Message;}}

@@ -101,7 +101,7 @@ public sealed partial class Settings
     public bool VisibilityHotkeyEnabled { get; set; }=true;
     public string VisibilityHotkeyKey { get; set; }="H";
     public string VisibilityHotkeyModifiers { get; set; }="Ctrl+Alt";
-    public string CategoryStyle { get; set; }="IconsLabels";
+    public string CategoryStyle { get; set; }="Dots";
     public string LaunchStyle { get; set; }="IconsLabels";
     public bool BoldMediaTitle { get; set; }=true;
     public bool BoldHeadings { get; set; }=true;
@@ -154,7 +154,7 @@ public sealed partial class Settings
         if(SatelliteSource is not ("Auto" or "Countdown" or "CPU" or "RAM" or "Calendar" or "Clock"))SatelliteSource="Auto";
         if(ClosedMediaContent is not ("Title" or "Waveform" or "Lyrics" or "None"))ClosedMediaContent="Title";
         if(ClosedMediaIcon is not ("Waveform" or "Artwork" or "None"))ClosedMediaIcon="Waveform";
-        if(CategoryStyle is not ("IconsLabels" or "Icons" or "Text" or "Dots"))CategoryStyle="IconsLabels";
+        CategoryStyle="Dots";
         if(LaunchStyle is not ("IconsLabels" or "Icons" or "Text"))LaunchStyle="IconsLabels";
         RecentColors=(RecentColors??new()).Where(ValidColor).Distinct(StringComparer.OrdinalIgnoreCase).Take(8).ToList();
         FocusMinutes=Math.Clamp(FocusMinutes,1,240); BreakMinutes=Math.Clamp(BreakMinutes,1,120);
