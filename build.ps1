@@ -12,6 +12,7 @@ $hostArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchi
 $canExecute = $Runtime -eq "win-$hostArchitecture"
 if ($RunDiagnostics -and !$canExecute) { throw 'Diagnostics require a host matching the target architecture.' }
 if (!$SkipTests) { & (Join-Path $PSScriptRoot 'tools\Test-SettingsScenes.ps1') }
+if (!$SkipTests -and $canExecute) { & (Join-Path $PSScriptRoot 'tools\Test-UninstallPlan.ps1') }
 $islandProject = Join-Path $PSScriptRoot 'src\NabyScape\NabyScape.csproj'
 $outputPath = [IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $outputPath | Out-Null

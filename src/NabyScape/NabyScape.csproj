@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\island.ico</ApplicationIcon>
     <AssemblyName>NabyScape</AssemblyName>
     <RootNamespace>NabyScape</RootNamespace>
-    <Version>2.22.1</Version>
+    <Version>2.23.0</Version>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
@@ -26,6 +26,8 @@
     <PackageReference Include="System.Speech" Version="10.0.13" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <Resource Include="Assets\island.ico" />
+    <EmbeddedResource Include="..\..\docs\presets\default-preferences.json" LogicalName="NabyScape.DefaultPreferences.json" />
+    <EmbeddedResource Include="..\..\tools\Uninstall-NabyScape.ps1" LogicalName="NabyScape.Uninstall.ps1" />
     <EmbeddedResource Include="..\..\docs\presets\default-layout.json" LogicalName="NabyScape.DefaultLayout.json" />
     <EmbeddedResource Include="..\..\tools\local_voice_server.py" LogicalName="NabyScape.LocalAsrServer" />
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="NabyScape.LICENSE" />

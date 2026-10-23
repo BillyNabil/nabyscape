@@ -26,7 +26,7 @@ internal static class SelfTests
         }
         if(Array.Exists(args,a=>a=="--capture-optimization-tests-only"))
         {AssistantCaptureTests.Run(Test);Finish();return;}
-        Test("Factory layout matches the selected daily appearance without personal content or consent",()=>
+        Test("Factory preferences match the selected daily setup without personal content",()=>
         {
             var s=FactoryDefaults.Create();
             Assert(s.Width==400 && s.Height==41 && s.Radius==13 && s.PanelWidth==526 && s.PanelMaxHeight==417 && s.PanelScale==1.04 && s.HoverWidth==447 && s.HoverHeight==207);
@@ -35,8 +35,9 @@ internal static class SelfTests
             Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews && !s.ActivitySatellite && !s.ActivitiesEnabled);
             Assert(HoverPagePolicy.Pages(s).SequenceEqual(s.Widgets.Where(w=>w.Enabled && HoverPagePolicy.Ids.Contains(w.Id)).Select(w=>w.Id)));
             Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice" && s.Widgets.All(w=>w.Enabled!=(w.Id=="voice")));
-            Assert(s.AutoCheckUpdates && s.AutoDownloadUpdates);
-            Assert(!s.ClipboardHistory && !s.AutoStart && !s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
+            Assert(s.AutoCheckUpdates && !s.AutoDownloadUpdates);
+            Assert(s.ClipboardHistory && s.AutoStart && s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
+            Assert(s.LyricsEnabled && s.NotificationDelivery=="Both" && s.QuietHours && s.QuietStart==22 && s.QuietEnd==7 && s.NotificationSeconds==10);
             Assert(s.Shortcuts.Count==2 && s.Shortcuts[0].Target=="explorer.exe" && s.Shortcuts[1].Target=="ms-settings:");
             s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==18);
         });

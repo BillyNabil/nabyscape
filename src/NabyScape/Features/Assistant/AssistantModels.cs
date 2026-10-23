@@ -34,7 +34,7 @@ internal sealed class AssistantOptions
     public string MicrophoneId {get;set;}="";
     public AssistantWakeOptions WakeWord {get;set;}=new();
     public bool WidgetNavigation {get;set;}=true;
-    public bool Enabled {get;set;}
+    public bool Enabled {get;set;}=true;
     public bool IslandCharacter {get;set;}=true;
     public string SelectedProvider {get;set;}="";
     public string SelectedVoiceProvider {get;set;}="";

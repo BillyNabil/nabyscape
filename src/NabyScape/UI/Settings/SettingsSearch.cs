@@ -67,6 +67,7 @@ public sealed partial class SettingsWindow
         Add("Voice setup & local models","AI","AI companion","Speech connection","asr tts microphone voice speech local hardware install model");
         Add("Wake word · hands-free voice","AI","AI companion","Wake word settings","wake word hands free hey naby microphone paused resume listening");
         Add("Uninstall ASR & TTS models","AI","AI companion","Installed speech models","uninstall remove model free space storage delete tts asr download cache");
+        Add("Uninstall NabyScape","Application","Local storage","Uninstall NabyScape…","uninstall remove application delete all data models cleanup fresh install hapus aplikasi");
         Add("Image input & support test","AI","AI companion","Image input","image input vision send pictures photo support test");
         Add("Test microphone and speech","AI","AI companion","Speech checks","microphone not working test transcription asr tts play sample speaker voice");
         Add("Timer & focus duration","Content","Focus sessions","","focus timer pomodoro menit durasi break istirahat");

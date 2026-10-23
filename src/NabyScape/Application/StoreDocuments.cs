@@ -160,7 +160,11 @@ public sealed partial class Store
                 fallbackLoads.Add(name);
                 Protect(name,ex,DiagnosticStage.StoreLoad);
                 PreserveUnreadableCopy(file,schema);
-                return Fresh<T>();
+                var fallback=Fresh<T>();
+                // A damaged/future existing profile cannot consent to background
+                // capture. Fresh, genuinely missing profiles use the recommended setup.
+                if(fallback is Settings preferences){preferences.ClipboardHistory=false;preferences.DownloadsEnabled=false;}
+                return fallback;
             }
         }
     }

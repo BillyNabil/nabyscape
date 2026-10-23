@@ -30,9 +30,9 @@ internal static class ProductionFoundationTests
             WelcomeSetup.Complete(store);
             Assert(before==File.ReadAllText(Path.Combine(store.DirectoryPath,"settings.json")),"Setup marker changed preferences.");
         });
-        Fixture("Update download default preserves existing and legacy opt-out",store=>
+        Fixture("Update download preference matches the owner snapshot and preserves existing opt-out",store=>
         {
-            Assert(store.Load<Settings>("new-profile").AutoDownloadUpdates,"New profile did not enable update downloads.");
+            Assert(!store.Load<Settings>("new-profile").AutoDownloadUpdates,"New profile did not match the owner snapshot.");
             store.Save("existing",new Settings{AutoDownloadUpdates=false});
             Assert(!store.Load<Settings>("existing").AutoDownloadUpdates,"Existing opt-out was overwritten.");
             File.WriteAllText(Path.Combine(store.DirectoryPath,"legacy.json"),"{}");
@@ -44,6 +44,7 @@ internal static class ProductionFoundationTests
             string original="{\"Width\":333,\"FutureContent\":\"preserve\"}",metadata="{\"SchemaVersion\":999}";
             File.WriteAllText(payload,original);File.WriteAllText(schema,metadata);
             var fallback=store.Load<Settings>("settings");bool rejected=false;
+            Assert(!fallback.ClipboardHistory && !fallback.DownloadsEnabled,"Unreadable profiles must not enable background capture.");
             try{store.Save("settings",fallback);}catch(StoreDocumentException){rejected=true;}
             Assert(rejected && File.ReadAllText(payload)==original && File.ReadAllText(schema)==metadata,"Future profile was changed.");
             Assert(store.GetHealth().FutureSchemaDocuments==1,"Future schema status is missing.");
@@ -61,7 +62,7 @@ internal static class ProductionFoundationTests
         {
             var settings=new Settings{Width=333,WeatherLatitude=null,WeatherLongitude=null,ClipboardHistory=true,UiLanguage="es",AutoDownloadUpdates=false};
             PreferenceReset.Reset(store,settings,null);
-            Assert(settings.ClipboardHistory && settings.UiLanguage=="en" && settings.AutoDownloadUpdates,"Reset changed capture consent or missed application preferences.");
+            Assert(settings.ClipboardHistory && settings.UiLanguage=="en" && !settings.AutoDownloadUpdates,"Reset changed capture consent or missed application preferences.");
             settings.ClipboardHistory=false;PreferenceReset.Restore(store,settings);
             Assert(!settings.ClipboardHistory && settings.Width==333 && settings.WeatherLatitude==null && settings.WeatherLongitude==null && settings.UiLanguage=="es" && !settings.AutoDownloadUpdates,"Restore changed consent or nullable preferences.");
             var node=System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(store.DirectoryPath,"preference-backup.json")))!;

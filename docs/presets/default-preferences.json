@@ -1,0 +1,342 @@
+{
+  "HoverFollowsWidgets": true,
+  "FollowMonitorAnimation": true,
+  "FollowMonitorDuration": 360,
+  "ClosedAmbient": true,
+  "DockEdge": "Top",
+  "DockVertical": 90,
+  "DockInset": 0,
+  "AmbientPalette": "Cover blend",
+  "AmbientDirection": "Bottom",
+  "AmbientHeight": 1.26,
+  "AmbientBalance": 0.16,
+  "AmbientSoftness": 0.4,
+  "AmbientSecondaryColor": "#CB72D9",
+  "WeatherUnits": "Celsius",
+  "UiLanguage": "en",
+  "AccessibilityTextScale": 1,
+  "AccessibilityHighContrast": false,
+  "BrowserMediaPreviews": true,
+  "DockUnlocked": false,
+  "PanelAutoHeight": true,
+  "WaveformSource": "Spectrum",
+  "WaveformSensitivity": 3,
+  "MediaIntegrationEnabled": true,
+  "LyricsEnabled": true,
+  "LyricsAnimation": "Slide",
+  "LyricsOffset": 0,
+  "CountdownSound": "Bell",
+  "CountdownSoundVolume": 1,
+  "NotificationDelivery": "Both",
+  "NotifyTimer": true,
+  "NotifyFocus": true,
+  "NotifyDownloads": true,
+  "NotifyUpdates": true,
+  "NotifyFailures": true,
+  "DownloadsEnabled": true,
+  "Preset": "Mac",
+  "Width": 400,
+  "Height": 41,
+  "Radius": 13,
+  "CompactLayout": true,
+  "HoverPeek": true,
+  "DropReveal": true,
+  "DetachablePreviews": false,
+  "CoverGestures": true,
+  "ActivitySatellite": false,
+  "SatelliteSource": "Auto",
+  "GlassStyle": false,
+  "SettingsMaterial": "Solid",
+  "LiveActivity": true,
+  "ClosedMediaIcon": "Artwork",
+  "ClosedMediaContent": "Waveform",
+  "ReactiveFeedback": true,
+  "SmartActivities": true,
+  "AlbumAccent": true,
+  "TwoStageHover": true,
+  "PanelWidth": 526,
+  "PanelMaxHeight": 417,
+  "PanelPadding": 32,
+  "PanelScale": 1.04,
+  "SectionGap": 18,
+  "HoverWidth": 447,
+  "HoverHeight": 207,
+  "HoverDelayMs": 180,
+  "HoverDetailDelayMs": 550,
+  "SwipeDistance": 48,
+  "GlassStrength": 0.99,
+  "Clock24Hour": true,
+  "ClockSeconds": false,
+  "ShowDate": true,
+  "MonitorNetwork": true,
+  "MonitorStorage": true,
+  "MonitorProcesses": true,
+  "HoverViews": [
+    {
+      "Id": "media",
+      "Enabled": true
+    },
+    {
+      "Id": "timer",
+      "Enabled": true
+    },
+    {
+      "Id": "focus",
+      "Enabled": true
+    },
+    {
+      "Id": "calendar",
+      "Enabled": true
+    },
+    {
+      "Id": "notes",
+      "Enabled": true
+    },
+    {
+      "Id": "files",
+      "Enabled": true
+    },
+    {
+      "Id": "system",
+      "Enabled": false
+    },
+    {
+      "Id": "clips",
+      "Enabled": false
+    },
+    {
+      "Id": "tasks",
+      "Enabled": false
+    },
+    {
+      "Id": "stopwatch",
+      "Enabled": false
+    },
+    {
+      "Id": "volume",
+      "Enabled": true
+    },
+    {
+      "Id": "weather",
+      "Enabled": true
+    },
+    {
+      "Id": "clock",
+      "Enabled": true
+    },
+    {
+      "Id": "battery",
+      "Enabled": true
+    },
+    {
+      "Id": "shortcuts",
+      "Enabled": true
+    },
+    {
+      "Id": "awake",
+      "Enabled": true
+    },
+    {
+      "Id": "links",
+      "Enabled": true
+    },
+    {
+      "Id": "voice",
+      "Enabled": true
+    }
+  ],
+  "ClipboardHistory": true,
+  "ActivitiesEnabled": false,
+  "Tools": [
+    {
+      "Id": "files",
+      "Enabled": true
+    },
+    {
+      "Id": "notes",
+      "Enabled": true
+    },
+    {
+      "Id": "tasks",
+      "Enabled": true
+    },
+    {
+      "Id": "clips",
+      "Enabled": true
+    },
+    {
+      "Id": "calendar",
+      "Enabled": true
+    },
+    {
+      "Id": "awake",
+      "Enabled": true
+    },
+    {
+      "Id": "links",
+      "Enabled": true
+    },
+    {
+      "Id": "weather",
+      "Enabled": true
+    }
+  ],
+  "Performance": "Maksimal",
+  "WheelAction": "pages",
+  "MiddleAction": "toggle",
+  "VolumeStep": 2,
+  "HotkeyEnabled": true,
+  "HotkeyKey": "I",
+  "HotkeyModifiers": "Ctrl+Alt",
+  "Horizontal": 50,
+  "Top": 0,
+  "DisplayMode": "Primary",
+  "Background": "#000000",
+  "Accent": "#FFFFFF",
+  "ControlFill": "#16171B",
+  "ControlBorder": "#303238",
+  "SelectionFill": "#34373E",
+  "PanelSwipe": true,
+  "Opacity": 1,
+  "AnimationMs": 400,
+  "ReduceMotion": false,
+  "HideFullscreen": true,
+  "HideMaximized": true,
+  "AlwaysTucked": false,
+  "TuckEdge": 2,
+  "TuckHotkeyEnabled": true,
+  "TuckHotkeyKey": "T",
+  "TuckHotkeyModifiers": "Ctrl+Alt",
+  "VisibilityHotkeyEnabled": true,
+  "VisibilityHotkeyKey": "H",
+  "VisibilityHotkeyModifiers": "Ctrl+Alt",
+  "CategoryStyle": "Dots",
+  "LaunchStyle": "Icons",
+  "BoldMediaTitle": true,
+  "BoldHeadings": true,
+  "WaveformIdleMotion": true,
+  "VolumeFeedback": true,
+  "BrightnessFeedback": true,
+  "AutoCheckUpdates": true,
+  "AutoStart": true,
+  "FocusMinutes": 25,
+  "BreakMinutes": 5,
+  "Widgets": [
+    {
+      "Id": "media",
+      "Enabled": true
+    },
+    {
+      "Id": "volume",
+      "Enabled": true
+    },
+    {
+      "Id": "timer",
+      "Enabled": true
+    },
+    {
+      "Id": "focus",
+      "Enabled": true
+    },
+    {
+      "Id": "clock",
+      "Enabled": true
+    },
+    {
+      "Id": "weather",
+      "Enabled": true
+    },
+    {
+      "Id": "system",
+      "Enabled": true
+    },
+    {
+      "Id": "battery",
+      "Enabled": true
+    },
+    {
+      "Id": "shortcuts",
+      "Enabled": true
+    },
+    {
+      "Id": "stopwatch",
+      "Enabled": true
+    },
+    {
+      "Id": "files",
+      "Enabled": true
+    },
+    {
+      "Id": "notes",
+      "Enabled": true
+    },
+    {
+      "Id": "tasks",
+      "Enabled": true
+    },
+    {
+      "Id": "clips",
+      "Enabled": true
+    },
+    {
+      "Id": "calendar",
+      "Enabled": true
+    },
+    {
+      "Id": "awake",
+      "Enabled": true
+    },
+    {
+      "Id": "links",
+      "Enabled": true
+    },
+    {
+      "Id": "voice",
+      "Enabled": false
+    }
+  ],
+  "CoverAmbient": true,
+  "AmbientStrength": 0.2,
+  "AmbientSpread": 1.52,
+  "AmbientMotion": "Breathe",
+  "AmbientScope": "Music only",
+  "AmbientWidgets": [
+    "media",
+    "volume",
+    "timer",
+    "stopwatch",
+    "focus",
+    "clock",
+    "system",
+    "battery",
+    "shortcuts",
+    "files",
+    "notes",
+    "tasks",
+    "clips",
+    "calendar",
+    "awake",
+    "links",
+    "closed",
+    "ai"
+  ],
+  "AmbientColorSource": "Album cover",
+  "AmbientCustomColor": "#7AA8DC",
+  "AmbientAudioResponse": "Responsive",
+  "AmbientSensitivity": 3,
+  "InteractionMotion": "Subtle",
+  "NotificationSeconds": 10,
+  "NotificationAnimation": "Lift",
+  "QuietHours": true,
+  "QuietStart": 22,
+  "QuietEnd": 7,
+  "AutoDownloadUpdates": false,
+  "Monitor": "",
+  "WeatherCity": "",
+  "WeatherLatitude": null,
+  "WeatherLongitude": null,
+  "DownloadsFolder": "",
+  "CountdownSoundFile": "",
+  "RecentColors": [],
+  "NotificationsSnoozedUntil": null
+}

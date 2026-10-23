@@ -50,12 +50,12 @@ internal sealed class WelcomeWindow : Window
         if(step==0)
         {
             body.Children.Add(UI.Text("Choose a starting point. You can change every choice later.",13,UI.Muted));
-            foreach(var choice in new[]{("Music","Playback, volume, clock and weather"),("Productivity","Focus, timer, notes, tasks and calendar"),("AI","Naby voice, clock and notes · connect your provider next"),("Custom","Keep your current choices and choose widgets yourself")})
+            foreach(var choice in new[]{("Music","Playback, volume, clock and weather"),("Productivity","Focus, timer, notes, tasks and calendar"),("AI","Naby voice, clock and notes · connect your provider next"),("Custom","Recommended NabyScape setup · keep the complete default experience")})
             {
-                var content=new StackPanel();content.Children.Add(UI.Text(choice.Item1+(purpose==choice.Item1?" · Selected":""),16));var hint=UI.Text(choice.Item2,12,UI.Muted);hint.Margin=new(0,5,0,0);content.Children.Add(hint);
+                var content=new StackPanel();content.Children.Add(UI.Text((choice.Item1=="Custom"?"Recommended":choice.Item1)+(purpose==choice.Item1?" · Selected":""),16));var hint=UI.Text(choice.Item2,12,UI.Muted);hint.Margin=new(0,5,0,0);content.Children.Add(hint);
                 var button=UI.CaptionButton(choice.Item1,()=>{purpose=choice.Item1;ChoosePurpose();Render();});button.Content=content;button.Padding=new(16);button.Margin=new(0,10,0,0);button.HorizontalContentAlignment=HorizontalAlignment.Left;button.Background=UI.Brush(purpose==choice.Item1?app.Settings.SelectionFill:app.Settings.ControlFill);body.Children.Add(button);
             }
-            body.Children.Add(UI.Text("This only selects widgets. It never enables microphone listening, clipboard capture, or downloads.",12,UI.Muted));
+            body.Children.Add(UI.Text("Choose a purpose to change widgets, or keep Recommended to use the complete default setup. Microphone listening starts only when you choose it.",12,UI.Muted));
         }
         else if(step==1)
         {
@@ -78,6 +78,7 @@ internal sealed class WelcomeWindow : Window
             body.Children.Add(UI.Text("Click the dock to open your widgets. Hover for a quick look. Right-click the tray icon to open Settings.",14,UI.Muted));
             body.Children.Add(UI.Text(string.Join(" · ",widgets.Where(w=>w.Value).Select(w=>Settings.Names.GetValueOrDefault(w.Key)??w.Key)),13));
             if(purpose!="AI")body.Children.Add(UI.Card("AI is optional",UI.Text("Connect your own provider or Hermes whenever you're ready. Voice starts only when you choose it.",13,UI.Muted),UI.CaptionButton("Set up AI",()=>Finish(true))));
+            body.Children.Add(UI.Text("Clipboard history: "+(app.Settings.ClipboardHistory?"On":"Off")+" · Download alerts: "+(app.Settings.DownloadsEnabled?"On":"Off")+". Change these in Settings at any time.",12,UI.Muted));
             body.Children.Add(UI.Text("You can reopen this guide from Settings > General.",12,UI.Muted));
         }
         body.Children.Add(error);
@@ -85,7 +86,7 @@ internal sealed class WelcomeWindow : Window
 
     private void ChoosePurpose()
     {
-        if(purpose=="Custom")return;
+        if(purpose=="Custom"){foreach(var widget in app.Settings.Widgets)widgets[widget.Id]=widget.Enabled;changedWidgets.Clear();return;}
         string[] enabled=purpose switch
         {
             "Music"=>new[]{"media","volume","clock","weather"},

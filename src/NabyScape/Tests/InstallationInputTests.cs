@@ -10,6 +10,25 @@ internal static class InstallationInputTests
     {
         static void Check(bool value){if(!value)throw new Exception("Assertion failed");}
         static void Reject(Action action){try{action();}catch(IOException){return;}catch(InvalidDataException){return;}throw new Exception("Unsafe input accepted");}
+        test("Fresh profiles use the complete bundled preferences and keep personal paths out",()=>
+        {
+            using var stream=typeof(FactoryDefaults).Assembly.GetManifestResourceStream("NabyScape.DefaultPreferences.json")!;
+            using var json=JsonDocument.Parse(stream);
+            foreach(var property in typeof(Settings).GetProperties(System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Instance))
+                if(property.CanWrite && property.Name!="Shortcuts")Check(json.RootElement.TryGetProperty(property.Name,out _));
+            var companion=new AssistantOptions();Check(companion.Enabled && companion.IslandCharacter && companion.WidgetNavigation && !companion.WakeWord.Enabled && companion.Providers.Count==0);
+            var defaults=FactoryDefaults.Create();Check(defaults.LyricsEnabled && defaults.ClipboardHistory && defaults.DownloadsEnabled && defaults.AutoStart && defaults.NotificationDelivery=="Both" && !defaults.AutoDownloadUpdates);
+            Check(defaults.Monitor=="" && defaults.DisplayMode=="Primary" && defaults.WeatherCity=="" && defaults.WeatherLatitude==null && defaults.DownloadsFolder=="" && defaults.CountdownSoundFile=="" && defaults.Shortcuts.Count==2);
+            string root=Path.Combine(Path.GetTempPath(),"NabyScape-fresh-preference-fixture-"+Guid.NewGuid().ToString("N"));
+            try
+            {
+                var store=new Store(root);var fresh=store.Load<Settings>("settings");Check(JsonSerializer.Serialize(fresh)==JsonSerializer.Serialize(defaults));
+                fresh.LyricsEnabled=false;fresh.NotificationDelivery="Off";store.Save("settings",fresh);
+                var existing=store.Load<Settings>("settings");Check(!existing.LyricsEnabled && existing.NotificationDelivery=="Off");
+            }
+            finally{foreach(string file in Directory.GetFiles(root))File.Delete(file);Directory.Delete(root);}
+            Check(Installer.Uninstaller.Contains("Get-NabyDataRoots") && Installer.Uninstaller.Contains("Remove-NabySavedKeys") && Installer.Uninstaller.Contains("Also remove my data and downloaded ASR / TTS models"));
+        });
         test("Selected wake microphone stream satisfies the real Windows Speech adapter without hardware",()=>
         {
             using var stream=new AssistantWakeInput(null);

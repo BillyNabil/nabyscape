@@ -31,7 +31,7 @@ internal static class Installer
         var window=new Window{Title="Install NabyScape · "+RuntimePlatform.Rid,Width=620,Height=535,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterScreen};
         window.Icon=System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Assets/island.ico"));window.SourceInitialized+=(_,_)=>Native.DarkTitleBar(window);
         var panel=new StackPanel{Margin=new(36)};panel.Children.Add(UI.Text("NabyScape",36,UI.Brush("#B4F272")));panel.Children.Add(UI.Text("A little space. More possibilities.",15,UI.Muted));
-        panel.Children.Add(new Border{Height=26});panel.Children.Add(UI.Text("Music, focus, and your everyday tools — always close.\n\nInstalls for this Windows user only. Auto-start is off by default.",14));
+        panel.Children.Add(new Border{Height=26});panel.Children.Add(UI.Text("Music, focus, and your everyday tools — always close.\n\nInstalls for this Windows user only. Choose your folder and startup preference below.",14));
         var folderLabel=UI.Text("Install folder",12,UI.Muted);folderLabel.Margin=new(0,20,0,6);panel.Children.Add(folderLabel);
         string suggested=string.Equals(InstallDirectory,InstallPaths.Legacy,StringComparison.OrdinalIgnoreCase)?InstallPaths.Default:InstallDirectory;
         var folder=new TextBox{Text=InstallPaths.FromArguments(args,suggested),MinHeight=36,VerticalContentAlignment=VerticalAlignment.Center};UI.Named(folder,"Installation folder");
@@ -42,16 +42,17 @@ internal static class Installer
             if(picker.ShowDialog(window)==true)folder.Text=string.Equals(Path.GetFileName(picker.FolderName),"NabyScape",StringComparison.OrdinalIgnoreCase)?picker.FolderName:Path.Combine(picker.FolderName,"NabyScape");
         });DockPanel.SetDock(browse,Dock.Right);row.Children.Add(browse);row.Children.Add(folder);panel.Children.Add(row);
         var state=UI.Text("Choose a location you can write to. Your personal settings are kept separately.",11,UI.Muted);state.Margin=new(0,0,0,12);panel.Children.Add(state);
+        var startupChoice=new CheckBox{Content="Start NabyScape with Windows",IsChecked=HasSavedPreferences?StartupService.Enabled():FactoryDefaults.Create().AutoStart,Margin=new(0,0,0,8)};panel.Children.Add(startupChoice);
         var launch=new CheckBox{Content="Open NabyScape after installation",IsChecked=true};panel.Children.Add(launch);
         var button=UI.Button("Install NabyScape",()=>{},true);button.Click+=(_,_)=>
         {
             button.IsEnabled=false;
-            try {string target=InstallPaths.Validate(folder.Text.Trim());Install(target);if(launch.IsChecked==true)Launch(target);window.Close();}
+            try {string target=InstallPaths.Validate(folder.Text.Trim());Install(target,startupChoice.IsChecked==true);if(launch.IsChecked==true)Launch(target);window.Close();}
             catch(Exception ex) {state.Text="Installation failed: "+ex.Message;button.IsEnabled=true;}
         };panel.Children.Add(button);window.Content=panel;return window;
     }
     private static void Launch(string folder)=>Process.Start(new ProcessStartInfo(Path.Combine(folder,"NabyScape.exe")){UseShellExecute=true});
-    internal static void Install(string? directory=null)
+    internal static void Install(string? directory=null,bool? startWithWindows=null)
     {
         ValidateArchitecture(Environment.ProcessPath??throw new IOException("Installer executable is unavailable."));
         string previous=InstallDirectory;string target=InstallPaths.Validate(directory??previous);
@@ -83,6 +84,9 @@ internal static class Installer
             var type=Type.GetTypeFromProgID("WScript.Shell") ?? throw new IOException("The Windows shortcut service is unavailable.");
             shell=Activator.CreateInstance(type);dynamic dynamicShell=shell!;shortcut=dynamicShell.CreateShortcut(ShortcutPath);dynamic link=shortcut;
             link.TargetPath=executable;link.WorkingDirectory=target;link.Description="NabyScape for Windows";link.IconLocation=executable+",0";link.Save();
+            object uninstallLink=dynamicShell.CreateShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs),"Uninstall NabyScape.lnk"));
+            try{dynamic uninstall=uninstallLink;uninstall.TargetPath=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),@"WindowsPowerShell\v1.0\powershell.exe");uninstall.Arguments="-NoProfile -ExecutionPolicy Bypass -File \""+Path.Combine(target,"Uninstall.ps1")+"\"";uninstall.WorkingDirectory=target;uninstall.Description="Remove NabyScape and optionally all downloaded speech models and personal data";uninstall.IconLocation=executable+",0";uninstall.Save();}
+            finally{if(Marshal.IsComObject(uninstallLink))Marshal.FinalReleaseComObject(uninstallLink);}
             foreach(string legacyName in new[]{"Luma Island.lnk","BillyNabila Island.lnk"})
             {
             string legacyShortcut=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs),legacyName);
@@ -101,11 +105,14 @@ internal static class Installer
         key.SetValue("QuietUninstallString","powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \""+Path.Combine(target,"Uninstall.ps1")+"\" -Quiet");
         key.SetValue("NoModify",1,RegistryValueKind.DWord);key.SetValue("NoRepair",1,RegistryValueKind.DWord);key.SetValue("EstimatedSize",(int)(new FileInfo(executable).Length/1024),RegistryValueKind.DWord);
         // On update, retain autostart preference while updating a prior executable path to the installed copy.
-        using var startup=Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run",true);
-        if(startup?.GetValue("LumaIsland")!=null || startup?.GetValue("BillyNabilaIsland")!=null || startup?.GetValue("NabyScape")!=null)
+        using var startup=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run");
+        bool startupEnabled=startWithWindows??(StartupService.Enabled() || !HasSavedPreferences && FactoryDefaults.Create().AutoStart);
+        if(startupEnabled)
         {
-            startup!.SetValue("NabyScape","\""+executable+"\" --background");startup.DeleteValue("LumaIsland",false);startup.DeleteValue("BillyNabilaIsland",false);
+            startup.SetValue("NabyScape","\""+executable+"\" --background");
         }
+        else startup.DeleteValue("NabyScape",false);
+        startup.DeleteValue("LumaIsland",false);startup.DeleteValue("BillyNabilaIsland",false);
         bool removeLegacyKey;
         using(var legacyKey=Registry.CurrentUser.OpenSubKey(InstallPaths.LegacyRegistryKey))
             removeLegacyKey=legacyKey?.GetValue("InstallLocation") is string oldLocation && string.Equals(oldLocation,previous,StringComparison.OrdinalIgnoreCase);
@@ -142,43 +149,21 @@ internal static class Installer
         stream.Position=offset;
         if(reader.ReadUInt32()!=0x00004550 || reader.ReadUInt16()!=RuntimePlatform.PeMachine)throw new IOException("Setup architecture verification failed. Download the correct official setup.");
     }
-    private const string Uninstaller="""
-param([switch]$Quiet)
-$ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName System.Windows.Forms
-$islandTarget = [IO.Path]::GetFullPath($PSScriptRoot)
-$uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\NabyScape'
-$registered = (Get-ItemProperty -LiteralPath $uninstallKey -Name InstallLocation -ErrorAction Stop).InstallLocation
-if ($islandTarget -ne [IO.Path]::GetFullPath($registered)) { throw 'Invalid uninstaller location.' }
-if ((Get-Item -LiteralPath $islandTarget).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Linked installation folders cannot be removed.' }
-if (-not $Quiet) {
-    $answer = [Windows.Forms.MessageBox]::Show('Uninstall NabyScape? Your personal preferences will be kept.', 'NabyScape', 'YesNo', 'Question')
-    if ($answer -ne 'Yes') { exit 0 }
-}
-Get-Process -Name LumaIsland,BillyNabilaIsland,NabyScape -ErrorAction SilentlyContinue | ForEach-Object {
-    if ($_.Path -and @((Join-Path $islandTarget 'LumaIsland.exe'), (Join-Path $islandTarget 'BillyNabilaIsland.exe'), (Join-Path $islandTarget 'NabyScape.exe')) -contains [IO.Path]::GetFullPath($_.Path)) { Stop-Process -Id $_.Id -Force }
-}
-Start-Sleep -Milliseconds 700
-$startupKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-foreach ($valueName in @('LumaIsland','BillyNabilaIsland','NabyScape')) {
-    $startupValue = (Get-ItemProperty -LiteralPath $startupKey -Name $valueName -ErrorAction SilentlyContinue).$valueName
-    if ($startupValue -and $startupValue.Contains($islandTarget)) { Remove-ItemProperty -LiteralPath $startupKey -Name $valueName }
-}
-$shortcutFile = Join-Path ([Environment]::GetFolderPath('Programs')) 'NabyScape.lnk'
-if (Test-Path -LiteralPath $shortcutFile) {
-    $shell = New-Object -ComObject WScript.Shell
-    $link = $shell.CreateShortcut($shortcutFile)
-    if ($link.TargetPath -eq (Join-Path $islandTarget 'NabyScape.exe')) { Remove-Item -LiteralPath $shortcutFile -Force }
-    [Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) | Out-Null
-    [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) | Out-Null
-}
-Remove-Item -LiteralPath $uninstallKey -Force
-# Delete only shipped files. Never recurse into a user-selected directory.
-foreach ($name in @('NabyScape.exe','LumaIsland.exe','BillyNabilaIsland.exe','Uninstall.ps1','LICENSE','LUCIDE-LICENSE.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt')) {
-    $file = Join-Path $islandTarget $name
-    if (Test-Path -LiteralPath $file -PathType Leaf) { Remove-Item -LiteralPath $file -Force }
-}
-if (-not (Get-ChildItem -LiteralPath $islandTarget -Force | Select-Object -First 1)) { Remove-Item -LiteralPath $islandTarget -Force }
-if (-not $Quiet) { [Windows.Forms.MessageBox]::Show('NabyScape has been uninstalled.','NabyScape') | Out-Null }
-""";
+    internal static string Uninstaller
+    {
+        get
+        {
+            using var stream=typeof(Installer).Assembly.GetManifestResourceStream("NabyScape.Uninstall.ps1")??throw new IOException("The bundled uninstaller is missing.");
+            using var reader=new StreamReader(stream);return reader.ReadToEnd();
+        }
+    }
+    internal static bool HasSavedPreferences=>new[]{"NabyScape","LumaIsland"}.Any(name=>File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),name,"settings.json")));
+    internal static void OpenUninstaller()
+    {
+        if(!OfficialUpdates.IsInstalled(Environment.ProcessPath!))throw new IOException("This is a portable copy. Remove its folder, or use Windows Installed apps for the installed copy.");
+        string script=Path.Combine(InstallDirectory,"Uninstall.ps1");
+        InstallPaths.Validate(InstallDirectory);
+        if(!File.Exists(script) || (File.GetAttributes(script)&FileAttributes.ReparsePoint)!=0)throw new IOException("Run the latest installer to repair the uninstall entry.");
+        _=Process.Start(new ProcessStartInfo("powershell.exe"){UseShellExecute=false,CreateNoWindow=true,ArgumentList={"-NoProfile","-ExecutionPolicy","Bypass","-File",script}})??throw new IOException("Could not open the uninstaller.");
+    }
 }

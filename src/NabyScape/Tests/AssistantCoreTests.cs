@@ -66,7 +66,7 @@ internal static class AssistantCoreTests
         {var fake=new DesktopBackend();fake.Release.Reset();using var desktop=new AssistantDesktop(fake);desktop.Start(fake.Target.Id,IntPtr.Zero);var first=desktop.Capture(default);Assert(fake.Started.Wait(2000));var queued=desktop.Capture(default);desktop.Stop();fake.Release.Set();foreach(var work in new[]{first,queued}){try{await work;throw new Exception();}catch(OperationCanceledException){}}Assert(fake.Captures==1 && desktop.Frame==null);}).GetAwaiter().GetResult());
         test("Assistant failed capture setup releases backend resources",()=>
         {var fake=new DesktopBackend{FailBegin=true};using var desktop=new AssistantDesktop(fake);Reject<InvalidOperationException>(()=>desktop.Start(fake.Target.Id,IntPtr.Zero));Assert(fake.Ends==2 && !desktop.Sharing);});
-        test("Assistant options exclude secrets and begin with all permissions off",()=>
-        {var options=new AssistantOptions();Assert(!options.Enabled && options.Providers.Count==0);var keys=new AssistantMemoryKeys();string id=Guid.NewGuid().ToString("N");keys.Write(id,"fixture-secret");options.Providers.Add(new(){Id=id});string json=JsonSerializer.Serialize(options);Assert(!json.Contains("fixture-secret") && keys.Exists(id));keys.Remove(id);Assert(!keys.Exists(id));});
+        test("Assistant is available by default with no provider secrets or active wake listening",()=>
+        {var options=new AssistantOptions();Assert(options.Enabled && !options.WakeWord.Enabled && options.Providers.Count==0);var keys=new AssistantMemoryKeys();string id=Guid.NewGuid().ToString("N");keys.Write(id,"fixture-secret");options.Providers.Add(new(){Id=id});string json=JsonSerializer.Serialize(options);Assert(!json.Contains("fixture-secret") && keys.Exists(id));keys.Remove(id);Assert(!keys.Exists(id));});
     }
 }
