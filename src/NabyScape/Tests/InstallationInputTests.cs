@@ -10,6 +10,23 @@ internal static class InstallationInputTests
     {
         static void Check(bool value){if(!value)throw new Exception("Assertion failed");}
         static void Reject(Action action){try{action();}catch(IOException){return;}catch(InvalidDataException){return;}throw new Exception("Unsafe input accepted");}
+        test("Selected wake microphone stream satisfies the real Windows Speech adapter without hardware",()=>
+        {
+            using var stream=new AssistantWakeInput(null);
+            var type=typeof(System.Speech.Recognition.SpeechRecognitionEngine).Assembly.GetType("System.Speech.Internal.SapiInterop.SpAudioStreamWrapper",true)!;
+            var format=new System.Speech.AudioFormat.SpeechAudioFormatInfo(16000,System.Speech.AudioFormat.AudioBitsPerSample.Sixteen,System.Speech.AudioFormat.AudioChannel.Mono);
+            using var adapter=(IDisposable)Activator.CreateInstance(type,System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic,null,new object[]{stream,format},null)!;
+            Check(stream.Length==long.MaxValue && stream.Position==0 && stream.Seek(0,SeekOrigin.Begin)==0);
+            stream.Feed(new byte[]{1,2,3,4});var bytes=new byte[4];var count=System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size);
+            try
+            {
+                type.GetMethod("Read")!.Invoke(adapter,new object[]{bytes,4,count});
+                Check(System.Runtime.InteropServices.Marshal.ReadIntPtr(count).ToInt64()==4 && bytes[3]==4 && stream.Position==4 && stream.Seek(0,SeekOrigin.Current)==4);
+            }
+            finally{System.Runtime.InteropServices.Marshal.FreeHGlobal(count);}
+            var waiting=System.Threading.Tasks.Task.Run(()=>stream.Read(new byte[4],0,4));stream.Dispose();
+            Check(waiting.Wait(3000) && waiting.Result==0);
+        });
         test("Installer rollback copies the verified legacy binary in place without accepting corrupt bytes",()=>
         {
             string root=Path.Combine(Path.GetTempPath(),"NabyScape-restore-fixture-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(root);

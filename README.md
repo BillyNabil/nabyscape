@@ -4,7 +4,7 @@
 
 NabyScape brings music controls, everyday tools and an optional AI companion into one configurable island for Windows.
 
-**Current release: [2.22.0](https://github.com/BillyNabil/nabyscape/releases/tag/v2.22.0).** Windows 10/11 packages are available for x64 and ARM64. Explore the [live website](https://nabyscape.vercel.app/), [release notes](docs/releases/v2.22.0.md) or [website source](website/).
+**Current release: [2.22.1](https://github.com/BillyNabil/nabyscape/releases/tag/v2.22.1).** Windows 10/11 packages are available for x64 and ARM64. Explore the [live website](https://nabyscape.vercel.app/), [release notes](docs/releases/v2.22.1.md) or [website source](website/).
 
 ## Your music, within reach
 
@@ -54,14 +54,14 @@ Settings now has wider navigation, visible voice-source choices and separate Voi
 
 | Your PC | Installer for Windows 10 / 11 | Portable |
 | --- | --- | --- |
-| Intel or AMD 64-bit | [Download x64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.0/NabyScape-win-x64-Setup.exe) | [x64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.0/NabyScape-win-x64-Portable.zip) |
-| Windows on ARM | [Download ARM64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.0/NabyScape-win-arm64-Setup.exe) | [ARM64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.0/NabyScape-win-arm64-Portable.zip) |
+| Intel or AMD 64-bit | [Download x64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.1/NabyScape-win-x64-Setup.exe) | [x64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.1/NabyScape-win-x64-Portable.zip) |
+| Windows on ARM | [Download ARM64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.1/NabyScape-win-arm64-Setup.exe) | [ARM64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.1/NabyScape-win-arm64-Portable.zip) |
 
 The same architecture-specific package targets Windows 10 build 19041 or later and Windows 11; no separate Windows 10 installer is needed. Windows 10 22H2 is recommended over older Windows 10 builds. OS/.NET support follows Microsoft's lifecycle. Windows 11 x64 is locally exercised; physical Windows 10 and native ARM64 execution have not been validated. Native local speech compatibility is separate: managed speech packs require an x64 process with AVX2/FMA; ARM64 can use compatible external speech servers or providers.
 
-New in 2.22: dot-only panel navigation, a saved microphone picker with a four-second input test, and an installer folder chooser. New installations default to `%LOCALAPPDATA%\Programs\NabyScape`. Existing preferences are kept.
+New in 2.22.1: dot-only panel navigation, a saved microphone picker with a four-second input test, and an installer folder chooser. New installations default to `%LOCALAPPDATA%\Programs\NabyScape`. Existing preferences are kept.
 
-The .NET runtime is bundled. Installers are unsigned and install for the current Windows user. [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.0/SHA256SUMS) · [Dependency notices](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.0/NabyScape-Notices.zip).
+The .NET runtime is bundled. Installers are unsigned and install for the current Windows user. [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.1/SHA256SUMS) · [Dependency notices](https://github.com/BillyNabil/nabyscape/releases/download/v2.22.1/NabyScape-Notices.zip).
 
 New installs use the Daily Notch appearance. Upgrades preserve preferences and content. Automatic update checks and downloads default on; installation/restart remains explicit. Startup, clipboard capture, AI and download watching have separate controls. Quit from the tray to exit.
 

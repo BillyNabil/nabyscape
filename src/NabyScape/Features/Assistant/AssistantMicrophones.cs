@@ -87,21 +87,25 @@ internal sealed partial class AssistantProviderSettings
 internal sealed class AssistantWakeInput : Stream
 {
     private readonly BlockingCollection<byte[]> blocks=new(32);
-    private readonly WaveInEvent microphone;
+    private readonly WaveInEvent? microphone;
     private byte[]? current;
     private int offset,closed;
-    internal AssistantWakeInput(string id)
+    private long consumed;
+    internal AssistantWakeInput(string? id)
     {
+        if(id==null)return; // In-memory fixture: exercise SAPI without opening hardware.
         microphone=new WaveInEvent{DeviceNumber=AssistantMicrophones.Resolve(id),WaveFormat=new WaveFormat(16000,16,1),BufferMilliseconds=50};
         microphone.DataAvailable+=(_,e)=>
         {
             if(System.Threading.Volatile.Read(ref closed)!=0)return;
             var bytes=new byte[e.BytesRecorded];Buffer.BlockCopy(e.Buffer,0,bytes,0,bytes.Length);
-            try{if(!blocks.TryAdd(bytes))blocks.CompleteAdding();}catch(InvalidOperationException){}
+            Feed(bytes);
         };
         microphone.RecordingStopped+=(_,_)=>blocks.CompleteAdding();
         try{microphone.StartRecording();}catch{Dispose();throw;}
     }
+    internal void Feed(byte[] bytes)
+    {try{if(!blocks.TryAdd(bytes))blocks.CompleteAdding();}catch(InvalidOperationException){}}
     public override int Read(byte[] buffer,int start,int count)
     {
         if(count==0 || System.Threading.Volatile.Read(ref closed)!=0)return 0;
@@ -110,23 +114,29 @@ internal sealed class AssistantWakeInput : Stream
             if(!blocks.TryTake(out current,System.Threading.Timeout.Infinite))return 0;
             offset=0;
         }
-        int length=Math.Min(count,current.Length-offset);Buffer.BlockCopy(current,offset,buffer,start,length);offset+=length;return length;
+        int length=Math.Min(count,current.Length-offset);Buffer.BlockCopy(current,offset,buffer,start,length);offset+=length;System.Threading.Interlocked.Add(ref consumed,length);return length;
     }
     protected override void Dispose(bool disposing)
     {
         if(disposing && System.Threading.Interlocked.Exchange(ref closed,1)==0)
         {
-            blocks.CompleteAdding();try{microphone.StopRecording();}finally{microphone.Dispose();}
+            blocks.CompleteAdding();try{microphone?.StopRecording();}finally{microphone?.Dispose();}
         }
         base.Dispose(disposing);
     }
     public override bool CanRead=>true;
     public override bool CanSeek=>false;
     public override bool CanWrite=>false;
-    public override long Length=>throw new NotSupportedException();
-    public override long Position{get=>throw new NotSupportedException();set=>throw new NotSupportedException();}
+    // SAPI's SpStreamWrapper reads Length at construction and Position on every
+    // read. A live stream has no known end; shutdown signals EOF through Read.
+    public override long Length=>long.MaxValue;
+    public override long Position{get=>System.Threading.Interlocked.Read(ref consumed);set=>Seek(value,SeekOrigin.Begin);}
     public override void Flush(){}
-    public override long Seek(long offset,SeekOrigin origin)=>throw new NotSupportedException();
+    public override long Seek(long offset,SeekOrigin origin)
+    {
+        long target=origin switch{SeekOrigin.Begin=>offset,SeekOrigin.Current=>checked(Position+offset),_=>throw new NotSupportedException()};
+        if(target!=Position)throw new NotSupportedException("A live microphone cannot rewind.");return target;
+    }
     public override void SetLength(long value)=>throw new NotSupportedException();
     public override void Write(byte[] buffer,int offset,int count)=>throw new NotSupportedException();
 }
