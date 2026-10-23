@@ -2,6 +2,8 @@
 
 python tools/render_showcase.py path/to/diagnostic-showcase
 The capture directory must contain chapters.json, frames/ and the named PNGs.
+python tools/render_showcase.py --social-only
+Rebuild only the repository link banner from the committed app captures.
 """
 from pathlib import Path
 import json
@@ -67,9 +69,24 @@ def label(img, number, title, subtitle, x, y):
     text(img, (x, y + 91), subtitle, 21, fill=MUTED)
 
 
+logo = Image.open(ROOT / 'src' / 'NabyScape' / 'Assets' / 'island.ico').convert('RGBA')
+# GitHub's social image is separate from the README hero; use its 2:1 format.
+social = backdrop((1280, 640))
+place(social, logo, (64, 56), 46, False)
+text(social, (124, 58), 'NabyScape', 32, True)
+text(social, (64, 155), 'Your desktop,\nwithin reach.', 74, True)
+text(social, (69, 356), 'Music, quick tools, and system stats.\nA customizable island for Windows 11.', 24, fill=MUTED)
+place(social, Image.open(OUT / 'media-raw.png').convert('RGBA'), (699, 157), 513)
+place(social, Image.open(OUT / 'closed-raw.png').convert('RGBA'), (735, 493), 442)
+text(social, (70, 526), 'OPEN SOURCE  /  LOCAL DATA', 20, True, MUTED)
+text(social, (70, 582), 'github.com/BillyNabil/nabyscape', 20, fill=MUTED)
+save(social, 'social-preview.png')
+if sys.argv[1] == '--social-only':
+    print('Social preview ready:', OUT / 'social-preview.png')
+    sys.exit(0)
+
 # A legible repository header with the app itself as the hero.
 hero = backdrop((1600, 1000))
-logo = Image.open(ROOT / 'src' / 'NabyScape' / 'Assets' / 'island.ico').convert('RGBA')
 place(hero, logo, (80, 57), 42, False)
 text(hero, (135, 57), 'NabyScape', 31, True)
 text(hero, (83, 173), 'Your desktop,\nwithin reach.', 96, True)

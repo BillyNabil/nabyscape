@@ -9,6 +9,27 @@ internal static class SettingsUxTests
     internal static void Run(Action<string,Action> test)
     {
         void Assert(bool value){if(!value)throw new Exception("Settings UX invariant failed");}
+        test("Settings save feedback names changed preferences without exposing personal content",()=>
+        {
+            var settings=new Settings();var before=System.Text.Json.JsonSerializer.SerializeToElement(settings);
+            settings.CoverAmbient=!settings.CoverAmbient;settings.Width=444;settings.DownloadsFolder="C:/private/example";
+            string message=SettingsChangeFeedback.Describe(before,settings);
+            Assert(message.StartsWith("Saved · ") && message.Contains("Ambient light: ") && message.Contains("Closed dock width: 444") && !message.Contains("private"));
+        });
+        test("Voice end action retains a filled stop icon in wrapped and inline layouts",()=>
+        {
+            foreach(bool wrap in new[]{false,true})
+            {
+                var button=AssistantControls.Action("Start conversation","mic",()=>{},true);
+                if(wrap && button.Content is System.Windows.Controls.StackPanel row)
+                {var children=row.Children.Cast<System.Windows.UIElement>().ToArray();row.Children.Clear();var grid=new System.Windows.Controls.Grid();foreach(var child in children)grid.Children.Add(child);button.Content=grid;}
+                AssistantControls.SetActionText(button,"End conversation");
+                var content=(System.Windows.Controls.Panel)button.Content;
+                Assert(content.Children[0] is System.Windows.Shapes.Path path && path.Fill!=null && path.Data.Bounds.Width>0 && path.Width==14);
+                AssistantControls.SetActionText(button,"Start conversation");
+                Assert(content.Children[0] is System.Windows.Controls.Viewbox);
+            }
+        });
         test("Settings backdrop gates and native errors are explicit and fail closed",()=>
         {
             var ready=new SettingsBackdrop.Conditions(true,false,true,false,false);int calls=0;

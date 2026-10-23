@@ -39,7 +39,13 @@ internal sealed class WeatherService : IDisposable
     private static readonly HttpClient client=new(){Timeout=TimeSpan.FromSeconds(15),MaxResponseContentBufferSize=1024*1024};
     private readonly Store store;
     private readonly CancellationTokenSource shutdown=new();
-    private Task<WeatherSnapshot>? pending;
+    private sealed class ForecastRequest
+    {
+        internal required CancellationTokenSource Cancellation;
+        internal required Task<WeatherSnapshot> Task;
+        internal int Users;
+    }
+    private ForecastRequest? pending;
     private string pendingKey="";
     internal WeatherSnapshot? Cached {get;private set;}
     internal DateTimeOffset LastAttempt {get;private set;}
@@ -52,18 +58,32 @@ internal sealed class WeatherService : IDisposable
         if(!doc.RootElement.TryGetProperty("results",out var results))return Array.Empty<WeatherPlace>();
         return results.EnumerateArray().Select(place=>new WeatherPlace(string.Join(", ",new[]{Text(place,"name"),Text(place,"admin1"),Text(place,"country")}.Where(v=>v.Length>0).Distinct()),Number(place,"latitude"),Number(place,"longitude"))).Where(p=>Math.Abs(p.Latitude)<=90 && Math.Abs(p.Longitude)<=180).ToArray();
     }
-    internal Task<WeatherSnapshot> Get(Settings s,bool force,CancellationToken token)
+    internal async Task<WeatherSnapshot> Get(Settings s,bool force,CancellationToken token)
     {
-        string key=Key(s);if(key.Length==0)throw new InvalidOperationException("Choose a city first.");
-        if(!force && Cached is {} saved && saved.Key==key && DateTimeOffset.UtcNow-saved.Updated<TimeSpan.FromMinutes(20))return Task.FromResult(saved);
-        if(pending is {IsCompleted:false} && pendingKey==key)return pending.WaitAsync(token);
-        pendingKey=key;LastAttempt=DateTimeOffset.UtcNow;pending=Download(s.WeatherLatitude!.Value,s.WeatherLongitude!.Value,s.WeatherUnits,key);return pending.WaitAsync(token);
+        token.ThrowIfCancellationRequested();string key=Key(s);if(key.Length==0)throw new InvalidOperationException("Choose a city first.");
+        if(!force && Cached is {} saved && saved.Key==key && DateTimeOffset.UtcNow-saved.Updated<TimeSpan.FromMinutes(20))return saved;
+        var request=pending;
+        if(request==null || request.Task.IsCompleted || request.Cancellation.IsCancellationRequested || pendingKey!=key)
+        {
+            pendingKey=key;LastAttempt=DateTimeOffset.UtcNow;var cancellation=CancellationTokenSource.CreateLinkedTokenSource(shutdown.Token);
+            request=new(){Cancellation=cancellation,Task=Download(s.WeatherLatitude!.Value,s.WeatherLongitude!.Value,s.WeatherUnits,key,cancellation.Token)};pending=request;
+        }
+        request.Users++;
+        try{return await request.Task.WaitAsync(token);}
+        finally
+        {
+            if(--request.Users==0)
+            {
+                if(!request.Task.IsCompleted)request.Cancellation.Cancel();
+                request.Cancellation.Dispose();if(ReferenceEquals(pending,request))pending=null;
+            }
+        }
     }
-    private async Task<WeatherSnapshot> Download(double lat,double lon,string units,string key)
+    private async Task<WeatherSnapshot> Download(double lat,double lon,string units,string key,CancellationToken token)
     {
         string coordinates=FormattableString.Invariant($"latitude={lat}&longitude={lon}");
         string url="https://api.open-meteo.com/v1/forecast?"+coordinates+"&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code,is_day,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=2&temperature_unit="+(units=="Fahrenheit"?"fahrenheit":"celsius");
-        using var doc=await Fetch(url,shutdown.Token);var root=doc.RootElement;var current=root.GetProperty("current");var daily=root.GetProperty("daily");var hourly=root.GetProperty("hourly");
+        using var doc=await Fetch(url,token);var root=doc.RootElement;var current=root.GetProperty("current");var daily=root.GetProperty("daily");var hourly=root.GetProperty("hourly");
         var snapshot=new WeatherSnapshot{Key=key,Updated=DateTimeOffset.UtcNow,Temperature=Number(current,"temperature_2m"),FeelsLike=Number(current,"apparent_temperature"),Wind=Number(current,"wind_speed_10m"),Humidity=Number(current,"relative_humidity_2m"),Code=(int)Number(current,"weather_code"),Day=Number(current,"is_day")==1,High=At(daily,"temperature_2m_max",0),Low=At(daily,"temperature_2m_min",0),RainChance=At(daily,"precipitation_probability_max",0),Sunrise=daily.GetProperty("sunrise")[0].GetString()??"",Sunset=daily.GetProperty("sunset")[0].GetString()??""};
         string now=Text(current,"time");var times=hourly.GetProperty("time");
         for(int i=0;i<times.GetArrayLength() && snapshot.Hours.Count<6;i++)
@@ -71,7 +91,7 @@ internal sealed class WeatherService : IDisposable
             string time=times[i].GetString()??"";if(string.CompareOrdinal(time,now)<0)continue;
             snapshot.Hours.Add(new(){Time=time.Length>=16?time.Substring(11,5):time,Temperature=At(hourly,"temperature_2m",i),Code=(int)At(hourly,"weather_code",i),Day=At(hourly,"is_day",i)==1,RainChance=At(hourly,"precipitation_probability",i)});
         }
-        if(!shutdown.IsCancellationRequested && pendingKey==key){Cached=snapshot;try{store.Save("weather",snapshot);}catch(Exception ex){store.Log(ex);}}return snapshot;
+        if(!token.IsCancellationRequested && pendingKey==key){Cached=snapshot;try{store.Save("weather",snapshot);}catch(Exception ex){store.Log(ex);}}return snapshot;
     }
     private static async Task<JsonDocument> Fetch(string url,CancellationToken token)
     {

@@ -67,7 +67,7 @@ internal static class InteractionHotfixDiagnostics
         await RunTuckHide(app,island,check);
         await RunClassicMixer(app,island,check);
         var s=app.Settings;s.ReduceMotion=true;s.AnimationMs=700;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=false;s.HideFullscreen=s.HideMaximized=false;s.CompactLayout=true;
-        foreach(var widget in s.Widgets)widget.Enabled=false;foreach(var view in s.HoverViews)view.Enabled=true;foreach(var tool in s.Tools)tool.Enabled=true;
+        s.HoverFollowsWidgets=false;string[] legacyHover={"media","timer","focus","calendar","notes","files","system","clips","tasks","stopwatch"};foreach(var widget in s.Widgets)widget.Enabled=false;foreach(var view in s.HoverViews)view.Enabled=legacyHover.Contains(view.Id);foreach(var tool in s.Tools)tool.Enabled=true;
         app.ChangeSettings();island.Collapse();
         var settingsBefore=s.Widgets.Select(w=>(w.Id,w.Enabled)).ToArray();var hoverBefore=s.HoverViews.Select(w=>(w.Id,w.Enabled)).ToArray();
         Check("all ten configured pages remain available with every main widget hidden",island.HoverDeckIds.Length==10);
@@ -76,7 +76,7 @@ internal static class InteractionHotfixDiagnostics
             island.PreviewActivity();island.SelectPeek(id);await Task.Delay(40);
             Check("carousel selects "+id+" and excludes inactive pages from keyboard traversal",island.PeekPage==id && island.PeekTabSafe);
             island.OpenPeekPage();await Task.Delay(80);island.UpdateLayout();
-            string target=id switch{"system"=>"status","timer" or "focus" or "stopwatch"=>"focus","media"=>"media",_=>"tools"};
+            string target=id switch{"system"=>"status","timer" or "focus"=>"focus","stopwatch"=>"stopwatch","media"=>"media",_=>id};
             Check("click opens correct hidden full panel for "+id,island.IsExpanded && island.ActivePage==target && TargetVisible(id));
             if(id is "timer" or "system" or "notes")Capture(island,"hover-route-"+id);
             island.Collapse();await Task.Delay(40);

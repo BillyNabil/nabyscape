@@ -68,7 +68,7 @@ public static class ActivityActionsTests
         {
             using var awake=new KeepAwakeService(_=>1);using var service=new ActivityActionsService(store,new Countdown(),awake,()=>{},_=>{},_=>{},()=>now);
             var item=new ActivityDefinition{Name="Keep",Steps=new(){Open("site")}};Assert(service.Save(item));
-            Directory.CreateDirectory(Path.Combine(store.DirectoryPath,"activities.json.tmp"));item.Name="Changed";Assert(!service.Save(item));Assert(service.Definitions.Single().Name=="Keep");
+            using var locked=new FileStream(Path.Combine(store.DirectoryPath,"activities.json"),FileMode.Open,FileAccess.Read,FileShare.Read);item.Name="Changed";Assert(!service.Save(item));Assert(service.Definitions.Single().Name=="Keep");
         });
         Check("expired or manually replaced awake is not stopped; failed releases can retry",store=>
         {

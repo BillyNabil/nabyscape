@@ -57,8 +57,7 @@ internal static class PremiumExperienceDiagnostics
         {
             void Navigate(string page)=>typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(window,new object[]{page});
             Navigate("Appearance");await Task.Delay(70);Capture(window,"settings-appearance");
-            check("Appearance exposes ambient and interaction settings",Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Ambient movement") && Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Interaction feedback"));
-            check("New sections have dedicated visual examples",Diagnostics.Descendants(window).OfType<SettingsScene>().Any(c=>c.Section=="Ambient light"));
+
             var slider=Diagnostics.Descendants(window).OfType<Slider>().First(c=>c.IsVisible && c.IsLoaded);slider.ApplyTemplate();var thumb=((Track)slider.Template.FindName("PART_Track",slider)).Thumb;
             s.ReduceMotion=false;s.InteractionMotion="Expressive";app.ChangeSettings();thumb.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice,0){RoutedEvent=Mouse.MouseEnterEvent});await Task.Delay(190);
             check("Sliders provide hover feedback without changing their value",!Motion.Enabled || thumb.RenderTransform is ScaleTransform {ScaleX:>1.1});
@@ -66,12 +65,18 @@ internal static class PremiumExperienceDiagnostics
             check("Checkboxes animate their selection feedback",!Motion.Enabled || (toggle.Template.FindName("Knob",toggle)??toggle.Template.FindName("Ring",toggle)) is FrameworkElement ring && ring.RenderTransform.HasAnimatedProperties);
             s.InteractionMotion="Off";app.ChangeSettings();thumb.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice,0){RoutedEvent=Mouse.MouseLeaveEvent});await Task.Delay(190);check("Interaction Off restores the neutral thumb",thumb.RenderTransform is ScaleTransform {ScaleX:1});
             s.InteractionMotion="Subtle";s.ReduceMotion=true;app.ChangeSettings();
-            Navigate("Application");await Task.Delay(60);Capture(window,"settings-notifications");check("Application exposes notification presentation and quiet schedule",Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Notification animation") && Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Quiet hours start"));
+            Navigate("Ambience");await Task.Delay(60);
+            check("Ambience exposes movement",Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Ambient movement"));
+            Diagnostics.ExpandSettingsExamples(window,"Ambient light");
+            check("Ambient example is rendered",Diagnostics.SettingsExamples(window).Any(c=>c.Section=="Ambient light" && c.ActualWidth>0 && c.ActualHeight>0));Capture(window,"settings-ambience");
+            Navigate("Motion");await Task.Delay(60);check("Motion exposes interaction feedback",Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Interaction feedback"));
+            Navigate("Notifications");await Task.Delay(60);Capture(window,"settings-notifications");check("Notifications exposes presentation and quiet schedule",Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Notification animation") && Diagnostics.Descendants(window).OfType<ComboBox>().Any(c=>AutomationProperties.GetName(c)=="Quiet hours start"));
             Navigate("AI");await Task.Delay(60);
-            var presets=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>ReferenceEquals(c.ItemsSource,AssistantProviderCatalog.Presets));presets.SelectedItem="Hermes Agent";
+            var presets=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>ReferenceEquals(c.ItemsSource,AssistantProviderCatalog.Presets));Diagnostics.Descendants(window).OfType<AssistantProviderSettings>().Single().RevealSetupTarget(presets);presets.SelectedItem="Hermes Agent";
             Diagnostics.Descendants(window).OfType<Button>().Single(b=>AutomationProperties.GetName(b)=="Add provider").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(60);
             check("Hermes preset fills its agent alias and local gateway",app.Assistant.Options.Providers.Any(p=>p.Backend=="Hermes" && p.Model=="hermes-agent" && p.BaseUrl.Contains(":8642/v1/")));
-            check("Hermes connection UI distinguishes backend permissions",Diagnostics.Descendants(window).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text.Contains("own permissions")));Capture(window,"settings-hermes");
+            window.OpenAiHermesSettings();await Task.Delay(100);
+            check("Hermes connection UI distinguishes backend permissions",Diagnostics.Descendants(window).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text.Contains("skills, memory, tools and permissions")));Capture(window,"settings-hermes");
         }
         finally{window.Close();}
 

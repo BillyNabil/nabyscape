@@ -38,6 +38,7 @@ internal static class LyricTiming
     }
     internal static int Index(IReadOnlyList<LyricLine> lines,double seconds)
     {int low=0,high=lines.Count-1,result=-1;while(low<=high){int middle=(low+high)/2;if(lines[middle].At<=seconds){result=middle;low=middle+1;}else high=middle-1;}return result;}
+    internal static bool CanUse(MediaService media)=>media.Available && !string.IsNullOrWhiteSpace(media.Title) && !string.IsNullOrWhiteSpace(media.Artist) && media.Artist!=media.Selected?.SourceAppUserModelId && media.Timeline().duration>0;
     internal static bool IsSpotify(string? source)=>source?.Contains("spotify",StringComparison.OrdinalIgnoreCase)==true;
 }
 
@@ -50,15 +51,22 @@ internal sealed class LyricsService : IDisposable
     private CancellationTokenSource? pending;
     private string key="";
     private bool disposed;
+    private readonly HashSet<object> consumers=new();
+    internal void Acquire(object owner)=>consumers.Add(owner);
+    internal void Release(object owner)
+    {
+        if(!consumers.Remove(owner) || consumers.Count>0)return;
+        Cancel();key="";cache.Clear();Set(new(Array.Empty<LyricLine>(),"Lyrics are off."));
+    }
     internal LyricResult Result {get;private set;}=new(Array.Empty<LyricLine>(),"Lyrics are off.");
     internal event Action? Changed;
     private static string TrackKey(string title,string artist,double duration)=>title+"\n"+artist+"\n"+Math.Round(duration);
     internal LyricsService(HttpMessageHandler? handler=null)
     {client=new(handler??new HttpClientHandler{AllowAutoRedirect=false,UseCookies=false}){Timeout=TimeSpan.FromSeconds(8)};client.DefaultRequestHeaders.UserAgent.ParseAdd("NabyScape/2.7.0 (+https://github.com/BillyNabil/nabyscape)");}
-    internal async Task Load(string title,string artist,double duration,bool enabled,bool spotify)
+    internal async Task Load(string title,string artist,double duration,bool enabled,bool compatible)
     {
         if(disposed)return;
-        if(!enabled || !spotify){Cancel();key="";Set(new(Array.Empty<LyricLine>(),enabled?"Select Spotify to show lyrics.":"Lyrics are off."));return;}
+        if(!enabled || !compatible){Cancel();key="";Set(new(Array.Empty<LyricLine>(),enabled?"Choose a music session with a title, artist and playback timeline.":"Lyrics are off."));return;}
         string next=TrackKey(title,artist,duration);if(next==key)return;Cancel();key=next;
         if(cache.TryGetValue(next,out var found)){Set(found);return;}
         var request=new CancellationTokenSource();pending=request;Set(new(Array.Empty<LyricLine>(),"Finding synced lyrics…"));

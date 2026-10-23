@@ -7,12 +7,14 @@ namespace NabyScape;
 // this WMI provider remain unsupported; there are no writes or polling fallback.
 public sealed class BrightnessService : IDisposable
 {
+    private bool attempted;
     private ManagementEventWatcher? watcher;
     public string Status {get;private set;}="Brightness feedback unavailable on this display";
     public event Action<int>? Changed;
     public void Start(bool enabled=true)
     {
-        if(!enabled){Status="Brightness events disabled during diagnostics";return;}
+        if(!enabled){Dispose();attempted=false;Status="Brightness feedback off";return;}
+        if(watcher!=null || attempted)return;attempted=true;
         try
         {
             using var query=new ManagementObjectSearcher(@"root\WMI","SELECT InstanceName FROM WmiMonitorBrightness");

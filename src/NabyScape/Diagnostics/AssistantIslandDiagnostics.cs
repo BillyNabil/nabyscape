@@ -29,7 +29,7 @@ internal static class AssistantIslandDiagnostics
     internal static async Task Run(App app,OverlayWindow island,string directory,Action<string,bool> check)
     {
         var ai=app.Assistant;var s=app.Settings;s.Width=327;s.Height=36;s.PanelWidth=526;s.PanelMaxHeight=417;s.HoverWidth=447;s.HoverHeight=207;s.PanelScale=1.04;s.HideMaximized=s.HideFullscreen=false;app.ChangeSettings();
-        var desktop=new FixtureDesktop();typeof(AssistantDesktop).GetField("backend",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai.Desktop,desktop);
+        var desktop=new FixtureDesktop();typeof(AssistantDesktop).GetField("fixture",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai.Desktop,desktop);
         T Field<T>(object target,string name)=>(T)target.GetType().GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(target)!;
         void Invoke(string name,params object[] args)=>typeof(OverlayWindow).GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(island,args);
         AssistantDiagnostics.FixtureVoice LiveVoice()
@@ -59,7 +59,7 @@ internal static class AssistantIslandDiagnostics
         await Task.Delay(300);Capture("island-normal-hover");island.Collapse();await Task.Delay(300);
         island.PreviewAssistant();await Task.Delay(350);
         check("Hover reveals the character and Chat/Talk inside the same island",island.AssistantPeeking && island.IsPeeking && !island.IsExpanded && island.PaintedHeight<=190.1 && Button("Chat here").IsVisible);
-        check("AI hover has no voice or screen side effects",!ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
+        check("AI hover has no voice or screen side effects",!ai.VoiceConnected && !ai.Desktop.Sharing);
         Capture("island-ai-hover");
         typeof(OverlayWindow).GetMethod("BeginFileDrop",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(island,null);
         check("Shelf drag takes priority over the AI hover",!island.AssistantPeeking && island.PeekPage=="files");
@@ -95,12 +95,9 @@ internal static class AssistantIslandDiagnostics
         await Task.Delay(350);
         check("A new reply can emerge from the closed island without opening a window",island.AssistantPeeking && app.Windows.Count==windows && !island.IsExpanded);
         Capture("island-ai-reply");
-        ai.Options.Providers.Add(new(){Name="Fixture",Model="fixture",Tools=true});ai.Options.SelectedProvider=ai.Options.Providers[0].Id;ai.SetActions(true);island.OpenAssistant(false);await Task.Delay(150);
+        ai.Options.Providers.Add(new(){Name="Fixture",Model="fixture",Tools=true});ai.Options.SelectedProvider=ai.Options.Providers[0].Id;island.OpenAssistant(false);await Task.Delay(150);
         var send=Button("Send");string retainedDraft=editor.Text;editor.Clear();check("Empty messages keep Send disabled",!send.IsEnabled);editor.Text=retainedDraft;check("Typing enables Send without changing the draft",send.IsEnabled);
         check("Composer removes the redundant keyboard hint",!Diagnostics.Descendants(view).OfType<TextBlock>().Any(t=>t.Text.StartsWith("Enter ")));Capture("island-ai-refined-composer");
-        var approval=ai.Execute(new("inline-review","nabyscape","{\"action\":\"timer_start\",\"seconds\":60}"),default);await Task.Delay(200);
-        check("Reviewed actions stay inside the island without a dialog",ai.Pending?.Id=="inline-review" && Button("Run once").IsVisible && app.Windows.Count==windows && !app.Session.Timer.Running);
-        Capture("island-ai-review");ai.Decide(false);await approval;
         var live=LiveVoice();
         island.Collapse();await Task.Delay(250);
         check("Collapsing inline chat keeps a live session with a visible microphone indicator",ai.VoiceConnected && !live.Stopped && character.IsVisible && closedOrb.Live);
@@ -125,44 +122,50 @@ internal static class AssistantIslandDiagnostics
         app.Productivity.AddFiles(new[]{droppedPath});Invoke("FinishFileDrop",true);
         check("An accepted tucked live file drop stages the fixture and keeps files visible",app.Productivity.Shelf.Any(item=>item.Path==droppedPath) && island.IsPeeking && island.PeekPage=="files" && !island.AssistantPeeking && !island.IsTucked && ai.VoiceConnected && !live.Stopped);
         s.AlwaysTucked=false;app.ChangeSettings();
-        island.OpenAssistant(false);ai.Desktop.Start("fixture",IntPtr.Zero);ai.Desktop.ControlEnabled=true;int stopsBefore=desktop.Stops;bool closeCanceled=false;System.ComponentModel.CancelEventHandler closing=(_,e)=>closeCanceled=e.Cancel;island.Closing+=closing;island.Close();island.Closing-=closing;await Task.Delay(150);
-        check("The actual Closing path cancels close, manually hides and stops fixture voice, screen and control",closeCanceled && island.UserHidden && !island.IsVisible && app.Windows.Cast<Window>().Contains(island) && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && !ai.Desktop.ControlEnabled && desktop.Stops>stopsBefore);
-        island.ToggleVisibility();live=LiveVoice();island.OpenAssistant(false);ai.Desktop.Start("fixture",IntPtr.Zero);ai.Desktop.ControlEnabled=true;
+        island.OpenAssistant(false);ai.Desktop.Start("fixture",IntPtr.Zero);int stopsBefore=desktop.Stops;bool closeCanceled=false;System.ComponentModel.CancelEventHandler closing=(_,e)=>closeCanceled=e.Cancel;island.Closing+=closing;island.Close();island.Closing-=closing;await Task.Delay(150);
+        check("The actual Closing path cancels close, manually hides and stops fixture voice, screen and control",closeCanceled && island.UserHidden && !island.IsVisible && app.Windows.Cast<Window>().Contains(island) && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && desktop.Stops>stopsBefore);
+        island.ToggleVisibility();live=LiveVoice();island.OpenAssistant(false);ai.Desktop.Start("fixture",IntPtr.Zero);
         var escape=new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(island)!,0,Key.Escape){RoutedEvent=Keyboard.PreviewKeyDownEvent};island.RaiseEvent(escape);await Task.Delay(150);
-        check("AI Escape stops fixture voice and screen sharing while leaving the island visible",escape.Handled && island.IsVisible && !island.AssistantOpen && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && !ai.Desktop.ControlEnabled);
+        check("AI Escape stops fixture voice and screen sharing while leaving the island visible",escape.Handled && island.IsVisible && !island.AssistantOpen && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing);
         live=LiveVoice();
         island.Collapse();island.ToggleVisibility();ai.Conversation.Record("assistant","A hidden island must stay hidden.");await Task.Delay(100);
         check("Replies respect manual hide, stop the live session and do not reveal the island",island.UserHidden && !island.IsVisible && !ai.VoiceConnected && live.Stopped && live.Disposed && !ai.Desktop.Sharing && !closedOrb.Rendering);
         island.ToggleVisibility();ai.SetIslandCharacter(false);await Task.Delay(100);
         check("Island character can be turned off independently",!character.IsVisible && !ai.Options.IslandCharacter && !ai.VoiceConnected);
         ai.SetIslandCharacter(true);island.Collapse();await Task.Delay(250);
-        check("Turning the character back on does not start capture",character.IsVisible && !ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
+        for(int retry=0;retry<20 && !character.IsVisible;retry++)await Task.Delay(50);
+        check("Re-enabled character returns after the exit transition",character.IsVisible);
+        check($"Turning the character back on does not start capture (visible={character.IsVisible}, voice={ai.VoiceConnected}, sharing={ai.Desktop.Sharing}, tucked={island.IsTucked}, peeking={island.IsPeeking})",!ai.VoiceConnected && !ai.Desktop.Sharing && ai.Options.IslandCharacter);
         check("Lifecycle checks used only fixture screen sessions with no capture or native input",desktop.Starts==2 && desktop.Captures==0 && desktop.Inputs==0);
         ai.Clear();
         app.ShowAssistantProviders();await Task.Delay(250);
         var settings=app.Windows.OfType<SettingsWindow>().Single();
         var providerEditor=Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single();
         check("Provider entry opens the AI category in the main Settings app",providerEditor.IsVisible && !app.Windows.OfType<AssistantProvidersWindow>().Any());
-        var model=Diagnostics.Descendants(providerEditor).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Chat model");model.Text="Unsaved fixture model";model.Select(2,4);
+        var modelChoice=Field<ComboBox>(providerEditor,"model");providerEditor.RevealSetupTarget(modelChoice);modelChoice.ApplyTemplate();
+        var model=(TextBox)modelChoice.Template.FindName("PART_EditableTextBox",modelChoice);model.Text="Unsaved fixture model";model.Select(2,4);
         typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Application"});settings.OpenAiSettings();await Task.Delay(150);
         check("AI settings preserve provider editing drafts across category navigation",ReferenceEquals(providerEditor,Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single()) && model.Text=="Unsaved fixture model" && model.SelectionStart==2 && model.SelectionLength==4);
+        providerEditor.RevealSetupTarget(modelChoice);connectionEditorForTest();
+        void connectionEditorForTest()=>Field<Expander>(providerEditor,"connectionEditor").IsExpanded=true;
         foreach(double width in new[]{1100d,600d})
         {
-            settings.Width=width;settings.Height=650;await Task.Delay(150);settings.UpdateLayout();
+            providerEditor.RevealSetupTarget(modelChoice);connectionEditorForTest();settings.Width=width;settings.Height=650;await Task.Delay(150);settings.UpdateLayout();
             check("Embedded AI settings keep connection fields inside the form at "+width,double.IsNaN(providerEditor.Height) && model.ActualWidth>100 && model.ActualWidth<settings.ActualWidth);
             if(width==600)
             {
                 var category=Diagnostics.Descendants(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Settings category");
-                typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Application"});bool first=category.SelectedItem?.ToString()=="Application";settings.OpenAiSettings();
-                check("Programmatic AI navigation keeps the compact category picker synchronized",first && category.SelectedItem?.ToString()=="AI");
+                typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Application"});bool first=category.SelectedItem?.ToString()=="General";settings.OpenAiSettings();
+                check("Programmatic AI navigation keeps the compact category picker synchronized",first && category.SelectedItem?.ToString()=="Naby AI");
             }
             var image=new RenderTargetBitmap((int)settings.ActualWidth,(int)settings.ActualHeight,96,96,PixelFormats.Pbgra32);image.Render(settings);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var file=File.Create(Path.Combine(directory,"settings-ai-"+width+".png"));png.Save(file);
         }
-        var password=Diagnostics.Descendants(providerEditor).OfType<PasswordBox>().Single();password.Password="fixture-only-unsaved-key";settings.Close();
-        check("Closing Settings clears the unsaved key without granting session capture",password.Password.Length==0 && !ai.VoiceConnected && !ai.Desktop.Sharing && !ai.ActionsAllowed);
+        var password=Field<PasswordBox>(providerEditor,"key");password.Password="fixture-only-unsaved-key";settings.Close();
+        check("Closing Settings clears the unsaved key without granting session capture",password.Password.Length==0 && !ai.VoiceConnected && !ai.Desktop.Sharing);
         ai.Options.Providers.Clear();ai.Options.SelectedProvider=ai.Options.SelectedVoiceProvider="";app.ShowAssistantProviders();await Task.Delay(100);
         settings=app.Windows.OfType<SettingsWindow>().Single();providerEditor=Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single();
-        check("First-run AI settings hide empty connection fields until a provider is added",Diagnostics.Descendants(providerEditor).OfType<Expander>().Single(e=>Equals(e.Header,"Provider connection")).Visibility==Visibility.Collapsed && !Diagnostics.Descendants(providerEditor).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Chat provider").IsEnabled);
+        var emptyConnection=Field<Expander>(providerEditor,"connectionEditor");var emptyProvider=Field<ComboBox>(providerEditor,"chatProvider");
+        check($"First-run AI settings hide empty connection fields until a provider is added (providers={ai.Options.Providers.Count}, visibility={emptyConnection.Visibility}, enabled={emptyProvider.IsEnabled})",emptyConnection.Visibility==Visibility.Collapsed && !emptyProvider.IsEnabled);
         settings.Close();
         File.WriteAllText(Path.Combine(directory,"capture-notes.txt"),"Actual WPF island render with synthetic conversation. No provider API, credential vault, microphone/speaker, desktop capture or native input used. A shared runtime drives closed character, hover greeting and inline chat. No separate Companion window is created by the tested entry point.");
         void Capture(string name)

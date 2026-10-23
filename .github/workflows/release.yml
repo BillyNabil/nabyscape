@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-dotnet@v6.0.0
         with:
           dotnet-version: 10.0.x
-      - name: Clean publish, test, package and hash
+      - name: Publish x64 and ARM64, run native-host checks, package and hash
         shell: pwsh
         run: ./tools/Build-Release.ps1 -Tag "$env:GITHUB_REF_NAME" -OutputDirectory "$env:RUNNER_TEMP/release"
       - name: Create draft only after checks; never overwrite an existing release
@@ -27,5 +27,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$env:GITHUB_REF_NAME" --repo "$env:GITHUB_REPOSITORY" --verify-tag --draft --generate-notes "$env:RUNNER_TEMP/release/NabyScape-win-x64-Setup.exe" "$env:RUNNER_TEMP/release/NabyScape-win-x64-Portable.zip" "$env:RUNNER_TEMP/release/NabyScape-Notices.zip" "$env:RUNNER_TEMP/release/SHA256SUMS"
+          gh release create "$env:GITHUB_REF_NAME" --repo "$env:GITHUB_REPOSITORY" --verify-tag --draft --generate-notes "$env:RUNNER_TEMP/release/NabyScape-win-x64-Setup.exe" "$env:RUNNER_TEMP/release/NabyScape-win-x64-Portable.zip" "$env:RUNNER_TEMP/release/NabyScape-win-arm64-Setup.exe" "$env:RUNNER_TEMP/release/NabyScape-win-arm64-Portable.zip" "$env:RUNNER_TEMP/release/NabyScape-Notices.zip" "$env:RUNNER_TEMP/release/SHA256SUMS"
           if ($LASTEXITCODE -ne 0) { throw 'Draft creation failed; existing releases are never changed.' }

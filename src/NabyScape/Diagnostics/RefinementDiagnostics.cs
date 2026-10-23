@@ -130,10 +130,10 @@ internal static class RefinementDiagnostics
                 Check(kind+" edge anchor is clamped onscreen",origin.X>=work.Left-2 && origin.Y>=work.Top-2 && origin.X+window.ActualWidth*dpi.DpiScaleX<=work.Right+2 && origin.Y+window.ActualHeight*dpi.DpiScaleY<=work.Bottom+2);
                 window.Close();
             }
-            settingsWindow=new SettingsWindow(app);settingsWindow.Show();await Settle();
+            settingsWindow=new SettingsWindow(app);settingsWindow.Show();Diagnostics.NavigateSettings(settingsWindow,"Appearance");await Settle();
             Fits("Appearance controls fit their scrolling form",settingsWindow);Capture(settingsWindow,Path.Combine(output,"settings-appearance.png"));
             var form=Tree(settingsWindow).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
-            var controlsHeading=Tree(settingsWindow).OfType<TextBlock>().Single(t=>t.Text=="Controls & outlines");controlsHeading.BringIntoView();await Settle();Capture(settingsWindow,Path.Combine(output,"settings-control-colors.png"));
+            var controlsHeading=Tree(settingsWindow).OfType<TextBlock>().Single(t=>t.Text=="Buttons & input fields");controlsHeading.BringIntoView();await Settle();Capture(settingsWindow,Path.Combine(output,"settings-control-colors.png"));
             form.ScrollToTop();Click(settingsWindow,"Preview Panel");
             var examples=Tree(settingsWindow).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Preview content");
             foreach(string example in new[]{"Control colors","Typography","Panel navigation","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard"})
@@ -171,6 +171,7 @@ internal static class RefinementDiagnostics
             FrameworkElement host=root;
             for(var parent=VisualTreeHelper.GetParent(control);parent!=null;parent=VisualTreeHelper.GetParent(parent))if(parent is ScrollContentPresenter presenter){host=presenter;break;}
             var bounds=control.TransformToAncestor(host).TransformBounds(new Rect(control.RenderSize));
+            if(host is ScrollContentPresenter && host.TemplatedParent is ScrollViewer horizontal && horizontal.HorizontalScrollBarVisibility!=ScrollBarVisibility.Disabled)continue;
             if(bounds.Left< -1 || bounds.Right>host.ActualWidth+1)failures.Add(AutomationProperties.GetName(control)+" "+bounds+" / "+host.ActualWidth);
         }
         return string.Join("; ",failures);

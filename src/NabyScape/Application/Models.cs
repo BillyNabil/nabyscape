@@ -121,18 +121,19 @@ public sealed partial class Settings
     };
     public static readonly Dictionary<string,string> Names = new()
     {
-        ["media"]="Media", ["volume"]="Volume", ["timer"]="Timer", ["stopwatch"]="Stopwatch", ["focus"]="Focus mode",
+        ["voice"]="Naby voice", ["media"]="Media", ["volume"]="Volume", ["timer"]="Timer", ["stopwatch"]="Stopwatch", ["focus"]="Focus mode",
         ["clock"]="Clock & date", ["system"]="System monitor", ["battery"]="Battery", ["shortcuts"]="Shortcuts",["tools"]="Everyday tools",
         ["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["weather"]="Weather"
     };
-    public static List<WidgetSetting> Defaults() => Names.Keys.Where(id=>id!="tools").Select(id => new WidgetSetting { Id=id,Enabled=id!="stopwatch" }).ToList();
+    public static List<WidgetSetting> Defaults() => Names.Keys.Where(id=>id!="tools").Select(id => new WidgetSetting { Id=id,Enabled=id is not ("stopwatch" or "voice") }).ToList();
     public void Normalize()
     {
+        NormalizeLanguageAccessibility();
         if(Array.IndexOf(SettingsBackdrop.Choices,SettingsMaterial)<0)SettingsMaterial="";
         if(NotificationDelivery is not ("Notch" or "Windows" or "Both" or "Off"))NotificationDelivery="Notch";
         DownloadsFolder??="";
         static double Clamp(double value,double min,double max,double fallback) => double.IsFinite(value) ? Math.Clamp(value,min,max) : fallback;
-        TuckEdge=Clamp(TuckEdge,3,12,6);
+        TuckEdge=Clamp(TuckEdge,0,12,6);
         if(TuckHotkeyKey==null || TuckHotkeyKey.Length!=1 || TuckHotkeyKey[0]<'A' || TuckHotkeyKey[0]>'Z')TuckHotkeyKey="T";
         if(TuckHotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))TuckHotkeyModifiers="Ctrl+Alt";
         Width=Clamp(Width,180,400,228); Height=Clamp(Height,28,72,32); Radius=Clamp(Radius,0,40,16);
@@ -151,8 +152,8 @@ public sealed partial class Settings
         if(VisibilityHotkeyKey==null || VisibilityHotkeyKey.Length!=1 || VisibilityHotkeyKey[0]<'A' || VisibilityHotkeyKey[0]>'Z')VisibilityHotkeyKey="H";
         if(VisibilityHotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))VisibilityHotkeyModifiers="Ctrl+Alt";
         if(SatelliteSource is not ("Auto" or "Countdown" or "CPU" or "RAM" or "Calendar" or "Clock"))SatelliteSource="Auto";
-        if(ClosedMediaContent is not ("Title" or "Waveform"))ClosedMediaContent="Title";
-        if(ClosedMediaIcon is not ("Waveform" or "Artwork"))ClosedMediaIcon="Waveform";
+        if(ClosedMediaContent is not ("Title" or "Waveform" or "Lyrics" or "None"))ClosedMediaContent="Title";
+        if(ClosedMediaIcon is not ("Waveform" or "Artwork" or "None"))ClosedMediaIcon="Waveform";
         if(CategoryStyle is not ("IconsLabels" or "Icons" or "Text" or "Dots"))CategoryStyle="IconsLabels";
         if(LaunchStyle is not ("IconsLabels" or "Icons" or "Text"))LaunchStyle="IconsLabels";
         RecentColors=(RecentColors??new()).Where(ValidColor).Distinct(StringComparer.OrdinalIgnoreCase).Take(8).ToList();
@@ -170,7 +171,7 @@ public sealed partial class Settings
             bool enabled=Widgets[legacy].Enabled;Widgets.RemoveAt(legacy);
             foreach(var tool in Tools)if(!Widgets.Any(w=>w.Id==tool.Id))Widgets.Insert(legacy++,new(){Id=tool.Id,Enabled=enabled && tool.Enabled});
         }
-        foreach(var id in Names.Keys.Where(id=>id!="tools")) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id=="weather" || id!="stopwatch" && !ToolNames.ContainsKey(id)});
+        foreach(var id in Names.Keys.Where(id=>id!="tools")) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id=="weather" || id is not ("stopwatch" or "voice") && !ToolNames.ContainsKey(id)});
         // Legacy availability also gates hover pages. Hiding a main-panel widget
         // must not remove an independently enabled hover page.
         foreach(var tool in Tools)tool.Enabled|=Widgets.Any(w=>w.Id==tool.Id && w.Enabled);
@@ -231,34 +232,13 @@ public sealed partial class Store
     }
     private static T Fresh<T>() where T:new()=>typeof(T)==typeof(Settings)?(T)(object)FactoryDefaults.Create():new T();
     public T Load<T>(string name) where T:new()
-    {
-        var file=Path.Combine(DirectoryPath,name+".json");
-        if(!File.Exists(file)) return Fresh<T>();
-        try
-        {
-            using var document=JsonDocument.Parse(File.ReadAllText(file));
-            var value=document.RootElement.Deserialize<T>(Options) ?? Fresh<T>();
-            if(value is Settings settings && !settings.CompactLayout)
-            {
-                // Older classic profiles predate the configurable panel dimensions.
-                if(!document.RootElement.TryGetProperty(nameof(Settings.PanelWidth),out _)) settings.PanelWidth=452;
-                if(!document.RootElement.TryGetProperty(nameof(Settings.PanelMaxHeight),out _)) settings.PanelMaxHeight=634;
-            }
-            return value;
-        }
-        catch(Exception ex) when(ex is JsonException or IOException or UnauthorizedAccessException)
-        {
-            Warning="Settings could not be read. Defaults were loaded and the original file was preserved.";
-            try { File.Copy(file,file+".backup-"+DateTime.Now.ToString("yyyyMMddHHmmss"),true); } catch { }
-            return Fresh<T>();
-        }
-    }
+        =>LoadDocument<T>(name);
     public void Save<T>(string name,T value)
-    {
-        var file=Path.Combine(DirectoryPath,name+".json");
-        File.WriteAllText(file+".tmp",JsonSerializer.Serialize(value,Options));
-        File.Move(file+".tmp",file,true);
-    }
+        =>SaveDocument(name,value);
     public void Log(Exception ex)
-    { try { File.AppendAllText(Path.Combine(DirectoryPath,"errors.log"),DateTimeOffset.Now+" "+ex+Environment.NewLine); } catch { } }
+    {
+        PrivateDiagnostics.Record(DiagnosticStage.Application,PrivateDiagnostics.Classify(ex));
+        // This existing local log can contain private details. It is NEVER part of a diagnostics report.
+        try { File.AppendAllText(Path.Combine(DirectoryPath,"errors.log"),DateTimeOffset.Now+" "+ex+Environment.NewLine); } catch { }
+    }
 }

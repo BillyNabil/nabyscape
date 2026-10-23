@@ -12,20 +12,33 @@ internal static class SelfTests
     {
         var checks=new List<string>();int failed=0;
         int reportAt=Array.IndexOf(args,"--report");string? progressPath=reportAt>=0 && reportAt+1<args.Length?args[reportAt+1]+".progress":null;
+        int filterAt=Array.IndexOf(args,"--test-filter");string? filter=filterAt>=0 && filterAt+1<args.Length?args[filterAt+1]:null;
         void Test(string name,Action test)
-        {if(progressPath!=null)File.WriteAllText(progressPath,name);try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
+        {if(filter!=null && !name.Contains(filter,StringComparison.OrdinalIgnoreCase))return;if(progressPath!=null)File.WriteAllText(progressPath,name);try{test();checks.Add("PASS  "+name);}catch(Exception ex){failed++;checks.Add("FAIL  "+name+": "+ex.Message);}}
         static void Assert(bool condition,string reason="Assertion failed") {if(!condition)throw new Exception(reason);}
+        void Finish()
+        {
+            if(checks.Count==0){failed++;checks.Add("FAIL  No tests matched the requested filter.");}
+            checks.Add($"RESULT: {checks.Count-failed} passed, {failed} failed");
+            checks.AddRange(AssistantCaptureTests.Evidence);
+            if(reportAt>=0 && reportAt+1<args.Length)File.WriteAllLines(args[reportAt+1],checks);
+            Environment.ExitCode=failed==0?0:1;
+        }
+        if(Array.Exists(args,a=>a=="--capture-optimization-tests-only"))
+        {AssistantCaptureTests.Run(Test);Finish();return;}
         Test("Factory layout matches the selected daily appearance without personal content or consent",()=>
         {
             var s=FactoryDefaults.Create();
-            Assert(s.Width==327 && s.Height==36 && s.PanelWidth==526 && s.PanelMaxHeight==417 && s.PanelScale==1.04 && s.HoverWidth==447 && s.HoverHeight==207);
-            Assert(s.GlassStrength==.58 && s.CategoryStyle=="Icons" && s.LaunchStyle=="Icons" && s.Performance=="Maksimal" && s.WheelAction=="pages" && s.HideMaximized && s.TuckEdge==9);
+            Assert(s.Width==400 && s.Height==41 && s.Radius==13 && s.PanelWidth==526 && s.PanelMaxHeight==417 && s.PanelScale==1.04 && s.HoverWidth==447 && s.HoverHeight==207);
+            Assert(!s.GlassStyle && s.GlassStrength==.99 && s.CategoryStyle=="Dots" && s.LaunchStyle=="Icons" && s.Performance=="Maksimal" && s.AnimationMs==400 && s.WheelAction=="pages" && s.HideMaximized && s.TuckEdge==2);
+            Assert(s.ClosedAmbient && s.AmbientScope=="Music only" && s.AmbientStrength==.2 && s.AmbientMotion=="Breathe" && s.WaveformSource=="Spectrum" && s.WaveformSensitivity==3);
             Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews && !s.ActivitySatellite && !s.ActivitiesEnabled);
             Assert(HoverPagePolicy.Pages(s).SequenceEqual(s.Widgets.Where(w=>w.Enabled && HoverPagePolicy.Ids.Contains(w.Id)).Select(w=>w.Id)));
-            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links" && s.Widgets.All(w=>w.Enabled));
+            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice" && s.Widgets.All(w=>w.Enabled!=(w.Id=="voice")));
+            Assert(s.AutoCheckUpdates && s.AutoDownloadUpdates);
             Assert(!s.ClipboardHistory && !s.AutoStart && !s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
             Assert(s.Shortcuts.Count==2 && s.Shortcuts[0].Target=="explorer.exe" && s.Shortcuts[1].Target=="ms-settings:");
-            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==16);
+            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==18);
         });
         Test("App resources retain installer notices, theme and icon after source relocation",()=>
         {
@@ -39,7 +52,10 @@ internal static class SelfTests
         });
         MinimalWidgetTests.Run(Test);ReactiveAmbientTests.Run(Test);PremiumExperienceTests.Run(Test);AssistantProviderTests.Run(Test);
         AssistantVoiceTests.Run(Test);
+        AssistantSpeechRemovalTests.Run(Test);
+        UxCompletionTests.Run(Test);
         AssistantCoreTests.Run(Test);
+        AssistantCaptureTests.Run(Test);
         Stage5Tests.Run((name,pass)=>Test("Stage5: "+name,()=>Assert(pass)));
         InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         WaveformMotionTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
@@ -51,6 +67,7 @@ internal static class SelfTests
         SettingsUxTests.Run(Test);
         InteractionHotfixTests.Run(Test);
         PersistenceTests.Run(Test);
+        ProductionFoundationTests.Run(Test);
         UpdateTests.Run(Test);
         NotificationDownloadTests.Run(Test);
         Test("Customization profiles round-trip without personal data or startup changes",()=>
@@ -147,7 +164,7 @@ internal static class SelfTests
             });
             Test("Malformed settings are backed up before recovery",()=>
             {
-                File.WriteAllText(Path.Combine(temp,"broken.json"),"{bad json");var s=store.Load<Settings>("broken");Assert(s.Width==327 && store.Warning!=null && Directory.GetFiles(temp,"broken.json.backup-*").Length>0);
+                File.WriteAllText(Path.Combine(temp,"broken.json"),"{bad json");var s=store.Load<Settings>("broken");Assert(s.Width==400 && store.Warning!=null && Directory.GetFiles(temp,"broken.json.backup-*").Length>0);
             });
             Test("Broken shortcut produces actionable failure",()=>
             {
@@ -157,9 +174,6 @@ internal static class SelfTests
             {bool threw=false;try{ShortcutService.Open(new(){Target="javascript:alert(1)"});}catch(ArgumentException){threw=true;}Assert(threw);});
         }
         finally { if(Directory.Exists(temp))Directory.Delete(temp,true); }
-        checks.Add($"RESULT: {checks.Count-failed} passed, {failed} failed");
-        var output=Array.IndexOf(args,"--report");
-        if(output>=0 && output+1<args.Length)File.WriteAllLines(args[output+1],checks);
-        Environment.ExitCode=failed==0?0:1;
+        Finish();
     }
 }

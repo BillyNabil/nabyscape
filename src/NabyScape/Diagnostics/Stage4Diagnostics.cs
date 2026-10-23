@@ -97,11 +97,11 @@ internal static class Stage4Diagnostics
         var window=new SettingsWindow(app);
         try
         {
-            window.Show();typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,new object[]{"Application"});await Task.Delay(150);
-            check("Stage4 distinct notification and download scenes",Diagnostics.Descendants(window).OfType<SettingsScene>().Count(s=>s.Section is "Downloads" or "Notifications")==2);
+            window.Show();typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(window,new object[]{"Notifications"});await Task.Delay(150);Diagnostics.ExpandSettingsExamples(window,"Notifications","Downloads");
+            check("Stage4 distinct notification and download scenes",Diagnostics.SettingsExamples(window).Count(s=>s.Section is "Downloads" or "Notifications")==2);
             foreach(string title in new[]{"Notifications","Downloads"})
             {
-                var scene=Diagnostics.Descendants(window).OfType<SettingsScene>().Single(s=>s.Section==title);scene.BringIntoView();await Task.Delay(100);Capture(window,"stage4-settings-"+title.ToLowerInvariant());
+                var scene=Diagnostics.SettingsExamples(window).Single(s=>s.Section==title);scene.BringIntoView();await Task.Delay(100);check("Stage4 rendered "+title,scene.ActualWidth>0 && scene.ActualHeight>0);Capture(window,"stage4-settings-"+title.ToLowerInvariant());
             }
             window.Width=580;window.Height=700;await Task.Delay(150);var folderButton=Diagnostics.Descendants(window).OfType<Button>().Single(b=>AutomationProperties.GetName(b)=="Choose folder…");folderButton.BringIntoView();await Task.Delay(150);Capture(window,"stage4-settings-narrow");
             var origin=folderButton.TransformToAncestor(window).Transform(new Point());check("Stage4 narrow folder controls contained",origin.X>=0 && origin.X+folderButton.ActualWidth<=window.ActualWidth+1);

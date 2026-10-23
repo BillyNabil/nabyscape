@@ -7,7 +7,7 @@ namespace NabyScape;
 internal static class AutoTuckPolicy
 {
     internal const double EdgeHeight=6;
-    internal static double Offset(double compactHeight,double edge=EdgeHeight)=>-Math.Max(0,compactHeight-Math.Clamp(edge,3,12));
+    internal static double Offset(double compactHeight,double edge=EdgeHeight)=>-Math.Max(0,compactHeight-Math.Clamp(edge,0,12));
     internal static bool ShouldTuck(bool requested,bool manuallyHidden,bool expanded,bool peeking,bool engaged)=>requested && !manuallyHidden && !engaged;
     internal static bool CanHover(bool manuallyHidden,bool requested,bool tucked)=>!manuallyHidden && requested && tucked;
 }
@@ -45,7 +45,7 @@ public sealed partial class OverlayWindow
     private void ApplyEnvironmentTuck(){if(TuckRequested && !userHidden && !expanded && !peeking)SetTucked(true);else if(!TuckRequested)SetTucked(false);}
     private void SetTucked(bool value)
     {
-        bool changed=tucked!=value;tucked=value;RefreshNoticeEdge();UpdateAmbientMotion();
+        bool changed=tucked!=value;tucked=value;ConfigureDisplayFollow();RefreshNoticeEdge();UpdateAmbientMotion();
         double destination=0,destinationX=0;
         if(value)
         {
@@ -69,6 +69,7 @@ public sealed partial class OverlayWindow
         if(!Motion.Enabled){tuckMotion.Dispose();tuckSlide.X=destinationX;tuckSlide.Y=destination;}
         else {tuckMotion.Go(tuckSlide,TranslateTransform.YProperty,destination,app.Settings.AnimationMs);tuckMotion.Go(tuckSlide,TranslateTransform.XProperty,destinationX,app.Settings.AnimationMs);}
         if(changed && !value)ConfigureLiveActivity();
+        if(changed && !value)RefreshIdleDock();
     }
     internal void RevealTuckedPreview()
     {

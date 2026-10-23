@@ -18,24 +18,23 @@ internal static class Stage6Diagnostics
         try
         {
             check("Stage6 legacy Settings surface stays solid and island glass remains enabled",window.MaterialResult.Actual=="Solid" && window.Background is SolidColorBrush brush && brush.Color==Color.FromRgb(17,18,20) && app.Settings.GlassStyle);
-            check("Stage6 distinct Settings material scene",Diagnostics.Descendants(window).OfType<SettingsScene>().Count(s=>s.Section=="Settings material")==1);
+            Diagnostics.ExpandSettingsExamples(window,"Settings material","Color & material");
+            check("Stage6 distinct Settings material scene",Diagnostics.SettingsExamples(window).Count(s=>s.Section=="Settings material")==1);
             var choice=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings material");
             // Exercise normal category navigation and the existing section-index scroll path.
             foreach(string category in new[]{"Layout","Appearance"})
-                Diagnostics.Descendants(window).OfType<Button>().Single(b=>System.Windows.Automation.AutomationProperties.GetName(b)==category).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Diagnostics.NavigateSettings(window,category);
             choice=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings material");
             check("Stage6 Appearance re-entry retains the material selector",choice.SelectedItem?.ToString()=="Solid");
-            var index=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings section index");
-            index.SelectedItem=index.Items.OfType<ComboBoxItem>().Single(item=>item.Content?.ToString()=="Settings material");await Task.Delay(300);
+            choice.BringIntoView();Diagnostics.ExpandSettingsExamples(window,"Settings material","Color & material");await Task.Delay(300);
             bool capture=Environment.GetCommandLineArgs().Contains("--stage6-capture");
             for(int cycle=0;cycle<2;cycle++)foreach(string material in SettingsBackdrop.Choices)
             {
                 if(cycle==1 && material==SettingsBackdrop.Choices[0])
                 {
-                    foreach(string category in new[]{"Layout","Appearance"})Diagnostics.Descendants(window).OfType<Button>().Single(b=>System.Windows.Automation.AutomationProperties.GetName(b)==category).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    foreach(string category in new[]{"Layout","Appearance"})Diagnostics.NavigateSettings(window,category);
                     choice=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings material");
-                    index=Diagnostics.Descendants(window).OfType<ComboBox>().Single(c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Settings section index");
-                    index.SelectedItem=index.Items.OfType<ComboBoxItem>().Single(item=>item.Content?.ToString()=="Settings material");await Task.Delay(300);
+                    choice.BringIntoView();Diagnostics.ExpandSettingsExamples(window,"Settings material","Color & material");await Task.Delay(300);
                     check("Stage6 repeated cycle follows Appearance re-entry",choice.SelectedItem?.ToString()==SettingsBackdrop.Requested(app.Settings));
                 }
                 choice.SelectedItem=material;await Task.Delay(800);window.UpdateLayout();var result=window.MaterialResult;
@@ -54,7 +53,9 @@ internal static class Stage6Diagnostics
                 if(capture)continue; // Capture production transitions without intrusive bitmap rendering between them.
                 // These are separate WPF-only checks, excluded from composed capture.
                 // acknowledgment so rendering them cannot mask a composed defect.
-                foreach(var scene in Diagnostics.Descendants(window).OfType<SettingsScene>().Where(s=>s.Section is "Settings material" or "Color & material"))
+                var scenes=Diagnostics.SettingsExamples(window).Where(s=>s.Section is "Settings material" or "Color & material").ToArray();
+                check("Stage6 both material examples rendered "+tag,scenes.Length==2 && scenes.All(s=>s.ActualWidth>0 && s.ActualHeight>0));
+                foreach(var scene in scenes)
                 {
                     int width=(int)Math.Ceiling(scene.ActualWidth),height=(int)Math.Ceiling(scene.ActualHeight);var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);bitmap.Render(scene);
                     var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));using(var file=File.Create(Path.Combine(directory,tag+"-"+(scene.Section=="Settings material"?"material":"island")+"-scene-wpf.png")))encoder.Save(file);

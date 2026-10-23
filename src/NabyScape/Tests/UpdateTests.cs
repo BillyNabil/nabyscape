@@ -12,6 +12,8 @@ internal static class UpdateTests
     private sealed class Fake(Func<HttpRequestMessage,CancellationToken,Task<HttpResponseMessage>> send):HttpMessageHandler
     {protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)=>send(request,token);}
     private static string Release(string? version=null,string host="https://github.com/BillyNabil/nabyscape",string name="NabyScape-win-x64-Setup.exe"){version??=Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion).ToString(3);return JsonSerializer.Serialize(new{tag_name="v"+version,html_url=host+"/releases/tag/v"+version,draft=false,prerelease=false,assets=new[]{new{name, browser_download_url=host+"/releases/download/v"+version+"/"+name,size=4},new{name="SHA256SUMS",browser_download_url=host+"/releases/download/v"+version+"/SHA256SUMS",size=100}}});}
+    private static OfficialUpdates IsolatedUpdates(Store store,HttpMessageHandler? transport=null,Action<string,Version>? inspect=null)
+        =>new(store,transport,inspect,Path.Combine(store.DirectoryPath,"updates"));
     internal static void Run(Action<string,Action> test)
     {
         static void Assert(bool pass){if(!pass)throw new Exception("Update fixture failed");}
@@ -40,26 +42,26 @@ internal static class UpdateTests
         {
             foreach(string mode in new[]{"offline","timeout","rate","redirect"})
             {
-                int calls=0;using var updates=new OfficialUpdates(store,new Fake((request,token)=>{calls++;if(mode=="offline")throw new HttpRequestException("offline");if(mode=="timeout")throw new TaskCanceledException();if(mode=="redirect")return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Found){Headers={Location=new Uri("https://evil.test/setup.exe")}});return Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests));}));
+                int calls=0;using var updates=IsolatedUpdates(store,new Fake((request,token)=>{calls++;if(mode=="offline")throw new HttpRequestException("offline");if(mode=="timeout")throw new TaskCanceledException();if(mode=="redirect")return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Found){Headers={Location=new Uri("https://evil.test/setup.exe")}});return Task.FromResult(new HttpResponseMessage(HttpStatusCode.TooManyRequests));}));
                 updates.Check(true).GetAwaiter().GetResult();Assert(!updates.Busy && updates.Available==null && updates.VerifiedSetup==null && calls<=2);
             }
         });
         Fixture("Updates duplicate checks and 24 hour state do not poll",store=>
         {
-            var pending=new TaskCompletionSource<HttpResponseMessage>();int calls=0;using var updates=new OfficialUpdates(store,new Fake((r,t)=>{calls++;return pending.Task;}));var first=updates.Check(true);updates.Check(true).GetAwaiter().GetResult();Assert(calls==1);pending.SetResult(Ok(Release()));first.GetAwaiter().GetResult();updates.Check(false).GetAwaiter().GetResult();Assert(calls==1 && File.Exists(Path.Combine(store.DirectoryPath,"update-state.json")));
-            using var next=new OfficialUpdates(store,new Fake((r,t)=>throw new Exception("Should not poll")));next.Check(false).GetAwaiter().GetResult();Assert(next.Status=="Ready to check for updates.");Assert(!CustomizationProfile.Export(new Settings()).Contains("AutoCheckUpdates"));
+            var pending=new TaskCompletionSource<HttpResponseMessage>();int calls=0;using var updates=IsolatedUpdates(store,new Fake((r,t)=>{calls++;return pending.Task;}));var first=updates.Check(true);updates.Check(true).GetAwaiter().GetResult();Assert(calls==1);pending.SetResult(Ok(Release()));first.GetAwaiter().GetResult();updates.Check(false).GetAwaiter().GetResult();Assert(calls==1 && File.Exists(Path.Combine(store.DirectoryPath,"update-state.json")));
+            using var next=IsolatedUpdates(store,new Fake((r,t)=>throw new Exception("Should not poll")));next.Check(false).GetAwaiter().GetResult();Assert(next.Status=="Ready to check for updates.");Assert(!CustomizationProfile.Export(new Settings()).Contains("AutoCheckUpdates"));
         });
         Fixture("Updates bad checksum and truncated downloads never become executable",store=>
         {
             foreach(bool truncated in new[]{false,true})
             {
-                using var updates=new OfficialUpdates(store,new Fake((r,t)=>Task.FromResult(Ok(r.RequestUri==OfficialUpdates.Endpoint?Release():r.RequestUri!.AbsolutePath.EndsWith("SHA256SUMS")?new string('A',64)+"  NabyScape-win-x64-Setup.exe":truncated?"abc":"abcd"))));updates.Check(true).GetAwaiter().GetResult();Assert(updates.Available?.Version==Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion));updates.Download().GetAwaiter().GetResult();Assert(updates.VerifiedSetup==null && updates.Status.Contains("failed") && !File.Exists(Path.Combine(store.DirectoryPath,"updates","NabyScape-Setup.exe.partial")));
+                using var updates=IsolatedUpdates(store,new Fake((r,t)=>Task.FromResult(Ok(r.RequestUri==OfficialUpdates.Endpoint?Release():r.RequestUri!.AbsolutePath.EndsWith("SHA256SUMS")?new string('A',64)+"  NabyScape-win-x64-Setup.exe":truncated?"abc":"abcd"))));updates.Check(true).GetAwaiter().GetResult();Assert(updates.Available?.Version==Stage3Diagnostics.Network.NextVersion(OfficialUpdates.InstalledVersion));updates.Download().GetAwaiter().GetResult();Assert(updates.VerifiedSetup==null && updates.Status.Contains("failed") && !File.Exists(Path.Combine(store.DirectoryPath,"updates","NabyScape-Setup.exe.partial")));
             }
         });
         Fixture("Updates successful fake download checksum verification and duplicate download exclusion",store=>
         {
             string hash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes("abcd")));var pending=new TaskCompletionSource<HttpResponseMessage>();int setupCalls=0,inspections=0;
-            using var updates=new OfficialUpdates(store,new Fake((r,t)=>
+            using var updates=IsolatedUpdates(store,new Fake((r,t)=>
             {
                 if(r.RequestUri==OfficialUpdates.Endpoint)return Task.FromResult(Ok(Release()));
                 if(r.RequestUri!.AbsolutePath.EndsWith("SHA256SUMS"))return Task.FromResult(Ok(hash+"  NabyScape-win-x64-Setup.exe"));

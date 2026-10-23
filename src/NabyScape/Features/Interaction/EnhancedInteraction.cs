@@ -69,6 +69,9 @@ public sealed partial class OverlayWindow
     }
     private void CyclePage(int direction)
     {var keys=compactTabs.Keys.ToArray();if(keys.Length==0)return;int i=Array.IndexOf(keys,activePage);SelectPage(keys[(i+direction+keys.Length)%keys.Length]);}
+    internal Func<IntPtr,int,uint,uint,bool>? DiagnosticHotkeyRegistration {get;set;}
+    private bool RegisterConfiguredHotkey(IntPtr window,int id,uint modifiers,uint key)
+        =>DiagnosticRun && DiagnosticHotkeyRegistration is {} registration?registration(window,id,modifiers,key):RegisterHotKey(window,id,modifiers,key);
     private void ConfigureHotkey()
     {
         if(hwnd==IntPtr.Zero)return;
@@ -77,9 +80,9 @@ public sealed partial class OverlayWindow
         if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);
         hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;HotkeyError=HotkeyPolicy.Conflict(app.Settings,"Panel");VisibilityHotkeyError=HotkeyPolicy.Conflict(app.Settings,"Visibility");TuckHotkeyError=HotkeyPolicy.Conflict(app.Settings,"Tuck");
         static uint Modifiers(string value)=>value switch{"Ctrl+Shift"=>6u,"Alt+Shift"=>5u,_=>3u};
-        if(app.Settings.HotkeyEnabled && HotkeyError.Length==0){hotkeyRegistered=RegisterHotKey(hwnd,HotkeyId,Modifiers(app.Settings.HotkeyModifiers)|0x4000,(uint)app.Settings.HotkeyKey[0]);if(!hotkeyRegistered)HotkeyError="Open / close hotkey is in use. Choose another combination in Settings.";}
-        if(app.Settings.VisibilityHotkeyEnabled && VisibilityHotkeyError.Length==0){visibilityHotkeyRegistered=RegisterHotKey(hwnd,VisibilityHotkeyId,Modifiers(app.Settings.VisibilityHotkeyModifiers)|0x4000,(uint)app.Settings.VisibilityHotkeyKey[0]);if(!visibilityHotkeyRegistered)VisibilityHotkeyError="Hide / show hotkey is in use. Choose another combination in Settings.";}
-        if(app.Settings.TuckHotkeyEnabled && TuckHotkeyError.Length==0){tuckHotkeyRegistered=RegisterHotKey(hwnd,TuckHotkeyId,Modifiers(app.Settings.TuckHotkeyModifiers)|0x4000,(uint)app.Settings.TuckHotkeyKey[0]);if(!tuckHotkeyRegistered)TuckHotkeyError="Tuck hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.HotkeyEnabled && HotkeyError.Length==0){hotkeyRegistered=RegisterConfiguredHotkey(hwnd,HotkeyId,Modifiers(app.Settings.HotkeyModifiers)|0x4000,(uint)app.Settings.HotkeyKey[0]);if(!hotkeyRegistered)HotkeyError="Open / close hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.VisibilityHotkeyEnabled && VisibilityHotkeyError.Length==0){visibilityHotkeyRegistered=RegisterConfiguredHotkey(hwnd,VisibilityHotkeyId,Modifiers(app.Settings.VisibilityHotkeyModifiers)|0x4000,(uint)app.Settings.VisibilityHotkeyKey[0]);if(!visibilityHotkeyRegistered)VisibilityHotkeyError="Hide / show hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.TuckHotkeyEnabled && TuckHotkeyError.Length==0){tuckHotkeyRegistered=RegisterConfiguredHotkey(hwnd,TuckHotkeyId,Modifiers(app.Settings.TuckHotkeyModifiers)|0x4000,(uint)app.Settings.TuckHotkeyKey[0]);if(!tuckHotkeyRegistered)TuckHotkeyError="Tuck hotkey is in use. Choose another combination in Settings.";}
     }
 
     private void AutomaticActivity(string kind,string heading,string detail)
@@ -127,11 +130,11 @@ public sealed partial class OverlayWindow
     private void UpdateAmbientMotion()
     {
         var s=app.Settings;
-        bool Includes(string id)=>AmbientPolicy.Includes(s,id);
+        bool Includes(string id)=>AmbientPolicy.Includes(s,id,app.Media.SourceDisabled);
         bool allowed=!noticeShowing && (assistantOpen || assistantPeeking?Includes("ai"):commandOpen || activitiesOpen?Includes("shortcuts"):expanded?
             PanelWidgets.Any(w=>(!s.CompactLayout || PageFor(w.Id)==activePage) && Includes(w.Id)):
             peeking?Includes(peekId):Includes("closed"));
-        allowed &= (expanded || peeking || s.ClosedAmbient) && !IsTucked && !userHidden;
+        allowed &= (expanded || peeking || s.ClosedAmbient && !IdleContent) && !IsTucked && !userHidden;
         bool quiet=IsTucked || !expanded && !peeking;
         surface.Fill=quiet?Brushes.Black:UI.Brush(s.Background);surface.GlassStyle=!quiet && s.GlassStyle;
         if(quiet)surface.AlbumTint=Colors.Transparent;

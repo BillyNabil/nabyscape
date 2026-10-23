@@ -26,6 +26,7 @@ internal sealed class MediaControls : Grid
     private readonly Func<FrameworkElement> volumeContent;
     private string kind="",sourceSignature="",iconKey="",levelIconKey="";
     private Button? anchor;
+    internal event Action? LayoutRequested;
     internal bool IsOpen=>kind.Length>0;
     internal string OpenKind=>kind;
     internal Border Popover=>popover;
@@ -61,7 +62,7 @@ internal sealed class MediaControls : Grid
         string signature=string.Join("\n",choices.Select(item=>item.Id+"\t"+item.Name))+"\nselected:"+id;
         if(IsOpen && kind=="source" && signature!=sourceSignature)Close(popover.IsKeyboardFocusWithin);
         sourceSignature=signature;sourceName.Text=current?.Name??"Media";sourceName.MaxWidth=Math.Max(48,ActualWidth-145);sourceName.TextTrimming=TextTrimming.CharacterEllipsis;
-        source.ToolTip=current!=null?"Media source · "+current.Name:"Play media in an app to select its session";
+        source.ToolTip=id==MediaSourceSelection.NoneId?"None · media stays hidden until you choose Auto or an app":id==MediaSourceSelection.AutoId?"Auto · follows the current Windows media app":current!=null?"Media source · "+current.Name:"Play media in an app to select its session";
         string key=current?.Id??"";if(key!=iconKey || sourceIcon.Children.Count==0){iconKey=key;sourceIcon.Children.Clear();sourceIcon.Children.Add(SourceGlyph(key));}
     }
     internal void Toggle(string next)
@@ -74,25 +75,26 @@ internal sealed class MediaControls : Grid
         {
             var list=new StackPanel();var heading=UI.Text("Media source",11,UI.Muted);heading.Margin=new(3,0,0,8);list.Children.Add(heading);
             var choices=sources();
-            if(choices.Count==0){var empty=UI.Text("No active media sessions.\nPlay something in Spotify or your browser.",11,UI.Muted);empty.Margin=new(3,6,3,6);list.Children.Add(empty);}
+            if(!choices.Any(choice=>choice.Id!=MediaSourceSelection.NoneId && choice.Id!=MediaSourceSelection.AutoId)){var empty=UI.Text("No active media sessions.\nPlay something in Spotify or your browser.",11,UI.Muted);empty.Margin=new(3,6,3,6);list.Children.Add(empty);}
             foreach(var item in choices)
             {
                 var button=UI.Button("Use media source "+item.Name,()=>{Close(false);item.Select();source.Focus();});button.Padding=new(6);button.Margin=new(0);button.Background=item.Id==selected()?UI.Brush("#24262B"):Brushes.Transparent;button.HorizontalContentAlignment=HorizontalAlignment.Stretch;
+                if(item.Id==MediaSourceSelection.NoneId)button.ToolTip="Show idle, focus or timer activity. Playback in other apps continues.";else if(item.Id==MediaSourceSelection.AutoId)button.ToolTip="Automatically follow the current Windows media app.";
                 var row=new DockPanel{LastChildFill=true};var check=UI.Text(item.Id==selected()?"✓":"",14);check.Width=22;check.HorizontalAlignment=HorizontalAlignment.Right;DockPanel.SetDock(check,Dock.Right);row.Children.Add(check);
                 var glyph=SourceGlyph(item.Id);glyph.Margin=new(0,0,10,0);DockPanel.SetDock(glyph,Dock.Left);row.Children.Add(glyph);var name=UI.Text(item.Name,12);name.TextTrimming=TextTrimming.CharacterEllipsis;name.TextWrapping=TextWrapping.NoWrap;row.Children.Add(name);button.Content=row;AutomationProperties.SetItemStatus(button,item.Id==selected()?"Selected":"Available");list.Children.Add(button);
             }
             popover.Child=new ScrollViewer{Content=list,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
         }
-        UI.Named(popover,next=="source"?"Media source popover":"Volume popover");popover.Visibility=Visibility.Visible;Place();
+        UI.Named(popover,next=="source"?"Media source popover":"Volume popover");popover.Visibility=Visibility.Visible;Place();LayoutRequested?.Invoke();
         var move=new TranslateTransform(0,Motion.Enabled?5:0);popover.RenderTransform=move;Motion.To(move,TranslateTransform.YProperty,0,180);popover.Opacity=Motion.Enabled?0:1;
         Motion.Fade(popover,1,220,completed:()=>{if(popover.RenderTransform==move){move.BeginAnimation(TranslateTransform.YProperty,null);popover.BeginAnimation(OpacityProperty,null);}});
-        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,()=>{if(IsOpen && popover.IsVisible)popover.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));});
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,()=>{if(IsOpen && popover.IsVisible){UpdateLayout();popover.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));UpdateLayout();popover.BringIntoView();}});
     }
     internal bool Close(bool restoreFocus=true)
     {
         if(!IsOpen)return false;kind="";popover.Visibility=Visibility.Collapsed;popover.Child=null;
         popover.BeginAnimation(OpacityProperty,null);popover.Opacity=1;if(popover.RenderTransform is TranslateTransform move)move.BeginAnimation(TranslateTransform.YProperty,null);
-        if(anchor!=null){anchor.Background=Brushes.Transparent;AutomationProperties.SetItemStatus(anchor,"Collapsed");if(restoreFocus && anchor.IsVisible)anchor.Focus();}anchor=null;return true;
+        if(anchor!=null){anchor.Background=Brushes.Transparent;AutomationProperties.SetItemStatus(anchor,"Collapsed");if(restoreFocus && anchor.IsVisible)anchor.Focus();}anchor=null;LayoutRequested?.Invoke();return true;
     }
     internal bool ContainsControl(DependencyObject? target)
     {

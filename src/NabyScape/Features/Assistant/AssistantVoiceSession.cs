@@ -186,14 +186,19 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         string? dataUrl = await capture(token).ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
         if (dataUrl == null) throw new InvalidOperationException("A fresh shared image is unavailable.");
+        ValidateImage(dataUrl);
         int comma = dataUrl.IndexOf(',');
-        if (dataUrl.Length > 3 * 1024 * 1024 || comma < 0 || !(dataUrl.StartsWith("data:image/jpeg;base64,", StringComparison.Ordinal) || dataUrl.StartsWith("data:image/png;base64,", StringComparison.Ordinal)))
-            throw new InvalidOperationException("Supply a bounded JPEG or PNG image data URL.");
-        try { _ = Convert.FromBase64String(dataUrl[(comma + 1)..]); } catch { throw new InvalidOperationException("The shared image is invalid."); }
         string payload = s.Gemini ? JsonSerializer.Serialize(new { realtimeInput = new { video = new { mimeType = dataUrl[5..dataUrl.IndexOf(';')], data = dataUrl[(comma + 1)..] } } })
             : JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "message", role = "user", content = new[] { new { type = "input_image", image_url = dataUrl } } } });
         token.ThrowIfCancellationRequested();
         return payload;
+    }
+    internal static void ValidateImage(string dataUrl)
+    {
+        int comma = dataUrl.IndexOf(',');
+        if (dataUrl.Length > 3 * 1024 * 1024 || comma < 0 || !(dataUrl.StartsWith("data:image/jpeg;base64,", StringComparison.Ordinal) || dataUrl.StartsWith("data:image/png;base64,", StringComparison.Ordinal)))
+            throw new InvalidOperationException("Supply a bounded JPEG or PNG image data URL.");
+        if (!AssistantBase64.IsValid(dataUrl.AsSpan(comma + 1))) throw new InvalidOperationException("The shared image is invalid.");
     }
     private async Task SendImageLocked(Session s, string payload, CancellationToken token)
     {

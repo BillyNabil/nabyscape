@@ -95,14 +95,14 @@ internal static class ReactiveAmbientDiagnostics
         var window=new SettingsWindow(app){ShowActivated=false};window.Show();await Task.Delay(80);
         try
         {
-            typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(window,new object[]{"Appearance"});await Task.Delay(100);
+            typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(window,new object[]{"Ambience"});await Task.Delay(100);
             var choices=Diagnostics.Descendants(window).OfType<ComboBox>().ToArray();
-            check("Appearance exposes ambient scope, colors, response and movement",new[]{"Ambient scope","Ambient color source","Ambient audio response","Ambient movement"}.All(name=>choices.Any(c=>AutomationProperties.GetName(c)==name)));
+            check("Ambience exposes ambient scope, colors, response and movement",new[]{"Ambient scope","Ambient color source","Ambient audio response","Ambient movement"}.All(name=>choices.Any(c=>AutomationProperties.GetName(c)==name)));
             var scope=choices.Single(c=>AutomationProperties.GetName(c)=="Ambient scope");scope.SelectedItem="Selected widgets";
             var section=Diagnostics.Descendants(window).OfType<TextBlock>().First(t=>t.Text=="Ambient light");
             var scroll=(ScrollViewer)typeof(SettingsWindow).GetField("settingsScroll",flags)!.GetValue(window)!;
             scroll.ScrollToVerticalOffset(section.TransformToAncestor((Visual)scroll.Content).Transform(new Point()).Y-12);await Task.Delay(100);Capture(window,"settings-ambient");
-            var responseLabel=Diagnostics.Descendants(window).OfType<TextBlock>().First(t=>t.Text=="Audio response");
+            var responseLabel=Diagnostics.Descendants(window).OfType<TextBlock>().First(t=>t.Text=="React to music");
             scroll.ScrollToVerticalOffset(responseLabel.TransformToAncestor((Visual)scroll.Content).Transform(new Point()).Y-12);await Task.Delay(100);Capture(window,"settings-audio-response");
             check("Widget choices stay available within a collapsible selector",Diagnostics.Descendants(window).OfType<Expander>().Any(e=>Equals(e.Header,"Choose widgets") && e.IsVisible));
             check("Ambient has a dedicated settings illustration",Diagnostics.Descendants(window).OfType<SettingsScene>().Any(c=>c.Section=="Ambient light"));

@@ -13,6 +13,21 @@ using Windows.Media.Control;
 
 namespace NabyScape;
 
+// Selection is local to this running instance. None never issues a transport command.
+internal sealed class MediaSourceSelection
+{
+    internal const string NoneId="@none",AutoId="@auto";
+    internal string Id {get;private set;}=AutoId;
+    internal bool IsNone=>Id==NoneId;
+    internal void Select(string? id)=>Id=id??NoneId;
+    internal string? Resolve(IReadOnlyList<string> sessions,string? current,string? previous=null)
+    {
+        if(IsNone)return null;
+        if(Id!=AutoId){if(sessions.Contains(Id))return Id;Id=AutoId;}
+        return previous!=null && sessions.Contains(previous)?previous:current!=null && sessions.Contains(current)?current:sessions.FirstOrDefault();
+    }
+}
+
 public sealed class MediaService : IDisposable
 {
     private GlobalSystemMediaTransportControlsSessionManager? manager;
@@ -20,11 +35,14 @@ public sealed class MediaService : IDisposable
     private readonly System.Windows.Threading.Dispatcher dispatcher;
     private readonly Action<Exception> log;
     private bool disposed;
-    private int generation;
+    private int generation,managerGeneration;
+    private bool enabled=true,managerInitializing;
     private string artworkKey="";
     private long timelineStamp;
     private (double elapsed,double duration) timelineSample;
-    private string? preferredSession;
+    private readonly MediaSourceSelection sourceSelection=new();
+    internal string SourceSelectionId=>sourceSelection.Id;
+    internal bool SourceDisabled=>sourceSelection.IsNone;
     public event Action? Changed;
     public List<GlobalSystemMediaTransportControlsSession> Sessions { get; private set; }=new();
     public GlobalSystemMediaTransportControlsSession? Selected=>selected;
@@ -39,37 +57,58 @@ public sealed class MediaService : IDisposable
     public bool Playing { get; private set; }
     internal bool DiagnosticFixture {get;set;}
     internal void DiagnosticPlayback(bool playing){if(!DiagnosticFixture)throw new InvalidOperationException();Playing=playing;Title="Performance fixture";Artist="Deterministic local signal";CanToggle=CanSeek=true;Changed?.Invoke();}
-    public bool Available=>DiagnosticFixture || selected!=null;
+    public bool Available=>!SourceDisabled && (DiagnosticFixture || selected!=null);
     public bool CanToggle { get; private set; }
     public bool CanNext { get; private set; }
     public bool CanPrevious { get; private set; }
     public bool CanSeek { get; private set; }
     public MediaService(Action<Exception> log)
     { dispatcher=System.Windows.Threading.Dispatcher.CurrentDispatcher; this.log=log; }
+    internal void SetEnabled(bool value)
+    {
+        if(disposed || !value && !enabled)return;enabled=value;
+        if(value){if(manager==null)_=Initialize();return;}
+        managerGeneration++;
+        if(manager!=null){manager.SessionsChanged-=SessionsChanged;manager.CurrentSessionChanged-=CurrentChanged;manager=null;}
+        Sessions.Clear();Select(null,false);
+    }
     public async Task Initialize()
     {
+        if(disposed || !enabled || manager!=null || managerInitializing)return;managerInitializing=true;int version=++managerGeneration;
         try
         {
-            manager=await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+            var discovered=await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
+            if(disposed || !enabled || version!=managerGeneration)return;manager=discovered;
             manager.SessionsChanged+=SessionsChanged; manager.CurrentSessionChanged+=CurrentChanged;
             Reload();
         }
-        catch(Exception ex) { log(ex); Artist="Media controls unavailable"; Changed?.Invoke(); }
+        catch(Exception ex) { if(!disposed && enabled && version==managerGeneration){log(ex);Artist="Media controls unavailable";Changed?.Invoke();} }
+        finally{managerInitializing=false;if(!disposed && enabled && version!=managerGeneration && manager==null)_=Initialize();}
     }
     private void SessionsChanged(GlobalSystemMediaTransportControlsSessionManager sender,SessionsChangedEventArgs args)=>dispatcher.BeginInvoke(Reload);
-    private void CurrentChanged(GlobalSystemMediaTransportControlsSessionManager sender,CurrentSessionChangedEventArgs args)=>dispatcher.BeginInvoke(()=>{if(preferredSession==null)Select(manager?.GetCurrentSession(),false);});
+    private void CurrentChanged(GlobalSystemMediaTransportControlsSessionManager sender,CurrentSessionChangedEventArgs args)=>dispatcher.BeginInvoke(()=>ApplySelection());
     private void Reload()
     {
-        if(disposed || manager==null) return;
+        if(disposed || !enabled || manager==null) return;
         Sessions=manager.GetSessions().ToList();
-        if(preferredSession!=null && !Sessions.Any(s=>s.SourceAppUserModelId==preferredSession))preferredSession=null;
-        Select(Sessions.FirstOrDefault(s=>s.SourceAppUserModelId==(preferredSession??selected?.SourceAppUserModelId)) ?? manager.GetCurrentSession(),false);
+        ApplySelection(selected?.SourceAppUserModelId);
+    }
+    private void ApplySelection(string? previous=null)
+    {
+        if(disposed || !enabled)return;
+        string? id=sourceSelection.Resolve(Sessions.Select(s=>s.SourceAppUserModelId).ToArray(),manager?.GetCurrentSession()?.SourceAppUserModelId,previous);
+        Select(Sessions.FirstOrDefault(s=>s.SourceAppUserModelId==id),false);
+    }
+    public void SelectNone()=>Select(null);
+    public void SelectAutomatic()
+    {
+        sourceSelection.Select(MediaSourceSelection.AutoId);ApplySelection();
     }
     public void Select(GlobalSystemMediaTransportControlsSession? session,bool manual=true)
     {
         if(disposed) return;
-        if(manual)preferredSession=session?.SourceAppUserModelId;
-        if(ReferenceEquals(selected,session)){Changed?.Invoke();return;}
+        if(manual)sourceSelection.Select(session?.SourceAppUserModelId);
+        if(ReferenceEquals(selected,session)){if(session==null)_=Refresh();else Changed?.Invoke();return;}
         if(selected!=null) { selected.MediaPropertiesChanged-=PropertiesChanged; selected.PlaybackInfoChanged-=PlaybackChanged;selected.TimelinePropertiesChanged-=TimelineChanged; }
         selected=session;timelineStamp=0;
         if(selected!=null) { selected.MediaPropertiesChanged+=PropertiesChanged; selected.PlaybackInfoChanged+=PlaybackChanged;selected.TimelinePropertiesChanged+=TimelineChanged; }
@@ -91,7 +130,7 @@ public sealed class MediaService : IDisposable
         var version=++generation; var session=selected;
         try
         {
-            if(session==null) { artworkKey="";Title="Nothing playing";Artist="Play something in your favorite app";Playing=false;Artwork=null;CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke();return; }
+            if(session==null) { artworkKey="";timelineStamp=0;timelineSample=(0,0);Title="Nothing playing";Artist=SourceDisabled?"Media source is set to None":"Play something in your favorite app";Playing=false;Artwork=null;CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke();return; }
             var p=await session.TryGetMediaPropertiesAsync();
             if(disposed || version!=generation)return;
             if(p==null){Playing=false;CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke();return;}
@@ -139,6 +178,7 @@ public sealed class MediaService : IDisposable
     }
     private (double elapsed,double duration) ReadTimeline()
     {
+        if(SourceDisabled)return(0,0);
         if(DiagnosticFixture)return(Playing?Environment.TickCount64/1000d%240:40,240);
         try
         {
@@ -165,7 +205,7 @@ public sealed class MediaService : IDisposable
     }
     public void Dispose()
     {
-        disposed=true;generation++;
+        disposed=true;generation++;managerGeneration++;
         if(manager!=null) { manager.SessionsChanged-=SessionsChanged;manager.CurrentSessionChanged-=CurrentChanged; }
         if(selected!=null) { selected.MediaPropertiesChanged-=PropertiesChanged;selected.PlaybackInfoChanged-=PlaybackChanged;selected.TimelinePropertiesChanged-=TimelineChanged; }
     }

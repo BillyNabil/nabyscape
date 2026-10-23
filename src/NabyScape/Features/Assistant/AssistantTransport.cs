@@ -14,10 +14,10 @@ using System.Threading.Tasks;
 
 namespace NabyScape;
 
-/// <summary>Bounded, non-streaming adapters. The caller owns tool execution and consent.</summary>
-internal sealed class AssistantTransport : IAssistantTransport, IDisposable
+/// <summary>Bounded provider adapters. The caller owns tool execution and consent.</summary>
+internal sealed partial class AssistantTransport : IAssistantTransport, IDisposable
 {
-    internal const int MaximumBodyBytes = 4 * 1024 * 1024;
+    internal const int MaximumBodyBytes = 32 * 1024 * 1024;
     internal const int MaximumTextCharacters = 128 * 1024;
     private const int MaximumCalls = 16;
     private readonly HttpClient client;
@@ -38,7 +38,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
 
     public void Dispose() => client.Dispose();
 
-    private static SocketsHttpHandler CreateHandler() => new()
+    internal static SocketsHttpHandler CreateHandler() => new()
     {
         AllowAutoRedirect = false, UseCookies = false, UseProxy = false,
         ConnectTimeout = TimeSpan.FromSeconds(15), MaxResponseHeadersLength = 32,
@@ -137,13 +137,12 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         }
         if (provider.Protocol == "Anthropic") request.Headers.Add("anthropic-version", "2023-06-01");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        deadline.CancelAfter(provider.Backend=="Hermes" && timeout==TimeSpan.FromSeconds(90)?TimeSpan.FromMinutes(3):timeout);
+        deadline.CancelAfter((provider.Backend=="Hermes" || provider.ImageOutput) && timeout==TimeSpan.FromSeconds(90)?TimeSpan.FromMinutes(3):timeout);
         try
         {
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
-                throw new IOException((int)response.StatusCode is >= 300 and < 400 ? "Provider redirects are blocked. Check the configured base URL."
-                    : $"The provider rejected the request (HTTP {(int)response.StatusCode}). Check its settings, access, and model support.");
+                throw new IOException(await Failure(response,apiKey,deadline.Token).ConfigureAwait(false));
             if (response.Content.Headers.ContentLength > MaximumBodyBytes) throw new IOException("The provider response exceeded the size limit.");
             await using var stream = await response.Content.ReadAsStreamAsync(deadline.Token).ConfigureAwait(false);
             using var buffer = new MemoryStream();
@@ -158,7 +157,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
             try
             {
                 using var document = JsonDocument.Parse(buffer.ToArray(), new JsonDocumentOptions { MaxDepth = 64 });
-                return Parse(provider.Protocol, document.RootElement, activeTools);
+                return Parse(provider, document.RootElement, activeTools);
             }
             catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or FormatException)
             { throw new IOException("The provider returned an invalid or unsupported response."); }
@@ -198,6 +197,13 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
                 if (!provider.Vision || message.Role != "user") throw new InvalidOperationException("Enable vision only for a model that supports user images.");
                 Image(message.ImageDataUrl);
                 payloadCharacters += message.ImageDataUrl.Length;
+            }
+            if(message.Role=="user" && message.Attachments is {Count:>0})
+            {
+                CheckAttachments(provider,message.Attachments);
+                payloadCharacters+=message.Attachments.Sum(f=>f.Weight);
+                textLength+=message.Attachments.Sum(f=>f.Text?.Length??0);
+                if(textLength>MaximumTextCharacters)throw new InvalidOperationException("The attached text and conversation exceed 128,000 characters. Start a new chat or split the documents.");
             }
             if (message.Calls is { Count: > 0 })
             {
@@ -240,7 +246,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         string mime = value[..split] switch { "data:image/jpeg;base64" => "image/jpeg", "data:image/png;base64" => "image/png", _ => "" };
         string data = value[(split + 1)..];
         if (mime.Length == 0 || data.Length == 0 || data.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '+' or '/' or '='))) throw new InvalidOperationException("Use an inline PNG or JPEG screenshot.");
-        try { Convert.FromBase64String(data); } catch (FormatException) { throw new InvalidOperationException("The screenshot encoding is invalid."); }
+        if (!AssistantBase64.IsValid(data.AsSpan())) throw new InvalidOperationException("The screenshot encoding is invalid.");
         return (mime, data);
     }
 
@@ -261,7 +267,11 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
             if (provider.Protocol == "ChatCompletions")
             {
                 var entry = new JsonObject { ["role"] = message.Role, ["content"] = message.Text };
-                if (message.ImageDataUrl != null) entry["content"] = new JsonArray(Text("text", message.Text), new JsonObject { ["type"] = "image_url", ["image_url"] = new JsonObject { ["url"] = message.ImageDataUrl } });
+                if (message.ImageDataUrl != null || message.Role=="user" && message.Attachments is {Count:>0})
+                {
+                    var content=new JsonArray(Text("text",message.Text));if(message.ImageDataUrl!=null)content.Add(PartImage(provider,message.ImageDataUrl));
+                    if(message.Role=="user" && message.Attachments!=null)foreach(var file in message.Attachments)foreach(var part in AttachmentParts(provider,file))content.Add(part);entry["content"]=content;
+                }
                 if (message.Role == "tool") entry["tool_call_id"] = message.CallId;
                 if (message.Calls is { Count: > 0 }) entry["tool_calls"] = new JsonArray(message.Calls.Select(c => (JsonNode)new JsonObject { ["id"] = c.Id, ["type"] = "function", ["function"] = new JsonObject { ["name"] = c.Name, ["arguments"] = c.Arguments } }).ToArray());
                 items.Add(entry);
@@ -270,10 +280,11 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
             {
                 if (message.Role == "tool") { items.Add(new JsonObject { ["type"] = "function_call_output", ["call_id"] = message.CallId, ["output"] = message.Text }); continue; }
                 if (message.ProtocolItems is { Count: > 0 }) { foreach (var item in message.ProtocolItems) items.Add(Node(item)); continue; }
-                if (message.Text.Length > 0 || message.ImageDataUrl != null)
+                if (message.Text.Length > 0 || message.ImageDataUrl != null || message.Role=="user" && message.Attachments is {Count:>0})
                 {
                     var content = new JsonArray(Text(message.Role == "assistant" ? "output_text" : "input_text", message.Text));
                     if (message.ImageDataUrl != null) content.Add(new JsonObject { ["type"] = "input_image", ["image_url"] = message.ImageDataUrl });
+                    if(message.Role=="user" && message.Attachments!=null)foreach(var file in message.Attachments)foreach(var part in AttachmentParts(provider,file))content.Add(part);
                     items.Add(new JsonObject { ["role"] = message.Role, ["content"] = content });
                 }
                 if (message.Calls != null) foreach (var call in message.Calls) items.Add(new JsonObject { ["type"] = "function_call", ["call_id"] = call.Id, ["name"] = call.Name, ["arguments"] = call.Arguments });
@@ -315,6 +326,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
                             parts.Add(part);
                         }
                     }
+                    if(message.Role=="user" && message.Attachments!=null)foreach(var file in message.Attachments)foreach(var part in AttachmentParts(provider,file))parts.Add(part);
                 }
                 if (parts.Count == 0) parts.Add(anthropic ? Text("text", " ") : new JsonObject { ["text"] = " " });
                 string role = message.Role == "assistant" ? (anthropic ? "assistant" : "model") : "user";
@@ -339,17 +351,24 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
             case "Gemini": body["contents"] = items; body["generationConfig"] = new JsonObject { ["maxOutputTokens"] = 4096 }; if (system.Length > 0) body["systemInstruction"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = system }) }; break;
         }
         if (definitions.Count > 0) body["tools"] = provider.Protocol == "Gemini" ? new JsonArray(new JsonObject { ["functionDeclarations"] = definitions }) : definitions;
+        if(provider.ImageOutput && provider.Backend!="Hermes")
+        {
+            if(provider.Protocol=="Responses"){if(body["tools"] is not JsonArray)body["tools"]=new JsonArray();((JsonArray)body["tools"]!).Add(new JsonObject{["type"]="image_generation"});}
+            else if(provider.Protocol=="Gemini")body["generationConfig"]!["responseModalities"]=new JsonArray("TEXT","IMAGE");
+            else if(provider.Protocol=="ChatCompletions")body["modalities"]=new JsonArray("text","image");
+        }
         return body;
     }
 
     private static string Get(JsonElement element, string name) => element.TryGetProperty(name, out var item) && item.ValueKind == JsonValueKind.String ? item.GetString()! : "";
     private static JsonElement ReadArray(JsonElement element, string name) => element.TryGetProperty(name, out var item) && item.ValueKind == JsonValueKind.Array ? item : throw new JsonException();
 
-    private static AssistantReply Parse(string protocol, JsonElement root, IReadOnlyList<AssistantTool> tools)
+    private static AssistantReply Parse(AssistantProvider provider, JsonElement root, IReadOnlyList<AssistantTool> tools)
     {
+        string protocol=provider.Protocol;
         if (root.ValueKind != JsonValueKind.Object || root.TryGetProperty("error", out _)) throw new JsonException();
-        var text = new StringBuilder(); var calls = new List<AssistantCall>(); var continuation = new List<JsonElement>();
-        void AddText(string value) { if (text.Length + value.Length > MaximumTextCharacters) throw new JsonException(); text.Append(value); }
+        var text = new StringBuilder(); var calls = new List<AssistantCall>(); var continuation = new List<JsonElement>();var files=new List<AssistantAttachment>();
+        void AddText(string value) { value=ExtractImages(value,provider,files);if (text.Length + value.Length > MaximumTextCharacters) throw new JsonException(); text.Append(value); }
         void AddCall(string id, string name, string arguments, string? signature = null)
         {
             var call = new AssistantCall(id, name, arguments, signature); ValidateCall(call);
@@ -359,13 +378,14 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
         if (protocol == "ChatCompletions")
         {
             var choices = ReadArray(root, "choices"); if (choices.GetArrayLength() == 0) throw new JsonException();
-            var choice = choices[0]; if (Get(choice, "finish_reason") is "length" or "content_filter") throw new JsonException();
+            var choice = choices[0]; if (Get(choice, "finish_reason") is "length" or "content_filter" or "error" or "cancelled") throw new JsonException();
             var message = choice.GetProperty("message");
             if (message.TryGetProperty("content", out var content))
             {
                 if (content.ValueKind == JsonValueKind.String) AddText(content.GetString()!);
-                else if (content.ValueKind == JsonValueKind.Array) foreach (var part in content.EnumerateArray()) if (Get(part, "type") == "text") AddText(Get(part, "text"));
+                else if (content.ValueKind == JsonValueKind.Array) foreach (var part in content.EnumerateArray()) {if (Get(part, "type") == "text") AddText(Get(part, "text"));else ReadMedia(part,provider,files);}
             }
+            if(message.TryGetProperty("images",out var images) && images.ValueKind==JsonValueKind.Array)foreach(var part in images.EnumerateArray())ReadMedia(part,provider,files);
             AddText(Get(message, "refusal"));
             if (message.TryGetProperty("tool_calls", out var toolCalls) && toolCalls.ValueKind != JsonValueKind.Null)
                 foreach (var call in toolCalls.EnumerateArray()) { if (Get(call, "type") != "function") throw new JsonException(); var function = call.GetProperty("function"); AddCall(Get(call, "id"), Get(function, "name"), Get(function, "arguments")); }
@@ -376,11 +396,11 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
             foreach (var item in ReadArray(root, "output").EnumerateArray())
             {
                 string type = Get(item, "type");
-                if (type is "message" or "reasoning" or "function_call") continuation.Add(item.Clone());
+                if (type is "message" or "reasoning" or "function_call" or "image_generation_call") continuation.Add(item.Clone());
                 if (type == "message") foreach (var part in ReadArray(item, "content").EnumerateArray())
-                { if (Get(part, "type") == "output_text") AddText(Get(part, "text")); else if (Get(part, "type") == "refusal") AddText(Get(part, "refusal")); }
+                { if (Get(part, "type") == "output_text") AddText(Get(part, "text")); else if (Get(part, "type") == "refusal") AddText(Get(part, "refusal"));else ReadMedia(part,provider,files); }
                 else if (type == "function_call") AddCall(Get(item, "call_id"), Get(item, "name"), Get(item, "arguments"));
-                else if (type != "reasoning") throw new JsonException();
+                else if (type != "reasoning" && !ReadMedia(item,provider,files)) throw new JsonException();
             }
         }
         else if (protocol == "Anthropic")
@@ -389,7 +409,7 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
             foreach (var item in ReadArray(root, "content").EnumerateArray())
             {
                 string type = Get(item, "type");
-                if (type is not ("text" or "tool_use" or "thinking" or "redacted_thinking")) throw new JsonException();
+                if (type is not ("text" or "tool_use" or "thinking" or "redacted_thinking") && !ReadMedia(item,provider,files)) throw new JsonException();
                 continuation.Add(item.Clone());
                 if (type == "text") AddText(Get(item, "text"));
                 else if (type == "tool_use") AddCall(Get(item, "id"), Get(item, "name"), item.GetProperty("input").GetRawText());
@@ -408,10 +428,10 @@ internal sealed class AssistantTransport : IAssistantTransport, IDisposable
                     string id = Get(function, "id"); if (id.Length == 0) id = "gemini_local_" + Guid.NewGuid().ToString("N");
                     AddCall(id, Get(function, "name"), function.TryGetProperty("args", out var args) ? args.GetRawText() : "{}", Get(part, "thoughtSignature") is { Length: > 0 } signature ? signature : null);
                 }
-                else if (!part.TryGetProperty("text", out _)) throw new JsonException();
+                else if (!part.TryGetProperty("text", out _) && !ReadMedia(part,provider,files)) throw new JsonException();
             }
         }
-        if (text.Length == 0 && calls.Count == 0 || continuation.Count > 128) throw new JsonException();
-        return new AssistantReply(text.ToString(), calls, continuation.Count == 0 ? null : continuation);
+        if (text.Length == 0 && calls.Count == 0 && files.Count==0 || continuation.Count > 128) throw new JsonException();
+        return new AssistantReply(text.ToString(), calls, continuation.Count == 0 ? null : continuation,files.Count==0?null:files);
     }
 }

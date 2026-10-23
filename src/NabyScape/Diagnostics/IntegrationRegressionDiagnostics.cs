@@ -40,12 +40,14 @@ internal static class IntegrationRegressionDiagnostics
         foreach(double width in new[]{514d,340d})
         {
             app.Settings.ReduceMotion=true;app.Settings.PanelWidth=width;app.ChangeSettings();island.Reveal(false);island.SelectPage("focus",false);await Task.Delay(100);island.UpdateLayout();
-            var starts=Diagnostics.Descendants(island).OfType<Button>().Where(b=>b.IsVisible && b.Content?.ToString()=="Start").ToArray();check("Focused Start controls exist at "+width,starts.Length>=2);
+            app.Session.Timer.Reset();app.Session.Focus.Reset();app.SaveSession();island.UpdateLayout();
+            var starts=Diagnostics.Descendants(island).OfType<Button>().Where(b=>b.IsVisible && AutomationProperties.GetAutomationId(b) is "timer-primary" or "focus-primary").ToArray();check("Focused countdown primary controls exist at "+width,starts.Length==2 && starts.Select(AutomationProperties.GetAutomationId).Distinct().Count()==2 && starts.Select(AutomationProperties.GetName).Distinct().Count()==2);
             foreach(var button in starts)
             {
-                var text=new FormattedText("Start",System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface(button.FontFamily,button.FontStyle,button.FontWeight,button.FontStretch),button.FontSize,Brushes.White,VisualTreeHelper.GetDpi(button).PixelsPerDip);
-                double required=text.WidthIncludingTrailingWhitespace+button.Padding.Left+button.Padding.Right;
-                check($"Focused Start text fits at {width}: {AutomationProperties.GetName(button)} width {button.ActualWidth:0.##}, required {required:0.##}",button.ActualWidth+.5>=required);
+                var icon=(FrameworkElement)button.Content;var iconBounds=icon.TransformToAncestor(button).TransformBounds(new Rect(icon.RenderSize));
+                check($"Countdown icon fits and remains accessible at {width}: {AutomationProperties.GetName(button)}; button={button.RenderSize}; icon={icon.RenderSize}; bounds={iconBounds}; enabled={button.IsEnabled}; focus={button.Focusable}/{button.IsTabStop}; state={AutomationProperties.GetItemStatus(button)}",button.ActualWidth>=35.9 && button.ActualHeight>=35.9 && button.IsEnabled && button.Focusable && button.IsTabStop && AutomationProperties.GetItemStatus(button)=="Start" && icon.ActualWidth>=10 && icon.ActualHeight>=16.9 && iconBounds.Left>=0 && iconBounds.Top>=0 && iconBounds.Right<=button.ActualWidth+.1 && iconBounds.Bottom<=button.ActualHeight+.1);
+                button.BringIntoView();await Task.Delay(30);island.UpdateLayout();var viewport=Diagnostics.Descendants(island).OfType<ScrollViewer>().First(v=>Diagnostics.Descendants(v).Contains(button));var actionBounds=button.TransformToAncestor(viewport).TransformBounds(new Rect(button.RenderSize));
+                check("Countdown primary scrolls fully into viewport at "+width,actionBounds.Top>=-.5 && actionBounds.Bottom<=viewport.ActualHeight+.5);
             }
         }
     }

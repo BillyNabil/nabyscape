@@ -16,7 +16,7 @@ internal sealed class MonitorFollowPolicy
     {string preferred=mode=="Follow"?followed??stored:mode=="Primary"?primary:stored;return Array.Exists(available,name=>name==preferred)?preferred:primary;}
     internal static System.Drawing.Point Place(Settings s,System.Drawing.Rectangle bounds,double scale,int width,int height,bool tucked,int paintedWidth=0)
     {
-        double compact=s.Width*scale;int painted=paintedWidth>0?paintedWidth:(int)compact;
+        double compact=s.Width*scale;int painted=paintedWidth>0?paintedWidth:width;
         int inset=Math.Max(0,(width-painted)/2),gap=(int)Math.Round(s.DockInset*scale);
         int x=bounds.Left+(int)((bounds.Width-compact)*s.Horizontal/100+compact/2-width/2d);
         int y=bounds.Top+(int)((tucked || s.Preset=="Mac" && s.DockEdge=="Top"?0:s.Top)*scale);
@@ -58,7 +58,7 @@ public sealed partial class OverlayWindow
             if(t>=1){StopFollowSlide();Position();}
         };
         Closed+=(_,_)=>{followSlide.Stop();pointerCheck.Stop();};
-        pointerCheck.Tick+=(_,_)=>{ResolveFollow();TrackAssistantPointer();};
+        pointerCheck.Tick+=(_,_)=>{ResolveFollow();TrackAssistantPointer();CheckHiddenTuckEdge();};
         IsVisibleChanged+=(_,_)=>ConfigureDisplayFollow();
         app.SettingsChanged+=ConfigureDisplayFollow;
         ConfigureDisplayFollow();
@@ -66,13 +66,29 @@ public sealed partial class OverlayWindow
     private void ConfigureDisplayFollow()
     {
         if(app.Settings.DisplayMode!="Follow"){StopFollowSlide();Native.FollowMonitor=null;}
-        if(userHidden || !IsVisible || (app.Settings.DisplayMode!="Follow" && !AssistantPointerTracking))
+        if(userHidden || !IsVisible || (app.Settings.DisplayMode!="Follow" && !AssistantPointerTracking && !HiddenTuckHover))
         {
             pointerCheck.Stop();followPolicy.Reset();
             if(app.Settings.DisplayMode!="Follow"){StopFollowSlide();Native.FollowMonitor=null;}
             return;
         }
         if(!pointerCheck.IsEnabled){followPolicy.Reset();ResolveFollow(true);pointerCheck.Start();}
+    }
+    private bool HiddenTuckHover=>IsTucked && app.Settings.TuckEdge==0 && !userHidden;
+    private void CheckHiddenTuckEdge()
+    {
+        if(!HiddenTuckHover || !Native.CursorPoint(out var point))return;
+        var screen=IslandScreen;double scale=Native.Scale(screen);var b=app.Settings.DockEdge=="Top"?screen.Bounds:screen.WorkingArea;
+        double center=b.Left+(b.Width-app.Settings.Width*scale)*app.Settings.Horizontal/100+app.Settings.Width*scale/2;
+        double cy=b.Top+(b.Height-app.Settings.Height*scale)*app.Settings.DockVertical/100+app.Settings.Height*scale/2;
+        bool hit=app.Settings.DockEdge switch
+        {
+            "Left"=>Math.Abs(point.X-b.Left)<3 && Math.Abs(point.Y-cy)<app.Settings.Height*scale/2,
+            "Right"=>Math.Abs(point.X-(b.Right-1))<3 && Math.Abs(point.Y-cy)<app.Settings.Height*scale/2,
+            "Bottom"=>Math.Abs(point.Y-(b.Bottom-1))<3 && Math.Abs(point.X-center)<app.Settings.Width*scale/2,
+            _=>Math.Abs(point.Y-b.Top)<3 && Math.Abs(point.X-center)<app.Settings.Width*scale/2
+        };
+        if(hit)RevealTuckedPreview();
     }
     private void StopFollowSlide(){followSlide.Stop();followClock.Stop();followMoving=false;}
     private bool FollowInteraction=>followMoving || mediaControls?.IsOpen==true || MinimalWidgets.MenuOpen(this) || fileDragActive || PeekInteractionActive || SatellitePointerInside || IsMouseOver || IsKeyboardFocusWithin || Mouse.Captured!=null || Mouse.LeftButton==MouseButtonState.Pressed || Mouse.RightButton==MouseButtonState.Pressed || app.Windows.Cast<Window>().Any(w=>w.IsKeyboardFocusWithin && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
@@ -97,7 +113,7 @@ public sealed partial class OverlayWindow
         if(peeking)ApplyPeekGeometry();
         Width=WindowHostWidth;Height=Math.Max(HostHeight,app.Settings.Height);
         refreshHz=Native.RefreshRate(IslandScreen);
-        surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:app.Settings.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
+        surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:ClosedSurfaceWidth);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
         Position();CheckEnvironment();UpdateSatellite();
     }
 }

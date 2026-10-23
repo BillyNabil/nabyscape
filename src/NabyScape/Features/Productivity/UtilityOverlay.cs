@@ -14,9 +14,22 @@ public sealed partial class OverlayWindow
 {
     private readonly StackPanel toolsContent=new();
     private bool weatherLayoutPending;
+    private double WeatherContentBudget
+    {
+        get
+        {
+            var screen=Native.ChooseScreen(app.Settings);double available=Math.Min(app.Settings.PanelMaxHeight,screen.WorkingArea.Height/Native.Scale(screen)-16);
+            return (available-PanelFramePadding)/app.Settings.PanelScale-48-app.Settings.SectionGap;
+        }
+    }
+    private void SizeWeatherViewport()
+    {
+        if(toolsMode=="weather")foreach(var weather in toolsContent.Children.OfType<WeatherView>())weather.FitTo(bodyWidth,WeatherContentBudget);
+    }
     private FrameworkElement BuildWeatherPage()
     {
         var weather=new WeatherView(app);
+        weather.FitTo(bodyWidth,WeatherContentBudget);
         weather.ContentSizeChanged+=()=>QueueWeatherPanelResize(weather);
         weather.Loaded+=(_,_)=>QueueWeatherPanelResize(weather);
         return weather;
@@ -29,7 +42,10 @@ public sealed partial class OverlayWindow
         {
             try
             {
-                if(expanded && weather.IsLoaded && weather.IsVisible && toolsMode=="weather" && toolsContent.Children.Contains(weather) && !assistantOpen && !commandOpen && !activitiesOpen)
+                // A second forecast can replace the view while a previous resize is
+                // queued. Resize the current mounted view, rather than dropping its
+                // only layout notification because the old instance was unloaded.
+                if(expanded && toolsMode=="weather" && toolsContent.Children.OfType<WeatherView>().Any(current=>current.IsLoaded && current.IsVisible) && !assistantOpen && !commandOpen && !activitiesOpen)
                     ResizeToolPanel();
             }
             finally{weatherLayoutPending=false;}

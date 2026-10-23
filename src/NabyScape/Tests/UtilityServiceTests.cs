@@ -118,9 +118,9 @@ public static class UtilityServiceTests
         {
             var calendar=new CalendarService(store);var item=calendar.Add("existing",now,now.AddHours(1),"");
             int changed=0;calendar.Changed+=()=>changed++;
-            Directory.CreateDirectory(Path.Combine(store.DirectoryPath,"calendar.json.tmp"));
-            Throws<UnauthorizedAccessException>(()=>calendar.Add("new",now,now.AddHours(1),""));
-            Throws<UnauthorizedAccessException>(()=>calendar.Remove(item.Id));
+            using var locked=new FileStream(Path.Combine(store.DirectoryPath,"calendar.json"),FileMode.Open,FileAccess.Read,FileShare.Read);
+            Throws<IOException>(()=>calendar.Add("new",now,now.AddHours(1),""));
+            Throws<IOException>(()=>calendar.Remove(item.Id));
             Assert(calendar.Events.Count==1 && calendar.Events[0].Id==item.Id && changed==0 && new CalendarService(store).Events.Count==1);
         });
         WithStore("calendar bounds and normalizes stored records without rewriting source",store=>

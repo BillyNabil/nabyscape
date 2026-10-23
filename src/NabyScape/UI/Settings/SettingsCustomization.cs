@@ -74,7 +74,7 @@ public sealed partial class SettingsWindow
         if(preview==null)return;if(previewExamples!=null && previewExamples.Items.Contains(previewContent) && previewExamples.SelectedItem?.ToString()!=previewContent)previewExamples.SelectedItem=previewContent;var s=app.Settings;bool closed=previewMode=="Closed",hover=previewMode=="Hover";double width=closed?s.Width:hover?Math.Min(s.HoverWidth,s.PanelWidth):s.PanelWidth;double height=closed?s.Height:hover?s.HoverHeight:s.PanelMaxHeight;
         bool detailExample=!closed && ((!hover && current!="Layout") || previewContent is "Control colors" or "Typography" or "Panel navigation" or "Drop zone" or "Detached preview" or "Cover gestures" or "Two activities" or "Activities" or "Smart clipboard" or "Shelf" or "Visibility");
         if(detailExample){closed=false;hover=false;width=300;height=previewContent switch{"Control colors"=>330,"Smart clipboard"=>320,"Detached preview"=>260,"Typography"=>220,"Shelf"=>260,"Music"=>250,"System"=>210,"Navigation"=>160,_=>230};}
-        AnimatePreviewSize(width,height);preview.Opacity=s.Opacity;preview.Background=previewMode=="Closed"?Brushes.Black:UI.Brush(s.Background);RefreshPreviewClip();preview.Margin=new(0,s.Preset=="Mac"?0:s.Top,0,0);
+        AnimatePreviewSize(width,height);preview.Opacity=Accessibility.HighContrast?1:s.Opacity;preview.Background=Accessibility.HighContrast?SystemColors.WindowBrush:previewMode=="Closed"?Brushes.Black:UI.Brush(s.Background);RefreshPreviewClip();preview.Margin=new(0,s.Preset=="Mac"?0:s.Top,0,0);
         var inset=new Thickness(closed?18:hover?32:s.PanelPadding,closed?0:15,closed?18:hover?32:s.PanelPadding,0);
         previewDimensions.Text=detailExample?"Detail preview \u00b7 your current appearance":$"{width:0} \u00d7 {height:0} px \u00b7 {s.Preset switch{"Mac"=>"Notch",_=>"Pill"}}";
         int settingsKey=previewContent is "Music" or "Timer" or "Focus" or "System"?HashCode.Combine(s.ClosedMediaContent,s.ClosedMediaIcon,s.LiveActivity,s.BoldMediaTitle,s.BoldHeadings,s.FocusMinutes,s.BreakMinutes):previewRevision;
@@ -84,14 +84,20 @@ public sealed partial class SettingsWindow
         previewTemplateKey=template;previewFrames.Clear();previewRealtimeFrames.Clear();hasPreviewWave=false;
         var content=new StackPanel{Margin=inset};previewLayout=content;var header=new DockPanel{Height=closed?height:23};var time=UI.Text(DateTime.Now.ToString(s.Clock24Hour?"HH:mm":"h:mm tt"),11);time.FontWeight=FontWeights.Bold;DockPanel.SetDock(time,Dock.Right);header.Children.Add(time);previewFrames.Add(_=>time.Text=DateTime.Now.ToString(s.Clock24Hour?"HH:mm":"h:mm tt"));var appName=UI.Text(closed && previewContent=="Music"?(app.Media.Available?app.Media.Title:""):previewContent,11);appName.TextWrapping=TextWrapping.NoWrap;appName.TextTrimming=TextTrimming.CharacterEllipsis;appName.FontWeight=s.BoldHeadings?FontWeights.SemiBold:FontWeights.Normal;header.Children.Add(appName);if(closed || hover)content.Children.Add(header);
         if(closed && previewContent=="AI"){appName.Text="Ask Naby";var face=new AssistantOrb{Width=22,Height=22,ReduceMotion=s.ReduceMotion,Margin=new(0,0,8,0)};DockPanel.SetDock(face,Dock.Left);header.Children.Insert(0,face);}
-        if(closed && previewContent=="Music" && app.Media.Available)
+        if(closed && previewContent=="Music" && app.Media.Available && s.ClosedMediaContent!="None")
         {
-            FrameworkElement? icon=s.ClosedMediaIcon=="Artwork" && app.Media.Artwork!=null?new Border{Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,8,0),VerticalAlignment=VerticalAlignment.Center,Child=new Image{Source=app.Media.Artwork,Stretch=Stretch.UniformToFill}}:s.LiveActivity && s.ClosedMediaContent!="Waveform"?PreviewWave():null;
+            FrameworkElement? icon=s.ClosedMediaIcon=="Artwork" && app.Media.Artwork!=null?new Border{Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,8,0),VerticalAlignment=VerticalAlignment.Center,Child=new Image{Source=app.Media.Artwork,Stretch=Stretch.UniformToFill}}:s.LiveActivity && s.ClosedMediaIcon=="Waveform" && s.ClosedMediaContent=="Title"?PreviewWave():null;
             if(icon!=null){DockPanel.SetDock(icon,Dock.Left);header.Children.Insert(0,icon);}
         }
         if(closed && previewContent=="Music" && app.Media.Available && s.ClosedMediaContent=="Waveform")
         {
             appName.Visibility=Visibility.Collapsed;var waveform=PreviewWave(true);waveform.Width=double.NaN;waveform.MaxWidth=72;waveform.Margin=new(0,0,8,0);waveform.HorizontalAlignment=HorizontalAlignment.Stretch;header.Children.Add(waveform);
+        }
+        if(closed && previewContent=="Music" && s.ClosedMediaContent=="None")appName.Text="";
+        if(closed && previewContent=="Music" && s.ClosedMediaContent=="Lyrics")
+        {
+            var lines=app.Lyrics.Result.Lines;int at=LyricTiming.Index(lines,app.Media.Timeline().elapsed+s.LyricsOffset);
+            appName.Text=at>=0?lines[at].Text:app.Media.Available?app.Media.Title:"Live lyrics";
         }
         if(closed && previewContent=="Volume feedback")
         {

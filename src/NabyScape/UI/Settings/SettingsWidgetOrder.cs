@@ -12,7 +12,13 @@ public sealed partial class SettingsWindow
     {
         var list=new StackPanel();string format="NabyScape.Order."+scope;
         void MoveTo(WidgetSetting item,int index)
-        {int old=items.IndexOf(item);if(old<0)return;items.RemoveAt(old);items.Insert(Math.Clamp(index,0,items.Count),item);Save();changed?.Invoke();Build();}
+        {
+            // Normalize replaces the list on save. Always mutate the live collection,
+            // including after another preference has already been saved in this page.
+            items=scope=="widgets"?app.Settings.Widgets:app.Settings.HoverViews;
+            int old=items.FindIndex(current=>current.Id==item.Id);if(old<0)return;
+            var current=items[old];items.RemoveAt(old);items.Insert(Math.Clamp(index,0,items.Count),current);Save();changed?.Invoke();Build();
+        }
         void Build()
         {
             list.Children.Clear();foreach(var item in items)

@@ -20,11 +20,11 @@ internal static class PreferenceReset
         ["Layout"]="FollowMonitorAnimation FollowMonitorDuration DockUnlocked PanelAutoHeight Width Height Horizontal DockEdge DockVertical DockInset Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
         ["Content"]="HoverFollowsWidgets Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
         ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers".Split(' '),
-        ["Audio"]="WaveformSource WaveformSensitivity LyricsEnabled LyricsAnimation LyricsOffset ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
+        ["Audio"]="MediaIntegrationEnabled WaveformSource WaveformSensitivity LyricsEnabled LyricsAnimation LyricsOffset ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
         ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
         ["AI"]=Array.Empty<string>(),
-        ["Application"]="AutoCheckUpdates".Split(' ')
+        ["Application"]="AutoCheckUpdates AutoDownloadUpdates UiLanguage AccessibilityTextScale AccessibilityHighContrast".Split(' ')
     };
     internal static string Summary(string? category)
     {
@@ -43,12 +43,13 @@ internal static class PreferenceReset
             "Audio"=>"closed media display, waveform and feedback",
             "System"=>"clock format and monitor readings",
             "Launch"=>"launch appearance and Activities availability",
+            "Application"=>"update checks and automatic downloads, interface language, text size and contrast",
             _=>"update checks, notification delivery and download monitoring"
         };
         string detail=category==null?string.Join("; ",Categories.Where(pair=>pair.Value.Length>0).Select(pair=>pair.Key+": "+Detail(pair.Key))):Detail(category);
         return $"Reset {(category??"all preferences")} to defaults ({Keys(category).Length} preferences): {detail}. Startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets are kept. A preference backup is saved first.";
     }
-    private static string[] Keys(string? category)=>category==null?Categories.Values.SelectMany(v=>v).Distinct().ToArray():Categories[category];
+    private static string[] Keys(string? category)=>category==null?Categories.Values.SelectMany(v=>v).Where(key=>key!=nameof(Settings.ClipboardHistory)).Distinct().ToArray():Categories[category];
     internal static void Reset(Store store,Settings target,string? category)
     {
         var candidate=Clone(target);var defaults=FactoryDefaults.Create();
@@ -63,7 +64,13 @@ internal static class PreferenceReset
         string file=Path.Combine(store.DirectoryPath,"preference-backup.json");
         using var json=JsonDocument.Parse(File.ReadAllText(file));
         if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException("The preference backup is invalid.");
-        foreach(string key in Keys(null))if(!PremiumPreferences.Keys.Contains(key) && key!="DisplayMode" && key!="SettingsMaterial" && !Categories["Application"].Contains(key) && (!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null))throw new InvalidDataException("The preference backup is incomplete: "+key);
+        foreach(string key in Keys(null))
+        {
+            if(PremiumPreferences.Keys.Contains(key) || key is "DisplayMode" or "SettingsMaterial" || Categories["Application"].Contains(key))continue;
+            bool nullable=Nullable.GetUnderlyingType(typeof(Settings).GetProperty(key)!.PropertyType)!=null;
+            if(!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null && !nullable)
+                throw new InvalidDataException("The preference backup is incomplete: "+key);
+        }
         var restored=json.RootElement.Deserialize<Settings>()??throw new InvalidDataException("The preference backup is empty.");
         var candidate=Clone(target);
         foreach(string key in Keys(null))Copy(restored,candidate,key);

@@ -38,7 +38,7 @@ internal static class AssistantDiagnostics
     internal static async Task Run(App app,OverlayWindow island,string directory,Action<string,bool> check)
     {
         island.Hide();var ai=app.Assistant;
-        check("Assistant defaults are opt-in with no session permissions",!ai.Options.Enabled && !ai.ActionsAllowed && !ai.Desktop.Sharing && !ai.VoiceConnected && ai.Keys is AssistantMemoryKeys);
+        check("Assistant defaults are opt-in with no session permissions",!ai.Options.Enabled && !ai.Desktop.Sharing && !ai.VoiceConnected && ai.Keys is AssistantMemoryKeys);
         var profile=new AssistantProvider{Name="Fixture provider",Model="fixture-model",Tools=true,Vision=true};
         ai.Options.Providers.Add(profile);ai.Options.SelectedProvider=profile.Id;ai.Options.Enabled=true;ai.SaveOptions();
         ai.Conversation.Record("user","Can you help me plan a quiet afternoon?");ai.Conversation.Record("assistant","Of course. We can keep a short task list here, then start a timer when you are ready. Nothing runs until you review it.");
@@ -49,36 +49,6 @@ internal static class AssistantDiagnostics
         check("Assistant settings refresh preserves composer and selection",input.Text=="A draft stays while the app updates." && input.SelectionStart==2 && input.SelectionLength==7);
         var orb=Diagnostics.Descendants(window).OfType<AssistantOrb>().Single();
         check("Assistant idle orb has no render subscription",!orb.Rendering);orb.State=AssistantState.Thinking;check("Assistant active orb wakes on demand",orb.Rendering);orb.ReduceMotion=true;check("Assistant Reduce Motion detaches continuous rendering",!orb.Rendering);orb.State=AssistantState.Idle;orb.ReduceMotion=false;
-        ai.SetActions(true);var review=ai.Execute(new("declined","nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);
-        check("Assistant pending action exposes review before changing state",ai.Pending?.Id=="declined" && !app.Session.Timer.Running);
-        Capture(window,"assistant-action-review",1);ai.Decide(false);string declined=await review;
-        check("Assistant Decline leaves the isolated timer untouched",declined.Contains("declined") && !app.Session.Timer.Running && ai.Pending==null);
-        review=ai.Execute(new("approved","nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);ai.Decide(true);await review;
-        check("Assistant Run once executes exactly the reviewed app action",app.Session.Timer.Running && app.Session.Timer.Remaining(DateTimeOffset.UtcNow)>40 && ai.Pending==null);app.Session.Timer.Reset();app.SaveSession();
-        review=ai.Execute(new("stopped","nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);ai.StopSession();await review;
-        check("Assistant Stop dismisses approval and revokes session controls",!app.Session.Timer.Running && !ai.ActionsAllowed && ai.Pending==null && !ai.Desktop.Sharing && !ai.VoiceConnected);
-        var sessionControls=Diagnostics.Descendants(window).OfType<Expander>().Single(e=>Equals(e.Header,"Session controls"));
-        sessionControls.IsExpanded=true;window.UpdateLayout();
-        foreach(string target in new[]{"Run once","Decline","Clear","Actions on","Display to share"})
-        {
-            ai.SetActions(true);ai.Desktop.ControlEnabled=true;
-            var fixtureVoice=new FixtureVoice();typeof(AssistantRuntime).GetField("voice",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai,fixtureVoice);
-            review=ai.Execute(new("escape-"+target,"nabyscape","{\"action\":\"timer_start\",\"seconds\":45}"),default);
-            window.UpdateLayout();
-            var child=Diagnostics.Descendants(window).OfType<UIElement>().First(e=>AutomationProperties.GetName(e)==target || e is Button b && Equals(b.Content,target));
-            KeyEventHandler handledChild=(_,e)=>e.Handled=true;
-            child.AddHandler(Keyboard.KeyDownEvent,handledChild);
-            try
-            {
-                // Programmatic routed event only; no activation, native key input,
-                // screen or device is required, including for already-handled keys.
-                child.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(window),0,Key.Escape){RoutedEvent=Keyboard.KeyDownEvent});
-                await review;
-                check("Assistant handled child Escape stops approval from "+target,ai.Pending==null && !ai.ActionsAllowed && !ai.Desktop.ControlEnabled && !ai.VoiceConnected && fixtureVoice.Stopped && fixtureVoice.Disposed && !app.Session.Timer.Running);
-            }
-            finally { child.RemoveHandler(Keyboard.KeyDownEvent,handledChild); }
-        }
-        sessionControls.IsExpanded=false;window.UpdateLayout();
         foreach(var size in new[]{(480d,690d),(360d,420d)})
         {
             window.Width=size.Item1;window.Height=size.Item2;await Task.Delay(70);window.UpdateLayout();

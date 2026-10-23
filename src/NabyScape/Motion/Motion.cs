@@ -13,7 +13,8 @@ internal static class Motion
     private static readonly ExponentialEase easeOut=Frozen(new ExponentialEase{Exponent=5,EasingMode=EasingMode.EaseOut});
     private static readonly CubicEase fadeOut=Frozen(new CubicEase{EasingMode=EasingMode.EaseOut});
     private static T Frozen<T>(T value) where T:Freezable {value.Freeze();return value;}
-    public static bool Enabled {get;set;}=true;
+    private static bool enabled=true;
+    public static bool Enabled {get=>enabled && SystemParameters.ClientAreaAnimation;set=>enabled=value;}
     public static double Duration {get;set;}=420;
     internal static int FrameLimit {get;set;}=180;
     internal static string Interaction {get;private set;}="Subtle";

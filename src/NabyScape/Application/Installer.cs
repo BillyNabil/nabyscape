@@ -24,7 +24,7 @@ internal static class Installer
             return;
         }
         var application=new Application();application.Resources.MergedDictionaries.Add(new ResourceDictionary{Source=new Uri("/NabyScape;component/Theme.xaml",UriKind.Relative)});
-        var window=new Window{Title="Install NabyScape",Width=560,Height=440,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterScreen};
+        var window=new Window{Title="Install NabyScape · "+RuntimePlatform.Rid,Width=560,Height=440,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterScreen};
         window.Icon=System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Assets/island.ico"));window.SourceInitialized+=(_,_)=>Native.DarkTitleBar(window);
         var panel=new StackPanel{Margin=new(36)};panel.Children.Add(UI.Text("NabyScape",36,UI.Brush("#B4F272")));panel.Children.Add(UI.Text("A little space. More possibilities.",15,UI.Muted));
         panel.Children.Add(new Border{Height=26});panel.Children.Add(UI.Text("Music, focus, and your everyday tools — always close.\n\nInstalls for this Windows user only. Auto-start is off by default.",14));
@@ -40,6 +40,7 @@ internal static class Installer
     private static void Launch()=>Process.Start(new ProcessStartInfo(Path.Combine(InstallDirectory,"NabyScape.exe")){UseShellExecute=true});
     internal static void Install()
     {
+        ValidateArchitecture(Environment.ProcessPath??throw new IOException("Installer executable is unavailable."));
         var target=Path.GetFullPath(InstallDirectory);var expected=Path.GetFullPath(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Programs","LumaIsland"));
         if(!string.Equals(target,expected,StringComparison.OrdinalIgnoreCase))throw new IOException("Invalid installation location.");
         foreach(string processName in new[]{"LumaIsland","BillyNabilaIsland","NabyScape"})
@@ -59,7 +60,7 @@ internal static class Installer
             File.Copy(source,executable+".new",true);File.Move(executable+".new",executable,true);
         }
         File.WriteAllText(Path.Combine(target,"Uninstall.ps1"),Uninstaller);
-        foreach(var name in new[]{"LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
+        foreach(var name in new[]{"LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
         {
             using var license=typeof(Installer).Assembly.GetManifestResourceStream("NabyScape."+name);
             if(license!=null){using var reader=new StreamReader(license);File.WriteAllText(Path.Combine(target,name),reader.ReadToEnd());}
@@ -98,6 +99,21 @@ internal static class Installer
         string legacyExecutable=Path.Combine(target,legacyName);
         if(File.Exists(legacyExecutable) && !string.Equals(source,legacyExecutable,StringComparison.OrdinalIgnoreCase))File.Delete(legacyExecutable);
         }
+    }
+    private static void ValidateArchitecture(string source)
+    {
+        var process=RuntimeInformation.ProcessArchitecture;var system=RuntimeInformation.OSArchitecture;
+        if(process is not (Architecture.X64 or Architecture.Arm64) || system is not (Architecture.X64 or Architecture.Arm64) || process==Architecture.Arm64 && system!=Architecture.Arm64)
+            throw new PlatformNotSupportedException("Use the NabyScape setup matching your Windows architecture (x64 or ARM64).");
+        string name=Path.GetFileName(source);
+        foreach(string rid in new[]{"win-x64","win-arm64"})
+            if(name.Contains(rid,StringComparison.OrdinalIgnoreCase) && rid!=RuntimePlatform.Rid)throw new IOException("The setup filename does not match its executable architecture. Download the correct official setup.");
+        using var stream=File.OpenRead(source);using var reader=new BinaryReader(stream);
+        if(stream.Length<64 || reader.ReadUInt16()!=0x5A4D)throw new IOException("Invalid setup executable.");
+        stream.Position=0x3C;int offset=reader.ReadInt32();
+        if(offset<64 || offset>stream.Length-6)throw new IOException("Invalid setup executable header.");
+        stream.Position=offset;
+        if(reader.ReadUInt32()!=0x00004550 || reader.ReadUInt16()!=RuntimePlatform.PeMachine)throw new IOException("Setup architecture verification failed. Download the correct official setup.");
     }
     private const string Uninstaller="""
 param([switch]$Quiet)

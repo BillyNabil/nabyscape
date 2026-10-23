@@ -12,7 +12,8 @@ internal static class FactoryDefaults
         using var stream=typeof(FactoryDefaults).Assembly.GetManifestResourceStream("NabyScape.DefaultLayout.json")
             ?? throw new InvalidOperationException("The bundled default layout is missing.");
         using var reader=new StreamReader(stream);
-        var settings=new Settings();
+        // New profiles opt into downloads; existing saved/legacy choices retain their own value.
+        var settings=new Settings{AutoDownloadUpdates=true};
         CustomizationProfile.Import(reader.ReadToEnd(),settings);
         return settings;
     }

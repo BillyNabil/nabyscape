@@ -13,12 +13,12 @@ public sealed partial class OverlayWindow
     private FrameworkElement BuildMediaControls(StackPanel panel)
     {
         mediaControls=new MediaControls(panel,WidgetOn("media"),WidgetOn("volume"),
-            ()=>app.Media.Sessions.Select(session=>new MediaSourceChoice(session.SourceAppUserModelId,MediaService.SessionName(session),()=>
+            ()=>new[]{new MediaSourceChoice(MediaSourceSelection.NoneId,"None",app.Media.SelectNone),new MediaSourceChoice(MediaSourceSelection.AutoId,"Auto",app.Media.SelectAutomatic)}.Concat(app.Media.Sessions.Select(session=>new MediaSourceChoice(session.SourceAppUserModelId,MediaService.SessionName(session),()=>
             {
                 // A session may disappear after its menu was rendered.
                 if(app.Media.Sessions.Contains(session))app.Media.Select(session);
-            })).ToArray(),()=>app.Media.Selected?.SourceAppUserModelId,BuildVolumePopover);
-        mediaControls.SizeChanged+=(_,_)=>QueueMediaLayout();RefreshMediaControls(true);return mediaControls;
+            }))).ToArray(),()=>app.Media.SourceSelectionId,BuildVolumePopover);
+        mediaControls.LayoutRequested+=QueueMediaLayout;mediaControls.SizeChanged+=(_,_)=>QueueMediaLayout();RefreshMediaControls(true);return mediaControls;
     }
     private FrameworkElement BuildVolumePopover()
     {

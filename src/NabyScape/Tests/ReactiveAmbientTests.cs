@@ -27,6 +27,16 @@ internal static class ReactiveAmbientTests
             s.AmbientScope="Selected widgets";s.AmbientWidgets=new(){"notes"};Assert(AmbientPolicy.Includes(s,"notes") && !AmbientPolicy.Includes(s,"media"));
             s.CoverAmbient=false;Assert(!AmbientPolicy.Includes(s,"notes"));s.CoverAmbient=true;s.AmbientStrength=0;Assert(!AmbientPolicy.Includes(s,"notes"));
         });
+        test("Media None suppresses every live ambience scope without changing preferences",()=>
+        {
+            var s=new Settings{CoverAmbient=true,ClosedAmbient=true,AmbientStrength=.8,AmbientWidgets=new(){"media","focus","notes","closed"}};
+            foreach(string scope in new[]{"All widgets","Music only","Selected widgets"})
+            {
+                s.AmbientScope=scope;
+                foreach(string widget in new[]{"media","focus","notes","closed","ai"})Assert(!AmbientPolicy.Includes(s,widget,true));
+            }
+            s.AmbientScope="All widgets";Assert(AmbientPolicy.Includes(s,"focus") && s.CoverAmbient && s.ClosedAmbient && s.AmbientStrength==.8);
+        });
         test("Ambient color source falls back without artwork and custom color stays independent",()=>
         {
             var s=new Settings{Accent="#123456",AmbientCustomColor="#654321"};
@@ -54,7 +64,7 @@ internal static class ReactiveAmbientTests
             var s=new Settings{AmbientScope="Selected widgets",AmbientWidgets=new(){"notes","tasks"},AmbientColorSource="Custom color",AmbientCustomColor="#ABCDEF",AmbientAudioResponse="Punchy",AmbientSensitivity=2.2};
             var target=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(s),target);
             Assert(target.AmbientScope==s.AmbientScope && target.AmbientWidgets.SequenceEqual(s.AmbientWidgets) && target.AmbientCustomColor==s.AmbientCustomColor && target.AmbientAudioResponse==s.AmbientAudioResponse && target.AmbientSensitivity==2.2);
-            Assert(PreferenceReset.Categories["Appearance"].Contains(nameof(Settings.AmbientWidgets)) && PremiumPreferences.Keys.Contains(nameof(Settings.AmbientSensitivity)));
+            Assert(PreferenceReset.Categories["Ambience"].Contains(nameof(Settings.AmbientWidgets)) && PremiumPreferences.Keys.Contains(nameof(Settings.AmbientSensitivity)));
         });
     }
 }

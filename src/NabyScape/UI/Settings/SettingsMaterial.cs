@@ -21,7 +21,7 @@ public sealed partial class SettingsWindow
     internal void ApplyMaterial()
     {
         var hwnd=new WindowInteropHelper(this).Handle;if(hwnd==IntPtr.Zero)return;
-        string requested=SettingsBackdrop.Requested(app.Settings);var conditions=SettingsBackdrop.ReadConditions();
+        string requested=SettingsBackdrop.Requested(app.Settings);var conditions=SettingsBackdrop.ReadConditions() with{HighContrast=Accessibility.HighContrast};
         if(materialKey is {} key && key==(requested,conditions))return;materialKey=(requested,conditions);
         MaterialResult=SettingsBackdrop.Resolve(requested,conditions,type=>SettingsBackdrop.Apply(hwnd,type));
         if(!MaterialResult.Native)SettingsBackdrop.Apply(hwnd,1);
@@ -30,7 +30,7 @@ public sealed partial class SettingsWindow
         var chrome=WindowChrome.GetWindowChrome(this);chrome.GlassFrameThickness=MaterialResult.Native?new Thickness(-1):new Thickness(0);
         var source=HwndSource.FromHwnd(hwnd);if(source?.CompositionTarget!=null)source.CompositionTarget.BackgroundColor=MaterialResult.Native?Colors.Transparent:Color.FromRgb(17,18,20);
         // Retain native blur beneath a dark client tint so secondary text stays readable.
-        Background=MaterialResult.Native?UI.Brush("#B0111214"):MaterialResult.Actual=="Simulated glass"?IslandSurface.Material("#111214"):UI.Brush("#111214");
+        Background=Accessibility.HighContrast?SystemColors.WindowBrush:MaterialResult.Native?UI.Brush("#B0111214"):MaterialResult.Actual=="Simulated glass"?IslandSurface.Material("#111214"):UI.Brush("#111214");
         materialStatus.Text=MaterialResult.Status+" Native materials apply to Settings only. The island preview keeps its existing material.";
         // Repaint retained examples once after the HWND composition change settles;
         // do not rebuild controls or attach a continuous rendering callback.

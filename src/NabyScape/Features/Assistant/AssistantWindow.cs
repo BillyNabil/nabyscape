@@ -11,7 +11,7 @@ internal sealed class AssistantWindow : Window
     internal AssistantWindow(App app)
     {
         Title="NabyScape · Companion";
-        AssistantWindowChrome.Place(this,app.Settings,480,690);
+        AssistantWindowChrome.Place(this,app.Settings,720,740);
         var view=new AssistantView(app);
         var outer=new ScrollViewer{Content=view,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
         Content=AssistantWindowChrome.Frame(this,"NabyScape · AI companion",outer);

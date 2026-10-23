@@ -42,14 +42,22 @@ internal static class Stage2Diagnostics
             }
             finally{island.DiagnosticEnvironment(IntPtr.Zero);if(!external.HasExited){external.CloseMainWindow();if(!await Task.Run(()=>external.WaitForExit(1500)))external.Kill();}}
         }
-        island.ShowTools("notes");await Task.Delay(50);var editor=Diagnostics.Descendants(island).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Quick notes");editor.Text="Pending note before reset";editor.Select(3,4);int builds=island.BodyBuilds;double left=island.Left;
+        PreferenceReset.Reset(app.Store,s,"Appearance");app.ChangeSettings();island.ShowTools("notes");await Task.Delay(50);var editor=Diagnostics.Descendants(island).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Quick notes");editor.Text="Pending note before reset";editor.Select(3,4);int builds=island.BodyBuilds;double left=island.Left;
         s.Accent="#112233";app.ChangeSettings();app.FlushPreferenceEditors();PreferenceReset.Reset(app.Store,s,"Appearance");app.ChangeSettings();await Task.Delay(100);
         var restored=Diagnostics.Descendants(island).OfType<TextBox>().Single(t=>AutomationProperties.GetName(t)=="Quick notes");
         Check("reset flushes pending note and retains editor selection and position",app.Productivity.Note=="Pending note before reset" && restored.SelectionStart==3 && restored.SelectionLength==4 && island.Left==left && island.BodyBuilds==builds);
         PreferenceReset.Restore(app.Store,s);app.ChangeSettings();Check("restore updates appearance resources",s.Accent=="#112233");
-        var settings=new SettingsWindow(app);try{settings.Show();typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Controls"});await Task.Delay(100);
+        var settings=new SettingsWindow(app);try{settings.Show();typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Visibility"});await Task.Delay(100);
         Check("Settings exposes always edge and configurable tuck shortcut",new[]{"Always tucked","Tucked edge height","Enable tuck shortcut","Tuck hotkey key","Tuck hotkey modifiers"}.All(name=>Diagnostics.Descendants(settings).OfType<FrameworkElement>().Any(e=>AutomationProperties.GetName(e)==name)));
-        s.TuckHotkeyKey=s.HotkeyKey;app.ChangeSettings();Check("duplicate panel/tuck registration is reported",app.TuckHotkeyStatus.Contains("conflicts") && app.HotkeyStatus.Contains("conflicts"));s.TuckHotkeyKey="T";app.ChangeSettings();Check("native tuck registration succeeds or reports actionable failure",app.TuckHotkeyStatus.Contains("Ctrl+Alt+T") || app.TuckHotkeyStatus.Contains("Choose another"));
+        int registrations=0;island.DiagnosticHotkeyRegistration=(_,_,_,_)=>{registrations++;return true;};
+        try
+        {
+            s.HotkeyEnabled=s.TuckHotkeyEnabled=true;s.VisibilityHotkeyEnabled=false;s.TuckHotkeyKey=s.HotkeyKey;app.ChangeSettings();
+            Check("duplicate panel/tuck registration is reported without native registration",app.TuckHotkeyStatus.Contains("conflicts") && app.HotkeyStatus.Contains("conflicts") && registrations==0);
+            s.TuckHotkeyKey="T";app.ChangeSettings();Check("configured tuck registration invokes isolated success seam",registrations==2 && app.TuckHotkeyStatus.Contains("Ctrl+Alt+T"));
+            island.DiagnosticHotkeyRegistration=(_,_,_,_)=>false;s.TuckHotkeyKey="Y";app.ChangeSettings();Check("registration failure reports actionable feedback",app.TuckHotkeyStatus.Contains("Choose another"));
+        }
+        finally{s.HotkeyEnabled=s.TuckHotkeyEnabled=s.VisibilityHotkeyEnabled=false;app.ChangeSettings();island.DiagnosticHotkeyRegistration=null;}
         typeof(SettingsWindow).GetMethod("Navigate",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(settings,new object[]{"Application"});
         Check("Application exposes reset and restore actions",new[]{"Reset this category","Reset all preferences","Restore last preference backup"}.All(name=>Diagnostics.Descendants(settings).OfType<Button>().Any(b=>AutomationProperties.GetName(b)==name)));
         }finally{settings.Close();}

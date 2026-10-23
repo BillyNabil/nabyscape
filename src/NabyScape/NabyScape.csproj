@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\island.ico</ApplicationIcon>
     <AssemblyName>NabyScape</AssemblyName>
     <RootNamespace>NabyScape</RootNamespace>
-    <Version>2.10.1</Version>
+    <Version>2.21.1</Version>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
@@ -23,11 +23,14 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Management" Version="10.0.0" />
+    <PackageReference Include="System.Speech" Version="10.0.13" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <Resource Include="Assets\island.ico" />
     <EmbeddedResource Include="..\..\docs\presets\default-layout.json" LogicalName="NabyScape.DefaultLayout.json" />
+    <EmbeddedResource Include="..\..\tools\local_voice_server.py" LogicalName="NabyScape.LocalAsrServer" />
     <EmbeddedResource Include="..\..\LICENSE" LogicalName="NabyScape.LICENSE" />
     <EmbeddedResource Include="..\..\licenses\NAudio-LICENSE.txt" LogicalName="NabyScape.NAudio-LICENSE.txt" />
+    <EmbeddedResource Include="..\..\licenses\System.Speech-LICENSE.txt" LogicalName="NabyScape.System.Speech-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\LUCIDE-LICENSE.txt" LogicalName="NabyScape.LUCIDE-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\DOTNET-LICENSE.txt" LogicalName="NabyScape.DOTNET-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\DOTNET-ThirdPartyNotices.txt" LogicalName="NabyScape.DOTNET-ThirdPartyNotices.txt" />

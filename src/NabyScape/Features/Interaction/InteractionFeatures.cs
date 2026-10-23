@@ -100,7 +100,7 @@ public sealed partial class OverlayWindow
         menu.Closed+=(_,_)=>{if(audioMenu==menu)audioMenu=null;};menu.IsOpen=true;
     }
     internal bool SystemSummaryVisible=>IsVisible && (peeking && peekId=="system" || WidgetOn("system") && (SatelliteNeedsSystemSamples || expanded && !activitiesOpen && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen)));
-    private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && !peeking && surface.SurfaceHeight<=app.Settings.Height+.5 && surface.SurfaceWidth<=app.Settings.Width+.5 && !FeedbackVisible && !TuckRequested && !userHidden && IsVisible;
+    private bool SatelliteEligible=>app.Settings.ActivitySatellite && WidgetOn("media") && (app.Media.Available && app.Media.Playing || DiagnosticRun && DiagnosticSatelliteMedia) && !expanded && !peeking && surface.SurfaceHeight<=app.Settings.Height+.5 && surface.SurfaceWidth<=app.Settings.Width+.5 && !FeedbackVisible && !TuckRequested && !userHidden && IsVisible;
     private CalendarEvent? SatelliteEvent=>app.Calendar.Events.Where(e=>e.End>DateTimeOffset.UtcNow && e.Start<=DateTimeOffset.UtcNow.AddHours(24)).OrderBy(e=>e.Start).FirstOrDefault();
     private string? SelectedSatellite=>SecondaryActivity.SelectSource(app.Settings.SatelliteSource,SecondaryActivity.Select(app.Session.Timer,app.Session.Focus,DateTimeOffset.UtcNow,WidgetOn("timer"),WidgetOn("focus")),SatelliteEvent!=null,WidgetOn("system"),ToolOn("calendar"),WidgetOn("clock"));
     private bool ShowMediaPrimary=>SatelliteEligible && SelectedSatellite!=null && SatelliteHasRoom();
@@ -146,7 +146,7 @@ public sealed partial class OverlayWindow
         var settings=app.Settings;double width=SatelliteWidth,height=settings.Height;
         satelliteWindow.Width=width;satelliteWindow.Height=height;
         satelliteSurface!.SurfaceWidth=width;satelliteSurface.SurfaceHeight=height;satelliteSurface.Radius=settings.Radius;satelliteSurface.Notch=surface.Notch;satelliteSurface.Fill=surface.Fill;satelliteSurface.GlassStyle=surface.GlassStyle;satelliteSurface.SetMaterial(settings.Background,settings.GlassStrength);satelliteSurface.AlbumTint=surface.AlbumTint;satelliteSurface.Refresh();
-        bool ambientAllowed=(expanded || peeking) && !IsTucked && AmbientPolicy.Includes(settings,satelliteKind is "cpu" or "ram"?"system":satelliteKind??"clock");
+        bool ambientAllowed=(expanded || peeking) && !IsTucked && AmbientPolicy.Includes(settings,satelliteKind is "cpu" or "ram"?"system":satelliteKind??"clock",app.Media.SourceDisabled);
         bool ambientMoving=app.Media.Playing && settings.LiveActivity;
         satelliteSurface.SetAmbient(AmbientPolicy.ColorsFor(settings,app.AmbientAudio.CoverColors),ambientAllowed?settings.AmbientStrength:0,settings.AmbientSpread,settings.AmbientMotion,ambientMoving,AmbientLook.From(settings));
         app.AmbientAudio.Set(satelliteSurface,ambientAllowed && ambientMoving);

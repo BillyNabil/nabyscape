@@ -39,7 +39,8 @@ internal static class Stage3Diagnostics
             window.Show();Navigate();await Task.Delay(100);
             check("Stage3 initial available state unknown and install disabled",app.Updates.Available==null && !Button("Install and restart").IsEnabled && !Button("Download update").IsEnabled);
             foreach(string name in new[]{"Check for updates","Release notes","Download update","Cancel update","Install and restart"})check("Stage3 keyboard action exposed: "+name,Button(name).Focusable && Button(name).IsTabStop);
-            check("Stage3 static distinct download example",Diagnostics.Descendants(window).OfType<SettingsScene>().Count(p=>p.Section=="Updates")==1);
+            Diagnostics.ExpandSettingsExamples(window,"Updates");
+            check("Stage3 distinct rendered download example",Diagnostics.SettingsExamples(window).Count(p=>p.Section=="Updates" && p.ActualWidth>0 && p.ActualHeight>0)==1);
             Button("Check for updates").Focus();check("Stage3 check can receive keyboard focus",Button("Check for updates").IsKeyboardFocused);Button("Check for updates").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));await Task.Delay(100);
             check("Stage3 fake newer release enables download but not portable install",app.Updates.Available?.Version==Network.NextVersion(OfficialUpdates.InstalledVersion) && Button("Download update").IsEnabled && !Button("Install and restart").IsEnabled);
             Capture("stage3-updates-wide");

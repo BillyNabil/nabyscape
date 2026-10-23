@@ -23,6 +23,23 @@ internal static class MediaExperienceTests
     }
     internal static void Run(Action<string,Action> test)
     {
+        test("None survives session enumeration and external current-source changes until explicitly reselected",()=>
+        {
+            var selection=new MediaSourceSelection();var sessions=new[]{"Spotify.exe","chrome.exe"};
+            Assert(selection.Id==MediaSourceSelection.AutoId && selection.Resolve(sessions,"Spotify.exe")=="Spotify.exe");
+            selection.Select(null);Assert(selection.IsNone && selection.Resolve(sessions,"chrome.exe","Spotify.exe")==null);
+            Assert(selection.Resolve(new[]{"chrome.exe","new-app.exe"},"new-app.exe")==null && selection.Resolve(Array.Empty<string>(),null)==null);
+            selection.Select("chrome.exe");Assert(selection.Resolve(sessions,"Spotify.exe")=="chrome.exe");
+            selection.Select(MediaSourceSelection.AutoId);Assert(selection.Resolve(sessions,"Spotify.exe")=="Spotify.exe" && selection.Resolve(sessions,"chrome.exe")=="chrome.exe");
+            selection.Select("gone.exe");Assert(selection.Resolve(sessions,"chrome.exe")=="chrome.exe" && selection.Id==MediaSourceSelection.AutoId);
+            Assert(new MediaSourceSelection().Id==MediaSourceSelection.AutoId);
+        });
+        test("None clears displayed media and timeline without sending playback commands",()=>
+        {
+            using var media=new MediaService(ex=>throw ex){DiagnosticFixture=true};media.DiagnosticPlayback(true);media.SelectNone();
+            Assert(media.SourceDisabled && !media.Available && !media.Playing && media.Artwork==null && media.Title=="Nothing playing" && !media.CanToggle && !media.CanSeek && media.Timeline()==(0d,0d));
+            media.SelectAutomatic();Assert(!media.SourceDisabled && media.Available && media.SourceSelectionId==MediaSourceSelection.AutoId);
+        });
         test("Legacy tool order expands in place and keeps disabled choices",()=>
         {
             var s=new Settings{Widgets=new(){new(){Id="media"},new(){Id="tools"},new(){Id="focus"}},Tools=new(){new(){Id="notes"},new(){Id="files",Enabled=false}}};s.Normalize();
@@ -41,13 +58,21 @@ internal static class MediaExperienceTests
             var lines=LyricTiming.Parse("[offset:-100]\n[00:01.00][00:03.125]朝のサンプル\n[00:62.00]invalid\n[ar:fixture]\n[00:04.5]Evening sample");
             Assert(lines.Length==3 && Math.Abs(lines[0].At-.9)<.001 && lines[0].Text=="朝のサンプル" && Math.Abs(lines[1].At-3.025)<.001 && LyricTiming.Index(lines,.1)==-1 && LyricTiming.Index(lines,3.1)==1 && LyricTiming.Index(lines,100)==2);
         });
-        test("Lyrics are opt-in, Spotify-only and cached without repeated requests",()=>Task.Run(async()=>
+        test("Lyrics require consent and usable metadata, and cache without repeated requests",()=>Task.Run(async()=>
         {
             var fake=new Fake();using var service=new LyricsService(fake);await service.Load("Sample title","Sample artist",180,false,true);await service.Load("Sample title","Sample artist",180,true,false);Assert(fake.Requests==0);
             await service.Load("Sample title","Sample artist",180,true,true);await service.Load("Sample title","Sample artist",180,true,true);Assert(fake.Requests==1 && service.Result.Lines.Length==2 && fake.LastUri!.Host=="lrclib.net" && !fake.LastUri.Query.Contains("key"));
             service.Retry();await service.Load("Sample title","Sample artist",180,true,true);Assert(fake.Requests==2);
             service.Import("Sample title","Sample artist",180,"[00:01.0]Original offline sample");await service.Load("Sample title","Sample artist",180,true,true);Assert(fake.Requests==2 && service.Result.Lines[0].Text=="Original offline sample");
         }).GetAwaiter().GetResult());
+        test("Shared lyric consumers retain a result until the last view releases it",()=>Task.Run(async()=>
+        {
+            var fake=new Fake();using var service=new LyricsService(fake);var dock=new object();var panel=new object();service.Acquire(dock);service.Acquire(panel);
+            await service.Load("Track","Artist",180,true,true);service.Release(dock);Assert(service.Result.Lines.Length==2);
+            service.Release(panel);Assert(service.Result.Lines.Length==0);service.Acquire(dock);await service.Load("Track","Artist",180,true,true);Assert(fake.Requests==2);
+        }).GetAwaiter().GetResult());
+        test("All closed dock modes and optional icon survive normalization",()=>
+        {foreach(string mode in new[]{"Title","Waveform","Lyrics","None"}){var s=new Settings{ClosedMediaContent=mode,ClosedMediaIcon="None"};s.Normalize();Assert(s.ClosedMediaContent==mode && s.ClosedMediaIcon=="None" && s.MediaIntegrationEnabled);}});
         test("Real FFT separates bass from treble with finite bounded bands",()=>
         {
             float[] Bands(double hz){var fft=new SpectrumTransform(48000);for(int i=0;i<16000;i++)fft.Add((float)(.3*Math.Sin(2*Math.PI*hz*i/48000)));return fft.Bands;}

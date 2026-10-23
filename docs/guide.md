@@ -4,7 +4,15 @@
 
 **Current release: v2.10.1.** [Download and release notes](releases/v2.10.1.md). The new demo shows actual v2.10 controls with sample content.
 
-New installations use the **Daily Notch** layout: 327 × 36 closed island, 526 px panel, 447 × 207 hover, 420 ms motion and icon navigation. [Default layout](presets/default-layout.json). Existing settings are never replaced on upgrade; explicit preference reset uses this default while preserving personal content, startup and clipboard consent.
+New installations use the **Daily Notch** layout: 400 × 41 closed island, 526 px panel, 447 × 207 hover, 400 ms motion and dot navigation. The selected daily preferences use a solid black surface, Spectrum waveform, Smoother motion performance, a 2 px tucked edge, and music-only cover-blend ambience at 20%. Idle and None still suppress ambience. [Default layout](presets/default-layout.json). Existing settings are never replaced on upgrade; explicit preference reset uses this default while preserving personal content, startup and clipboard consent.
+
+## First-time setup (local 2.21 candidate)
+
+New profiles get a short guide to dock position and everyday widgets. AI setup is optional. **Skip setup** keeps the current defaults; **Settings > General > Open setup guide** reopens the guide. Upgrades keep existing preferences.
+
+In the compact media panel, open **Media source** and choose **None** to show idle, focus or timer activity without the current music session. Playback continues in the other app. Choose **Auto** to follow the Windows media source again, or select an app directly. This choice lasts until NabyScape exits.
+
+New profiles check for updates and download verified updates automatically. Installation waits for **Install and restart**. Existing update preferences are preserved; both switches are available in **Settings > General > Updates**.
 
 ## Find your setup
 
@@ -22,15 +30,15 @@ In **Widgets & tools**, drag a grip to reorder. Alt+Up / Alt+Down works from the
 
 Each release includes **SHA256SUMS** for verifying the downloads. For development builds, use the [Windows build workflow](https://github.com/BillyNabil/nabyscape/actions/workflows/windows.yml); downloading its artifacts requires a GitHub account.
 
-**Windows 11 x64 is required.** The self-contained build includes the .NET runtime; you do not need an SDK to run it. The current installer is unsigned. Portable use still stores preferences in your Windows user profile.
+**The published x64 build requires Windows 11 x64.** Local 2.20 candidates also offer native Windows ARM64 packages, with architecture-aware installers and update selection. ARM64 packages are not published yet; bundled native speech packs remain x64-only. The self-contained build includes the .NET runtime; you do not need an SDK to run it. The current installer is unsigned. Portable use still stores preferences in your Windows user profile.
 
 Open Settings from the island or tray. Changes save automatically. Starting with Windows is optional and off by default; closing Settings keeps the app running. Choose **Quit** from the tray to exit.
 
 ## Music and lyrics
 
-Select Spotify in the Music panel, then use the lyrics icon beside playback, or enable **Settings → Audio → Lyrics → Show synced Spotify lyrics**. Lyrics appear to the right when there is enough room; the panel returns to its saved width when you hide them. Smaller working areas use a stacked layout.
+Select a music session in the Music panel, then use the lyrics icon beside playback, or enable **Settings → Music & sound → Lyrics → Show synced lyrics in the media panel**. Spotify, YouTube Music and Apple Music sessions can use the same metadata lookup when the player exposes a title, artist and playback timeline. Lyrics appear to the right when there is enough room; the panel returns to its saved width when you hide them. Smaller working areas use a stacked layout.
 
-Choose Slide, Focus or Karaoke and adjust timing by up to ten seconds in either direction. Automatic lookup sends the track title, artist and duration to LRCLIB; no Spotify login or API key is needed. Availability varies by track and service. Use Retry or import a local `.lrc` file for the current track. Local imports and cached lyrics stay in memory for the app session. Karaoke sweeps across a line using its timing; it does not provide word timestamps.
+Choose Slide, Focus or Karaoke and adjust timing by up to ten seconds in either direction. Automatic lookup sends the track title, artist and duration to LRCLIB; no music-service login or API key is needed. Availability varies by track and service. Use Retry or import a local `.lrc` file for the current track. Local imports and cached lyrics are memory-only and are released when the last visible lyrics view closes. Karaoke sweeps across a line using its timing; it does not provide word timestamps.
 
 **Settings → Audio → Visualizer** offers Frequency spectrum, Amplitude history and sensitivity. Frequency spectrum measures the matching Windows output, so other apps on the same device can contribute. Amplitude history uses the selected app's level. Audio is processed in memory, and sampling stops when no visible waveform needs it.
 
@@ -82,7 +90,7 @@ The panel, visibility and tuck global shortcuts are configurable. Buttons retain
 
 Controls follow the Windows media sessions exposed by each app. Choose the app in **Media**. Waveforms read matching sessions across active outputs, so a selected Spotify session is not driven by Discord audio.
 
-Choose **Appearance → Closed media icon** for album artwork or a waveform icon. **Closed media content** independently selects the song title or a compact waveform. Countdown and volume feedback keep priority.
+Choose **Music & sound → Closed media display** for Waveform, Live lyrics, Song title or None. Live lyrics shows one timed line with a short transition and falls back to the song title if unavailable. None leaves playback alone and shows idle or the running timer. The media icon separately supports artwork, waveform or None. Countdown, voice and notification feedback keep priority.
 
 Waveforms show amplitude history, not a frequency spectrum. They do not record audio or use the microphone. Optional gentle motion during quiet or unavailable readings is decorative. Unsupported app identities may use this fallback. Muted sessions return to a quiet baseline.
 
@@ -137,7 +145,7 @@ Uninstall through **Windows Settings → Apps → Installed apps → NabyScape**
 
 ## Build from source
 
-You need **Windows 11 x64** and **.NET SDK 10**.
+You need **Windows 11 x64 or ARM64** and **.NET SDK 10**. Publish for `win-x64` or `win-arm64` as appropriate. Do not run an ARM64 executable on an x64 host.
 
 Open [`NabyScape.slnx`](../NabyScape.slnx) in your IDE, or run `dotnet build NabyScape.slnx -c Release` from the repository root. The app project is [`src/NabyScape/NabyScape.csproj`](../src/NabyScape/NabyScape.csproj). The root build script publishes the standalone distribution and runs checks as before.
 
@@ -223,3 +231,39 @@ See [the roadmap](roadmap.md) for implemented capabilities and proposed addition
 NabyScape is available under the [MIT License](../LICENSE). Copyright (c) 2026 BillyNabil.
 
 Dependency notices: [NAudio](../licenses/NAudio-LICENSE.txt), [Lucide](../licenses/LUCIDE-LICENSE.txt), [.NET](../licenses/DOTNET-LICENSE.txt), and [.NET third-party components](../licenses/DOTNET-ThirdPartyNotices.txt).
+
+
+### Find your way around Settings
+
+Settings opens at **Start here** with shortcuts for appearance, dock position, widgets, Naby AI and app preferences. Category titles stay above the scrolling form. Controls are directly visible within each category. Technical details remain optional. Search opens the matching page and control.
+
+The live dock preview appears in visual categories such as colors, ambience, position, motion and music. Naby AI uses its own full-width setup surface instead of a dock preview. In **Naby AI → Chat**, choose the active connection, read its status, then use **Edit connection** only when details need changing. **Add or manage connections**, **Images & files**, and advanced protocol/voice fields are separate expandable groups. Changes still use the existing Save provider and draft protection. Use **Get started** for chat, voice or Hermes setup; **More** holds optional companion preferences.
+
+
+### Voice settings at a glance
+
+Voice setup displays four sources directly: Online provider, On this PC, External server, and My model files. The selected source is marked. Wake word, Models, and Check audio each have a dedicated tab with its controls already visible. Local setup keeps language, model selection and installation in the main flow; detailed hardware profiles and model specifications remain optional. Selecting a source previews its setup; use its Save or Install & use button to apply it.
+
+
+### Choose features and background work
+
+Open **Widgets & tools → Feature usage**. Use essentials selects music, clock, timer and focus, and keeps the other widgets off. Customize opens the individual switches. Notes, tasks, files and running sessions are preserved. Clipboard capture and AI/wake listening remain separately controlled; this preset does not silently stop or enable them.
+
+Connect to music apps disconnects Windows media session listeners and clears held track artwork when off. It reconnects on enable without stopping playback. Media discovery also stops when neither the media widget nor its hover page is enabled. Downloads has its own watcher switch. The brightness event watcher stops when brightness feedback is off. Shared audio meter resources are released after idle demand, and spectrum capture already expires without a visible consumer. Weather requests are shared between views and cancelled when their last view closes. Visible animation settings and frame limits are unchanged.
+
+Lyrics matching depends on the song metadata and timed lyrics catalog. Live/remix editions, missing artist fields and missing playback timelines may prevent syncing. The app does not extract the private lyrics displayed inside Apple Music or YouTube Music. Use a local timed LRC file for a matching track if needed. Selecting Live lyrics or enabling panel lyrics permits track title, artist and duration to be sent to LRCLIB while a lyrics view is visible.
+
+
+Closed-dock lyrics center short lines. Longer lines appear as width-measured phrases with crossfades, without changing dock dimensions; the next lyric timestamp always takes priority. Hovering keeps the standard music preview with artwork and playback controls. Reduce Motion keeps the text still. Lyrics lookup remains shared with the media panel and stops when no lyrics view needs it.
+
+
+Long closed-dock lyric lines now use width-measured phrases, replacing horizontal marquee clipping. Words stay intact when they fit; unspaced scripts or exceptionally long words split at text-element boundaries. Phrases share the LRC line's duration proportionally to text length, with crossfades between phrases. These are display timings derived from line timestamps, not word-level karaoke timestamps. The standard media hover is unchanged.
+
+
+### A comfortable first setup
+
+New installations offer Music, Productivity, AI or Custom as a starting point. Music selects media, volume, clock and weather. Productivity selects timer, focus, clock, notes, tasks and calendar. AI selects voice, clock and notes, then continues to connection setup. Custom keeps your selections editable. The next step chooses dock position and widgets. Skip setup keeps existing preferences. Presets only choose widgets; they do not enable microphone listening or clipboard capture, download models, or change provider credentials. Existing users can reopen the guide from Start here.
+
+**Start here → Your setup** shows music, chat, voice, lyrics and weather status with a next-action button. Saved connections are distinguished from connections checked successfully; installed local models are not advertised as verified speech. These statuses use local state and do not initiate API requests or microphone checks.
+
+After a saved appearance, dock layout or widget change, **Undo** appears beside the Settings save feedback. It restores the last saved batch of those preferences. Slider movements within one autosave batch count as one change. Undo preserves saved content, provider credentials, microphone permissions, clipboard history and background-service switches. It is available for the current Settings window; it is not a full application rollback.

@@ -44,10 +44,24 @@ internal static class MediaFooterDiagnostics
         Click(controls.SourceButton);Click(controls.VolumeButton);check("Only the most recently chosen popover is open",controls.OpenKind=="volume");
         var dismiss=typeof(OverlayWindow).GetMethod("DismissMediaOrCollapse",flags)!;dismiss.Invoke(island,null);dismiss.Invoke(island,null);check("Duplicate external click notifications do not collapse the dock",!controls.IsOpen && island.IsExpanded);
 
+        controls=Field<MediaControls>("mediaControls");Click(controls.SourceButton);await Task.Delay(30);Click(Diagnostics.Descendants(controls.Popover).OfType<Button>().Single(button=>AutomationProperties.GetName(button)=="Use media source None"));app.PublishUpdate(RuntimeChange.Media);
+        check("None clears selected media, artwork, title and timeline",app.Media.SourceDisabled && !app.Media.Available && !app.Media.Playing && app.Media.Artwork==null && app.Media.Title=="Nothing playing" && app.Media.Timeline()==(0d,0d));
+        var savedTimer=app.Session.Timer;var savedFocus=app.Session.Focus;app.Session.Timer=new();app.Session.Focus=new();island.Collapse();app.PublishUpdate(RuntimeChange.Media);
+        check("None restores idle without a stale cover or media waveform",!island.ClosedCoverVisible && !island.ClosedTitleWaveVisible && (bool)typeof(OverlayWindow).GetProperty("IdleContent",flags)!.GetValue(island)! && !app.AmbientAudio.Running);
+        foreach(var widget in s.Widgets)if(widget.Id is "focus" or "timer")widget.Enabled=true;app.ChangeSettings();
+        app.Session.Focus.Start(120,DateTimeOffset.UtcNow);app.PublishUpdate(RuntimeChange.Countdown);
+        check("None lets Focus occupy the primary island",ReferenceEquals(typeof(OverlayWindow).GetMethod("ActiveCountdown",flags)!.Invoke(island,null),app.Session.Focus));
+        app.Session.Focus=new();app.Session.Timer.Start(120,DateTimeOffset.UtcNow);app.PublishUpdate(RuntimeChange.Countdown);
+        check("None lets Timer occupy the primary island",ReferenceEquals(typeof(OverlayWindow).GetMethod("ActiveCountdown",flags)!.Invoke(island,null),app.Session.Timer));
+        app.Session.Timer=savedTimer;app.Session.Focus=savedFocus;island.Reveal(false);island.SelectPage("media",false);await Task.Delay(60);controls=Field<MediaControls>("mediaControls");Click(controls.SourceButton);await Task.Delay(30);
+        check("None remains selected and source selection can be reopened",Diagnostics.Descendants(controls.Popover).OfType<Button>().Any(button=>AutomationProperties.GetName(button)=="Use media source None" && AutomationProperties.GetItemStatus(button)=="Selected"));
+        Click(Diagnostics.Descendants(controls.Popover).OfType<Button>().Single(button=>AutomationProperties.GetName(button)=="Use media source Auto"));app.Media.DiagnosticPlayback(true);typeof(MediaService).GetProperty("Artwork")!.SetValue(app.Media,artwork);typeof(MediaService).GetProperty("Title")!.SetValue(app.Media,"Evening light");typeof(MediaService).GetProperty("Artist")!.SetValue(app.Media,"Original artwork · local demo");app.PublishUpdate(RuntimeChange.Media);
+        check("Auto explicitly restores media availability",!app.Media.SourceDisabled && app.Media.Available && app.Media.SourceSelectionId==MediaSourceSelection.AutoId);
+
         // Inject only deterministic sources and a sample slider for captures. Never
         // issue a real media/volume/device command or provider request.
         string current="Spotify.exe";int selections=0;var choices=new List<MediaSourceChoice>();
-        void ResetChoices(){choices.Clear();choices.Add(new("Spotify.exe","Spotify",()=>{current="Spotify.exe";selections++;}));choices.Add(new("chrome.exe","Google Chrome",()=>{current="chrome.exe";selections++;}));}
+        void ResetChoices(){choices.Clear();choices.Add(new(MediaSourceSelection.NoneId,"None",()=>{current=MediaSourceSelection.NoneId;selections++;}));choices.Add(new(MediaSourceSelection.AutoId,"Auto",()=>{current=MediaSourceSelection.AutoId;selections++;}));choices.Add(new("Spotify.exe","Spotify",()=>{current="Spotify.exe";selections++;}));choices.Add(new("chrome.exe","Google Chrome",()=>{current="chrome.exe";selections++;}));}
         FrameworkElement SampleVolume()
         {
             var panel=new StackPanel();var heading=new DockPanel();var value=UI.Text("63%",11,UI.Muted);DockPanel.SetDock(value,Dock.Right);heading.Children.Add(value);heading.Children.Add(UI.Text("Volume",12));panel.Children.Add(heading);
@@ -56,29 +70,40 @@ internal static class MediaFooterDiagnostics
         MediaControls Inject()
         {
             var old=Field<MediaControls>("mediaControls");old.Close(false);var owner=(Grid)old.Parent;int index=owner.Children.IndexOf(old);var content=(StackPanel)old.Children[0];old.Children.Remove(content);content.Children.RemoveAt(content.Children.Count-1);owner.Children.Remove(old);
-            var replacement=new MediaControls(content,true,true,()=>choices,()=>current,SampleVolume);owner.Children.Insert(index,replacement);typeof(OverlayWindow).GetField("mediaControls",flags)!.SetValue(island,replacement);replacement.Refresh(63,false,true);return replacement;
+            var replacement=new MediaControls(content,true,true,()=>choices,()=>current,SampleVolume);replacement.LayoutRequested+=()=>typeof(OverlayWindow).GetMethod("QueueMediaLayout",flags)!.Invoke(island,null);owner.Children.Insert(index,replacement);typeof(OverlayWindow).GetField("mediaControls",flags)!.SetValue(island,replacement);replacement.Refresh(63,false,true);return replacement;
         }
         ResetChoices();controls=Inject();await Task.Delay(90);Capture("media-default");
         Click(controls.VolumeButton);await Task.Delay(60);Capture("media-volume");Click(controls.SourceButton);await Task.Delay(60);Capture("media-sources");
         check("Current media source is marked",Diagnostics.Descendants(controls.Popover).OfType<Button>().Any(button=>AutomationProperties.GetName(button)=="Use media source Spotify" && AutomationProperties.GetItemStatus(button)=="Selected"));
+        check("None is the first source and Auto remains available",Diagnostics.Descendants(controls.Popover).OfType<Button>().First() is Button first && AutomationProperties.GetName(first)=="Use media source None" && Diagnostics.Descendants(controls.Popover).OfType<Button>().Any(button=>AutomationProperties.GetName(button)=="Use media source Auto"));
         Click(Diagnostics.Descendants(controls.Popover).OfType<Button>().Single(button=>AutomationProperties.GetName(button)=="Use media source Google Chrome"));controls.Refresh(63,false,true);
         check("Source selection runs exactly once and closes",current=="chrome.exe" && selections==1 && !controls.IsOpen);
-        Click(controls.SourceButton);choices.RemoveAt(1);controls.Refresh(63,false,true);check("Disappearing sessions dismiss stale choices",!controls.IsOpen);
-        choices.Clear();Click(controls.SourceButton);await Task.Delay(50);check("No sessions gives useful guidance",Diagnostics.Descendants(controls.Popover).OfType<TextBlock>().Any(text=>text.Text.StartsWith("No active media sessions")));controls.Close(false);
-        foreach(double width in new[]{526d,300d})
+        Click(controls.SourceButton);choices.RemoveAll(choice=>choice.Id=="chrome.exe");controls.Refresh(63,false,true);check("Disappearing sessions dismiss stale choices",!controls.IsOpen);
+        choices.RemoveAll(choice=>choice.Id!=MediaSourceSelection.NoneId && choice.Id!=MediaSourceSelection.AutoId);Click(controls.SourceButton);await Task.Delay(50);check("No sessions gives useful guidance",Diagnostics.Descendants(controls.Popover).OfType<TextBlock>().Any(text=>text.Text.StartsWith("No active media sessions")));controls.Close(false);
+        foreach(double height in new[]{417d,240d})foreach(double width in new[]{526d,300d})
         {
-            s.PanelWidth=width;app.ChangeSettings();island.SelectPage("media",false);await Task.Delay(120);ResetChoices();controls=Inject();await Task.Delay(70);closedHeight=island.PaintedHeight;
+            s.PanelMaxHeight=height;s.PanelWidth=width;app.ChangeSettings();island.SelectPage("media",false);await Task.Delay(120);ResetChoices();controls=Inject();await Task.Delay(70);closedHeight=island.PaintedHeight;
             for(int n=0;n<18;n++){int id=n;choices.Add(new("session"+n,"Long media source "+n,()=>current="session"+id));}controls.Refresh(63,false,true);
             foreach(string mode in new[]{"volume","source"})
             {
-                controls.Toggle(mode);await Task.Delay(60);island.UpdateLayout();var popup=controls.Popover;var bounds=popup.TransformToAncestor(controls).TransformBounds(new Rect(popup.RenderSize));
+                controls.Toggle(mode);await Task.Delay(90);island.UpdateLayout();var popup=controls.Popover;var bounds=popup.TransformToAncestor(controls).TransformBounds(new Rect(popup.RenderSize));
                 check(mode+" fits below its footer at "+width+" DIP",bounds.Left>=-.5 && bounds.Top>=-.5 && bounds.Right<=controls.ActualWidth+.5 && bounds.Bottom<=controls.ActualHeight+.5);
+                var painted=popup.TransformToAncestor(island).TransformBounds(new Rect(popup.RenderSize));double left=(island.ActualWidth-island.PaintedWidth)/2;
+                File.AppendAllText(Path.Combine(directory,"popover-bounds.txt"),mode+" "+width+" × "+height+": "+painted+" island="+left+","+island.PaintedWidth+","+island.PaintedHeight+" outer="+Field<ScrollViewer>("scroll").VerticalOffset+Environment.NewLine);
+                check(mode+" is reachable inside the painted island at "+width+" × "+height,painted.Left>=left-.5 && painted.Right<=left+island.PaintedWidth+.5 && painted.Top>=-.5 && painted.Bottom<=island.PaintedHeight+.5);
                 if(mode=="source")check("Long source lists scroll internally at "+width+" DIP",popup.Child is ScrollViewer viewer && viewer.ScrollableHeight>0);
+                if(mode=="source")
+                {
+                    var buttons=Diagnostics.Descendants(popup).OfType<Button>().ToArray();bool reachable=true;
+                    foreach(var button in buttons){button.Focus();button.BringIntoView();await Task.Delay(1);island.UpdateLayout();var row=button.TransformToAncestor(island).TransformBounds(new Rect(button.RenderSize));reachable&=button.IsKeyboardFocused && row.Top>=-.5 && row.Bottom<=island.PaintedHeight+.5;}
+                    check("Every source row can receive visible keyboard focus at "+width+" × "+height,reachable);
+                    Escape();check("Escape restores source focus at "+width+" × "+height,!controls.IsOpen && controls.SourceButton.IsKeyboardFocused);controls.Toggle(mode);await Task.Delay(30);
+                }
                 check(mode+" wheel cannot switch widgets at "+width+" DIP",!island.RoutePanelWheel(-120,false,popup) && !island.RoutePanelWheel(120,true,popup) && island.ActivePage=="media");
-                Capture("media-"+mode+"-"+width);controls.Close(false);
+                Capture("media-"+mode+"-"+width+"-"+height);controls.Close(false);
             }
         }
-        s.ReduceMotion=false;Motion.Configure(s);controls.Toggle("volume");check("Popover has a finite animated entrance",controls.Popover.RenderTransform.HasAnimatedProperties);await Task.Delay(420);check("Entrance settles without a render subscription",!controls.Popover.RenderTransform.HasAnimatedProperties);controls.Close(false);
+        s.PanelMaxHeight=417;s.ReduceMotion=false;Motion.Configure(s);controls.Toggle("volume");check("Popover has a finite animated entrance",controls.Popover.RenderTransform.HasAnimatedProperties);await Task.Delay(420);check("Entrance settles without a render subscription",!controls.Popover.RenderTransform.HasAnimatedProperties);controls.Close(false);
         s.ReduceMotion=true;Motion.Configure(s);controls.Toggle("source");check("Reduce motion skips entrance animation",!controls.Popover.RenderTransform.HasAnimatedProperties);island.SelectPage("focus",false);check("Changing widgets closes the popover",!controls.IsOpen);
         island.SelectPage("media",false);controls.Toggle("volume");island.Collapse();check("Collapsing releases the popover",!controls.IsOpen);
         s.PanelWidth=526;foreach(var widget in s.Widgets)if(widget.Id=="volume")widget.Enabled=false;

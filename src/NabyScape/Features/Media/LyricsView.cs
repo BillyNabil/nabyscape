@@ -38,20 +38,20 @@ internal sealed class LyricsView : Grid
     }
     private void Attach()
     {
-        if(attached || !IsLoaded || !IsVisible)return;attached=true;app.Updated+=Updated;app.Lyrics.Changed+=Paint;
+        if(attached || !IsLoaded || !IsVisible)return;attached=true;app.Updated+=Updated;app.Lyrics.Changed+=Paint;app.Lyrics.Acquire(this);
         for(var parent=VisualTreeHelper.GetParent(this);parent!=null;parent=VisualTreeHelper.GetParent(parent))if(parent is ScrollViewer viewer){viewport=viewer;viewport.ScrollChanged+=ViewportChanged;break;}
         host=Window.GetWindow(this);if(host!=null)host.StateChanged+=HostChanged;Refresh();
     }
-    private void Detach(){if(!attached)return;attached=false;app.Updated-=Updated;app.Lyrics.Changed-=Paint;if(viewport!=null)viewport.ScrollChanged-=ViewportChanged;if(host!=null)host.StateChanged-=HostChanged;viewport=null;host=null;tick.Stop();if(fixture==null)app.Lyrics.Cancel();}
+    private void Detach(){if(!attached)return;attached=false;app.Updated-=Updated;app.Lyrics.Changed-=Paint;if(viewport!=null)viewport.ScrollChanged-=ViewportChanged;if(host!=null)host.StateChanged-=HostChanged;viewport=null;host=null;tick.Stop();if(fixture==null)app.Lyrics.Release(this);}
     private void ViewportChanged(object sender,ScrollChangedEventArgs e)=>Refresh();
     private void HostChanged(object? sender,EventArgs e)=>Refresh();
     private void Updated(){if((app.CurrentUpdate&(RuntimeChange.Media|RuntimeChange.Settings))!=0)Refresh();}
     private void Refresh()
     {
-        if(!attached)return;if(!ElementVisibility.InViewport(this)){tick.Stop();if(fixture==null)app.Lyrics.Cancel();return;}
+        if(!attached)return;if(!ElementVisibility.InViewport(this)){tick.Stop();if(fixture==null)app.Lyrics.Release(this);return;}
         if(fixture!=null){Paint();return;}
-        _=app.Lyrics.Load(app.Media.Title,app.Media.Artist,app.Media.Timeline().duration,app.Settings.LyricsEnabled,LyricTiming.IsSpotify(app.Media.Selected?.SourceAppUserModelId));
-        Paint();if(app.Media.Playing && app.Settings.LyricsEnabled && LyricTiming.IsSpotify(app.Media.Selected?.SourceAppUserModelId))tick.Start();else tick.Stop();
+        app.Lyrics.Acquire(this);_=app.Lyrics.Load(app.Media.Title,app.Media.Artist,app.Media.Timeline().duration,app.Settings.LyricsEnabled,LyricTiming.CanUse(app.Media));
+        Paint();if(app.Media.Playing && app.Settings.LyricsEnabled && LyricTiming.CanUse(app.Media))tick.Start();else tick.Stop();
     }
     private void Paint()
     {
@@ -88,8 +88,8 @@ internal static class LyricsFiles
 {
     internal static string Import(App app,Window? owner)
     {
-        if(!LyricTiming.IsSpotify(app.Media.Selected?.SourceAppUserModelId))return "Select a Spotify track first.";
-        var dialog=new Microsoft.Win32.OpenFileDialog{Title="Timed lyrics for the current Spotify track",Filter="Timed lyrics (*.lrc)|*.lrc"};if(dialog.ShowDialog(owner)!=true)return "No file chosen.";
+        if(!LyricTiming.CanUse(app.Media))return "Select a music session with track details and a playback timeline first.";
+        var dialog=new Microsoft.Win32.OpenFileDialog{Title="Timed lyrics for the current track",Filter="Timed lyrics (*.lrc)|*.lrc"};if(dialog.ShowDialog(owner)!=true)return "No file chosen.";
         try
         {
             if(new System.IO.FileInfo(dialog.FileName).Length>512*1024)return "Choose an LRC file under 512 KB.";
@@ -106,10 +106,10 @@ public sealed partial class OverlayWindow
     private void ToggleLyrics(){app.Settings.LyricsEnabled=!app.Settings.LyricsEnabled;app.ChangeSettings();}
     private void SyncLyrics()
     {
-        bool spotify=LyricTiming.IsSpotify(app.Media.Selected?.SourceAppUserModelId);
+        bool compatible=LyricTiming.CanUse(app.Media);
         bool changed=false;
-        if(mediaLyrics!=null){var visible=app.Settings.LyricsEnabled && spotify?Visibility.Visible:Visibility.Collapsed;changed=mediaLyrics.Visibility!=visible;mediaLyrics.Visibility=visible;}
-        if(lyricsButton!=null){lyricsButton.Visibility=spotify?Visibility.Visible:Visibility.Collapsed;lyricsButton.Background=app.Settings.LyricsEnabled?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;lyricsButton.ToolTip=app.Settings.LyricsEnabled?"Hide lyrics":"Show synced lyrics · looks up track details with LRCLIB";System.Windows.Automation.AutomationProperties.SetItemStatus(lyricsButton,app.Settings.LyricsEnabled?"On":"Off");}
+        if(mediaLyrics!=null){var visible=app.Settings.LyricsEnabled && compatible?Visibility.Visible:Visibility.Collapsed;changed=mediaLyrics.Visibility!=visible;mediaLyrics.Visibility=visible;}
+        if(lyricsButton!=null){lyricsButton.Visibility=compatible?Visibility.Visible:Visibility.Collapsed;lyricsButton.Background=app.Settings.LyricsEnabled?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;lyricsButton.ToolTip=app.Settings.LyricsEnabled?"Hide lyrics":"Show synced lyrics · looks up track details with LRCLIB";System.Windows.Automation.AutomationProperties.SetItemStatus(lyricsButton,app.Settings.LyricsEnabled?"On":"Off");}
         if(changed && mediaLyricsLayout?.IsLoaded==true)ResizeToolPanel();
     }
 }

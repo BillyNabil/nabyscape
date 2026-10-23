@@ -10,3 +10,4 @@ test-profile/
 *.suo
 /release-output/
 __pycache__/
+.vercel/

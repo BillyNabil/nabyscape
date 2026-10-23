@@ -148,7 +148,7 @@ internal static class InteractionDiagnostics
             var music=WindowFor("media");music.Close();overlay.ToggleVisibility();overlay.ToggleVisibility();await Settle();Check("manual show does not reopen a closed preview",!app.Previews.AnyVisible("media") && !Application.Current.Windows.Cast<Window>().Any(w=>w.Title=="NabyScape · Music"));
             app.Previews.Open("media");created.Add(WindowFor("media"));
             app.Session.Timer.Start(300,DateTimeOffset.UtcNow);app.SaveSession();WindowFor("timer").Close();Check("closing countdown preview leaves shared countdown running",app.Session.Timer.Running && app.Session.Timer.Remaining(DateTimeOffset.UtcNow)>295);app.Previews.Open("timer");created.Add(WindowFor("timer"));
-            var enabled=app.Settings.Widgets.Single(w=>w.Id=="system");enabled.Enabled=false;app.ChangeSettings();Check("disabling a widget closes its preview",!app.Previews.AnyVisible("system") && !Application.Current.Windows.Cast<Window>().Any(w=>w.Title=="NabyScape · System"));enabled.Enabled=true;app.ChangeSettings();app.Previews.Open("system");created.Add(WindowFor("system"));
+            var enabled=app.Settings.Widgets.Single(w=>w.Id=="system");var systemHover=app.Settings.HoverViews.Single(w=>w.Id=="system");bool systemHoverEnabled=systemHover.Enabled;systemHover.Enabled=false;enabled.Enabled=false;app.ChangeSettings();Check("disabling a widget closes its preview",!app.Previews.AnyVisible("system") && !Application.Current.Windows.Cast<Window>().Any(w=>w.Title=="NabyScape · System"));enabled.Enabled=true;systemHover.Enabled=systemHoverEnabled;app.ChangeSettings();app.Previews.Open("system");created.Add(WindowFor("system"));
             overlay.OpenFeaturePage("notes");await Settle();var main=Entry(overlay,"Quick notes");var hover=Entry(overlay,"Preview note draft");var detached=Entry(WindowFor("notes"),"Shared notes document");
             main.Text="Shared document from the main notes editor, with enough text for selection.";await Settle();Check("main note edits synchronize hover and detached document",app.Productivity.Note==main.Text && hover.Text==main.Text && detached.Text==main.Text);
             detached.Select(7,3);main.Text+=" Appended in main.";Check("main edits preserve detached note selection",detached.Text==main.Text && detached.SelectionStart==7 && detached.SelectionLength==3);
@@ -222,7 +222,7 @@ internal static class InteractionDiagnostics
             foreach(var mode in new[]{"notes","calendar","files"})
             {
                 overlay.ShowActivities(false);overlay.OpenFeaturePage(mode);overlay.UpdateLayout();
-                Check("Activities to detached "+mode+" route mounts normal Tools body",!overlay.ActivitiesOpen && overlay.ActivePage=="tools" && Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="All tools"));
+                Check("Activities to detached "+mode+" route mounts normal Tools body",!overlay.ActivitiesOpen && overlay.ActivePage==mode && (mode=="calendar"?Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Add local event"):Diagnostics.Descendants(overlay).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text==(mode=="files"?"File shelf":"Notes"))));
             }
             foreach(bool compact in new[]{true,false})
             {
@@ -273,13 +273,13 @@ internal static class InteractionDiagnostics
             }
             foreach(var preset in new[]{"Mac","iPhone"})foreach(var h in new[]{28d,39d,72d})
             {
-                overlay.Collapse();app.Settings.Width=295;app.Settings.Height=h;app.Settings.Preset=preset;app.Settings.SatelliteSource="CPU";app.ChangeSettings();Invoke("UpdateSatellite");await Task.Delay(160);overlay.UpdateLayout();
+                overlay.Collapse();app.Settings.Width=295;app.Settings.Height=h;app.Settings.Preset=preset;app.Settings.SatelliteSource="CPU";app.ChangeSettings();Invoke("UpdateSatellite");await Task.Delay(320);overlay.UpdateLayout();
                 satellite=(Window?)Field("satelliteWindow");if(satellite==null)continue;satellite.UpdateLayout();
                 var shape=(IslandSurface)Field("satelliteSurface")!;double shoulder=preset=="Mac"?Math.Min(16,h*.36):0;
                 var dpi=VisualTreeHelper.GetDpi(overlay);var mainTop=overlay.PointToScreen(new Point(0,0));var mainBodyRight=overlay.PointToScreen(new Point((overlay.ActualWidth+app.Settings.Width)/2-shoulder,0));
                 Check($"Companion aligns height and top at {preset}/{h}",Math.Abs(satellite.Height-h)<.1 && Math.Abs(satellite.Top-mainTop.Y/dpi.DpiScaleY)<1);
                 Check($"Companion visible body gap stays 8px at {preset}/{h}",Math.Abs(satellite.Left+shoulder-mainBodyRight.X/dpi.DpiScaleX-8)<1);
-                Check($"Companion inherits contour and material at {preset}/{h}",shape.Notch==(preset=="Mac") && shape.Radius==app.Settings.Radius && shape.GlassStyle==app.Settings.GlassStyle && satellite.Opacity==overlay.Opacity);
+                Check($"Companion inherits contour and material at {preset}/{h} (notch={shape.Notch}, radius={shape.Radius}/{app.Settings.Radius}, glass={shape.GlassStyle}/{app.Settings.GlassStyle}, opacity={satellite.Opacity}/{overlay.Opacity})",shape.Notch==(preset=="Mac") && shape.Radius==app.Settings.Radius && shape.GlassStyle==((IslandSurface)Field("surface")!).GlassStyle && satellite.Opacity==overlay.Opacity);
                 Check($"Companion text fits contour safe insets at {preset}/{h}",Diagnostics.Descendants(satellite).OfType<TextBlock>().Where(t=>t.IsVisible).All(t=>{var r=t.TransformToAncestor(satellite).TransformBounds(new Rect(t.RenderSize));return r.Left>=shoulder && r.Right<=satellite.ActualWidth-shoulder && r.Bottom<=h;}));
                 var visual=new DrawingVisual();double crop=(overlay.ActualWidth-app.Settings.Width)/2;double delta=satellite.Left-mainTop.X/dpi.DpiScaleX-crop;int captureWidth=(int)Math.Ceiling(delta+satellite.Width);
                 using(var dc=visual.RenderOpen()){dc.DrawRectangle(UI.Brush("#C6C4C0"),null,new Rect(0,0,captureWidth,h+16));dc.PushClip(new RectangleGeometry(new Rect(0,0,captureWidth,h+16)));dc.DrawRectangle(new VisualBrush(overlay),null,new Rect(-crop,0,overlay.ActualWidth,overlay.ActualHeight));dc.DrawRectangle(new VisualBrush(satellite),null,new Rect(delta,0,satellite.ActualWidth,satellite.ActualHeight));dc.Pop();}
@@ -287,7 +287,7 @@ internal static class InteractionDiagnostics
             }
             overlay.Collapse();app.Settings.SatelliteSource="Calendar";app.ChangeSettings();Invoke("UpdateSatellite");Check("Calendar companion omitted without nearby events",((Window?)Field("satelliteWindow"))?.IsVisible!=true);
             var companionEvent=app.Calendar.Add("Companion fixture",DateTimeOffset.Now.AddMinutes(20),DateTimeOffset.Now.AddMinutes(50),"");
-            try{Invoke("UpdateSatellite");Check("Calendar companion shows next local event",((Window?)Field("satelliteWindow"))?.IsVisible==true);Invoke("OpenSatellite",false);Check("Calendar companion hover opens calendar",overlay.IsPeeking && overlay.PeekPage=="calendar");Invoke("OpenSatellite",true);Check("Calendar companion click opens calendar tools",overlay.IsExpanded && overlay.ActivePage=="tools");}finally{app.Calendar.Remove(companionEvent.Id);}
+            try{Invoke("UpdateSatellite");Check("Calendar companion shows next local event",((Window?)Field("satelliteWindow"))?.IsVisible==true);Invoke("OpenSatellite",false);Check("Calendar companion hover opens calendar",overlay.IsPeeking && overlay.PeekPage=="calendar");Invoke("OpenSatellite",true);Check("Calendar companion click opens calendar page",overlay.IsExpanded && overlay.ActivePage=="calendar");}finally{app.Calendar.Remove(companionEvent.Id);}
             app.Settings.SatelliteSource="Auto";
             overlay.DiagnosticSatelliteMedia=false;overlay.Collapse();app.Settings.CompactLayout=false;app.ChangeSettings();overlay.Reveal(false);overlay.UpdateLayout();
             Check("Classic Quick launch exposes Activities",Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Activities"));

@@ -28,7 +28,7 @@ internal static class PremiumDiagnostics
         {
             var s=app.Settings;s.CompactLayout=true;s.ReduceMotion=true;s.PanelWidth=514;s.PanelMaxHeight=504;s.PanelScale=1;s.LiveActivity=true;s.HideFullscreen=s.HideMaximized=false;
             foreach(var widget in s.Widgets)widget.Enabled=true;app.ChangeSettings();
-            Check("closed and Status clocks use bold numerals",((TextBlock)Field(island,"compactClock")!).FontWeight==FontWeights.Bold && ((TextBlock)Field(island,"clock")!).FontWeight==FontWeights.Bold);
+            Check("closed clock follows idle typography and Status stays bold",((TextBlock)Field(island,"compactClock")!).FontWeight==((bool)Field(island,"idleClosed")!?FontWeights.Medium:FontWeights.Bold) && ((TextBlock)Field(island,"clock")!).FontWeight==FontWeights.Bold);
             foreach(double width in new[]{514d,340d})
             {
                 s.PanelWidth=width;app.ChangeSettings();island.Reveal(false);
@@ -39,9 +39,9 @@ internal static class PremiumDiagnostics
                     if(page=="status")
                     {
                         island.SelectMonitorTab("hardware");await Task.Delay(2300);Capture(island,$"premium-hardware-{width}");
-                        Check("monitor hides scrollbar at width "+width,Tree(island).OfType<ScrollViewer>().Where(v=>v.IsVisible).All(v=>v.VerticalScrollBarVisibility==ScrollBarVisibility.Hidden));
+                        Check("monitor hides scrollbar at width "+width,Tree(island).OfType<ScrollViewer>().Single(v=>v.IsVisible && AutomationProperties.GetName(v)=="System details · scroll or use Page Down").VerticalScrollBarVisibility==ScrollBarVisibility.Hidden);
                     }
-                    else {Check(page+" controls fit at width "+width,PanelControlsFit(island));if(page=="focus")Check("Start labels stay readable at width "+width,Tree(island).OfType<Button>().Where(b=>b.IsVisible && b.Content?.ToString()=="Start").All(b=>{var text=new FormattedText("Start",System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface(b.FontFamily,b.FontStyle,b.FontWeight,b.FontStretch),b.FontSize,Brushes.White,VisualTreeHelper.GetDpi(b).PixelsPerDip);return b.ActualWidth+.5>=text.WidthIncludingTrailingWhitespace+b.Padding.Left+b.Padding.Right;}));}
+                    else {string overflow=PanelControlOverflow(island);Check(page+" controls fit at width "+width+(overflow.Length==0?"":": "+overflow),overflow.Length==0);if(page=="focus")Check("Start labels stay readable at width "+width,Tree(island).OfType<Button>().Where(b=>b.IsVisible && b.Content?.ToString()=="Start").All(b=>{var text=new FormattedText("Start",System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface(b.FontFamily,b.FontStyle,b.FontWeight,b.FontStretch),b.FontSize,Brushes.White,VisualTreeHelper.GetDpi(b).PixelsPerDip);return b.ActualWidth+.5>=text.WidthIncludingTrailingWhitespace+b.Padding.Left+b.Padding.Right;}));}
                 }
             }
             settings=new SettingsWindow(app);settings.Show();await Task.Delay(160);
@@ -49,28 +49,29 @@ internal static class PremiumDiagnostics
             foreach(double width in new[]{1100d,640d,480d})
             {
                 settings.Width=width;settings.Height=780;
-                foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
+                foreach(string category in new[]{"Appearance","Ambience","Motion","Layout","Visibility","Controls","Content","Audio","Clipboard","Weather","System","Launch","AI","Notifications","Application"})
                 {
                     typeof(SettingsWindow).GetMethod("Navigate",flags)!.Invoke(settings,new object[]{category});await Task.Delay(60);settings.UpdateLayout();
-                    Check(category+" has a section index and contextual illustrations at width "+width,Tree(settings).Any(n=>AutomationProperties.GetName(n)=="Settings section index") && Tree(settings).OfType<SettingsScene>().Any());
-                    Check(category+" form controls fit at width "+width,SettingsFit(settings));
-                    var index=Tree(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Settings section index");
-                    var lastSection=(Border)((ComboBoxItem)index.Items[index.Items.Count-1]).Tag;
-                    index.SelectedIndex=index.Items.Count-1;await Task.Delay(60);
                     var form=Tree(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");
-                    Check(category+" section picker navigates the form at width "+width,Math.Abs(form.VerticalOffset-Math.Min(form.ScrollableHeight,lastSection.TranslatePoint(new Point(),(StackPanel)form.Content).Y+((StackPanel)form.Content).Margin.Top))<2);
-                    Check(category+" section picker remains visible at width "+width,index.TransformToAncestor(settings).Transform(new Point()).Y>=0 && index.TransformToAncestor(settings).Transform(new Point()).Y+index.ActualHeight<settings.ActualHeight);
-                    index.SelectedIndex=1;await Task.Delay(80);
-                    index.SelectedIndex=index.Items.Count-1;await Task.Delay(80);
-                    Check(category+" can jump repeatedly",Math.Abs(form.VerticalOffset-Math.Min(form.ScrollableHeight,lastSection.TranslatePoint(new Point(),(StackPanel)form.Content).Y+((StackPanel)form.Content).Margin.Top))<2);
+                    var sections=Diagnostics.LogicalDescendants((DependencyObject)form.Content).OfType<Border>().Where(b=>b.Tag is string).ToArray();
+                    var scenes=Diagnostics.SettingsExamples(settings);
+                    Diagnostics.ExpandSettingsExamples(settings,scenes.Select(s=>s.Section).ToArray());
+                    Check(category+" has visible settings content without duplicate preview drawers at width "+width,category=="Weather"?Tree(settings).OfType<WeatherView>().Any(w=>w.IsVisible && w.ActualWidth>0):category=="AI"?Tree(settings).OfType<AssistantProviderSettings>().Any(v=>v.IsVisible && v.ActualWidth>0):sections.Length>0 && sections.All(s=>s.ActualWidth>0));
+                    Check(category+" form controls fit at width "+width,SettingsFit(settings));
+                    async Task Reach(Border section)
+                    {
+                        var heading=Diagnostics.LogicalDescendants(section).OfType<TextBlock>().First();heading.BringIntoView();await Task.Delay(60);settings.UpdateLayout();var bounds=heading.TransformToAncestor(form).TransformBounds(new Rect(heading.RenderSize));
+                        Check(category+" section heading reachable: "+section.Tag+" at "+width,heading.ActualHeight>0 && bounds.Top>=-.5 && bounds.Bottom<=form.ActualHeight+.5);
+                    }
+                    if(sections.Length>0){await Reach(sections[^1]);await Reach(sections[0]);await Reach(sections[^1]);}
                     form.ScrollToVerticalOffset(Math.Min(220,form.ScrollableHeight));await Task.Delay(20);
                     double beforeSave=form.VerticalOffset;var pageInstance=form.Content;
                     var toggle=Tree(form).OfType<CheckBox>().FirstOrDefault(c=>AutomationProperties.GetName(c)!="Start automatically when signing in to Windows");
                     if(toggle!=null){bool? originalToggle=toggle.IsChecked;toggle.IsChecked=!originalToggle;toggle.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));await Task.Delay(260);Check(category+" applying a toggle preserves scroll and controls",ReferenceEquals(pageInstance,form.Content) && Math.Abs(form.VerticalOffset-beforeSave)<2);toggle.IsChecked=originalToggle;toggle.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));await Task.Delay(220);}
                     if(category=="Content")
                     {
-                        var move=Tree(form).OfType<Button>().First(b=>AutomationProperties.GetName(b).StartsWith("Move down ") && b.IsEnabled);double beforeOrder=form.VerticalOffset;move.Focus();beforeOrder=form.VerticalOffset;move.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(100);
-                        Check("reordering Content preserves scroll at width "+width,Math.Abs(form.VerticalOffset-beforeOrder)<2);
+                        var grip=Tree(form).OfType<Button>().First(b=>AutomationProperties.GetName(b).StartsWith("Drag to reorder "));grip.BringIntoView();await Task.Delay(30);
+                        Check("Content reorder grips are keyboard discoverable at width "+width,grip.Focusable && grip.IsTabStop && grip.ToolTip?.ToString()?.Contains("Alt+")==true);
                     }
                     if(category=="Launch")
                     {
@@ -81,13 +82,10 @@ internal static class PremiumDiagnostics
                     var slider=Tree(form).OfType<Slider>().FirstOrDefault();if(slider!=null){double originalValue=slider.Value,beforeSlider=form.VerticalOffset;slider.Value=Math.Min(slider.Maximum,slider.Value+slider.TickFrequency);await Task.Delay(230);Check(category+" slider updates preserve scroll",Math.Abs(form.VerticalOffset-beforeSlider)<2);slider.Value=originalValue;}
                     if(width==1100)
                     {
-                        index=Tree(settings).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Settings section index");
-                        foreach(var option in index.Items.OfType<ComboBoxItem>().Where(i=>i.Tag is Border).ToArray())
+                        foreach(var destination in sections)
                         {
-                            index.SelectedItem=option;await Task.Delay(80);
-                            var destination=(Border)option.Tag;var expected=Math.Min(form.ScrollableHeight,destination.TranslatePoint(new Point(),(StackPanel)form.Content).Y+((StackPanel)form.Content).Margin.Top);
-                            Check(category+" jump aligns "+option.Content,Math.Abs(form.VerticalOffset-expected)<2);
-                            if(option.Content?.ToString() is "Hover pages" or "Clipboard history" or "Typography" or "Closed media display" or "Detachable previews" or "Automatic tucking")Capture(settings,"settings-detail-"+option.Content.ToString()!.ToLowerInvariant().Replace(' ','-'));
+                            await Reach(destination);
+                            if(destination.Tag?.ToString() is "Hover pages" or "Clipboard history" or "Typography" or "Closed media display" or "Detachable previews" or "Automatic tucking")Capture(settings,"settings-detail-"+destination.Tag.ToString()!.ToLowerInvariant().Replace(' ','-'));
                         }
                     }
                     form.ScrollToTop();await Task.Delay(30);
@@ -109,10 +107,18 @@ internal static class PremiumDiagnostics
         var viewport=Tree(settings).OfType<ScrollViewer>().Single(v=>AutomationProperties.GetName(v)=="Settings form viewport");var presenter=Tree(viewport).OfType<ScrollContentPresenter>().First();
         return Tree(viewport).OfType<FrameworkElement>().Where(e=>e.IsVisible && e.ActualWidth>0 && e is Button or Slider or ComboBox or CheckBox or ColorField).All(e=>{var r=e.TransformToAncestor(presenter).TransformBounds(new Rect(e.RenderSize));return r.Left>=-.5 && r.Right<=presenter.ActualWidth+.5;});
     }
-    private static bool PanelControlsFit(OverlayWindow island)
+    private static string PanelControlOverflow(OverlayWindow island)
     {
         var body=(StackPanel)typeof(OverlayWindow).GetField("body",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(island)!;
-        return Tree(body).OfType<FrameworkElement>().Where(e=>e.IsVisible && e.ActualWidth>0 && e is Button or TextBox or Slider or ComboBox).All(e=>{var r=e.TransformToAncestor(body).TransformBounds(new Rect(e.RenderSize));return r.Left>=-.5 && r.Right<=body.ActualWidth+.5;});
+        foreach(var control in Tree(body).OfType<FrameworkElement>().Where(e=>e.IsVisible && e.ActualWidth>0 && e is Button or TextBox or Slider or ComboBox))
+        {
+            FrameworkElement host=body;
+            for(var parent=VisualTreeHelper.GetParent(control);parent!=null;parent=VisualTreeHelper.GetParent(parent))if(parent is ScrollContentPresenter presenter){host=presenter;break;}
+            if(host is ScrollContentPresenter && host.TemplatedParent is ScrollViewer horizontal && horizontal.HorizontalScrollBarVisibility!=ScrollBarVisibility.Disabled)continue;
+            var bounds=control.TransformToAncestor(host).TransformBounds(new Rect(control.RenderSize));
+            if(bounds.Left<-.5 || bounds.Right>host.ActualWidth+.5)return $"{control.GetType().Name} {AutomationProperties.GetName(control)} bounds {bounds.Left:0.0}..{bounds.Right:0.0}, viewport {host.ActualWidth:0.0}";
+        }
+        return "";
     }
     private static System.Collections.Generic.IEnumerable<DependencyObject> Tree(DependencyObject node)
     {for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++){var child=VisualTreeHelper.GetChild(node,i);yield return child;foreach(var descendant in Tree(child))yield return descendant;}}

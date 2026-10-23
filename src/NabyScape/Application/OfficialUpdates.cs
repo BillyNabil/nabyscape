@@ -21,6 +21,7 @@ internal sealed class OfficialUpdates : IDisposable
     internal static Version InstalledVersion=>new(typeof(App).Assembly.GetName().Version!.ToString(3));
     private readonly HttpClient http;
     private readonly Store store;
+    private readonly string stagingDirectory;
     private readonly Action<string,Version> inspect;
     private readonly UpdateState state;
     private int active;
@@ -32,25 +33,29 @@ internal sealed class OfficialUpdates : IDisposable
     internal bool Busy=>active!=0;
     internal event Action? Changed;
     internal event Action<OfficialRelease>? UpdateAvailable;
-    internal OfficialUpdates(Store store,HttpMessageHandler? transport=null,Action<string,Version>? inspect=null)
+    internal event Action? DownloadReady;
+    internal OfficialUpdates(Store store,HttpMessageHandler? transport=null,Action<string,Version>? inspect=null,string? stagingDirectory=null)
     {
-        this.store=store;this.inspect=inspect??InspectSetup;state=store.Load<UpdateState>("update-state");
+        this.store=store;this.stagingDirectory=Path.GetFullPath(stagingDirectory??UpdateHandoff.Folder);this.inspect=inspect??InspectSetup;state=store.Load<UpdateState>("update-state");
         http=new(transport??new HttpClientHandler{AllowAutoRedirect=false});http.Timeout=TimeSpan.FromSeconds(45);
         http.DefaultRequestHeaders.UserAgent.ParseAdd("NabyScape/"+InstalledVersion);http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
     }
     internal void Cancel()=>cancellation?.Cancel();
     private void Report(string text){Status=text;Changed?.Invoke();}
-    internal async Task Check(bool manual,bool enabled=true)
+    internal async Task Check(bool manual,bool enabled=true,bool autoDownload=false)
     {
         if(!manual && (!enabled || DateTimeOffset.UtcNow-state.LastAttempt<TimeSpan.FromHours(24)))return;
+        bool checkedRelease=false;
         await Operation(async token=>
         {
             state.LastAttempt=DateTimeOffset.UtcNow;store.Save("update-state",state);Report("Checking official releases…");
             using var response=await Get(Endpoint,token);string json=await ReadText(response,1024*1024,token);
             Available=Parse(json,InstalledVersion);VerifiedSetup=null;VerifiedHash=null;
-            Report(Available==null?"You have the latest stable version.":"Version "+Available.Version+" is available.");
+            checkedRelease=true;
+            Report(Available==null?"You have the latest stable version.":Localization.Format("Version {0} is available.",Available.Version));
             if(Available!=null)UpdateAvailable?.Invoke(Available);
         });
+        if(checkedRelease && !manual && autoDownload && Available!=null && !Busy)await Download();
     }
     internal async Task Download()
     {
@@ -58,25 +63,34 @@ internal sealed class OfficialUpdates : IDisposable
         await Operation(async token=>
         {
             var release=Available;VerifiedSetup=null;VerifiedHash=null;
-            string folder=Path.Combine(store.DirectoryPath,"updates");Directory.CreateDirectory(folder);
+            string folder=stagingDirectory;Directory.CreateDirectory(folder);
             string partial=Path.Combine(folder,"NabyScape-Setup.exe.partial"),target=Path.Combine(folder,"NabyScape-Setup.exe");
             try
             {
                 Report("Downloading checksums…");using var sums=await Get(release.Checksums,token);
                 string hash=Checksum(await ReadText(sums,65536,token));
+                if(File.Exists(target) && new FileInfo(target).Length==release.Size)
+                {
+                    try
+                    {
+                        await Task.Run(()=>{VerifyFile(target,hash);inspect(target,release.Version);},token);
+                        token.ThrowIfCancellationRequested();VerifiedHash=hash;VerifiedSetup=target;Report("Download verified. Choose Install and restart when ready.");DownloadReady?.Invoke();return;
+                    }
+                    catch(InvalidDataException){ /* A stale or incomplete cached setup is replaced below. */ }
+                }
                 using var response=await Get(release.Setup,token);
                 if(response.Content.Headers.ContentLength is long length && length!=release.Size)throw new InvalidDataException("Setup length does not match release metadata.");
                 using(var input=await response.Content.ReadAsStreamAsync(token))
                 using(var output=new FileStream(partial,FileMode.Create,FileAccess.Write,FileShare.None,81920,true))
                 {
-                    byte[] buffer=new byte[81920];long total=0;int read;
+                    byte[] buffer=new byte[81920];long total=0;int read;long lastPercent=-1;
                     while((read=await input.ReadAsync(buffer,token))>0)
-                    {total+=read;if(total>release.Size)throw new InvalidDataException("Setup is larger than expected.");await output.WriteAsync(buffer.AsMemory(0,read),token);Report($"Downloading update… {total*100/release.Size}%");}
+                    {total+=read;if(total>release.Size)throw new InvalidDataException("Setup is larger than expected.");await output.WriteAsync(buffer.AsMemory(0,read),token);long percent=total*100/release.Size;if(percent!=lastPercent){lastPercent=percent;Report(Localization.Format("Downloading update… {0}%",percent));}}
                     if(total!=release.Size)throw new InvalidDataException("Setup download was interrupted.");
                 }
                 token.ThrowIfCancellationRequested();await Task.Run(()=>{VerifyFile(partial,hash);inspect(partial,release.Version);},token);token.ThrowIfCancellationRequested();
                 if(OperatingSystem.IsWindows())File.WriteAllText(partial+":Zone.Identifier","[ZoneTransfer]\r\nZoneId=3\r\nHostUrl="+release.Setup.AbsoluteUri+"\r\n");
-                File.Move(partial,target,true);VerifiedHash=hash;VerifiedSetup=target;Report("Download verified. Choose Install and restart when ready.");
+                File.Move(partial,target,true);VerifiedHash=hash;VerifiedSetup=target;Report("Download verified. Choose Install and restart when ready.");DownloadReady?.Invoke();
             }
             finally{if(File.Exists(partial))File.Delete(partial);}
         });
@@ -85,9 +99,10 @@ internal sealed class OfficialUpdates : IDisposable
     {
         if(Interlocked.CompareExchange(ref active,1,0)!=0)return;
         using var source=new CancellationTokenSource(TimeSpan.FromMinutes(10));cancellation=source;
-        try{await action(source.Token);}
-        catch(OperationCanceledException){Report("Update cancelled or timed out. Your current app is unchanged.");}
-        catch(Exception ex){store.Log(ex);Report("Update failed: "+ex.Message);}
+        var clock=Stopwatch.StartNew();PrivateDiagnostics.SetServiceState(DiagnosticService.Updates,DiagnosticServiceState.Busy);
+        try{await action(source.Token);PrivateDiagnostics.Record(DiagnosticStage.Updater,DiagnosticCode.Completed,clock.Elapsed);PrivateDiagnostics.SetServiceState(DiagnosticService.Updates,DiagnosticServiceState.Ready);}
+        catch(OperationCanceledException){PrivateDiagnostics.Record(DiagnosticStage.Updater,DiagnosticCode.Cancelled,clock.Elapsed);PrivateDiagnostics.SetServiceState(DiagnosticService.Updates,DiagnosticServiceState.Degraded);Report("Update cancelled or timed out. Your current app is unchanged.");}
+        catch(Exception ex){PrivateDiagnostics.Record(DiagnosticStage.Updater,ex is InvalidDataException?DiagnosticCode.VerificationFailed:DiagnosticCode.UnknownFailure,clock.Elapsed);PrivateDiagnostics.SetServiceState(DiagnosticService.Updates,DiagnosticServiceState.Failed);store.Log(ex);Report(Localization.Format("Update failed: {0}",ex.Message));}
         finally{cancellation=null;Interlocked.Exchange(ref active,0);Changed?.Invoke();}
     }
     private async Task<HttpResponseMessage> Get(Uri uri,CancellationToken token)
@@ -104,7 +119,7 @@ internal sealed class OfficialUpdates : IDisposable
             }
             if((result.StatusCode==HttpStatusCode.TooManyRequests || (int)result.StatusCode>=500) && attempt<1)
             {result.Dispose();await Task.Delay(TimeSpan.FromSeconds(2),token);continue;}
-            result.EnsureSuccessStatusCode();return result;
+            try{result.EnsureSuccessStatusCode();return result;}catch{result.Dispose();throw;}
         }
     }
     private static async Task<string> ReadText(HttpResponseMessage response,int limit,CancellationToken token)
@@ -120,6 +135,7 @@ internal sealed class OfficialUpdates : IDisposable
         if(!Regex.IsMatch(tag,@"^v\d+\.\d+\.\d+$") || !Version.TryParse(tag[1..],out var version) || root.GetProperty("draft").GetBoolean() || root.GetProperty("prerelease").GetBoolean())throw new InvalidDataException("Expected a stable official release.");
         var notes=new Uri(root.GetProperty("html_url").GetString()!);
         if(notes.AbsoluteUri!=Repository+"/releases/tag/"+tag)throw new InvalidDataException("Invalid release identity.");
+        if(version<=current)return null;
         Uri Asset(string name,out long size)
         {
             var assets=root.GetProperty("assets").EnumerateArray().Where(a=>a.GetProperty("name").GetString()==name).ToArray();
@@ -129,12 +145,12 @@ internal sealed class OfficialUpdates : IDisposable
             if(uri.AbsoluteUri!=Repository+"/releases/download/"+tag+"/"+name || size<1 || size>512L*1024*1024)throw new InvalidDataException("Invalid official asset.");
             return uri;
         }
-        var setup=Asset("NabyScape-win-x64-Setup.exe",out long size);var sums=Asset("SHA256SUMS",out _);
-        return version>current?new(version,tag,notes,setup,size,sums):null;
+        var setup=Asset(RuntimePlatform.SetupAsset,out long size);var sums=Asset("SHA256SUMS",out _);
+        return new(version,tag,notes,setup,size,sums);
     }
     internal static string Checksum(string text)
     {
-        var matches=text.Split('\n').Select(line=>Regex.Match(line.TrimEnd('\r'),@"^([a-fA-F0-9]{64})  NabyScape-win-x64-Setup\.exe$")).Where(m=>m.Success).ToArray();
+        var matches=text.Split('\n').Select(line=>Regex.Match(line.TrimEnd('\r'),@"^([a-fA-F0-9]{64})  "+Regex.Escape(RuntimePlatform.SetupAsset)+"$")).Where(m=>m.Success).ToArray();
         if(matches.Length!=1)throw new InvalidDataException("Invalid or missing setup checksum.");return matches[0].Groups[1].Value.ToUpperInvariant();
     }
     internal static void VerifyFile(string path,string hash)
@@ -144,10 +160,16 @@ internal sealed class OfficialUpdates : IDisposable
         using var file=File.OpenRead(path);using var reader=new BinaryReader(file);
         if(file.Length<64 || reader.ReadUInt16()!=0x5A4D)throw new InvalidDataException("Setup is not a Windows executable.");
         file.Position=0x3C;int offset=reader.ReadInt32();if(offset<64 || offset>file.Length-6)throw new InvalidDataException("Invalid setup header.");
-        file.Position=offset;if(reader.ReadUInt32()!=0x4550 || reader.ReadUInt16()!=0x8664)throw new InvalidDataException("Setup is not win-x64.");
+        file.Position=offset;if(reader.ReadUInt32()!=0x4550 || reader.ReadUInt16()!=RuntimePlatform.PeMachine)throw new InvalidDataException("Setup architecture does not match "+RuntimePlatform.Rid+".");
         UpdateSignature.VerifyIfPresent(path);
         var version=FileVersionInfo.GetVersionInfo(path);if(new Version(version.FileMajorPart,version.FileMinorPart,version.FileBuildPart)!=expected)throw new InvalidDataException("Setup version does not match the release.");
     }
     internal static bool IsInstalled(string path)=>new[]{"NabyScape.exe","LumaIsland.exe","BillyNabilaIsland.exe"}.Any(name=>string.Equals(Path.GetFullPath(path),Path.Combine(Installer.InstallDirectory,name),StringComparison.OrdinalIgnoreCase));
+    internal static bool IsAutomaticInstallPath(string path)=>string.Equals(Path.GetFullPath(path),Path.Combine(Installer.InstallDirectory,"NabyScape.exe"),StringComparison.OrdinalIgnoreCase);
+    internal static void RequireAutomaticInstallPath(string path)
+    {
+        if(!IsInstalled(path))throw new IOException("Portable copy: quit and replace the portable files manually.");
+        if(!IsAutomaticInstallPath(path))throw new IOException("This legacy executable cannot install or restore updates automatically. Quit the app, download the official installer from "+Repository+"/releases/latest, run it, then open NabyScape.exe before using automatic recovery.");
+    }
     public void Dispose(){Cancel();http.Dispose();}
 }

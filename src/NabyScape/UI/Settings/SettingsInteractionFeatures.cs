@@ -10,7 +10,7 @@ public sealed partial class SettingsWindow
     private void InteractionFeatureControls()
     {
         var s=app.Settings;
-        var edge=new StackPanel();AddSlider(edge,"Tucked edge height",s.TuckEdge,3,12,v=>s.TuckEdge=v," DIP");
+        var edge=new StackPanel();AddSlider(edge,"Tucked edge height",s.TuckEdge,0,12,v=>s.TuckEdge=v," px");edge.Children.Add(UI.Text("0 hides the dock completely. Use the tuck shortcut or hover the screen edge to reveal it.",11,UI.Muted));
         page.Children.Add(Section("Automatic tucking",Check("Always tucked",s.AlwaysTucked,v=>s.AlwaysTucked=v),edge,Check("Tuck above maximized apps",s.HideMaximized,v=>s.HideMaximized=v),Check("Tuck above fullscreen apps",s.HideFullscreen,v=>s.HideFullscreen=v),UI.Text("Leaves a small edge at the top when Chrome or another app fills this display. Move the pointer to that edge to reveal the preview. Manual hide still hides the whole island.",11,UI.Muted)));
         page.Children.Add(Section("Panel navigation",Check("Swipe between open panels",s.PanelSwipe,v=>s.PanelSwipe=v),UI.Text("Swipe empty space or use Shift+wheel to switch panels. Long lists keep vertical scrolling. Keyboard: Ctrl+Tab.",11,UI.Muted)));
         page.Children.Add(Section("Drag to Island",Check("Reveal shelf when dragging files",s.DropReveal,v=>s.DropReveal=v),UI.Text("Drag files onto the island or its tucked edge. Drop to stage references; select multiple shelf items to drag them out together. Manual hiding stays hidden.",11,UI.Muted)));

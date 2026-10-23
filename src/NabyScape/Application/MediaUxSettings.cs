@@ -9,6 +9,7 @@ public sealed partial class Settings
     public bool PanelAutoHeight {get;set;}=true;
     public string WaveformSource {get;set;}="Spectrum";
     public double WaveformSensitivity {get;set;}=1.35;
+    public bool MediaIntegrationEnabled {get;set;}=true;
     public bool LyricsEnabled {get;set;}
     public string LyricsAnimation {get;set;}="Slide";
     public double LyricsOffset {get;set;}

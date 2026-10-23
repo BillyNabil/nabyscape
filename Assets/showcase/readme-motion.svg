@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="390" viewBox="0 0 1440 390" role="img" aria-labelledby="title desc">
+<title id="title">See NabyScape in motion</title>
+<desc id="desc">Play the 29-second silent app tour, recorded in version 2.10.</desc>
+<defs><radialGradient id="light" cx=".9" cy="1" r=".85"><stop stop-color="#47352b"/><stop offset="1" stop-color="#111416"/></radialGradient></defs>
+<rect width="1440" height="390" rx="18" fill="url(#light)"/>
+<text x="78" y="167" fill="#eeece7" font-family="Segoe UI,Arial,sans-serif" font-size="61" letter-spacing="-1.8">See it in motion.</text>
+<text x="82" y="225" fill="#b6b1aa" font-family="Segoe UI,Arial,sans-serif" font-size="22">The island, in use. An actual app recording.</text>
+<text x="82" y="313" fill="#deb89d" font-family="Segoe UI,Arial,sans-serif" font-size="17">29 seconds · Silent · v2.10 capture</text>
+<circle cx="1204" cy="195" r="67" fill="#e8e3d9"/>
+<path d="m1189 167 43 28-43 28Z" fill="#171817"/>
+</svg>

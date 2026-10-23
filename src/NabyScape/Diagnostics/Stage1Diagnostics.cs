@@ -66,20 +66,22 @@ internal static class Stage1Diagnostics
         var preview=Diagnostics.Descendants(settings).OfType<Expander>().Single(e=>AutomationProperties.GetName(e)=="Settings live preview");
         var form=Diagnostics.Descendants(settings).OfType<ScrollViewer>().Single(c=>AutomationProperties.GetName(c)=="Settings form viewport");
         Check("480x300 uses category chooser and collapsed preview with usable form",chooser.IsVisible && !preview.IsExpanded && form.ActualWidth>=300 && form.ActualHeight>=80);
-        foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
-        {chooser.SelectedItem=category;settings.UpdateLayout();Check("compact category is reachable: "+category,form.ExtentHeight>0 && form.ActualWidth>=300);}
+        var categories=new[]{("Appearance","Look & colors"),("Ambience","Ambience"),("Motion","Animation & speed"),("Layout","Position & size"),("Visibility","Show & hide"),("Controls","Mouse & keyboard"),("Content","Widgets & tools"),("Audio","Music & sound"),("Clipboard","Clipboard"),("Weather","Weather"),("System","Clock & system"),("Launch","Apps & shortcuts"),("AI","Naby AI"),("Notifications","Notifications"),("Application","General")};
+        foreach(var (category,title) in categories)
+        {chooser.SelectedItem=Localization.Text(title);settings.UpdateLayout();Check("compact category is reachable: "+category,Equals(chooser.SelectedItem,Localization.Text(title)) && Diagnostics.CurrentSettingsCategory(settings)==category && form.ExtentHeight>0 && form.ActualWidth>=300);}
         Capture(settings,"settings-480x300");
         settings.Width=900;settings.Height=300;await Task.Delay(100);settings.UpdateLayout();
         var navigation=Diagnostics.Descendants(settings).OfType<ScrollViewer>().Single(c=>AutomationProperties.GetName(c)=="Settings category viewport");
         Check("900x300 sidebar has a scrolling category viewport",!chooser.IsVisible && navigation.IsVisible && navigation.ScrollableHeight>0);
-        foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
+        var buttons=(System.Collections.Generic.Dictionary<string,Button>)typeof(SettingsWindow).GetField("navigationButtons",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(settings)!;
+        foreach(var (category,_) in categories)
         {
-            var button=Diagnostics.Descendants(navigation).OfType<Button>().Single(b=>b.Content?.ToString()==category);
+            var button=buttons[category];
             button.BringIntoView();await Task.Delay(30);settings.UpdateLayout();
             var position=button.TransformToAncestor(navigation).Transform(new Point());
             bool reachable=position.Y>=0 && position.Y+button.ActualHeight<=navigation.ActualHeight;
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));settings.UpdateLayout();
-            Check("short sidebar category is reachable: "+category,reachable && form.ExtentHeight>0);
+            Check("short sidebar category is reachable: "+category,reachable && Diagnostics.CurrentSettingsCategory(settings)==category && form.ExtentHeight>0);
         }
         Capture(settings,"settings-900x300");
         // Exercise the registered hook handler and queued LocationChanged containment on an isolated HWND.
@@ -109,7 +111,7 @@ internal static class Stage1Diagnostics
         settings.Width=900;settings.Height=680;await Task.Delay(100);Check("narrow preview can be expanded",!preview.IsExpanded);preview.IsExpanded=true;settings.UpdateLayout();Check("expanded narrow preview leaves scrolling form",preview.IsExpanded && form.ActualHeight>=80);Capture(settings,"settings-narrow-preview");
         settings.Width=1100;settings.Height=780;await Task.Delay(100);settings.UpdateLayout();
         Check("wide Settings displays sidebar, form and preview",!chooser.IsVisible && preview.IsExpanded && form.ActualWidth>=300);Capture(settings,"settings-wide");
-        chooser.SelectedItem="Content";settings.UpdateLayout();Capture(settings,"widget-order");
+        chooser.SelectedItem=Localization.Text("Widgets & tools");settings.UpdateLayout();Capture(settings,"widget-order");
     }
     private sealed class SettingsScope(SettingsWindow window):IDisposable
     {

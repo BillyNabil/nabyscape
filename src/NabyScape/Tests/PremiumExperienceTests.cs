@@ -18,7 +18,7 @@ internal static class PremiumExperienceTests
         test("Premium preferences normalize nonfinite values and unknown modes",()=>
         {
             var s=new Settings{AmbientStrength=double.NaN,AmbientSpread=20,AmbientMotion="unknown",InteractionMotion="unknown",NotificationSeconds=double.PositiveInfinity,NotificationAnimation="unknown",QuietStart=-1,QuietEnd=30};s.Normalize();
-            Assert(s.AmbientStrength==.5 && s.AmbientSpread==1 && s.AmbientMotion=="Drift" && s.InteractionMotion=="Subtle" && s.NotificationSeconds==12 && s.NotificationAnimation=="Lift" && s.QuietStart==0 && s.QuietEnd==23);
+            Assert(s.AmbientStrength==.5 && s.AmbientSpread==2.5 && s.AmbientMotion=="Drift" && s.InteractionMotion=="Subtle" && s.NotificationSeconds==12 && s.NotificationAnimation=="Lift" && s.QuietStart==0 && s.QuietEnd==23);
         });
         test("Quiet hours cover overnight boundaries without silencing the daytime",()=>
         {

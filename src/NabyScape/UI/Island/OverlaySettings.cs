@@ -74,7 +74,7 @@ public sealed partial class OverlayWindow
         if(previous.Content!=next.Content || classicMixerOpen){bodyDirty=true;return false;}
         var s=app.Settings;
         if(previous.Hotkeys!=next.Hotkeys)ConfigureHotkey();
-        Motion.Configure(s);Opacity=s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac" && s.DockEdge=="Top";surface.Radius=s.Radius;
+        Motion.Configure(s);Opacity=Accessibility.HighContrast?1:s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac" && s.DockEdge=="Top";surface.Radius=s.Radius;
         hoverDelay.Interval=TimeSpan.FromMilliseconds(s.HoverDelayMs);detailDelay.Interval=TimeSpan.FromMilliseconds(s.HoverDetailDelayMs);
         ApplyHeadingTypography(body);ApplyMediaTypography(title,s.BoldMediaTitle);
         foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));
@@ -83,7 +83,7 @@ public sealed partial class OverlayWindow
             refreshHz=Native.RefreshRate(Native.ChooseScreen(s));compact.Width=Math.Max(120,Math.Min(s.Width,expandedWidth)-(surface.Notch?32:12));compact.Height=s.Height;compact.MinHeight=s.Height;
             Dimensions();foreach(var reflow in bodyReflow)reflow();Dimensions();foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));Width=WindowHostWidth;Height=Math.Max(HostHeight,s.Height);
             surface.BeginUpdate();
-            try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:s.Width);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?s.HoverHeight:100):s.Height);}
+            try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:ClosedSurfaceWidth);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?s.HoverHeight:100):s.Height);}
             finally{surface.EndUpdate();}
             if(peeking)PreparePeekDeck();
         }

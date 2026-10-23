@@ -186,7 +186,7 @@ internal sealed class DetachedPreviewWindow : Window
             if(rect!=candidate)SetPhysicalBounds(rect,scale);
         }finally{clamping=false;}
     }
-    internal void ApplySettings(){surface.Background=UI.Brush(app.Settings.Background);surface.Opacity=app.Settings.Opacity;ambientPresenter.Refresh();view?.ApplySettings();}
+    internal void ApplySettings(){surface.Background=Accessibility.HighContrast?SystemColors.WindowBrush:UI.Brush(app.Settings.Background);surface.Opacity=Accessibility.HighContrast?1:app.Settings.Opacity;ambientPresenter.Refresh();view?.ApplySettings();}
     private void ScheduleSave(){if(clamping)return;saveGeometry.Stop();if(IsVisible)saveGeometry.Start();}
     private void PersistGeometry()
     {

@@ -198,7 +198,7 @@ public static class ProductivityTests
             int errors=0,changes=0;
             using var service=new ProductivityService(new Store(root),_=>errors++,false);
             service.Changed+=()=>changes++;
-            Directory.CreateDirectory(Path.Combine(root,"productivity.json.tmp"));
+            Assert(service.Save());using var locked=new FileStream(Path.Combine(root,"productivity.json"),FileMode.Open,FileAccess.Read,FileShare.Read);
             service.Note="editable despite disk error";
             Assert(errors==0 && changes==1); service.Note="editable despite disk error"; Assert(changes==1); Assert(!service.Save());
             Assert(errors==1 && changes==1 && service.Note=="editable despite disk error" && !string.IsNullOrEmpty(service.LastError));

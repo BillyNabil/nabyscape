@@ -109,7 +109,7 @@ internal static class AssistantCharacterDiagnostics
             orb.ReduceMotion=false;window.Hide();check("Hidden character releases idle/live animation and blink scheduling",!orb.Rendering && !orb.IdleAnimating && !orb.BlinkScheduled && !orb.Pressed);
             window.Show();orb.State=AssistantState.Idle;await Task.Delay(40);check("Visible idle character resumes retained motion and sparse blinking",!orb.Rendering && orb.IdleAnimating && orb.BlinkScheduled);
             window.Close();await Task.Delay(40);check("Closing character view releases all visual scheduling",!orb.Rendering && !orb.IdleAnimating && !orb.BlinkScheduled);
-            check("Character interaction never enables microphone, sharing or actions",!app.Assistant.VoiceConnected && !app.Assistant.Desktop.Sharing && !app.Assistant.ActionsAllowed);
+            check("Character interaction never enables microphone, sharing or actions",!app.Assistant.VoiceConnected && !app.Assistant.Desktop.Sharing);
             File.WriteAllText(Path.Combine(directory,"capture-notes.txt"),"Actual retained WPF character, synthetic listening/speaking levels and state fixtures. GIF sampled at 25 fps; application uses its existing FramePacer. No provider, credential, microphone, speaker, desktop capture or native input used.");
         }
         finally{if(window.IsLoaded)window.Close();}

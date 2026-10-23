@@ -13,7 +13,7 @@ namespace NabyScape;
 internal sealed class AssistantOrb : FrameworkElement
 {
     private AssistantState state;
-    private bool rendering,reduceMotion,live,hovered,pressed,idleAnimating,music;
+    private bool rendering,reduceMotion,live,hovered,pressed,idleAnimating,music,motionEnabled;
     private readonly ScaleTransform headphonesReveal=new(0,0,50,50);
     private readonly MatrixTransform idlePose=new();
     private AnimationClock? idleClock;
@@ -76,7 +76,7 @@ internal sealed class AssistantOrb : FrameworkElement
         get=>state;
         set{if(state==value)return;state=value;Move(expression,ScaleTransform.ScaleYProperty,EyeScale,220);Refresh();if(IsVisible && !reduceMotion && Motion.Enabled){Blink(state==AssistantState.Approval);Bounce(state==AssistantState.Error);}}
     }
-    internal bool ReduceMotion {get=>reduceMotion;set{reduceMotion=value;Refresh();}}
+    internal bool ReduceMotion {get=>reduceMotion;set{if(reduceMotion==value && motionEnabled==Motion.Enabled)return;reduceMotion=value;motionEnabled=Motion.Enabled;Refresh();}}
     internal double Level {get=>level;set=>level=Math.Clamp(double.IsFinite(value)?value:0,0,1);}
     internal bool Rendering=>rendering;
     internal bool IdleAnimating=>idleAnimating;

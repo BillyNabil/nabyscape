@@ -38,7 +38,7 @@ internal static class VisualPolishDiagnostics
         app.Productivity.AddTask("Review the cover artwork");app.Productivity.AddTask("Keep the next step clear");
         for(int i=0;i<12;i++)app.Productivity.Clips.Add(new ClipItem{Text=i==0?"https://example.com/design-notes":"Local design note "+(i+1),Timestamp=new DateTimeOffset(2026,10,20,12,0,0,TimeSpan.Zero).AddMinutes(-i)});
         app.Productivity.Save();island.Reveal(false);await Task.Delay(100);
-        var tabs=Field<Dictionary<string,Button>>("compactTabs");string[] originalPages={"media","focus","status","access","files","notes","tasks","clips","calendar","awake","links"};
+        var tabs=Field<Dictionary<string,Button>>("compactTabs");string[] originalPages={"voice","media","focus","stopwatch","status","access","files","notes","tasks","clips","calendar","awake","links","weather"};
         check("Existing page groups and dot navigation are retained",tabs.Keys.SequenceEqual(originalPages) && tabs.Values.All(b=>b.Content is System.Windows.Shapes.Rectangle));
         foreach(double width in new[]{526d,300d})
         {
@@ -65,7 +65,7 @@ internal static class VisualPolishDiagnostics
         try
         {
             var nav=(Dictionary<string,Button>)typeof(SettingsWindow).GetField("navigationButtons",flags)!.GetValue(window)!;
-            check("All nine Settings categories remain in their original order",nav.Keys.SequenceEqual(new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","AI","Application"}));
+            check("All fifteen Settings categories retain the expected order",nav.Keys.SequenceEqual(new[]{"Appearance","Ambience","Motion","Layout","Visibility","Controls","Content","Audio","Clipboard","Weather","System","Launch","AI","Notifications","Application"}));
             var navigate=typeof(SettingsWindow).GetMethod("Navigate",flags)!;
             foreach(string category in nav.Keys){navigate.Invoke(window,new object[]{category});await Task.Delay(40);Capture(window,"settings-"+category.ToLowerInvariant());}
             navigate.Invoke(window,new object[]{"Appearance"});await Task.Delay(40);

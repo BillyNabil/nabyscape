@@ -14,7 +14,7 @@ internal static class AssistantProviderPersistence
         var original=current.Providers.Single(p=>p.Id==originalId);
         var next=JsonSerializer.Deserialize<AssistantOptions>(JsonSerializer.Serialize(current))!;
         var saved=JsonSerializer.Deserialize<AssistantProvider>(JsonSerializer.Serialize(candidate))!;
-        bool rotate=replacementKey.Length>0 || Origin(original.BaseUrl)!=Origin(saved.BaseUrl) || Origin(original.RealtimeUrl)!=Origin(saved.RealtimeUrl);
+        bool rotate=replacementKey.Length>0 || Origin(original.BaseUrl)!=Origin(saved.BaseUrl) || Origin(original.RealtimeUrl)!=Origin(saved.RealtimeUrl) || saved.Backend=="Hermes" && original.BaseUrl.TrimEnd('/')!=saved.BaseUrl.TrimEnd('/');
         saved.Id=rotate?Guid.NewGuid().ToString("N"):original.Id;
         next.Providers[next.Providers.FindIndex(p=>p.Id==originalId)]=saved;next.SelectedProvider=saved.Id;
         if(next.SelectedVoiceProvider==originalId)next.SelectedVoiceProvider=saved.Id;

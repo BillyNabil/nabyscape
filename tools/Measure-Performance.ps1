@@ -37,6 +37,11 @@ try {
  }
  $process.WaitForExit()
  if($process.ExitCode -ne 0){throw "Benchmark failed with exit $($process.ExitCode)"}
+ if($samples.Count -eq 0 -or !(Test-Path -LiteralPath (Join-Path $report 'performance.json')) -or !(Test-Path -LiteralPath (Join-Path $report 'integration-report.txt'))) {
+  throw 'Benchmark produced no valid timed evidence. Use the application executable, not a Setup-named executable, and inspect the diagnostic report.'
+ }
+ $expected=@($Scenarios.Split(',') | Where-Object {$_})
+ foreach($scenario in $expected){if(!@($samples | Where-Object {$_.scenario -eq $scenario}).Count){throw "Missing timed memory samples for $scenario."}}
  ConvertTo-Json -InputObject $samples -Depth 4 | Set-Content -LiteralPath (Join-Path $report 'private-working-set-samples.json') -Encoding utf8
  Write-Output "BENCHMARK_OK $report ($($samples.Count) memory samples)"
 } finally {$process.Dispose()}

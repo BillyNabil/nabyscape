@@ -15,7 +15,7 @@ internal sealed class CountdownView : StackPanel
 {
     private readonly App app;
     private readonly bool focus;
-    private readonly TextBlock digits=UI.Text("",29), status=UI.Text("Ready",10,UI.Muted), hint=UI.Text("",10,UI.Muted), durationLabel=UI.Text("",10,UI.Muted);
+    private readonly TextBlock digits=UI.Caption("",29), status=UI.Caption("Ready",10,UI.Muted), hint=UI.Caption("",10,UI.Muted), durationLabel=UI.Caption("",10,UI.Muted);
     private readonly ProgressRing progress=new();
     private readonly TextBox minutes, breaks;
     private readonly Button primary, reset;
@@ -33,7 +33,7 @@ internal sealed class CountdownView : StackPanel
         string id=focus?"focus":"timer";
         var header=new DockPanel{LastChildFill=true,Margin=new(0,0,0,9)};
         status.HorizontalAlignment=HorizontalAlignment.Right;DockPanel.SetDock(status,Dock.Right);header.Children.Add(status);
-        if(heading){var title=UI.Heading(focus?"Focus":"Timer",13);title.FontWeight=FontWeights.SemiBold;header.Children.Add(title);}Children.Add(header);
+        if(heading){var title=UI.Heading(Localization.Text(focus?"Focus":"Timer"),13);title.FontWeight=FontWeights.SemiBold;header.Children.Add(title);}Children.Add(header);
         Typography.SetNumeralAlignment(digits,FontNumeralAlignment.Tabular);digits.FontWeight=FontWeights.Medium;digits.TextWrapping=TextWrapping.NoWrap;digits.HorizontalAlignment=HorizontalAlignment.Center;
         progress.Accent(focus);UI.Named(progress,focus?"Focus session progress":"Timer progress");
         var instrument=new Grid{Margin=new(0,4,0,14)};instrument.Children.Add(progress);
@@ -44,8 +44,8 @@ internal sealed class CountdownView : StackPanel
         if(focus)fields.ColumnDefinitions.Add(new());
         fields.Children.Add(Field(focus?"Focus · min":"Duration · min",minutes));
         if(focus){var field=Field("Break · min",breaks);field.Margin=new(8,0,0,0);Grid.SetColumn(field,1);fields.Children.Add(field);}
-        primary=UI.Button("Start",Activate,true);AutomationProperties.SetAutomationId(primary,id+"-primary");
-        reset=UI.Button("Reset",()=>{State.Reset();app.SaveSession();});UI.Named(reset,"Reset "+id);AutomationProperties.SetAutomationId(reset,id+"-reset");
+        primary=UI.CaptionButton("Start",Activate,true);AutomationProperties.SetAutomationId(primary,id+"-primary");
+        reset=UI.CaptionButton("Reset",()=>{State.Reset();app.SaveSession();});UI.Named(reset,Localization.Text(focus?"Reset focus":"Reset timer"));AutomationProperties.SetAutomationId(reset,id+"-reset");
         var actions=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center,Margin=new(0,0,0,18)};
         foreach(var button in new[]{primary,reset}){button.Width=button.Height=36;button.MinHeight=36;button.Margin=new(0);button.Padding=new(9);button.Tag=new CornerRadius(18);button.ToolTip="Tab to select; Space or Enter to activate";}
         primary.Margin=new(0,0,12,0);reset.Background=Brushes.Transparent;reset.Foreground=UI.Muted;reset.BorderThickness=new(1);reset.BorderBrush=UI.Brush("#3C4048");reset.Content=Icons.Create("reset",17,UI.Muted);actions.Children.Add(primary);actions.Children.Add(reset);Children.Add(actions);
@@ -63,8 +63,8 @@ internal sealed class CountdownView : StackPanel
 
     private static StackPanel Field(string label,TextBox input)
     {
-        var panel=new StackPanel();var text=UI.Text(label,10,UI.Muted);text.Margin=new(0,0,0,7);panel.Children.Add(text);
-        input.Height=32;input.MinHeight=32;input.FontSize=12;input.MaxLength=8;input.Padding=new(0,5,0,5);input.Margin=new(0);input.BorderThickness=new(0);input.Background=Brushes.Transparent;input.HorizontalContentAlignment=HorizontalAlignment.Center;
+        var panel=new StackPanel();var text=UI.Caption(label,10,UI.Muted);text.Margin=new(0,0,0,7);panel.Children.Add(text);
+        input.MinHeight=32;input.MinHeight=32;input.FontSize=12;input.MaxLength=8;input.Padding=new(0,5,0,5);input.Margin=new(0);input.BorderThickness=new(0);input.Background=Brushes.Transparent;input.HorizontalContentAlignment=HorizontalAlignment.Center;
         input.GotKeyboardFocus+=(_,_)=>input.SelectAll();
         double maximum=label.StartsWith("Break")?120:label.StartsWith("Focus")?240:1440;
         var controls=new Grid();controls.ColumnDefinitions.Add(new(){Width=new GridLength(28)});controls.ColumnDefinitions.Add(new());controls.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
@@ -124,16 +124,16 @@ internal sealed class CountdownView : StackPanel
         }
         bool valid=Valid(out double seconds,out _,out _);
         digits.Text=active || completed?state.Display(now):Countdown.FormatSeconds(valid?seconds:0);
-        status.Text=active?(state.Running?(focus?(state.Phase=="break"?"Break":"Focusing"):"Running"):"Paused"):completed?"Complete":"Ready";
+        Accessibility.Announce(status,Localization.Text(active?(state.Running?(focus?(state.Phase=="break"?"Break":"Focusing"):"Running"):"Paused"):completed?"Complete":"Ready"));
         string action=state.Running?"Pause":active?"Resume":"Start";
         if(AutomationProperties.GetItemStatus(primary)!=action){primary.Content=Icons.Create(state.Running?"pause":"play",17,Brushes.Black);AutomationProperties.SetItemStatus(primary,action);}
-        UI.Named(primary,state.Running?(focus?"Pause focus":"Pause timer"):active?(focus?"Resume focus":"Resume timer"):(focus?"Start focus":"Start"));
+        AutomationProperties.SetName(primary,Localization.Text(state.Running?(focus?"Pause focus":"Pause timer"):active?(focus?"Resume focus":"Resume timer"):(focus?"Start focus":"Start")));
         primary.IsEnabled=active || valid;reset.IsEnabled=active || completed;
         minutes.IsEnabled=breaks.IsEnabled=!active;
         progress.Value=active || completed?state.Progress(now):0;
         progress.Accent(focus && state.Phase!="break");
         durationLabel.Text=active || completed?"of "+(state.DurationSeconds/60).ToString("0.#",CultureInfo.CurrentCulture)+" min":focus?"Focus · "+minutes.Text+" min":"of "+minutes.Text+" min";
-        hint.Text=!active && !valid?(focus?"Use 1–240 focus and 1–120 break minutes.":"Enter 0.1–1440 minutes."):completed?"Time is up.":focus?$"{breaks.Text} min break after focus.":"";
+        hint.Text=!active && !valid?Localization.Text(focus?"Use 1–240 focus and 1–120 break minutes.":"Enter 0.1–1440 minutes."):completed?Localization.Text("Time is up."):focus?Localization.Format("{0} min break after focus.",breaks.Text):"";
         hint.Foreground=!active && !valid?UI.Brush("#F0B8A8"):UI.Muted;
     }
 }

@@ -41,10 +41,17 @@ public sealed partial class AudioService
     internal Func<float>? DiagnosticPeak;
     internal long DiagnosticMeterReads {get;private set;}
     internal long DiagnosticSpectrumSamples {get;private set;}
-    private long spectrumSequence;
+    private long spectrumSequence,lastMediaDemand;
+    internal void TrimIdleMedia()
+    {
+        if(lastMediaDemand==0 || Stopwatch.GetElapsedTime(lastMediaDemand).TotalSeconds<2)return;
+        lastMediaDemand=0;mediaPeaks?.Dispose();mediaPeaks=null;mediaPeakSource="";mediaSampleGate.Reset();
+        outputSpectrum?.Stop();MediaSpectrum=null;mediaOutputs.Clear();Array.Clear(spectrumBands);
+        CurrentMediaPeak=0;MediaMeterMuted=false;meterSessions=meterAudible=0;MediaLevel=default;spectrumSequence=0;
+    }
     internal float MediaPeak(string? source,bool includeSpectrum=true)
     {
-        long stamp=Stopwatch.GetTimestamp();
+        long stamp=Stopwatch.GetTimestamp();lastMediaDemand=stamp;
         if(mediaSampleGate.Accept(source,stamp))
         {
             float peak=ReadMediaPeak(source);MediaLevel=new(mediaSampleGate.Sequence,stamp,peak,MediaMeterMuted,meterSessions,meterAudible);

@@ -17,30 +17,31 @@ public sealed partial class OverlayWindow
     private readonly Dictionary<string,FrameworkElement> compactPages=new();
     private readonly Dictionary<string,Button> compactTabs=new();
     private readonly Grid compactPageHost=new(),peekPanel=new(),timelinePanel=new();
-    private readonly TextBlock peekTitle=UI.Text("",13),peekSubtitle=UI.Text("",11,UI.Muted);
+    private readonly TextBlock peekTitle=UI.Caption("",13),peekSubtitle=UI.Caption("",11,UI.Muted);
     private readonly Image peekArt=new(){Width=56,Height=56,Stretch=Stretch.UniformToFill};
     private readonly ProgressBar peekProgress=new(){Minimum=0,Maximum=1,Height=3,Background=UI.Brush("#34363D"),Foreground=Brushes.White,BorderThickness=new(0)};
-    private readonly TextBlock peekElapsed=UI.Text("",11,UI.Muted),peekDuration=UI.Text("",11,UI.Muted);
+    private readonly TextBlock peekElapsed=UI.Caption("",11,UI.Muted),peekDuration=UI.Caption("",11,UI.Muted);
     private readonly TranslateTransform peekArtSlide=new();
     private readonly System.Windows.Controls.Grid peekCoverContent=new();
     private FrameworkElement peekFallback=null!;
     private readonly ActivityVisual peekWave=new(){Width=58,Height=16,WaveOnly=true};
     private Button? peekPlay;
     private readonly Slider seekSlider=new(){Minimum=0,Maximum=1,TickFrequency=.001,SmallChange=.01,LargeChange=.05,IsMoveToPointEnabled=true,Height=24,Margin=new(0)};
-    private readonly TextBlock elapsed=UI.Text("0:00",10,UI.Muted),duration=UI.Text("0:00",10,UI.Muted);
+    private readonly TextBlock elapsed=UI.Caption("0:00",10,UI.Muted),duration=UI.Caption("0:00",10,UI.Muted);
     private readonly DispatcherTimer hoverDelay=new(){Interval=TimeSpan.FromMilliseconds(180)},leaveDelay=new(){Interval=TimeSpan.FromMilliseconds(300)},seekDelay=new(){Interval=TimeSpan.FromMilliseconds(140)};
     private double HostHeight
     {
         get
         {
+            if(assistantOpen || VoiceRoomOpen)return AssistantView.PanelSize(app.Settings,VoiceRoomOpen).Height;
             if(!app.Settings.CompactLayout)return expandedHeight;
             var screen=Native.ChooseScreen(app.Settings);return Math.Min(app.Settings.PanelMaxHeight,screen.WorkingArea.Height/Native.Scale(screen)-16);
         }
     }
     internal bool IsPeeking=>peeking;
     internal string ActivePage=>activePage;
-    private static string PageFor(string widget)=>Settings.ToolNames.ContainsKey(widget)?widget:widget switch{"media" or "volume"=>"media","timer" or "focus" or "stopwatch"=>"focus","shortcuts"=>"access","tools"=>"tools",_=>"status"};
-    private static string PageName(string page)=>Settings.ToolNames.TryGetValue(page,out var tool)?tool:page switch{"media"=>"Media","focus"=>"Focus","status"=>"Status","tools"=>"Tools",_=>"Launch"};
+    private static string PageFor(string widget)=>Settings.ToolNames.ContainsKey(widget)?widget:widget switch{"media" or "volume"=>"media","timer" or "focus"=>"focus","stopwatch"=>"stopwatch","voice"=>"voice","shortcuts"=>"access","tools"=>"tools",_=>"status"};
+    private static string PageName(string page)=>Localization.Text(Settings.ToolNames.TryGetValue(page,out var tool)?tool:page switch{"media"=>"Media","focus"=>"Focus","stopwatch"=>"Stopwatch","voice"=>"Naby voice","status"=>"Status","tools"=>"Tools",_=>"Launch"});
     private string? hoverPanelWidget;
     private bool WidgetOn(string id)=>id==hoverPanelWidget || app.Settings.Widgets.Any(w=>w.Enabled && w.Id==id);
     private IEnumerable<WidgetSetting> PanelWidgets=>app.Settings.Widgets.Where(w=>w.Enabled || w.Id==hoverPanelWidget);
@@ -61,7 +62,7 @@ public sealed partial class OverlayWindow
         root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;EnsurePeekDeck();if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !TuckRequested)hoverDelay.Start();};
         root.MouseLeave+=(_,_)=>{if(DiagnosticRun)return;hoverDelay.Stop();if(peeking || TuckRequested)leaveDelay.Start();};
         hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(assistantCharacterButton.IsMouseOver){PreviewAssistant();return;}if(PointerInside() && !expanded && !userHidden && !TuckRequested)PreviewActivity();};
-        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || TuckRequested) && !PointerInside() && !SatellitePointerInside && !PeekInteractionActive && !fileDragActive)Collapse();};
+        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || TuckRequested) && !AssistantReplyVisible && !PointerInside() && !SatellitePointerInside && !PeekInteractionActive && !fileDragActive)Collapse();};
         peekMedia.HorizontalAlignment=HorizontalAlignment.Center;peekMedia.VerticalAlignment=VerticalAlignment.Top;peekMedia.Width=286;peekMedia.Height=100;peekMedia.Margin=new(0);
         peekMedia.RowDefinitions.Add(new(){Height=new GridLength(56)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});
         peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});peekMedia.ColumnDefinitions.Add(new());peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
@@ -80,7 +81,7 @@ public sealed partial class OverlayWindow
 
         timelinePanel.RowDefinitions.Add(new(){Height=GridLength.Auto});timelinePanel.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var labels=new DockPanel();DockPanel.SetDock(duration,Dock.Right);labels.Children.Add(duration);labels.Children.Add(elapsed);timelinePanel.Children.Add(labels);
-        Grid.SetRow(seekSlider,1);timelinePanel.Children.Add(seekSlider);UI.Named(seekSlider,"Playback position");
+        Grid.SetRow(seekSlider,1);timelinePanel.Children.Add(seekSlider);UI.LocalizedName(seekSlider,"Playback position");
         seekSlider.ValueChanged+=(_,_)=>{if(!updating && (seekSlider.IsMouseCaptureWithin || seekSlider.IsKeyboardFocusWithin)){seekDelay.Stop();seekDelay.Start();}};
         seekDelay.Tick+=async(_,_)=>{seekDelay.Stop();await app.Media.Seek(seekSlider.Value);};
     }
@@ -119,7 +120,7 @@ public sealed partial class OverlayWindow
         if(position.Item2<=0){peekElapsed.Text=media?"Windows media controls":"No active session";peekDuration.Text=media?"":"Open →";}
         if(media){timelineAt=DateTimeOffset.UtcNow;timelineElapsed=position.Item1;timelineDuration=position.Item2;}
         peekWave.Visibility=peekId=="media" && media && app.Settings.LiveActivity?Visibility.Visible:Visibility.Collapsed;
-        ApplyPeekGeometry();
+        UpdateClosedLyricsDemand();ApplyPeekGeometry();
     }
     private void BuildCompactBody()
     {
@@ -131,7 +132,7 @@ public sealed partial class OverlayWindow
         var settings=Icons.Button("settings","Settings",app.ShowSettings,false,28);settings.Margin=new(0);settings.Background=Brushes.Transparent;Grid.SetColumn(settings,2);navigation.Children.Add(settings);
         if(bodyWidth<250 && app.Settings.CategoryStyle!="Dots"){navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});Grid.SetRow(settings,0);}
         int categoryCount=Math.Max(1,PanelWidgets.Select(w=>PageFor(w.Id)).Distinct().Count());
-        var tabRow=new System.Windows.Controls.Primitives.UniformGrid{Columns=categoryCount,Rows=1,Width=categoryCount*(app.Settings.CategoryStyle=="Dots"?18:app.Settings.CategoryStyle=="Icons"?40:64),HorizontalAlignment=HorizontalAlignment.Center};var navScroll=new ScrollViewer{Content=tabRow,HorizontalScrollBarVisibility=ScrollBarVisibility.Hidden,VerticalScrollBarVisibility=ScrollBarVisibility.Disabled,HorizontalContentAlignment=HorizontalAlignment.Center};Grid.SetColumn(navScroll,bodyWidth<250 && app.Settings.CategoryStyle!="Dots"?0:1);if(bodyWidth<250 && app.Settings.CategoryStyle!="Dots"){Grid.SetColumnSpan(navScroll,3);Grid.SetRow(navScroll,1);}KeyboardNavigation.SetDirectionalNavigation(tabRow,KeyboardNavigationMode.Cycle);navScroll.PanningMode=PanningMode.HorizontalOnly;navScroll.ToolTip="Panel navigation · scroll for more panels";navScroll.PreviewMouseWheel+=(_,e)=>{if(navScroll.ScrollableWidth>0){navScroll.ScrollToHorizontalOffset(navScroll.HorizontalOffset-e.Delta*.5);e.Handled=true;}};navigation.Children.Add(navScroll);body.Children.Add(navigation);body.Children.Add(compactPageHost);
+        var tabRow=new System.Windows.Controls.Primitives.UniformGrid{Columns=categoryCount,Rows=1,Width=categoryCount*(app.Settings.CategoryStyle=="Dots"?18:app.Settings.CategoryStyle=="Icons"?40:64),HorizontalAlignment=HorizontalAlignment.Center};var navScroll=new ScrollViewer{Content=tabRow,HorizontalScrollBarVisibility=ScrollBarVisibility.Hidden,VerticalScrollBarVisibility=ScrollBarVisibility.Disabled,HorizontalContentAlignment=HorizontalAlignment.Center};Grid.SetColumn(navScroll,bodyWidth<250 && app.Settings.CategoryStyle!="Dots"?0:1);if(bodyWidth<250 && app.Settings.CategoryStyle!="Dots"){Grid.SetColumnSpan(navScroll,3);Grid.SetRow(navScroll,1);}KeyboardNavigation.SetDirectionalNavigation(tabRow,KeyboardNavigationMode.Cycle);navScroll.PanningMode=PanningMode.HorizontalOnly;navScroll.ToolTip=Localization.Text("Panel navigation · scroll for more panels");navScroll.PreviewMouseWheel+=(_,e)=>{if(navScroll.ScrollableWidth>0){navScroll.ScrollToHorizontalOffset(navScroll.HorizontalOffset-e.Delta*.5);e.Handled=true;}};navigation.Children.Add(navScroll);body.Children.Add(navigation);body.Children.Add(compactPageHost);
         bodyReflow.Add(()=>
         {
             bool narrow=bodyWidth<250 && app.Settings.CategoryStyle!="Dots";navigation.Margin=new(0,0,0,app.Settings.SectionGap);navigation.RowDefinitions.Clear();if(narrow){navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});navigation.RowDefinitions.Add(new(){Height=GridLength.Auto});}
@@ -142,7 +143,7 @@ public sealed partial class OverlayWindow
             FrameworkElement view;if(page==activePage)view=BuildCompactPage(page);else{view=new Border();pendingCompactPages.Add(page);}view.Visibility=Visibility.Collapsed;compactPages[page]=view;compactPageHost.Children.Add(view);
             var tab=UI.Button(PageName(page),()=>SelectPage(page));tab.Padding=new(8,6,8,6);tab.FontSize=10.5;tab.MinHeight=30;tab.Margin=new(0,0,4,0);tab.Tag=new CornerRadius(15);StyleCategory(tab,page);compactTabs[page]=tab;tabRow.Children.Add(tab);
         }
-        if(compactPages.Count==0){var empty=UI.Text("Enable widgets in Settings.",12,UI.Muted);compactPages["media"]=empty;compactPageHost.Children.Add(empty);}
+        if(compactPages.Count==0){var empty=UI.Caption("Enable widgets in Settings.",12,UI.Muted);compactPages["media"]=empty;compactPageHost.Children.Add(empty);}
         var mixer=new Border{Visibility=Visibility.Collapsed};pendingCompactPages.Add("mixer");compactPages["mixer"]=mixer;compactPageHost.Children.Add(mixer);
         if(!compactPages.ContainsKey(activePage))activePage=compactPages.Keys.FirstOrDefault()??"media";
         SelectPage(activePage,false);
@@ -182,30 +183,31 @@ public sealed partial class OverlayWindow
             {
                 var info=new StackPanel{VerticalAlignment=VerticalAlignment.Center};title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;artist.TextWrapping=TextWrapping.NoWrap;artist.TextTrimming=TextTrimming.CharacterEllipsis;artist.Margin=new(0,4,0,0);info.Children.Add(WrapTitle(title));info.Children.Add(WrapTitle(artist));
                 var cover=new Border{Child=WrapArtwork(artwork),Width=88,Height=88,Margin=new(0,0,20,0),Clip=new RectangleGeometry(new Rect(0,0,88,88),15,15)};
-                var row=new Grid{Margin=new(0,0,0,12)};row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.ColumnDefinitions.Add(new());row.Children.Add(cover);
+                var row=new Grid{Margin=new(0,0,0,6)};row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.ColumnDefinitions.Add(new());row.Children.Add(cover);
                 previous=Icons.Button("previous","Previous track",()=>_=app.Media.Command("previous"),false,38);play=Icons.Button("play","Play or pause",()=>_=app.Media.Command("toggle"),true,46);playIcon="";next=Icons.Button("next","Next track",()=>_=app.Media.Command("next"),false,38);previous.Background=next.Background=Brushes.Transparent;
                 previous.Margin=new(0,0,8,0);play.Margin=new(0);next.Margin=new(8,0,0,0);
-                lyricsButton=Icons.Button("lyrics","Show or hide Spotify lyrics",ToggleLyrics,false,28);lyricsButton.Margin=new(16,0,0,0);lyricsButton.Background=Brushes.Transparent;
-                var buttons=UI.Row(previous,play,next);buttons.HorizontalAlignment=HorizontalAlignment.Center;var playbackRow=new Grid{Margin=new(0,12,0,0)};playbackRow.Children.Add(buttons);lyricsButton.HorizontalAlignment=HorizontalAlignment.Right;lyricsButton.VerticalAlignment=VerticalAlignment.Center;lyricsButton.Margin=new(0);playbackRow.Children.Add(lyricsButton);
-                info.Children.Add(playbackRow);Grid.SetColumn(info,1);row.Children.Add(info);panel.Children.Add(row);row.Loaded+=(_,_)=>QueueMediaLayout();row.IsVisibleChanged+=(_,_)=>{if(row.IsVisible)QueueMediaLayout();};
+                lyricsButton=Icons.Button("lyrics","Show or hide synced lyrics",ToggleLyrics,false,28);lyricsButton.Margin=new(16,0,0,0);lyricsButton.Background=Brushes.Transparent;
+                var buttons=UI.Row(previous,play,next);buttons.HorizontalAlignment=HorizontalAlignment.Center;var playbackRow=new Grid{Margin=new(0)};playbackRow.Children.Add(buttons);lyricsButton.HorizontalAlignment=HorizontalAlignment.Right;lyricsButton.VerticalAlignment=VerticalAlignment.Center;lyricsButton.Margin=new(0);playbackRow.Children.Add(lyricsButton);
+                Grid.SetColumn(info,1);row.Children.Add(info);panel.Children.Add(row);panel.Children.Add(playbackRow);row.Loaded+=(_,_)=>QueueMediaLayout();row.IsVisibleChanged+=(_,_)=>{if(row.IsVisible)QueueMediaLayout();};
                 row.SizeChanged+=(_,_)=>{bool narrow=row.ActualWidth<310;double size=narrow?64:88;cover.Width=cover.Height=artwork.Width=artwork.Height=size;cover.Margin=new(0,0,narrow?14:20,0);if(previousArtwork.TryGetValue(artwork,out var outgoing))outgoing.Width=outgoing.Height=size;musicWave.Width=narrow?112:164;cover.Clip=new RectangleGeometry(new Rect(0,0,size,size),narrow?11:15,narrow?11:15);previous.Width=previous.Height=next.Width=next.Height=narrow?28:38;play.Width=play.Height=narrow?38:46;title.FontSize=narrow?15:18;previous.Margin=new(0,0,narrow?2:8,0);next.Margin=new(narrow?2:8,0,0,0);};
-                if(app.Settings.LiveActivity){if(musicWave.Parent is Panel oldWave)oldWave.Children.Remove(musicWave);musicWave.Height=22;musicWave.Margin=new(0,0,0,8);var waveHost=new Grid{Margin=new(cover.Width+cover.Margin.Right,0,0,0)};waveHost.Children.Add(musicWave);row.SizeChanged+=(_,_)=>waveHost.Margin=new(cover.Width+cover.Margin.Right,0,0,0);panel.Children.Add(waveHost);}mediaLyrics=new LyricsView(app);SyncLyrics();timelinePanel.Margin=new(0,0,0,10);panel.Children.Add(timelinePanel);
+                if(app.Settings.LiveActivity){if(musicWave.Parent is Panel oldWave)oldWave.Children.Remove(musicWave);musicWave.Height=22;musicWave.Margin=new(0,0,0,8);var waveHost=new Grid{Margin=new(0,3,0,0)};waveHost.Children.Add(musicWave);panel.Children.Add(waveHost);}mediaLyrics=new LyricsView(app);SyncLyrics();timelinePanel.Margin=new(0,0,0,10);panel.Children.Add(timelinePanel);
             }
             var controls=BuildMediaControls(panel);
             return WidgetOn("media")?WrapMediaLyrics(controls):controls;
         }
+        if(page=="voice")return new AssistantVoiceView(app);
+        if(page=="stopwatch")return new StopwatchView(app);
         if(page=="focus")
         {
-            var row=new Grid();bool stacked=bodyWidth<310 || PanelWidgets.Count(w=>PageFor(w.Id)=="focus")>2;int count=PanelWidgets.Count(w=>PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
+            var row=new Grid();bool stacked=bodyWidth<310;int count=PanelWidgets.Count(w=>PageFor(w.Id)=="focus");for(int i=0;i<count;i++){if(stacked)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());}int column=0;
             foreach(var widget in PanelWidgets.Where(w=>PageFor(w.Id)=="focus"))
             {
-                if(widget.Id=="stopwatch"){var watchModule=new Border{Child=new StopwatchView(app),Margin=new(0,12,0,4)};if(stacked)Grid.SetRow(watchModule,column++);else Grid.SetColumn(watchModule,column++);row.Children.Add(watchModule);continue;}
                 var contents=new CountdownView(app,widget.Id=="focus");
                 var module=new Border{BorderBrush=UI.Brush(app.Settings.ControlBorder),BorderThickness=new Thickness(0),Padding=stacked?new Thickness(0,4,0,4):new Thickness(column==0?0:14,4,column==0?14:0,4),Margin=stacked?new Thickness(0,column==0?0:16,0,0):new Thickness(column==0?0:8,0,0,0),Child=contents};if(stacked)Grid.SetRow(module,column++);else Grid.SetColumn(module,column++);row.Children.Add(module);module.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");
             }
             bodyReflow.Add(()=>
             {
-                bool vertical=bodyWidth<310 || count>2;row.RowDefinitions.Clear();row.ColumnDefinitions.Clear();int index=0;
+                bool vertical=bodyWidth<310;row.RowDefinitions.Clear();row.ColumnDefinitions.Clear();int index=0;
                 foreach(Border module in row.Children){if(vertical)row.RowDefinitions.Add(new(){Height=GridLength.Auto});else row.ColumnDefinitions.Add(new());Grid.SetRow(module,vertical?index:0);Grid.SetColumn(module,vertical?0:index);module.BorderThickness=new Thickness(0);module.Padding=vertical?new Thickness(0,4,0,4):new Thickness(index==0?0:14,4,index==0?14:0,4);module.Margin=vertical?new Thickness(0,index==0?0:16,0,0):new Thickness(index==0?0:8,0,0,0);index++;}
             });
             return row;
@@ -223,13 +225,13 @@ public sealed partial class OverlayWindow
             }
             return panel;
         }
-        var launch=new StackPanel{Margin=new(0,2,0,8)};var search=UI.Button("Search commands  ·  Ctrl+K",()=>ShowCommands());search.Background=UI.Brush("#14161A");search.BorderThickness=new(1);search.BorderBrush=UI.Brush("#30343C");search.Padding=new(12,8,12,8);search.Margin=new(0,0,0,16);search.HorizontalContentAlignment=HorizontalAlignment.Stretch;var searchRow=new DockPanel();var keys=UI.Text("Ctrl+K",10,UI.Muted);DockPanel.SetDock(keys,Dock.Right);searchRow.Children.Add(keys);var searchIcon=Icons.Create("search",16,UI.Muted);searchIcon.Margin=new(0,0,12,0);DockPanel.SetDock(searchIcon,Dock.Left);searchRow.Children.Add(searchIcon);searchRow.Children.Add(UI.Text("Search commands",12,UI.Muted));search.Content=searchRow;launch.Children.Add(search);
+        var launch=new StackPanel{Margin=new(0,2,0,8)};var search=UI.CaptionButton("Search commands  ·  Ctrl+K",()=>ShowCommands());search.Background=UI.Brush("#14161A");search.BorderThickness=new(1);search.BorderBrush=UI.Brush("#30343C");search.Padding=new(12,8,12,8);search.Margin=new(0,0,0,16);search.HorizontalContentAlignment=HorizontalAlignment.Stretch;var searchRow=new DockPanel();var keys=UI.Caption("Ctrl+K",10,UI.Muted);DockPanel.SetDock(keys,Dock.Right);searchRow.Children.Add(keys);var searchIcon=Icons.Create("search",16,UI.Muted);searchIcon.Margin=new(0,0,12,0);DockPanel.SetDock(searchIcon,Dock.Left);searchRow.Children.Add(searchIcon);searchRow.Children.Add(UI.Caption("Search commands",12,UI.Muted));search.Content=searchRow;launch.Children.Add(search);
         var shortcuts=new WrapPanel();KeyboardNavigation.SetDirectionalNavigation(shortcuts,KeyboardNavigationMode.Cycle);launch.Children.Add(shortcuts);foreach(var shortcut in app.Settings.Shortcuts)
         {
             shortcuts.Children.Add(LaunchButton(shortcut));
         }
-        if(app.Settings.ActivitiesEnabled)launch.Children.Add(UI.Button("Activities",()=>ShowActivities()));
-        if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Text("Add shortcuts in Settings.",12,UI.Muted));return launch;
+        if(app.Settings.ActivitiesEnabled)launch.Children.Add(UI.CaptionButton("Activities",()=>ShowActivities()));
+        if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Caption("Add shortcuts in Settings.",12,UI.Muted));return launch;
     }
     private void UpdateTimeline()
     {

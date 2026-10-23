@@ -81,6 +81,12 @@ internal sealed partial class IslandSurface : FrameworkElement
     }
     protected override void OnRender(DrawingContext context)
     {
+        if(Accessibility.HighContrast)
+        {
+            // The dock text uses WindowText; keep its painted material opaque and paired.
+            context.DrawGeometry(SystemColors.WindowBrush,new Pen(SystemColors.WindowTextBrush,1),Contour);
+            return;
+        }
         context.DrawGeometry(Fill,null,Contour);
         context.PushClip(Contour);
         if(GlassStyle){context.PushOpacity((.45+.55*GlassLift)*GlassStrength);

@@ -9,7 +9,7 @@ namespace NabyScape;
 
 internal static class AmbientPolicy
 {
-    internal static bool Includes(Settings s,string widget)=>s.CoverAmbient && s.AmbientStrength>0 && (widget=="closed"?s.ClosedAmbient:s.AmbientScope switch
+    internal static bool Includes(Settings s,string widget,bool sourceDisabled=false)=>!sourceDisabled && s.CoverAmbient && s.AmbientStrength>0 && (widget=="closed"?s.ClosedAmbient:s.AmbientScope switch
     {
         "Music only"=>widget is "media" or "volume" or "closed",
         "Selected widgets"=>s.AmbientWidgets.Contains(widget),
@@ -141,7 +141,7 @@ internal sealed class AmbientPresenter : IDisposable
     private void Changed(){if((app.CurrentUpdate&(RuntimeChange.Settings|RuntimeChange.Media))!=0)Refresh();}
     internal void Refresh()
     {
-        var s=app.Settings;bool allowed=AmbientPolicy.Includes(s,widget);
+        var s=app.Settings;bool allowed=AmbientPolicy.Includes(s,widget,app.Media.SourceDisabled);
         bool moving=app.Media.Playing && s.LiveActivity && surface.IsVisible && Window.GetWindow(surface)?.WindowState!=WindowState.Minimized;
         surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving,AmbientLook.From(s));
         app.AmbientAudio.Set(surface,allowed && moving);

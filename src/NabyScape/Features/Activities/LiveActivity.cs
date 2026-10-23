@@ -118,7 +118,7 @@ public sealed partial class OverlayWindow
     private void InitializeLiveActivity()
     {
         root.MouseMove+=(_,_)=>{if(app.Settings.GlassStyle && (expanded || peeking))WakeLiveRendering();};
-        InitializeFeedback();
+        InitializeFeedback();InitializeClosedLyrics();
         IsVisibleChanged+=(_,_)=>{ConfigureLiveActivity();if(!IsVisible)ClearFeedback();};
     }
     private bool AudioVisualDemand=>IsVisible && !IsTucked && app.Settings.LiveActivity && app.Media.Playing && WidgetOn("media") &&

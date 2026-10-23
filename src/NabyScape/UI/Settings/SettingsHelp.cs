@@ -4,7 +4,7 @@ public sealed partial class SettingsWindow
 {
     private static readonly Dictionary<string,string> SettingDescriptions=new()
     {
-        ["Show ambience on closed dock"]="Keep album light on the compact dock. Tucking always turns it black. The main ambient switch must also be on.",
+        ["Show ambience on closed dock"]="Show ambient light on the compact dock during music, voice, countdowns or notifications. Idle and tucked docks stay black. The main ambient switch must also be on.",
         ["Ambient light"]="Add soft colored light behind your widgets.",
         ["Ambient intensity"]="Set the brightest the light can be. Music can make it pulse below this level.",
         ["Ambient sensitivity"]="Amplifies the visual response to measured media audio without changing playback volume. 100% uses the original level.",
@@ -16,7 +16,7 @@ public sealed partial class SettingsWindow
         ["Notification delivery"]="Notch uses a compact indicator. Windows uses a tray notification. Both sends each once; Off suppresses all. A manually hidden island uses Windows fallback.",
         ["Infer completed arrivals in a download folder"]="Opt-in folder watcher: ignores existing files and waits for a readable final name with stable size for two seconds. It cannot prove browser completion.",
         ["Always tucked"]="Keeps a small top edge visible until you hover; for example keep music out of the way while working.",
-        ["Tucked edge height"]="Choose a 3–12 DIP hover target. Default 6 DIP leaves a narrow, reachable edge.",
+        ["Tucked edge height"]="Choose 0–12 layout pixels. Zero hides the dock completely; screen-edge hover and the tuck shortcut bring it back.",
         ["Enable tuck shortcut"]="Ctrl+Alt+T tucks the island; press again to release the manual latch to automatic rules.",
         ["Black glass"]="Adds a dark gradient and soft reflections to the island.",
         ["Color from album artwork"]="Tints the open media panel using the current cover.",
@@ -79,8 +79,8 @@ public sealed partial class SettingsWindow
         ["Control playback from album cover"]="Click the closed cover to play or pause. Hold it to choose a media app.",
         ["Show companion beside music"]="Adds a small CPU, memory, clock, event or countdown beside the closed island.",
         ["Companion beside music"]="Choose what appears beside music. Automatic prefers a countdown or upcoming event.",
-        ["Closed media icon"]="Choose an audio indicator or the current album cover at the left of the island.",
-        ["Closed media content"]="Choose the song title or waveform inside the closed island.",
+        ["Closed media icon"]="Choose an audio indicator, album cover or None at the left of the island.",
+        ["Closed media content"]="Choose waveform, synced lyrics, song title or None for the closed dock.",
         ["Performance profile"]="Auto follows the display; Eco uses fewer frames; Maximum favors smooth motion.",
         ["Island display"]="Choose the monitor for the island. Disconnected displays fall back to the primary screen.",
         ["Wheel action"]="Choose what the wheel does while the island is closed. Hover still browses previews.",

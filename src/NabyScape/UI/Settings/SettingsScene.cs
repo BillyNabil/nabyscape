@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","About NabyScape"};
+    internal static readonly string[] Sections={"Feature usage","Your setup","Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","Language & accessibility","Private diagnostics","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -66,6 +66,10 @@ internal sealed class SettingsScene : FrameworkElement
         Box(0,0,420,kind=="Enabled widgets & order"?Math.Max(124,widgetBottom+42):124,UI.Brush("#191C21"),10);
         switch(kind)
         {
+            case "Feature usage":
+                Text("Choose what runs",24,18,18,true);Text(s.Widgets.Count(w=>w.Enabled)+" enabled widgets",24,51,12);Note("Essentials or Custom · background switches stay explicit");break;
+            case "Your setup":
+                Text("Your next step",24,18,18,true);Text("Music · AI · Voice · Lyrics · Weather",24,51,12);Note("Saved settings and verified connections have distinct statuses");break;
             case "AI companion":
                 dc.DrawEllipse(UI.Brush("#23262D"),new Pen(UI.Brush("#777D88"),1),new Point(53,51),24,24);dc.DrawRoundedRectangle(white,null,new Rect(42,37,7,16),3.5,3.5);dc.DrawRoundedRectangle(white,null,new Rect(57,37,7,16),3.5,3.5);Text("Connect your AI",94,24,15,true);Text("Provider → model → chat / voice",94,51,12);Keys("Local key",298,23,95);Note("Optional · keys in Windows Credential Manager · session capture controls");break;
             case "Shape":
@@ -152,7 +156,7 @@ internal sealed class SettingsScene : FrameworkElement
             case "Visualizer":case "Waveform source":case "Live signal":
                 Text(s.WaveformSource=="Spectrum"?"Bass → mids → treble":"Amplitude history",22,18,13,true);Wave(125,62);Text(s.WaveformSensitivity.ToString("0.##")+"× sensitivity",270,38,12);Note(s.WaveformSource=="Spectrum"?"Real frequency bands · selected media output mix":"Measured selected-app amplitude · fast attack, smooth release");break;
             case "Lyrics":
-                Text("A little closer to the music",24,17,11,false,muted);Text("One line, right on time",24,42,22,true);Text("Slide     Focus     Karaoke",24,77,11,false,muted);Toggle(355,20,s.LyricsEnabled);Note(s.LyricsAnimation+" · Spotify lyrics via LRCLIB · no key required");break;
+                Text("A little closer to the music",24,17,11,false,muted);Text("One line, right on time",24,42,22,true);Text("Slide     Focus     Karaoke",24,77,11,false,muted);Toggle(355,20,s.LyricsEnabled);Note(s.LyricsAnimation+" · Synced lyrics via LRCLIB · no key required");break;
             case "Move & resize":
                 Island(95,22,220,36);Line(88,18,66,18);Line(66,18,66,83);Line(66,83,88,83);Text("↔",180,70,20);Toggle(352,28,s.DockUnlocked);Note("Drag the top grip to move · lower corners resize each state");break;
             case "Completion sound":
@@ -196,6 +200,11 @@ internal sealed class SettingsScene : FrameworkElement
                 Text("Saved on this PC",24,21,17,true);Text("Preferences · Notes · Tasks",24,51,12);Text("No account required",24,77,11,false,muted);break;
             case "About NabyScape":
                 Text("NabyScape",24,20,23,true);Text("Windows 11 · x64",24,60,12,false,muted);Text("Version "+typeof(App).Assembly.GetName().Version!.ToString(3),250,31,12);break;
+            case "Language & accessibility":
+                Text("Language",24,18,12,true);Keys(s.UiLanguage=="es"?"Español":s.UiLanguage=="id"?"Bahasa Indonesia":"English",210,12,176);
+                Text("Text size",24,55,12,true);Text((s.AccessibilityTextScale*100).ToString("0",CultureInfo.InvariantCulture)+"%",218,55,12);Toggle(350,55,s.AccessibilityHighContrast);Note("Language · text size · contrast · Windows motion preferences");break;
+            case "Private diagnostics":
+                Text("Review before sharing",24,18,16,true);Text("App version · service status · controlled events",24,48,11,false,muted);Keys("Copy",24,73,95);Keys("Export",133,73,95);Note("No automatic upload · conversations and credentials excluded");break;
             default:throw new InvalidOperationException("Missing Settings example: "+kind);
         }
         dc.Pop();

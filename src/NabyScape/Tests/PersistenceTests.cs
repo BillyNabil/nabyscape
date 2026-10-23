@@ -41,14 +41,14 @@ internal static class PersistenceTests
             failed=Store.Migrate(legacy,next);Assert(failed.DirectoryPath==legacy && failed.Warning!=null && failed.Load<Settings>("settings").Width==301);
         });
         Fixture("Explicit Store path does not migrate sibling legacy data",root=>
-        {string legacy=Path.Combine(root,"LumaIsland"),next=Path.Combine(root,"NabyScape");new Store(legacy).Save("settings",new Settings{Width=301});var isolated=new Store(next);Assert(isolated.Load<Settings>("settings").Width==327 && !File.Exists(Path.Combine(next,"settings.json")));});
+        {string legacy=Path.Combine(root,"LumaIsland"),next=Path.Combine(root,"NabyScape");new Store(legacy).Save("settings",new Settings{Width=301});var isolated=new Store(next);Assert(isolated.Load<Settings>("settings").Width==400 && !File.Exists(Path.Combine(next,"settings.json")));});
         Fixture("Reset category all and restore preserve capture startup shortcuts and personal files",root=>
         {
             var store=new Store(root);var settings=new Settings{Width=333,Accent="#112233",SettingsMaterial="Native Mica",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Keep",Target="external"}}};
             store.Save("productivity",new ProductivityData{Note="keep",Tasks=new(){new(){Text="keep"}},Clips=new(){new(){Text="keep"}}});string before=File.ReadAllText(Path.Combine(root,"productivity.json"));
             PreferenceReset.Reset(store,settings,"Appearance");Assert(settings.Width==333 && settings.Accent=="#FFFFFF" && SettingsBackdrop.Requested(settings)=="Solid" && settings.AutoStart && settings.ClipboardHistory && settings.Shortcuts[0].Target=="external");
             PreferenceReset.Restore(store,settings);Assert(settings.Accent=="#112233" && settings.Width==333 && settings.SettingsMaterial=="Native Mica");
-            PreferenceReset.Reset(store,settings,null);Assert(settings.Width==327 && settings.Accent=="#FFFFFF" && settings.AutoStart && settings.ClipboardHistory && settings.Shortcuts[0].Target=="external" && before==File.ReadAllText(Path.Combine(root,"productivity.json")));
+            PreferenceReset.Reset(store,settings,null);Assert(settings.Width==400 && settings.Accent=="#FFFFFF" && settings.AutoStart && settings.ClipboardHistory && settings.Shortcuts[0].Target=="external" && before==File.ReadAllText(Path.Combine(root,"productivity.json")));
             settings.ClipboardHistory=false;settings.AutoStart=false;PreferenceReset.Restore(store,settings);Assert(settings.Width==333 && !settings.ClipboardHistory && !settings.AutoStart);
         });
         Fixture("Pre-material preference backups restore the original solid Settings surface",root=>
@@ -69,7 +69,7 @@ internal static class PersistenceTests
         test("Tuck defaults bounds profile and all shortcut conflicts",()=>
         {
             var s=new Settings();Assert(!s.AlwaysTucked && s.TuckEdge==6 && s.HideFullscreen && !s.HideMaximized && s.TuckHotkeyKey=="T");
-            s.TuckEdge=1;s.Normalize();Assert(s.TuckEdge==3 && AutoTuckPolicy.Offset(32,s.TuckEdge)==-29);s.TuckEdge=99;s.Normalize();Assert(s.TuckEdge==12 && AutoTuckPolicy.Offset(32,s.TuckEdge)==-20);
+            s.TuckEdge=1;s.Normalize();Assert(s.TuckEdge==1 && AutoTuckPolicy.Offset(32,s.TuckEdge)==-31);s.TuckEdge=99;s.Normalize();Assert(s.TuckEdge==12 && AutoTuckPolicy.Offset(32,s.TuckEdge)==-20);
             s.AlwaysTucked=true;var other=new Settings();CustomizationProfile.Import(CustomizationProfile.Export(s),other);Assert(other.AlwaysTucked && other.TuckEdge==12);
             s.TuckHotkeyKey="I";Assert(HotkeyPolicy.Conflict(s,"Tuck").Contains("Panel") && HotkeyPolicy.Conflict(s,"Panel").Contains("Tuck"));s.HotkeyEnabled=false;s.TuckHotkeyKey="H";Assert(HotkeyPolicy.Conflict(s,"Tuck").Contains("Visibility"));s.TuckHotkeyEnabled=false;Assert(HotkeyPolicy.Conflict(s,"Visibility")=="");s.HotkeyEnabled=true;s.HotkeyKey="H";Assert(HotkeyPolicy.Conflict(s,"Visibility").Contains("Panel"));
         });
