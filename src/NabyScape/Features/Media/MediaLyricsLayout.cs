@@ -21,7 +21,7 @@ public sealed partial class OverlayWindow
 {
     private Grid? mediaLyricsLayout;
     private Border? lyricsAside;
-    private bool ShowLyricsLayout=>app.Settings.CompactLayout && activePage=="media" && !assistantOpen && !commandOpen && !activitiesOpen && mediaLyrics?.Visibility==Visibility.Visible;
+    private bool ShowLyricsLayout=>app.Settings.CompactLayout && activePage=="media" && !assistantOpen && !commandOpen && mediaLyrics?.Visibility==Visibility.Visible;
     private FrameworkElement WrapMediaLyrics(FrameworkElement controls)
     {
         mediaLyricsLayout=new Grid();mediaLyricsLayout.ColumnDefinitions.Add(new());mediaLyricsLayout.ColumnDefinitions.Add(new(){Width=GridLength.Auto});mediaLyricsLayout.RowDefinitions.Add(new(){Height=GridLength.Auto});mediaLyricsLayout.RowDefinitions.Add(new(){Height=GridLength.Auto});

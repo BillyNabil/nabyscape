@@ -58,6 +58,18 @@ internal static class MediaExperienceTests
             var lines=LyricTiming.Parse("[offset:-100]\n[00:01.00][00:03.125]朝のサンプル\n[00:62.00]invalid\n[ar:fixture]\n[00:04.5]Evening sample");
             Assert(lines.Length==3 && Math.Abs(lines[0].At-.9)<.001 && lines[0].Text=="朝のサンプル" && Math.Abs(lines[1].At-3.025)<.001 && LyricTiming.Index(lines,.1)==-1 && LyricTiming.Index(lines,3.1)==1 && LyricTiming.Index(lines,100)==2);
         });
+        test("Closed lyrics use waveform for missing lines, intro, blank breaks and instrumental markers",()=>
+        {
+            Assert(LyricTiming.VocalIndex(Array.Empty<LyricLine>(),10)==-1);
+            var lines=LyricTiming.Parse("[00:05]First vocal line\n[00:10]\n[00:15][Instrumental]\n[00:20]Next vocal line\n[00:25]♪ ♫\n[00:30](Music)\n[00:35]Intro");
+            Assert(LyricTiming.VocalIndex(lines,0)==-1 && LyricTiming.VocalIndex(lines,5)==0 && LyricTiming.VocalIndex(lines,9.99)==0);
+            foreach(double at in new[]{10d,14.99,15,19.99,25,30})Assert(LyricTiming.VocalIndex(lines,at)==-1);
+            Assert(LyricTiming.VocalIndex(lines,20)==3 && LyricTiming.VocalIndex(lines,24.99)==3 && LyricTiming.VocalIndex(lines,35)==6);
+            Assert(LyricTiming.VocalIndex(lines,7)==0); // Seeking backward restores vocals.
+            foreach(string marker in new[]{"Instrumental","[instrumental break]","(Interlude)","[Intro]","[Outro]","[Solo]","🎵","🎶"})
+                Assert(LyricTiming.VocalIndex(new[]{new LyricLine(0,marker)},1)==-1);
+            Assert(LyricTiming.VocalIndex(new[]{new LyricLine(0,"A long vocal line")},80)==0);
+        });
         test("Lyrics require consent and usable metadata, and cache without repeated requests",()=>Task.Run(async()=>
         {
             var fake=new Fake();using var service=new LyricsService(fake);await service.Load("Sample title","Sample artist",180,false,true);await service.Load("Sample title","Sample artist",180,true,false);Assert(fake.Requests==0);

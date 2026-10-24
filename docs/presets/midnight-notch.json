@@ -126,8 +126,6 @@
     "DropReveal": true,
     "DetachablePreviews": true,
     "CoverGestures": true,
-    "ActivitySatellite": false,
-    "SatelliteSource": "CPU",
     "ControlFill": "#16171B",
     "ControlBorder": "#303238",
     "SelectionFill": "#34373E",
@@ -161,8 +159,7 @@
         "Id": "links",
         "Enabled": true
       }
-    ],
-    "ActivitiesEnabled": true
+    ]
   },
   "format": "luma.layout.v1"
 }

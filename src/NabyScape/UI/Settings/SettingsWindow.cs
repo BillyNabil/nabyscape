@@ -65,7 +65,7 @@ public sealed partial class SettingsWindow : Window
         var previewColumn=new StackPanel{Margin=new(20,28,20,20)};var previewTitle=UI.Caption("Live preview",14);previewTitle.FontWeight=FontWeights.SemiBold;previewColumn.Children.Add(previewTitle);previewFocus.Margin=new(0,7,0,0);previewColumn.Children.Add(previewFocus);
         var modes=new Grid{Margin=new(0,14,0,12)};for(int i=0;i<3;i++)modes.ColumnDefinitions.Add(new());int column=0;foreach(string mode in new[]{"Closed","Hover","Panel"}){var button=UI.CaptionButton(mode,()=>{previewMode=mode;RefreshPreview();});button.FontSize=10;button.Padding=new(3,7,3,7);button.Margin=new(0,0,4,0);button.Tag=new CornerRadius(7);UI.Named(button,"Preview "+mode);Grid.SetColumn(button,column++);modes.Children.Add(button);previewModeButtons[mode]=button;}previewColumn.Children.Add(modes);
         previewStage=new Border{Height=238,Background=UI.Brush("#202226"),CornerRadius=new(10),ClipToBounds=true,Child=new System.Windows.Controls.Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=preview,VerticalAlignment=VerticalAlignment.Top}};previewColumn.Children.Add(previewStage);
-        previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Caption("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Stopwatch","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard","Control colors","Typography","Panel navigation","Visibility","Tasks","Startup","AI"})examples.Items.Add(item);examples.SelectedIndex=0;UI.LocalizedName(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=previewHelp;hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
+        previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Caption("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Stopwatch","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Smart clipboard","Control colors","Typography","Panel navigation","Visibility","Tasks","Startup","AI"})examples.Items.Add(item);examples.SelectedIndex=0;UI.LocalizedName(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=previewHelp;hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
         var previewExpander=new Expander{Header=UI.Caption("Live preview",12,UI.Muted),Foreground=UI.Muted,Margin=new(8,0,0,0),Content=UI.Scroll(previewColumn),IsExpanded=true};
         var rail=new Border{BorderBrush=UI.Brush("#24262B"),BorderThickness=new(1,0,0,0),Child=previewExpander};Grid.SetColumn(rail,1);Grid.SetRowSpan(rail,3);workspace.Children.Add(rail);
         var saveRow=new DockPanel();undoSettings.Visibility=Visibility.Collapsed;undoSettings.Click+=(_,_)=>UndoSettings();DockPanel.SetDock(undoSettings,Dock.Right);saveRow.Children.Add(undoSettings);retrySave.Visibility=Visibility.Collapsed;retrySave.HorizontalAlignment=HorizontalAlignment.Right;retrySave.Click+=(_,_)=>CommitSettings();DockPanel.SetDock(retrySave,Dock.Right);saveRow.Children.Add(retrySave);saveRow.Children.Add(status);
@@ -110,7 +110,7 @@ public sealed partial class SettingsWindow : Window
         app.Updates.Changed+=UpdateControls;
         app.SettingsChanged+=SettingsApplied;app.Updated+=UpdateFrameStatus;
         bool closeApproved=false,closePrompt=false;
-        Closing+=async(_,e)=>{if(closeApproved || aiSettings?.HasProviderDraft!=true)return;e.Cancel=true;if(closePrompt)return;closePrompt=true;try{if(await aiSettings.ConfirmProviderChanges()){closeApproved=true;Close();}}finally{closePrompt=false;}};
+        Closing+=async(_,e)=>{if(closeApproved || aiSettings?.HasProviderDraft!=true)return;e.Cancel=true;if(closePrompt)return;closePrompt=true;try{if(await aiSettings.ConfirmProviderChanges()){closeApproved=true;_ =Dispatcher.BeginInvoke(new Action(()=>{if(IsLoaded)Close();}));}}finally{closePrompt=false;}};
         Closed+=(_,_)=>{aiSettings?.ClearSecrets();if(saveTimer.IsEnabled)CommitSettings();app.Updates.Changed-=UpdateControls;app.SettingsChanged-=SettingsApplied;app.Updated-=UpdateFrameStatus;};InitializeHomeStatuses();Navigate("Home");RefreshPreview();
     }
     private void CommitSettings()
@@ -249,7 +249,6 @@ public sealed partial class SettingsWindow : Window
     {
         var s=app.Settings;
         page.Children.Add(Section("Launch display",StyleChoice("Launch appearance",s.LaunchStyle,v=>s.LaunchStyle=v)));
-        page.Children.Add(Section("Activity actions",Check("Enable Activities",s.ActivitiesEnabled,v=>s.ActivitiesEnabled=v),UI.Caption("Show Activities in Launch and command search. Turning this off stops the routine's owned Focus/Keep awake; apps already opened remain running.",11,UI.Muted)));
         var shortcuts=new StackPanel();shortcuts.Children.Add(UI.CaptionButton("Add installed app",()=>new AppPicker(this,shortcut=>
         {
             if(s.Shortcuts.Count>=40){Accessibility.Announce(status,Localization.Text("You can add up to 40 shortcuts."));return;}
@@ -290,7 +289,7 @@ public sealed partial class SettingsWindow : Window
             var button=UI.Button(labels[i],()=>{s.ClosedMediaContent=ids[index];RefreshChoices();previewMode="Closed";previewContent="Music";Save();});button.Content=content;button.HorizontalContentAlignment=HorizontalAlignment.Left;button.Padding=new(14);button.Margin=new(0,0,8,8);button.MinHeight=76;choices.Children.Add(button);buttons.Add(button);
         }
         RefreshChoices();UI.LocalizedName(choices,"Closed media content");
-        page.Children.Add(Section("Closed media display",choices,UI.Caption("Live lyrics sends track details to LRCLIB while visible. If timed lyrics are unavailable, the song title appears. None leaves music playing and shows idle or your timer.",12,UI.Muted),UI.Caption("Media icon",12,UI.Muted),mediaIcon));
+        page.Children.Add(Section("Closed media display",choices,UI.Caption("Live lyrics switches to a waveform when lyrics are unavailable or during marked instrumental breaks. Track details are sent to LRCLIB while visible. None shows idle or your timer without stopping music.",12,UI.Muted),UI.Caption("Media icon",12,UI.Muted),mediaIcon));
     }
     private void DisplaySettings()
     {

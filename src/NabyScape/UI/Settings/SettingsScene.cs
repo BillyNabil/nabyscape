@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Feature usage","Your setup","Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Activity actions","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","Language & accessibility","Private diagnostics","About NabyScape"};
+    internal static readonly string[] Sections={"Feature usage","Your setup","Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","Language & accessibility","Private diagnostics","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -143,8 +143,6 @@ internal sealed class SettingsScene : FrameworkElement
                 Box(18,15,151,68,Brushes.Black);Bar(79,24,30,1);Text("Island preview",33,49,12);Line(185,48,224,61);Box(244,31,151,57,Brushes.Black);Text("Mini window",260,49,12,true);Note("Drag the grip to position · or use Detach");break;
             case "Closed cover gestures":
                 Cover(22,22,38);Text("Click",80,21,13,true);Text("Play / pause",80,43,11);Text("Hold 500 ms",240,21,13,true);Text("Choose media session",240,43,11);Note(s.CoverGestures?"Enabled when the closed icon uses album artwork":"Cover gestures disabled");break;
-            case "Two live activities":
-                Island(22,24,236,35);Box(274,24,122,35,Brushes.Black,17);Text(s.SatelliteSource=="Auto"?"Auto companion":s.SatelliteSource,288,35,11);Note("Companion hides while the preview or panel is open");break;
             case "Automatic activity":
                 Text("New song / session ending",24,20,14,true);Island(26,51,225,30);Text("Brief preview",274,57,11);Note(s.SmartActivities?"Appears without taking keyboard focus":"Automatic previews disabled");break;
             case "Notch gestures":
@@ -175,8 +173,6 @@ internal sealed class SettingsScene : FrameworkElement
                 Text("Launch",24,18,16,true);Text("Current style: "+s.LaunchStyle.Replace("IconsLabels","Icons + labels"),24,50,13);Note("Saved apps and shortcuts use this display style");break;
             case "Shortcuts":
                 Text("Launch",24,18,15,true);Text(s.Shortcuts.Count+" saved shortcuts",250,22,11,false,muted);int si=0;foreach(var item in s.Shortcuts.Take(3)){Box(24+si*128,49,116,29);Text(item.Name,32+si++*128,57,11,false,null,100);}if(si==0)Text("Add an app, folder or website below",24,56,12);Note("Only your saved shortcuts appear in Launch");break;
-            case "Activity actions":
-                Keys("Open app",22,30,106);Line(139,45,159,45);Keys("Start Focus",170,30,106);Line(287,45,307,45);Keys("Keep awake",316,30,90);Note(s.ActivitiesEnabled?"Example routine · starts only when you press Start":"Activities hidden; saved routines are kept");break;
             case "Layout profile":
                 Text("Appearance + layout",24,22,16,true);Text("Content order + gestures",24,50,12);Keys("Export / Import",250,27,143);Note("Excludes notes, clipboard items, app targets and startup");break;
             case "Ambient light":

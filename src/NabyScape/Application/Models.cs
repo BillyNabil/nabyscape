@@ -37,8 +37,6 @@ public sealed partial class Settings
     public bool DropReveal { get; set; } = true;
     public bool DetachablePreviews { get; set; } = true;
     public bool CoverGestures { get; set; } = true;
-    public bool ActivitySatellite { get; set; } = true;
-    public string SatelliteSource { get; set; } = "Auto";
     public bool GlassStyle { get; set; } = true;
     public string SettingsMaterial { get; set; } = "";
     public bool LiveActivity { get; set; } = true;
@@ -67,7 +65,6 @@ public sealed partial class Settings
     public bool MonitorProcesses { get; set; }=true;
     public List<WidgetSetting> HoverViews { get; set; }=new[]{"media","timer","focus","calendar","notes","files","system"}.Select(id=>new WidgetSetting{Id=id,Enabled=id!="system"}).ToList();
     public bool ClipboardHistory { get; set; }
-    public bool ActivitiesEnabled {get;set;}=true;
     public List<WidgetSetting> Tools {get;set;}=ToolNames.Keys.Select(id=>new WidgetSetting{Id=id}).ToList();
     public static readonly Dictionary<string,string> ToolNames=new(){["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["weather"]="Weather"};
     public bool ToolEnabled(string id)=>Widgets.FirstOrDefault(t=>t.Id==id)?.Enabled ?? (Widgets.Any(w=>w.Id=="tools" && w.Enabled) && Tools.Any(t=>t.Id==id && t.Enabled));
@@ -151,7 +148,6 @@ public sealed partial class Settings
         if(HotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))HotkeyModifiers="Ctrl+Alt";
         if(VisibilityHotkeyKey==null || VisibilityHotkeyKey.Length!=1 || VisibilityHotkeyKey[0]<'A' || VisibilityHotkeyKey[0]>'Z')VisibilityHotkeyKey="H";
         if(VisibilityHotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))VisibilityHotkeyModifiers="Ctrl+Alt";
-        if(SatelliteSource is not ("Auto" or "Countdown" or "CPU" or "RAM" or "Calendar" or "Clock"))SatelliteSource="Auto";
         if(ClosedMediaContent is not ("Title" or "Waveform" or "Lyrics" or "None"))ClosedMediaContent="Title";
         if(ClosedMediaIcon is not ("Waveform" or "Artwork" or "None"))ClosedMediaIcon="Waveform";
         CategoryStyle="Dots";

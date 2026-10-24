@@ -23,7 +23,7 @@ public sealed partial class SettingsWindow
         new("Clipboard","Clipboard","Features","Control whether copied text and images are saved on this device.","clipboard salin copy paste capture history riwayat gambar",new[]{"Clipboard history"}),
         new("Weather","Weather","Features","Choose your city and see the weather in Celsius or Fahrenheit.","weather cuaca kota city temperature suhu rain hujan"),
         new("System","Clock & system","Features","Choose the clock format and computer information shown in widgets.","clock jam tanggal date battery cpu ram network storage system"),
-        new("Launch","Shortcuts","Features","Choose your favorite apps and create one-click routines.","apps launch aplikasi shortcuts explorer routine activities"),
+        new("Launch","Shortcuts","Features","Choose your favorite apps, folders and websites.","apps launch aplikasi shortcuts explorer"),
         new("AI","Naby AI","Features","Connect an AI provider and manage companion preferences.","ai naby hermes gemini live voice provider api key chat model token"),
         new("Notifications","Notifications","App","Choose which alerts appear, their sounds and quiet hours.","notifications notif pemberitahuan alert sound bunyi quiet hours downloads",new[]{"Notifications","Notification presentation","Downloads","Completion sound"}),
         new("Application","General","App","Manage startup, updates, local data and app preferences.","general startup update version install storage data reset backup mulai windows")

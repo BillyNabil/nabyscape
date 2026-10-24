@@ -24,6 +24,7 @@ internal static class SelfTests
             if(reportAt>=0 && reportAt+1<args.Length)File.WriteAllLines(args[reportAt+1],checks);
             Environment.ExitCode=failed==0?0:1;
         }
+        WpfOptimizationTests.Run(Test);
         if(Array.Exists(args,a=>a=="--capture-optimization-tests-only"))
         {AssistantCaptureTests.Run(Test);Finish();return;}
         Test("Factory preferences match the selected daily setup without personal content",()=>
@@ -32,7 +33,7 @@ internal static class SelfTests
             Assert(s.Width==400 && s.Height==41 && s.Radius==13 && s.PanelWidth==526 && s.PanelMaxHeight==417 && s.PanelScale==1.04 && s.HoverWidth==447 && s.HoverHeight==207);
             Assert(!s.GlassStyle && s.GlassStrength==.99 && s.CategoryStyle=="Dots" && s.LaunchStyle=="Icons" && s.Performance=="Maksimal" && s.AnimationMs==400 && s.WheelAction=="pages" && s.HideMaximized && s.TuckEdge==2);
             Assert(s.ClosedAmbient && s.AmbientScope=="Music only" && s.AmbientStrength==.2 && s.AmbientMotion=="Breathe" && s.WaveformSource=="Spectrum" && s.WaveformSensitivity==3);
-            Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews && !s.ActivitySatellite && !s.ActivitiesEnabled);
+            Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews);
             Assert(HoverPagePolicy.Pages(s).SequenceEqual(s.Widgets.Where(w=>w.Enabled && HoverPagePolicy.Ids.Contains(w.Id)).Select(w=>w.Id)));
             Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice" && s.Widgets.All(w=>w.Enabled!=(w.Id=="voice")));
             Assert(s.AutoCheckUpdates && !s.AutoDownloadUpdates);
@@ -60,7 +61,6 @@ internal static class SelfTests
         Stage5Tests.Run((name,pass)=>Test("Stage5: "+name,()=>Assert(pass)));
         InteractionFeatureTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         WaveformMotionTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
-        ActivityActionsTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         DetachedPreviewTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         SmartClipboardTests.Run((name,pass)=>Test(name,()=>Assert(pass)));
         PerformanceTests.Run(Test);

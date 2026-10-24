@@ -31,7 +31,7 @@ internal static class InteractionDiagnostics
         var images=Directory.Exists(cache)?Directory.GetFiles(cache,"*.png").ToDictionary(p=>p,File.ReadAllBytes):new Dictionary<string,byte[]>();
         var fileNames=kinds.Select(k=>"detached-"+k+".json").Concat(new[]{"settings.json","session.json","productivity.json","activities.json","calendar.json"});
         var savedFiles=fileNames.ToDictionary(n=>Path.Combine(app.Store.DirectoryPath,n),n=>File.Exists(Path.Combine(app.Store.DirectoryPath,n))?File.ReadAllBytes(Path.Combine(app.Store.DirectoryPath,n)):null);
-        string? calendarId=null,activityId=null;bool activityStarted=false;
+        string? calendarId=null;
         var created=new List<Window>();
         void Check(string name,bool value)=>check("Interactions: "+name,value);
         IEnumerable<DependencyObject> Tree(DependencyObject root)=>Diagnostics.Descendants(root);
@@ -168,13 +168,6 @@ internal static class InteractionDiagnostics
                 }
             }
             finally{content.LayoutTransform=oldTransform;noteWindow.Width=oldWidth;noteWindow.Height=oldHeight;}
-            // Focus-only activity cannot launch an application, open a URL, write audio or hold display awake.
-            if(app.Activities.ActiveActivity!=null)throw new InvalidOperationException("Diagnostic activity requires no pre-existing active activity.");
-            app.Session.Focus.Reset();var definition=new ActivityDefinition{Name="Study session",Steps=new(){new(){Kind="focus",Minutes=2}}};activityId=definition.Id;
-            Check("local focus-only activity definition saves",app.Activities.Save(definition) && app.Store.Load<ActivityActionsData>("activities").Activities.Any(a=>a.Id==definition.Id && a.Steps.All(s=>s.Kind=="focus")));overlay.ShowActivities(false);await Settle();Capture(overlay,"activity-definition");
-            FindButton(overlay,"Start activity Study session").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));activityStarted=app.Activities.ActiveActivity?.Id==definition.Id;await Settle();
-            Check("activity Start starts shared Focus and reports its step",activityStarted && app.Session.Focus.Running && app.Activities.Results.Count==1 && app.Activities.Results[0].Success);Capture(overlay,"activity-running");
-            FindButton(overlay,"Stop activity").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));activityStarted=false;Check("activity Stop releases its owned Focus",app.Activities.ActiveActivity==null && !app.Session.Focus.Running);Capture(overlay,"activity-stopped");
             var p=app.Productivity;p.SetClipboardEnabled(true);p.ClearClips();p.IngestText("Diagnostic plain text");p.IngestText("https://example.com/review?keep=yes&utm_source=diagnostic#section");p.IngestText("#2A6F9B");
             var bitmap=BitmapSource.Create(2,2,96,96,PixelFormats.Bgra32,null,new byte[]{155,111,42,255,42,111,155,255,42,155,111,255,111,42,155,255},8);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using(var bytes=new MemoryStream()){png.Save(bytes);p.IngestImage(bytes.ToArray());}
             Check("native-free clipboard fixtures classify Text Link Image Color",p.Clips.Select(c=>SmartClipboard.Classify(c).Kind).Distinct().Count()==4);
@@ -193,7 +186,7 @@ internal static class InteractionDiagnostics
         finally
         {
             foreach(var window in created.Distinct().Where(w=>Application.Current.Windows.Cast<Window>().Contains(w)).ToArray())window.Close();
-            if(activityStarted)app.Activities.Stop();if(activityId!=null)app.Activities.Remove(activityId);if(calendarId!=null)app.Calendar.Remove(calendarId);
+            if(calendarId!=null)app.Calendar.Remove(calendarId);
             Restore(app.Session.Timer,timer);Restore(app.Session.Focus,focus);app.SaveSession();
             app.Productivity.Note=notes;app.Productivity.SetClipboardEnabled(clipboardEnabled);app.Productivity.ClipboardPaused=clipboardPaused;app.Productivity.Clips.Clear();
             if(images.Count>0)Directory.CreateDirectory(cache);foreach(var image in images)File.WriteAllBytes(image.Key,image.Value);app.Productivity.Clips.AddRange(clips);app.Productivity.Shelf.Clear();app.Productivity.Shelf.AddRange(originalShelf);app.Productivity.Save();
@@ -221,8 +214,8 @@ internal static class InteractionDiagnostics
             foreach(var widget in app.Settings.Widgets)widget.Enabled=true;foreach(var view in app.Settings.HoverViews)view.Enabled=true;app.ChangeSettings();
             foreach(var mode in new[]{"notes","calendar","files"})
             {
-                overlay.ShowActivities(false);overlay.OpenFeaturePage(mode);overlay.UpdateLayout();
-                Check("Activities to detached "+mode+" route mounts normal Tools body",!overlay.ActivitiesOpen && overlay.ActivePage==mode && (mode=="calendar"?Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Add local event"):Diagnostics.Descendants(overlay).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text==(mode=="files"?"File shelf":"Notes"))));
+                overlay.ShowCommands(false);overlay.OpenFeaturePage(mode);overlay.UpdateLayout();
+                Check("Commands to detached "+mode+" route mounts normal Tools body",!overlay.CommandsOpen && overlay.ActivePage==mode && (mode=="calendar"?Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Add local event"):Diagnostics.Descendants(overlay).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text==(mode=="files"?"File shelf":"Notes"))));
             }
             foreach(bool compact in new[]{true,false})
             {
@@ -236,69 +229,17 @@ internal static class InteractionDiagnostics
             app.Settings.CompactLayout=true;app.Settings.HoverPeek=true;foreach(var view in app.Settings.HoverViews)view.Enabled=true;app.ChangeSettings();
             overlay.ShowCommands(false);var command=Entry("Search commands");command.Text="unfinished search";command.Select(3,5);Drag();Cancel();
             Check("Cancelled expanded drag retains command editor and selection",overlay.CommandsOpen && ReferenceEquals(command,Entry("Search commands")) && command.Text=="unfinished search" && command.SelectionStart==3 && command.SelectionLength==5);
-            overlay.ShowActivities(false);var activityBody=Field("activityContent");Drag();Cancel();Check("Cancelled drag retains Activities body",overlay.ActivitiesOpen && ReferenceEquals(activityBody,Field("activityContent")));
             overlay.ShowTools("calendar",false);Button("Add local event").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));var title=Entry("Event title");title.Text="Unsaved local draft";title.Select(2,4);var start=Entry("Event start time");start.Text="13:45";Drag();Cancel();
             Check("Cancelled drag retains calendar form instances, draft and caret",ReferenceEquals(title,Entry("Event title")) && title.Text=="Unsaved local draft" && title.SelectionStart==2 && title.SelectionLength==4 && ReferenceEquals(start,Entry("Event start time")) && start.Text=="13:45" && Field("calendarEditing") is true);
-            // Inject availability only; no media command or external session is created.
-            overlay.Collapse();app.Session.Timer.Start(300,DateTimeOffset.UtcNow);app.Session.Focus.Reset();overlay.DiagnosticSatelliteMedia=true;app.Settings.ActivitySatellite=true;app.ChangeSettings();Invoke("UpdateSatellite");
-            var satellite=(Window?)Field("satelliteWindow");Check("Satellite fixture has room and a visible click target",satellite?.IsVisible==true);
-            if(satellite!=null)
-            {
-                var before=Native.GetForegroundWindow();var bounds=new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height);
-                overlay.DiagnosticSatellitePointerPresent=true;satellite.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseEnterEvent});
-                Invoke("UpdateSatellite");await Task.Delay(1100);Invoke("UpdateSatellite");
-                Check("Satellite withdraws while own hover preview opens",overlay.IsPeeking && overlay.PeekPage=="timer" && !satellite.IsVisible && bounds==new Rect(satellite.Left,satellite.Top,satellite.Width,satellite.Height));
-                Check("Satellite hover preserves foreground and uses non-activating window",before==Native.GetForegroundWindow() && !satellite.ShowActivated);
-                // Simulate the crossing into the main preview, then departure from both surfaces.
-                overlay.DiagnosticPointerPresent=true;overlay.DiagnosticSatellitePointerPresent=false;satellite.RaiseEvent(new System.Windows.Input.MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0){RoutedEvent=System.Windows.Input.Mouse.MouseLeaveEvent});await Task.Delay(400);
-                Check("Satellite-to-preview crossing keeps preview open",overlay.IsPeeking);
-                overlay.DiagnosticPointerPresent=false;((System.Windows.Threading.DispatcherTimer)Field("leaveDelay")!).Start();await Task.Delay(400);Check("Leaving satellite and preview dismisses orphan preview",!overlay.IsPeeking);
-                Invoke("UpdateSatellite");Invoke("OpenSatellite",false);Invoke("UpdateSatellite");Diagnostics.Descendants(satellite).OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
-                Check("Satellite click after hover opens countdown panel",overlay.IsExpanded && overlay.ActivePage=="focus");
-            }
-            app.Session.Timer.Reset();app.Session.Focus.Reset();
-            foreach(var mode in new[]{"Auto","CPU","RAM","Clock"})
-            {
-                overlay.Collapse();app.Settings.SatelliteSource=mode;app.Settings.HoverViews.Single(v=>v.Id=="system").Enabled=false;app.ChangeSettings();Invoke("UpdateSatellite");
-                satellite=(Window?)Field("satelliteWindow");Check(mode+" companion visible without countdown",satellite?.IsVisible==true);
-                Check(mode+" companion requests system sampling only for CPU/RAM",overlay.SystemSummaryVisible==(mode is "Auto" or "CPU" or "RAM"));
-                Invoke("OpenSatellite",false);Invoke("UpdateSatellite");await Task.Delay(180);
-                Check(mode+" companion opens system preview even if omitted from carousel",overlay.IsPeeking && overlay.PeekPage=="system" && satellite?.IsVisible!=true);
-                if(satellite!=null)
-                {
-                    satellite.UpdateLayout();Check(mode+" companion text fits",Diagnostics.Descendants(satellite).OfType<TextBlock>().Where(t=>t.IsVisible).All(t=>{var r=t.TransformToAncestor(satellite).TransformBounds(new Rect(t.RenderSize));return r.Left>=0 && r.Right<=satellite.ActualWidth;}));
-                    var bmp=new RenderTargetBitmap((int)satellite.ActualWidth,(int)satellite.ActualHeight,96,96,PixelFormats.Pbgra32);bmp.Render(satellite);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bmp));using(var capture=File.Create(Path.Combine(directory,"companion-"+mode.ToLowerInvariant()+".png")))encoder.Save(capture);
-                    Diagnostics.Descendants(satellite).OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));Check(mode+" companion click opens status",overlay.IsExpanded && overlay.ActivePage=="status");
-                }
-            }
-            foreach(var preset in new[]{"Mac","iPhone"})foreach(var h in new[]{28d,39d,72d})
-            {
-                overlay.Collapse();app.Settings.Width=295;app.Settings.Height=h;app.Settings.Preset=preset;app.Settings.SatelliteSource="CPU";app.ChangeSettings();Invoke("UpdateSatellite");await Task.Delay(320);overlay.UpdateLayout();
-                satellite=(Window?)Field("satelliteWindow");if(satellite==null)continue;satellite.UpdateLayout();
-                var shape=(IslandSurface)Field("satelliteSurface")!;double shoulder=preset=="Mac"?Math.Min(16,h*.36):0;
-                var dpi=VisualTreeHelper.GetDpi(overlay);var mainTop=overlay.PointToScreen(new Point(0,0));var mainBodyRight=overlay.PointToScreen(new Point((overlay.ActualWidth+app.Settings.Width)/2-shoulder,0));
-                Check($"Companion aligns height and top at {preset}/{h}",Math.Abs(satellite.Height-h)<.1 && Math.Abs(satellite.Top-mainTop.Y/dpi.DpiScaleY)<1);
-                Check($"Companion visible body gap stays 8px at {preset}/{h}",Math.Abs(satellite.Left+shoulder-mainBodyRight.X/dpi.DpiScaleX-8)<1);
-                Check($"Companion inherits contour and material at {preset}/{h} (notch={shape.Notch}, radius={shape.Radius}/{app.Settings.Radius}, glass={shape.GlassStyle}/{app.Settings.GlassStyle}, opacity={satellite.Opacity}/{overlay.Opacity})",shape.Notch==(preset=="Mac") && shape.Radius==app.Settings.Radius && shape.GlassStyle==((IslandSurface)Field("surface")!).GlassStyle && satellite.Opacity==overlay.Opacity);
-                Check($"Companion text fits contour safe insets at {preset}/{h}",Diagnostics.Descendants(satellite).OfType<TextBlock>().Where(t=>t.IsVisible).All(t=>{var r=t.TransformToAncestor(satellite).TransformBounds(new Rect(t.RenderSize));return r.Left>=shoulder && r.Right<=satellite.ActualWidth-shoulder && r.Bottom<=h;}));
-                var visual=new DrawingVisual();double crop=(overlay.ActualWidth-app.Settings.Width)/2;double delta=satellite.Left-mainTop.X/dpi.DpiScaleX-crop;int captureWidth=(int)Math.Ceiling(delta+satellite.Width);
-                using(var dc=visual.RenderOpen()){dc.DrawRectangle(UI.Brush("#C6C4C0"),null,new Rect(0,0,captureWidth,h+16));dc.PushClip(new RectangleGeometry(new Rect(0,0,captureWidth,h+16)));dc.DrawRectangle(new VisualBrush(overlay),null,new Rect(-crop,0,overlay.ActualWidth,overlay.ActualHeight));dc.DrawRectangle(new VisualBrush(satellite),null,new Rect(delta,0,satellite.ActualWidth,satellite.ActualHeight));dc.Pop();}
-                var pair=new RenderTargetBitmap(captureWidth,(int)h+16,96,96,PixelFormats.Pbgra32);pair.Render(visual);var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(pair));using(var file=File.Create(Path.Combine(directory,$"companion-pair-{preset}-{h}.png")))encoder.Save(file);
-            }
-            overlay.Collapse();app.Settings.SatelliteSource="Calendar";app.ChangeSettings();Invoke("UpdateSatellite");Check("Calendar companion omitted without nearby events",((Window?)Field("satelliteWindow"))?.IsVisible!=true);
-            var companionEvent=app.Calendar.Add("Companion fixture",DateTimeOffset.Now.AddMinutes(20),DateTimeOffset.Now.AddMinutes(50),"");
-            try{Invoke("UpdateSatellite");Check("Calendar companion shows next local event",((Window?)Field("satelliteWindow"))?.IsVisible==true);Invoke("OpenSatellite",false);Check("Calendar companion hover opens calendar",overlay.IsPeeking && overlay.PeekPage=="calendar");Invoke("OpenSatellite",true);Check("Calendar companion click opens calendar page",overlay.IsExpanded && overlay.ActivePage=="calendar");}finally{app.Calendar.Remove(companionEvent.Id);}
-            app.Settings.SatelliteSource="Auto";
-            overlay.DiagnosticSatelliteMedia=false;overlay.Collapse();app.Settings.CompactLayout=false;app.ChangeSettings();overlay.Reveal(false);overlay.UpdateLayout();
-            Check("Classic Quick launch exposes Activities",Diagnostics.Descendants(overlay).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)=="Activities"));
+            overlay.Collapse();app.Settings.CompactLayout=false;app.ChangeSettings();overlay.Reveal(false);overlay.UpdateLayout();
             Check("Classic visible system card requests shared samples",overlay.SystemSummaryVisible && Diagnostics.Descendants(overlay).OfType<TextBlock>().Any(t=>t.IsVisible && t.Text=="System"));
-            overlay.ShowCommands(false);Check("Classic commands exclude hidden system summary",!overlay.SystemSummaryVisible);overlay.ShowActivities(false);Check("Classic Activities exclude hidden system summary",!overlay.SystemSummaryVisible);
-            overlay.OpenFeaturePage("notes");Check("Classic Tools route restores actual system card visibility",!overlay.ActivitiesOpen && overlay.SystemSummaryVisible);
-            overlay.Collapse();app.Settings.ActivitySatellite=false;app.ChangeSettings();Check("Collapsed island with companion off stops system-summary sample demand",!overlay.SystemSummaryVisible);
+            overlay.ShowCommands(false);Check("Classic commands exclude hidden system summary",!overlay.SystemSummaryVisible);
+            overlay.OpenFeaturePage("notes");Check("Classic Tools route restores actual system card visibility",!overlay.CommandsOpen && overlay.SystemSummaryVisible);
+            overlay.Collapse();app.ChangeSettings();Check("Collapsed island stops system-summary sample demand",!overlay.SystemSummaryVisible);
         }
         finally
         {
-            Cancel();overlay.DiagnosticSatelliteMedia=false;overlay.DiagnosticSatellitePointerPresent=false;overlay.DiagnosticPointerPresent=false;overlay.Collapse();
+            Cancel();overlay.DiagnosticPointerPresent=false;overlay.Collapse();
             Restore(app.Session.Timer,timer);Restore(app.Session.Focus,focus);
             var original=JsonSerializer.Deserialize<Settings>(saved)!;foreach(var property in typeof(Settings).GetProperties().Where(p=>p.CanRead && p.CanWrite))property.SetValue(app.Settings,property.GetValue(original));app.ChangeSettings();
             if(hidden!=overlay.UserHidden)overlay.ToggleVisibility();overlay.DiagnosticRun=diagnostic;

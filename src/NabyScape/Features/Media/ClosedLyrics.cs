@@ -19,13 +19,14 @@ public sealed partial class OverlayWindow
     private bool ClosedMediaActive=>app.Settings.ClosedMediaContent!="None" && WidgetOn("media") && app.Media.Available && app.Media.Playing;
     private bool WantsClosedLyrics=>!closedLyricsDisposed && app.Settings.ClosedMediaContent=="Lyrics" && ClosedMediaActive &&
         IsVisible && WindowState!=WindowState.Minimized && !userHidden && !IsTucked && !TuckRequested && !expanded && !peeking && !FeedbackVisible && app.Notifications.Current==null && !ClosedVoiceActivity && ActiveCountdown()==null;
+    private int ClosedLyricIndex=>LyricTiming.CanUse(app.Media)?LyricTiming.VocalIndex(app.Lyrics.Result.Lines,app.Media.Timeline().elapsed+app.Settings.LyricsOffset):-1;
     private string ClosedMediaText
     {
         get
         {
-            if(app.Settings.ClosedMediaContent!="Lyrics" || !LyricTiming.CanUse(app.Media))return app.Media.Title;
-            var lines=app.Lyrics.Result.Lines;int index=LyricTiming.Index(lines,app.Media.Timeline().elapsed+app.Settings.LyricsOffset);
-            if(index<0 || string.IsNullOrWhiteSpace(lines[index].Text))return app.Media.Title;
+            if(app.Settings.ClosedMediaContent!="Lyrics")return app.Media.Title;
+            var lines=app.Lyrics.Result.Lines;int index=ClosedLyricIndex;
+            if(index<0)return "";
             double end=index+1<lines.Length?lines[index+1].At:app.Media.Timeline().duration;
             return ClosedLyricPhrase(lines[index].Text,lines[index].At,end,app.Media.Timeline().elapsed+app.Settings.LyricsOffset);
         }
@@ -53,7 +54,7 @@ public sealed partial class OverlayWindow
     }
     private void PaintClosedLyrics()
     {
-        if(!WantsClosedLyrics)return;SetClosedSummary(ClosedMediaText);
+        if(!WantsClosedLyrics)return;SetClosedSummary(ClosedMediaText);UpdateClosedMediaWaveform();
         if(app.Lyrics.Result.Lines.Length>0 && LyricTiming.CanUse(app.Media) && !closedLyricTick.IsEnabled)closedLyricTick.Start();
     }
     private void SetClosedSummary(string text)

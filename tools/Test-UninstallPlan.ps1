@@ -12,12 +12,12 @@ New-Item -ItemType Directory -Path $local,$temp,$outside -Force | Out-Null
 try {
     $sentinel=Join-Path $outside 'imported-model.onnx';'personal model' | Set-Content -LiteralPath $sentinel
     $roots=Get-NabyDataRoots $local $temp
-    foreach($folder in @('NabyScape/local-speech/models','LumaIsland/local-speech/voices','NabyScape-Updates/rollback')) {
+    foreach($folder in @('NabyScape/local-speech/models','NabyScape/native-runtime/fixture-hash','NabyScape/native-host-spool','LumaIsland/local-speech/voices','NabyScape-Updates/rollback')) {
         $path=Join-Path $local $folder;New-Item -ItemType Directory -Path $path -Force | Out-Null
         'downloaded by app' | Set-Content -LiteralPath (Join-Path $path 'owned.bin')
     }
     $plan=New-NabyRemovalPlan $roots
-    if($plan.Files.Count -ne 3){throw 'Managed model/update roots were not included'}
+    if($plan.Files.Count -ne 5){throw 'Managed model, native renderer cache or update roots were not included'}
     Remove-NabyPlannedData $plan
     if((Test-Path -LiteralPath (Join-Path $local 'NabyScape')) -or (Test-Path -LiteralPath (Join-Path $local 'LumaIsland')) -or (Test-Path -LiteralPath (Join-Path $local 'NabyScape-Updates'))){throw 'App-owned files remain'}
     if((Get-Content -LiteralPath $sentinel -Raw).Trim() -ne 'personal model'){throw 'Imported model was changed'}

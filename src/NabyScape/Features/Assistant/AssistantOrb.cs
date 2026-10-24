@@ -12,6 +12,7 @@ namespace NabyScape;
 // Idle motion uses retained WPF transforms; managed frame callbacks are for live states.
 internal sealed class AssistantOrb : FrameworkElement
 {
+    internal static bool ReferenceTransformsForDiagnostics {get;set;}
     private AssistantState state;
     private bool rendering,reduceMotion,live,hovered,pressed,idleAnimating,music,motionEnabled;
     private readonly ScaleTransform headphonesReveal=new(0,0,50,50);
@@ -26,6 +27,7 @@ internal sealed class AssistantOrb : FrameworkElement
     private double requestedX=double.NaN,requestedY=double.NaN;
     private readonly MatrixTransform viewportTransform=new();
     private readonly RotateTransform thinkingTilt=new(0,50,50),leftTilt=new(),rightTilt=new();
+    private readonly TransformGroup leftEyePose=new(),rightEyePose=new();
     private readonly Pen outline=new(edge,1),liveOutline=new(body,2);
     private static Pen Stroke(Brush brush,double width){var pen=new Pen(brush,width);pen.Freeze();return pen;}
     private int blinks;
@@ -46,6 +48,10 @@ internal sealed class AssistantOrb : FrameworkElement
     }
     internal AssistantOrb()
     {
+        // PushTransform(A), PushTransform(B) applies B before A. Reverse each
+        // retained group to preserve that exact composition with a shallow stack.
+        leftEyePose.Children.Add(leftTilt);leftEyePose.Children.Add(leftLid);leftEyePose.Children.Add(expression);leftEyePose.Children.Add(gaze);
+        rightEyePose.Children.Add(rightTilt);rightEyePose.Children.Add(rightLid);rightEyePose.Children.Add(expression);rightEyePose.Children.Add(gaze);
         Width=Height=52;
         Loaded+=(_,_)=>{Refresh();if(!reduceMotion && Motion.Enabled)Bounce(false);};
         Unloaded+=(_,_)=>{Detach();StopIdle();blinkTimer.Stop();ResetInteraction();};
@@ -169,15 +175,19 @@ internal sealed class AssistantOrb : FrameworkElement
         if(args is not RenderingEventArgs frame || !pacer.Accept(frame.RenderingTime,Motion.FrameLimit))return;
         double now=frame.RenderingTime.TotalSeconds,dt=last==0?0:Math.Clamp(now-last,0,.05);last=now;phase+=dt;displayLevel+=(level-displayLevel)*(1-Math.Exp(-dt*16));InvalidateVisual();
     }
-    protected override void OnRender(DrawingContext dc)
+    protected override void OnRender(DrawingContext dc)=>DrawCharacter(dc,ReferenceTransformsForDiagnostics);
+    // The reference path is used only by pixel-parity diagnostics. All geometry,
+    // brushes and animation values are shared, so it cannot silently drift.
+    internal void DrawCharacter(DrawingContext dc,bool nestedReference)
     {
         double size=Math.Min(ActualWidth,ActualHeight);if(size<=0)return;
         bool moving=rendering && !reduceMotion && Motion.Enabled;double t=moving?phase:0,energy=moving && state is AssistantState.Listening or AssistantState.Speaking?displayLevel:0;
         double bob=moving?Math.Sin(t*(state==AssistantState.Thinking?3:2))*1.2:0;
         var matrix=new Matrix(size/100,0,0,size/100,(ActualWidth-size)/2,(ActualHeight-size)/2);if(viewportTransform.Matrix!=matrix)viewportTransform.Matrix=matrix;
         thinkingTilt.Angle=state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*5:0;
-        dc.PushTransform(viewportTransform);dc.PushTransform(idlePose);dc.PushTransform(lift);dc.PushTransform(lean);dc.PushTransform(squash);
-        dc.PushTransform(thinkingTilt);
+        // Keep the outer silhouette's original transform rounding. Flatten only
+        // the deeper eye subtree, where bounds walking otherwise grows to 16 matrices.
+        dc.PushTransform(viewportTransform);dc.PushTransform(idlePose);dc.PushTransform(lift);dc.PushTransform(lean);dc.PushTransform(squash);dc.PushTransform(thinkingTilt);
         // Keep a circular silhouette in every resting/live state. Expression lives in
         // the eyes and posture; only an intentional press briefly compresses it.
         double radius=43*(1+energy*.018);
@@ -187,16 +197,16 @@ internal sealed class AssistantOrb : FrameworkElement
         dc.DrawGeometry(null,headphonePen,headphoneBand);
         dc.DrawRoundedRectangle(edge,cupPen,new Rect(5,43,14,27),6,6);
         dc.DrawRoundedRectangle(edge,cupPen,new Rect(81,43,14,27),6,6);
-        dc.Pop();dc.PushTransform(gaze);dc.PushTransform(expression);
+        dc.Pop();if(nestedReference){dc.PushTransform(gaze);dc.PushTransform(expression);}
         double searching=state==AssistantState.Thinking && moving?Math.Sin(t*2.3)*4:0,height=30;
         for(int i=0;i<2;i++)
         {
             double x=i==0?35:65,y=41+bob+(state==AssistantState.Approval?(i==0?-3:3):0),h=height+(state==AssistantState.Speaking && moving?Math.Sin(t*11+i*.9)*energy*8+energy*5:0);
             var tilt=i==0?leftTilt:rightTilt;tilt.Angle=state==AssistantState.Error?(i==0?-18:18):-8+(state==AssistantState.Thinking?searching:0);tilt.CenterX=x;tilt.CenterY=y;
-            dc.PushTransform(i==0?leftLid:rightLid);dc.PushTransform(tilt);
-            dc.DrawRoundedRectangle(eyes,null,new(x-8+searching,y-h/2,16,h),8,8);dc.Pop();dc.Pop();
+            if(nestedReference){dc.PushTransform(i==0?leftLid:rightLid);dc.PushTransform(tilt);}else dc.PushTransform(i==0?leftEyePose:rightEyePose);
+            dc.DrawRoundedRectangle(eyes,null,new(x-8+searching,y-h/2,16,h),8,8);dc.Pop();if(nestedReference)dc.Pop();
         }
-        dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();
+        if(nestedReference){dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();dc.Pop();}else{dc.Pop();dc.Pop();dc.Pop();dc.Pop();}
         if(live){liveOutline.Thickness=Math.Max(2,110/size);dc.DrawEllipse(eyes,liveOutline,new(83,83),6.5,6.5);}
         dc.Pop();dc.Pop();
     }

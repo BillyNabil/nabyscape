@@ -15,7 +15,7 @@ internal static class Stage2Diagnostics
     internal static async Task Run(App app,OverlayWindow island,string directory,Action<string,bool> check)
     {
         void Check(string name,bool pass)=>check("Stage 2: "+name,pass);
-        var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.ReduceMotion=true;s.SmartActivities=false;s.ActivitySatellite=false;island.DiagnosticEnvironment(IntPtr.Zero);app.ChangeSettings();island.Collapse();
+        var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.ReduceMotion=true;s.SmartActivities=false;island.DiagnosticEnvironment(IntPtr.Zero);app.ChangeSettings();island.Collapse();
         s.AlwaysTucked=true;app.ChangeSettings();island.CheckEnvironment();await Task.Delay(100);
         Check("always tucked leaves six DIP and stops live rendering",island.IsTucked && Math.Abs(island.VisibleBounds.Height-6)<.1 && !island.LiveRunning);
         foreach(double edge in new[]{3d,12d}){s.TuckEdge=edge;app.ChangeSettings();Check("configurable edge "+edge,Math.Abs(island.VisibleBounds.Height-edge)<.1);}

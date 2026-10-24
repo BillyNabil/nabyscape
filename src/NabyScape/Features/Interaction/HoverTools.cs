@@ -15,7 +15,7 @@ public sealed partial class OverlayWindow
         if(!peekInitialized)return;
         var p=app.Productivity;
         string clips=p.ClipboardEnabled?string.Join("|",p.Clips.Take(2).Select(c=>c.Id))+"|"+p.ClipboardPaused:"off";
-        if(clips!=clipboardPeekKey)
+        if(peekId=="clips" && clips!=clipboardPeekKey)
         {
             clipboardPeekKey=clips;peekClipboard.Children.Clear();
             if(!p.ClipboardEnabled)peekClipboard.Children.Add(UI.Text("History is off. Enable it in Settings → Controls.",11,UI.Muted));
@@ -28,7 +28,7 @@ public sealed partial class OverlayWindow
             }
         }
         string tasks=string.Join("|",p.Tasks.Take(2).Select(t=>t.Id+":"+t.Text));
-        if(tasks!=tasksPeekKey || peekTasks.Children.Count==0)
+        if(peekId=="tasks" && (tasks!=tasksPeekKey || peekTasks.Children.Count==0))
         {
             tasksPeekKey=tasks;peekTasks.Children.Clear();
             foreach(var task in p.Tasks.Take(2))

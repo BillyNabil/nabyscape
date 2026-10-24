@@ -25,9 +25,9 @@ internal static class Stage1Diagnostics
             element.UpdateLayout();var image=new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth),(int)Math.Ceiling(element.ActualHeight),96,96,PixelFormats.Pbgra32);image.Render(element);
             var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(image));using var file=File.Create(Path.Combine(directory,"stage1-"+name+".png"));encoder.Save(file);
         }
-        var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.ReduceMotion=true;s.SmartActivities=false;s.ActivitySatellite=false;
+        var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.ReduceMotion=true;s.SmartActivities=false;
         foreach(var widget in s.Widgets)widget.Enabled=true;app.ChangeSettings();
-        app.Media.DiagnosticFixture=false;island.Collapse();app.ChangeSettings();await Task.Delay(150);
+        app.Media.SelectNone();island.Collapse();app.ChangeSettings();await Task.Delay(150);
         Check("idle has no brand label or waveform",island.HeaderLabel.Text=="" && Field<ActivityVisual>("activity").Visibility==Visibility.Collapsed && !island.ClosedTitleWaveVisible);
         Check("idle retains enabled clock",Field<TextBlock>("compactClock").Visibility==Visibility.Visible);
         s.Widgets.Single(w=>w.Id=="clock").Enabled=false;app.ChangeSettings();await Task.Delay(100);
@@ -39,6 +39,7 @@ internal static class Stage1Diagnostics
         s.CategoryStyle="Text";app.ChangeSettings();await Task.Delay(120);note=Entry("Quick notes");
         Check($"content rebuild retains note focus, selection and editor scroll (focus={note.IsKeyboardFocusWithin}, selection={note.SelectionStart}/{note.SelectionLength}, scroll={note.VerticalOffset}/{noteScroll})",note.IsKeyboardFocusWithin && note.SelectionStart==4 && note.SelectionLength==7 && Math.Abs(note.VerticalOffset-noteScroll)<1);
         typeof(OverlayWindow).GetMethod("EnsurePeekDeck",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(island,null);
+        typeof(OverlayWindow).GetMethod("EnsurePeekView",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(island,new object[]{"notes"});
         var mini=new DetachedPreviewView(app,"notes",()=>{});mini.SetVisible(true);
         try
         {
@@ -66,7 +67,7 @@ internal static class Stage1Diagnostics
         var preview=Diagnostics.Descendants(settings).OfType<Expander>().Single(e=>AutomationProperties.GetName(e)=="Settings live preview");
         var form=Diagnostics.Descendants(settings).OfType<ScrollViewer>().Single(c=>AutomationProperties.GetName(c)=="Settings form viewport");
         Check("480x300 uses category chooser and collapsed preview with usable form",chooser.IsVisible && !preview.IsExpanded && form.ActualWidth>=300 && form.ActualHeight>=80);
-        var categories=new[]{("Appearance","Look & colors"),("Ambience","Ambience"),("Motion","Animation & speed"),("Layout","Position & size"),("Visibility","Show & hide"),("Controls","Mouse & keyboard"),("Content","Widgets & tools"),("Audio","Music & sound"),("Clipboard","Clipboard"),("Weather","Weather"),("System","Clock & system"),("Launch","Apps & shortcuts"),("AI","Naby AI"),("Notifications","Notifications"),("Application","General")};
+        var categories=new[]{("Appearance","Look & colors"),("Ambience","Ambience"),("Motion","Motion & speed"),("Layout","Position & size"),("Visibility","Show & hide"),("Controls","Controls"),("Content","Widgets & tools"),("Audio","Music & sound"),("Clipboard","Clipboard"),("Weather","Weather"),("System","Clock & system"),("Launch","Shortcuts"),("AI","Naby AI"),("Notifications","Notifications"),("Application","General")};
         foreach(var (category,title) in categories)
         {chooser.SelectedItem=Localization.Text(title);settings.UpdateLayout();Check("compact category is reachable: "+category,Equals(chooser.SelectedItem,Localization.Text(title)) && Diagnostics.CurrentSettingsCategory(settings)==category && form.ExtentHeight>0 && form.ActualWidth>=300);}
         Capture(settings,"settings-480x300");

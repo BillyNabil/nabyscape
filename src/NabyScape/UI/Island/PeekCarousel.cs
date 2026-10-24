@@ -50,7 +50,7 @@ public sealed partial class OverlayWindow
     private string[] PeekPages()
     {
         var ids=hoverDeckCache??=HoverPagePolicy.Pages(app.Settings);
-        if(satellitePreview && SatellitePeekKind is {} satellite && !ids.Contains(satellite))ids=ids.Append(satellite).ToArray();
+
         if((fileDragActive || shelfDropBrowsing) && !ids.Contains("files"))ids=ids.Append("files").ToArray();
         return ids;
     }
@@ -68,8 +68,6 @@ public sealed partial class OverlayWindow
         var previous=PeekIcon("previous","Previous track in preview",()=>_=app.Media.Command("previous"));var next=PeekIcon("next","Next track in preview",()=>_=app.Media.Command("next"));var mute=PeekIcon("volume","Mute preview audio",()=>{app.Audio.ToggleMute();app.Audio.Read();Update();});var output=PeekIcon("chevron","Choose preview audio output",OpenAudioMenu);
         peekTrackPrevious=previous;peekTrackNext=next;peekMute=mute;peekOutput=output;controls.Children.Add(previous);Grid.SetColumn(next,1);controls.Children.Add(next);Grid.SetColumn(mute,2);controls.Children.Add(mute);
         peekVolume=new Slider{Minimum=0,Maximum=100,Height=26,Margin=new(7,0,9,0),VerticalAlignment=VerticalAlignment.Center};UI.Named(peekVolume,"Preview volume");peekVolume.ValueChanged+=(_,_)=>{if(!updating){app.Audio.SetVolume(peekVolume.Value/100);app.Audio.Read();}};Grid.SetColumn(peekVolume,3);controls.Children.Add(peekVolume);Grid.SetColumn(output,4);controls.Children.Add(output);var mixerButton=PeekIcon("mixer","Open mixer from preview",OpenMixer);Grid.SetColumn(mixerButton,5);controls.Children.Add(mixerButton);Grid.SetRow(controls,3);Grid.SetColumnSpan(controls,3);peekMedia.Children.Add(controls);AddPeekView("media",peekMedia);
-        AddPeekView("stopwatch",new StopwatchView(app));AddPeekClock("timer");AddPeekClock("focus");AddPeekView("calendar",BuildPeekCalendar());AddPeekView("notes",BuildPeekNote());AddPeekView("files",BuildPeekShelf());AddPeekView("system",BuildPeekSystem());AddPeekView("clips",BuildToolPeek("clips"));AddPeekView("tasks",BuildToolPeek("tasks"));
-        foreach(var id in HoverPagePolicy.Ids.Where(id=>!peekViews.ContainsKey(id)))AddPeekView(id,BuildExtraPeek(id));
         var footer=new Grid{Margin=new(0,2,0,0)};peekFooter=footer;footer.ColumnDefinitions.Add(new(){Width=new GridLength(50)});footer.ColumnDefinitions.Add(new());footer.ColumnDefinitions.Add(new(){Width=new GridLength(48)});footer.ColumnDefinitions.Add(new(){Width=new GridLength(74)});footer.Children.Add(peekPageName);
         var dots=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center};peekDotStrip=dots;Grid.SetColumn(dots,1);footer.Children.Add(dots);
         foreach(var id in HoverPagePolicy.Ids)
@@ -111,6 +109,22 @@ public sealed partial class OverlayWindow
     {var button=PlainPeekButton(right?"Next preview":"Previous preview",action);button.Width=24;button.Height=22;button.Content=new System.Windows.Shapes.Path{Data=Geometry.Parse(right?"M1,1 L5,5 1,9":"M5,1 L1,5 5,9"),Stroke=UI.Brush("#BFC2CA"),StrokeThickness=1.3,Width=5,Height=9};button.ToolTip=right?"Next · drag left":"Previous · drag right";return button;}
     private void AddPeekView(string id,FrameworkElement view)
     {view.Width=PeekWidth;view.Height=124;view.Visibility=Visibility.Collapsed;var move=new TranslateTransform();view.RenderTransform=move;peekMoves[id]=move;peekViews[id]=view;peekViewport.Children.Add(view);}
+    private void EnsurePeekView(string id)
+    {
+        if(peekViews.ContainsKey(id))return;
+        if(id is "timer" or "focus")AddPeekClock(id);
+        else
+        {
+            var view=id switch
+            {
+                "stopwatch"=>(FrameworkElement)new StopwatchView(app),"calendar"=>BuildPeekCalendar(),"notes"=>BuildPeekNote(),"files"=>BuildPeekShelf(),"system"=>BuildPeekSystem(),"clips" or "tasks"=>BuildToolPeek(id),_=>BuildExtraPeek(id)
+            };
+            AddPeekView(id,view);
+        }
+        // A newly visited page must receive the current safe bounds immediately,
+        // including compact first-stage height, before its first layout/transition.
+        ApplyPeekGeometry();
+    }
     private void PreparePeekDeck()
     {
         EnsurePeekDeck();
@@ -131,6 +145,8 @@ public sealed partial class OverlayWindow
     private void LayoutPeek(double offset,bool animate)
     {
         var ids=PeekPages();int index=Array.IndexOf(ids,peekId);
+        EnsurePeekView(peekId);
+        int neighbor=index+(offset>0?-1:1);if(Math.Abs(offset)>.01 && neighbor>=0 && neighbor<ids.Length)EnsurePeekView(ids[neighbor]);
         foreach(var pair in peekViews)
         {
             int i=Array.IndexOf(ids,pair.Key);double x=(i-index)*PeekWidth+offset;pair.Value.Visibility=i>=0 && (Math.Abs(x)<PeekWidth-.1 || (animate && Math.Abs(peekMoves[pair.Key].X)<PeekWidth-.1))?Visibility.Visible:Visibility.Collapsed;pair.Value.IsHitTestVisible=pair.Key==peekId;KeyboardNavigation.SetTabNavigation(pair.Value,pair.Key==peekId?KeyboardNavigationMode.Continue:KeyboardNavigationMode.None);if(pair.Key!=peekId && pair.Value.IsKeyboardFocusWithin)peekPanel.Focus();
@@ -148,7 +164,7 @@ public sealed partial class OverlayWindow
     {
         if(!peeking || noticeShowing || assistantPeeking)return false;
         // Only the focused multiline editor keeps its native vertical scrolling.
-        if(!VisibilityPolicy.CarouselOwnsWheel(peeking,horizontal,peekNote.IsKeyboardFocusWithin,IsPeekNoteSource(source)))return false;
+        if(!VisibilityPolicy.CarouselOwnsWheel(peeking,horizontal,peekNote?.IsKeyboardFocusWithin==true,IsPeekNoteSource(source)))return false;
         int direction=peekWheel.Push(horizontal?delta:-delta,Environment.TickCount64);
         if(direction!=0)NavigatePeek(direction);
         return true;
@@ -236,8 +252,8 @@ public sealed partial class OverlayWindow
         if(peekVolume!=null && !peekVolume.IsMouseCaptureWithin && !peekVolume.IsKeyboardFocusWithin){bool previous=updating;updating=true;try{peekVolume.Value=app.Audio.Volume*100;}finally{updating=previous;}}
         peekMute.IsEnabled=peekOutput.IsEnabled=peekVolume!.IsEnabled=app.Audio.Available;Motion.Icon(peekMute,app.Audio.Muted?"muted":"volume",14);peekTrackPrevious.IsEnabled=app.Media.CanPrevious;peekTrackNext.IsEnabled=app.Media.CanNext;peekTrackPrevious.Opacity=peekTrackPrevious.IsEnabled?1:.3;peekTrackNext.Opacity=peekTrackNext.IsEnabled?1:.3;
         UpdateExtraPeek();UpdateToolPeeks();var now=DateTimeOffset.UtcNow;peekSystem.Text=$"CPU  {app.Usage.cpu:0}%\nRAM  {app.Usage.used:0.0} / {app.Usage.total:0.0} GB";
-        foreach(var pair in peekClocks){var c=PeekClock(pair.Key);var fields=pair.Value;double remaining=c.Remaining(now);fields.time.Text=remaining>0?c.Display(now):Countdown.FormatSeconds((pair.Key=="timer"?5:app.Settings.FocusMinutes)*60);fields.detail.Text=pair.Key=="focus"?(c.Phase=="break"?"Break":"Focus"):("Timer");if(remaining>0 && !c.Running)fields.detail.Text+=" · paused";if(automaticPreview && previewKind==pair.Key && activityTitle.Length>0){fields.detail.Text=activityTitle;fields.time.Text=remaining>0?c.Display(now):"00:00";}fields.progress.Value=remaining>0?c.Progress(now):0;Motion.Icon(fields.toggle,c.Running?"pause":"play",14);}
-        peekEvent=app.Calendar.Events.Where(e=>e.End>now).OrderBy(e=>e.Start).FirstOrDefault();peekEventTitle.Text=peekEvent?.Title??"No upcoming events";peekEventTime.Text=peekEvent==null?DateTime.Now.ToString("ddd, d MMM"):peekEvent.Start<=now?"Now · until "+peekEvent.End.ToLocalTime().ToString("HH:mm"):peekEvent.Start.ToLocalTime().ToString("ddd, d MMM · HH:mm");peekJoin.Visibility=peekEvent?.MeetingUrl.Length>0?Visibility.Visible:Visibility.Collapsed;
-        var file=app.Productivity.Shelf.LastOrDefault();peekFilePath=file?.Exists==true?file.Path:null;if(peekShelfArtPath!=peekFilePath){peekShelfArtPath=peekFilePath;peekShelfArt.Source=null;peekShelfArt.Visibility=peekFilePath==null?Visibility.Collapsed:Visibility.Visible;if(peekFilePath!=null)_=LoadPeekShelfArtwork(peekFilePath);}peekShelfName.Text=file?.Name??"Drop files onto the notch";peekShelfCount.Text=app.Productivity.Shelf.Count==0?"File shelf":$"{app.Productivity.Shelf.Count} staged · drag a file out";peekShelfFile.IsEnabled=peekFilePath!=null;
+        foreach(var pair in peekClocks.Where(pair=>pair.Key==peekId)){var c=PeekClock(pair.Key);var fields=pair.Value;double remaining=c.Remaining(now);fields.time.Text=remaining>0?c.Display(now):Countdown.FormatSeconds((pair.Key=="timer"?5:app.Settings.FocusMinutes)*60);fields.detail.Text=pair.Key=="focus"?(c.Phase=="break"?"Break":"Focus"):("Timer");if(remaining>0 && !c.Running)fields.detail.Text+=" · paused";if(automaticPreview && previewKind==pair.Key && activityTitle.Length>0){fields.detail.Text=activityTitle;fields.time.Text=remaining>0?c.Display(now):"00:00";}fields.progress.Value=remaining>0?c.Progress(now):0;Motion.Icon(fields.toggle,c.Running?"pause":"play",14);}
+        if(peekViews.ContainsKey("calendar") && peekId=="calendar"){peekEvent=app.Calendar.Events.Where(e=>e.End>now).OrderBy(e=>e.Start).FirstOrDefault();peekEventTitle.Text=peekEvent?.Title??"No upcoming events";peekEventTime.Text=peekEvent==null?DateTime.Now.ToString("ddd, d MMM"):peekEvent.Start<=now?"Now · until "+peekEvent.End.ToLocalTime().ToString("HH:mm"):peekEvent.Start.ToLocalTime().ToString("ddd, d MMM · HH:mm");peekJoin.Visibility=peekEvent?.MeetingUrl.Length>0?Visibility.Visible:Visibility.Collapsed;}
+        if(peekViews.ContainsKey("files") && peekId=="files"){var file=app.Productivity.Shelf.LastOrDefault();peekFilePath=file?.Exists==true?file.Path:null;if(peekShelfArtPath!=peekFilePath){peekShelfArtPath=peekFilePath;peekShelfArt.Source=null;peekShelfArt.Visibility=peekFilePath==null?Visibility.Collapsed:Visibility.Visible;if(peekFilePath!=null)_=LoadPeekShelfArtwork(peekFilePath);}peekShelfName.Text=file?.Name??"Drop files onto the notch";peekShelfCount.Text=app.Productivity.Shelf.Count==0?"File shelf":$"{app.Productivity.Shelf.Count} staged · drag a file out";peekShelfFile.IsEnabled=peekFilePath!=null;}
     }
 }

@@ -13,7 +13,7 @@ public sealed partial class OverlayWindow
     private bool panelSwiped;
     private static bool PanelGestureBlocked(DependencyObject? source)
     {for(var node=source;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))if(node is ButtonBase or TextBoxBase or Slider or Thumb or ScrollBar or ComboBox || node is FrameworkElement f && f.Tag as string is "file-drag" or "media-popover")return true;return false;}
-    private bool CanPanelSwipe=>expanded && app.Settings.CompactLayout && app.Settings.PanelSwipe && !commandOpen && !activitiesOpen && !assistantOpen;
+    private bool CanPanelSwipe=>expanded && app.Settings.CompactLayout && app.Settings.PanelSwipe && !commandOpen && !assistantOpen;
     internal bool RoutePanelWheel(int delta,bool horizontal,DependencyObject? source)
     {
         if(!CanPanelSwipe)return false;

@@ -16,7 +16,7 @@ internal static class InteractionHotfixDiagnostics
 {
     internal static async Task RunClassicMixer(App app,OverlayWindow island,Action<string,bool> check)
     {
-        var s=app.Settings;s.CompactLayout=false;s.ReduceMotion=true;s.SmartActivities=false;s.ActivitySatellite=false;s.HideFullscreen=s.HideMaximized=false;
+        var s=app.Settings;s.CompactLayout=false;s.ReduceMotion=true;s.SmartActivities=false;s.HideFullscreen=s.HideMaximized=false;
         foreach(var widget in s.Widgets)widget.Enabled=widget.Id=="volume";
         s.HoverViews.Single(v=>v.Id=="media").Enabled=true;s.HoverViews.Single(v=>v.Id=="timer").Enabled=true;app.ChangeSettings();island.Collapse();
         bool Visible(string name)=>Diagnostics.Descendants(island).OfType<Button>().Any(b=>b.IsVisible && AutomationProperties.GetName(b)==name);
@@ -37,7 +37,7 @@ internal static class InteractionHotfixDiagnostics
     }
     internal static async Task RunTuckHide(App app,OverlayWindow island,Action<string,bool> check)
     {
-        var s=app.Settings;s.ReduceMotion=true;s.AlwaysTucked=false;s.HideFullscreen=s.HideMaximized=false;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=false;s.AnimationMs=700;
+        var s=app.Settings;s.ReduceMotion=true;s.AlwaysTucked=false;s.HideFullscreen=s.HideMaximized=false;s.SmartActivities=false;s.LiveActivity=false;s.AnimationMs=700;
         app.ChangeSettings();island.DiagnosticEnvironment(IntPtr.Zero);island.DiagnosticPointerPresent=false;island.Collapse();
         s.ReduceMotion=false;app.ChangeSettings();island.ToggleTuck();await Task.Delay(100);island.ToggleTuck();await Task.Delay(140);
         check("Interaction hotfix: manual-hide regression begins during animated downward reveal",island.TuckMoving && !island.IsTucked && island.TuckOffset<0);
@@ -66,7 +66,7 @@ internal static class InteractionHotfixDiagnostics
         }));
         await RunTuckHide(app,island,check);
         await RunClassicMixer(app,island,check);
-        var s=app.Settings;s.ReduceMotion=true;s.AnimationMs=700;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=false;s.HideFullscreen=s.HideMaximized=false;s.CompactLayout=true;
+        var s=app.Settings;s.ReduceMotion=true;s.AnimationMs=700;s.SmartActivities=false;s.LiveActivity=false;s.HideFullscreen=s.HideMaximized=false;s.CompactLayout=true;
         s.HoverFollowsWidgets=false;string[] legacyHover={"media","timer","focus","calendar","notes","files","system","clips","tasks","stopwatch"};foreach(var widget in s.Widgets)widget.Enabled=false;foreach(var view in s.HoverViews)view.Enabled=legacyHover.Contains(view.Id);foreach(var tool in s.Tools)tool.Enabled=true;
         app.ChangeSettings();island.Collapse();
         var settingsBefore=s.Widgets.Select(w=>(w.Id,w.Enabled)).ToArray();var hoverBefore=s.HoverViews.Select(w=>(w.Id,w.Enabled)).ToArray();

@@ -28,7 +28,7 @@ internal static class AssistantIslandDiagnostics
     }
     internal static async Task Run(App app,OverlayWindow island,string directory,Action<string,bool> check)
     {
-        var ai=app.Assistant;var s=app.Settings;s.Width=327;s.Height=36;s.PanelWidth=526;s.PanelMaxHeight=417;s.HoverWidth=447;s.HoverHeight=207;s.PanelScale=1.04;s.HideMaximized=s.HideFullscreen=false;app.ChangeSettings();
+        var ai=app.Assistant;ai.Options.Enabled=false;var s=app.Settings;s.Width=327;s.Height=36;s.PanelWidth=526;s.PanelMaxHeight=417;s.HoverWidth=447;s.HoverHeight=207;s.PanelScale=1.04;s.HideMaximized=s.HideFullscreen=false;app.ChangeSettings();
         var desktop=new FixtureDesktop();typeof(AssistantDesktop).GetField("fixture",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(ai.Desktop,desktop);
         T Field<T>(object target,string name)=>(T)target.GetType().GetField(name,BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(target)!;
         void Invoke(string name,params object[] args)=>typeof(OverlayWindow).GetMethod(name,BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(island,args);
@@ -160,7 +160,20 @@ internal static class AssistantIslandDiagnostics
             }
             var image=new RenderTargetBitmap((int)settings.ActualWidth,(int)settings.ActualHeight,96,96,PixelFormats.Pbgra32);image.Render(settings);var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(image));using var file=File.Create(Path.Combine(directory,"settings-ai-"+width+".png"));png.Save(file);
         }
-        var password=Field<PasswordBox>(providerEditor,"key");password.Password="fixture-only-unsaved-key";settings.Close();
+        var password=Field<PasswordBox>(providerEditor,"key");password.Password="fixture-only-unsaved-key";
+        // Closing now protects unsaved provider drafts. Exercise Discard on this
+        // synthetic fixture instead of leaving the suite waiting in a modal dialog.
+        bool discarded=false;
+        var discardPrompt=settings.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ContextIdle,new Action(()=>
+        {
+            var prompt=app.Windows.OfType<Window>().Single(w=>w.Title=="Unsaved provider changes");
+            Diagnostics.Descendants(prompt).OfType<Button>().Single(b=>b.Content?.ToString()=="Discard").RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));discarded=true;
+        }));
+        bool settingsClosed=false;settings.Closed+=(_,_)=>settingsClosed=true;settings.Close();
+        await discardPrompt;
+        for(int wait=0;wait<30 && !settingsClosed;wait++)await Task.Delay(50);
+        check("Closing Settings confirms discard of the synthetic unsaved provider draft",discarded);
+        check("Discarding the synthetic draft actually closes Settings and releases its window",settingsClosed && !app.Windows.OfType<SettingsWindow>().Any());
         check("Closing Settings clears the unsaved key without granting session capture",password.Password.Length==0 && !ai.VoiceConnected && !ai.Desktop.Sharing);
         ai.Options.Providers.Clear();ai.Options.SelectedProvider=ai.Options.SelectedVoiceProvider="";app.ShowAssistantProviders();await Task.Delay(100);
         settings=app.Windows.OfType<SettingsWindow>().Single();providerEditor=Diagnostics.Descendants(settings).OfType<AssistantProviderSettings>().Single();

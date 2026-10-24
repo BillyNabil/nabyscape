@@ -21,7 +21,7 @@ internal static class PersistenceTests
             string images=Path.Combine(legacy,"clipboard-images");Directory.CreateDirectory(images);string image=Path.Combine(images,"test.png");File.WriteAllBytes(image,new byte[]{1,2,3});
             old.Save("settings",new Settings{Width=311,AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="External",Target=image}}});
             old.Save("productivity",new ProductivityData{Note="private",Tasks=new(){new(){Text="keep"}},Shelf=new(){new(){Path=image}},Clips=new(){new(){Kind="image",ImagePath=image},new(){Kind="image",ImagePath=Path.Combine(root,"outside.png")}}});
-            old.Save("activities",new ActivityActionsData{Activities=new(){new(){Name="Keep",Steps=new(){new(){Target=new(){Name="Keep",Target=image}}}}}});
+            old.Save("activities",new {Activities=new[]{new {Name="Keep",Steps=new[]{new {Target=new {Name="Keep",Target=image}}}}}});
             var migrated=Store.Migrate(legacy,next);var data=migrated.Load<ProductivityData>("productivity");var settings=migrated.Load<Settings>("settings");
             Assert(migrated.DirectoryPath==next && Directory.Exists(legacy) && File.Exists(image) && settings.Width==311 && settings.AutoStart && settings.ClipboardHistory);
             Assert(data.Clips[0].ImagePath==Path.Combine(next,"clipboard-images","test.png") && data.Clips[1].ImagePath==Path.Combine(root,"outside.png") && data.Shelf[0].Path==image && settings.Shortcuts[0].Target==image && data.Note=="private" && data.Tasks.Count==1);

@@ -91,7 +91,7 @@ public sealed partial class OverlayWindow
         if(hit)RevealTuckedPreview();
     }
     private void StopFollowSlide(){followSlide.Stop();followClock.Stop();followMoving=false;}
-    private bool FollowInteraction=>followMoving || mediaControls?.IsOpen==true || MinimalWidgets.MenuOpen(this) || fileDragActive || PeekInteractionActive || SatellitePointerInside || IsMouseOver || IsKeyboardFocusWithin || Mouse.Captured!=null || Mouse.LeftButton==MouseButtonState.Pressed || Mouse.RightButton==MouseButtonState.Pressed || app.Windows.Cast<Window>().Any(w=>w.IsKeyboardFocusWithin && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
+    private bool FollowInteraction=>followMoving || mediaControls?.IsOpen==true || MinimalWidgets.MenuOpen(this) || fileDragActive || PeekInteractionActive || IsMouseOver || IsKeyboardFocusWithin || Mouse.Captured!=null || Mouse.LeftButton==MouseButtonState.Pressed || Mouse.RightButton==MouseButtonState.Pressed || app.Windows.Cast<Window>().Any(w=>w.IsKeyboardFocusWithin && Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase);
     private void ResolveFollow(bool immediate=false)
     {
         if(DiagnosticRun || app.Settings.DisplayMode!="Follow")return;
@@ -114,6 +114,6 @@ public sealed partial class OverlayWindow
         Width=WindowHostWidth;Height=Math.Max(HostHeight,app.Settings.Height);
         refreshHz=Native.RefreshRate(IslandScreen);
         surface.BeginUpdate();try{motion.Snap(surface,IslandSurface.SurfaceWidthProperty,expanded?expandedWidth:peeking?PeekSurfaceWidth:ClosedSurfaceWidth);motion.Snap(surface,IslandSurface.SurfaceHeightProperty,expanded?expandedHeight:peeking?(assistantPeeking?AssistantPeekHeight:peekDetailed?app.Settings.HoverHeight:100):app.Settings.Height);}finally{surface.EndUpdate();}
-        Position();CheckEnvironment();UpdateSatellite();
+        Position();CheckEnvironment();SyncAssistantVisibility();
     }
 }

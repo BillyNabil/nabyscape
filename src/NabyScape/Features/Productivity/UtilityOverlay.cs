@@ -45,7 +45,7 @@ public sealed partial class OverlayWindow
                 // A second forecast can replace the view while a previous resize is
                 // queued. Resize the current mounted view, rather than dropping its
                 // only layout notification because the old instance was unloaded.
-                if(expanded && toolsMode=="weather" && toolsContent.Children.OfType<WeatherView>().Any(current=>current.IsLoaded && current.IsVisible) && !assistantOpen && !commandOpen && !activitiesOpen)
+                if(expanded && toolsMode=="weather" && toolsContent.Children.OfType<WeatherView>().Any(current=>current.IsLoaded && current.IsVisible) && !assistantOpen && !commandOpen)
                     ResizeToolPanel();
             }
             finally{weatherLayoutPending=false;}
@@ -66,7 +66,7 @@ public sealed partial class OverlayWindow
     private void NavigateTool(string mode)
     {
         if(mode!="home" && !ToolOn(mode))return;
-        activitiesOpen=false;FlushNotes();bool back=mode=="home";toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();RefreshTools();
+        FlushNotes();bool back=mode=="home";toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();RefreshTools();
         if(Motion.Enabled){var move=new TranslateTransform(back?-14:14,0);toolsContent.RenderTransform=move;toolsContent.Opacity=0;Motion.Fade(toolsContent,1,180);Motion.To(move,TranslateTransform.XProperty,0,280);}
     }
     private void BuildToolLauncher()
@@ -136,7 +136,7 @@ public sealed partial class OverlayWindow
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
     private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
-    {if(mode!="home" && !ToolOn(mode))return;if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();if(mode=="home")mode=app.Settings.Widgets.FirstOrDefault(w=>w.Enabled && Settings.ToolNames.ContainsKey(w.Id))?.Id??"notes";toolsMode=mode;OpenHoverPanel(mode,activate);RefreshTools();}
+    {if(mode!="home" && !ToolOn(mode))return;if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();if(mode=="home")mode=app.Settings.Widgets.FirstOrDefault(w=>w.Enabled && Settings.ToolNames.ContainsKey(w.Id))?.Id??"notes";toolsMode=mode;OpenHoverPanel(mode,activate);RefreshTools();}
     private void RefreshTools()
     {
 

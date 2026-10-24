@@ -92,7 +92,6 @@ public sealed partial class SettingsWindow
     {
         previewFocus.Text=name;
         if(name=="Show ambience on closed dock"){previewMode="Closed";previewContent="Music";}
-        else if(name=="Enable Activities"){previewMode="Panel";previewContent="Activities";}
         else if(name.EndsWith(" tool")){previewMode="Hover";previewContent=name[..^5] switch{"File shelf"=>"Shelf","Notes"=>"Note","Clipboard"=>"Smart clipboard","Tasks"=>"Tasks","Calendar"=>"Calendar",_=>"Tools"};}
         else if(current=="Ambience"){previewMode="Panel";previewContent="Music";}
         else if(current=="AI"){previewMode="Panel";previewContent="AI";}
@@ -102,7 +101,6 @@ public sealed partial class SettingsWindow
         else if(name=="Reveal shelf when dragging files"){previewMode="Hover";previewContent="Drop zone";}
         else if(name=="Allow detachable previews"){previewMode="Hover";previewContent="Detached preview";}
         else if(name=="Control playback from album cover"){previewMode="Hover";previewContent="Cover gestures";}
-        else if(name is "Show companion beside music" or "Companion beside music"){previewMode="Hover";previewContent="Two activities";}
         else if(name.Contains("media title",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Typography";}
         else if(name.Contains("heading",StringComparison.OrdinalIgnoreCase)){previewMode="Panel";previewContent="Typography";}
         else if(name.Contains("volume indicator",StringComparison.OrdinalIgnoreCase) || name=="Volume step"){previewMode="Closed";previewContent="Volume feedback";}

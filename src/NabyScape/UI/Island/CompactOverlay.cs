@@ -59,10 +59,17 @@ public sealed partial class OverlayWindow
     }
     private void InitializeCompactInteraction()
     {
-        root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;EnsurePeekDeck();if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !TuckRequested)hoverDelay.Start();};
+        ContentRendered+=(_,_)=>Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,new Action(()=>
+        {
+            // Prepare only the lightweight preview shell after startup has painted.
+            // Editors and other widget pages remain lazy. Pointer entry starts its
+            // delay immediately, without constructing controls on the input path.
+            if(!DiagnosticRun && !app.Quitting && app.Settings.HoverPeek && app.Settings.CompactLayout)EnsurePeekDeck();
+        }));
+        root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !TuckRequested)hoverDelay.Start();};
         root.MouseLeave+=(_,_)=>{if(DiagnosticRun)return;hoverDelay.Stop();if(peeking || TuckRequested)leaveDelay.Start();};
         hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(assistantCharacterButton.IsMouseOver){PreviewAssistant();return;}if(PointerInside() && !expanded && !userHidden && !TuckRequested)PreviewActivity();};
-        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || TuckRequested) && !AssistantReplyVisible && !PointerInside() && !SatellitePointerInside && !PeekInteractionActive && !fileDragActive)Collapse();};
+        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || TuckRequested) && !AssistantReplyVisible && !PointerInside() && !PeekInteractionActive && !fileDragActive)Collapse();};
         peekMedia.HorizontalAlignment=HorizontalAlignment.Center;peekMedia.VerticalAlignment=VerticalAlignment.Top;peekMedia.Width=286;peekMedia.Height=100;peekMedia.Margin=new(0);
         peekMedia.RowDefinitions.Add(new(){Height=new GridLength(56)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});
         peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});peekMedia.ColumnDefinitions.Add(new());peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
@@ -90,7 +97,7 @@ public sealed partial class OverlayWindow
     {
         if(app.Notifications.Current!=null && !expanded && !peeking && !fileDragActive && !userHidden){OpenNotice();return;}
         if(PeekPages().Length==0 || (!app.Settings.CompactLayout && !tuckPreview && !fileDragActive) || (!app.Settings.HoverPeek && !automaticPreview && !tuckPreview && !fileDragActive) || expanded || peeking || userHidden || (TuckRequested && !tuckPreview && !fileDragActive))return;
-        peeking=true;UpdateSatellite();Show();Dimensions();ConfigurePerformance();peekDetailed=!app.Settings.TwoStageHover || automaticPreview;detailDelay.Stop();if(!peekDetailed)detailDelay.Start();
+        peeking=true;SyncAssistantVisibility();Show();Dimensions();ConfigurePerformance();peekDetailed=!app.Settings.TwoStageHover || automaticPreview;detailDelay.Stop();if(!peekDetailed)detailDelay.Start();
         scroll.Visibility=Visibility.Collapsed;compact.IsHitTestVisible=false;Motion.Fade(compact,0,80);
         PreparePeekDeck();
         peekPanel.Visibility=Visibility.Visible;peekPanel.IsHitTestVisible=true;Motion.Fade(peekPanel,1,160);
@@ -150,7 +157,7 @@ public sealed partial class OverlayWindow
     {
         LeaveAssistantPanel();
         mediaControls?.Close(false);EnsureBody();
-        if(activitiesOpen){activitiesOpen=false;activityDraft=null;BuildBody();}
+
         if(!app.Settings.CompactLayout || commandOpen || !compactPages.ContainsKey(page))return;
         if(animate && activePage==page && compactPages[page].Visibility==Visibility.Visible)return;
         FlushNotes();EnsureCompactPage(page);InvalidateSystemMonitor();activePage=page;
@@ -228,7 +235,6 @@ public sealed partial class OverlayWindow
         {
             shortcuts.Children.Add(LaunchButton(shortcut));
         }
-        if(app.Settings.ActivitiesEnabled)launch.Children.Add(UI.CaptionButton("Activities",()=>ShowActivities()));
         if(app.Settings.Shortcuts.Count==0)shortcuts.Children.Add(UI.Caption("Add shortcuts in Settings.",12,UI.Muted));return launch;
     }
     private void UpdateTimeline()

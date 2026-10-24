@@ -35,7 +35,7 @@ public sealed partial class OverlayWindow
     {body.UpdateLayout();Dimensions(true);if(expanded){motion.Go(surface,IslandSurface.SurfaceWidthProperty,expandedWidth,Math.Min(300,app.Settings.AnimationMs));motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));}}
     internal void ShowCommands(bool activate=true)
     {
-        LeaveAssistantPanel();activitiesOpen=false;FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
+        LeaveAssistantPanel();FlushNotes();commandOpen=true;BuildBody();scroll.ScrollToTop();Reveal(activate);ResizeToolPanel();
         if(activate)Dispatcher.BeginInvoke(()=>commandInput?.Focus());
     }
     private void CloseCommands()
@@ -53,8 +53,6 @@ public sealed partial class OverlayWindow
     {
         yield return ("AI companion","Chat, voice and reviewed actions · configure your own provider",app.ShowAssistant);
         yield return ("Notifications","View pending notifications and Downloads · Enter",()=>{CloseCommands();OpenNotice(true);});
-        if(app.Settings.ActivitiesEnabled)yield return ("Activities","Run or edit your workspace routines",()=>ShowActivities());
-        foreach(var definition in app.Activities.Definitions.Where(_=>app.Settings.ActivitiesEnabled)){var action=definition;yield return ("Activity · "+action.Name,"Open activity controls",()=>ShowActivities());}
         yield return ("Tuck / Return to automatic","Toggle the manual tuck latch; hover the edge to preview",()=>{CloseCommands();ToggleTuck();});
         yield return ("Open Settings","Appearance, widgets, and interaction",app.ShowSettings);
         foreach(var pair in new[]{("media","Media controls"),("focus","Timers & focus"),("status","System status"),("access","Quick launch")})

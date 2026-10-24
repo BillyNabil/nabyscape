@@ -256,8 +256,6 @@
     "DropReveal": true,
     "DetachablePreviews": false,
     "CoverGestures": true,
-    "ActivitySatellite": false,
-    "SatelliteSource": "Auto",
     "ControlFill": "#16171B",
     "ControlBorder": "#303238",
     "SelectionFill": "#34373E",
@@ -295,7 +293,6 @@
         "Id": "weather",
         "Enabled": true
       }
-    ],
-    "ActivitiesEnabled": false
+    ]
   }
 }

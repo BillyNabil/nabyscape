@@ -185,7 +185,7 @@ function Invoke-NabyUninstall {
             finally { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) | Out-Null }
         }
     } finally { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) | Out-Null }
-    foreach ($name in @('NabyScape.exe','LumaIsland.exe','BillyNabilaIsland.exe','Uninstall.ps1','LICENSE','LUCIDE-LICENSE.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt')) {
+    foreach ($name in @('NabyScape.exe','NabyScape.UI.exe','NabyScape.Core.exe','NabyScape.ico','LumaIsland.exe','BillyNabilaIsland.exe','Uninstall.ps1','LICENSE','LUCIDE-LICENSE.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt','NATIVE-ThirdPartyNotices.txt','RUST-Library-COPYRIGHT.html')) {
         $path=Assert-NabyOwnedPath (Join-Path $islandTarget $name) $islandTarget
         if (Test-Path -LiteralPath $path -PathType Leaf) { Remove-Item -LiteralPath $path -Force }
     }

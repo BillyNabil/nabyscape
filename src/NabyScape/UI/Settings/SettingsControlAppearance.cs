@@ -25,14 +25,6 @@ public sealed partial class SettingsWindow
         var note=UI.Input("Example detached note","A little space for your next idea.");note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=70;layout.Children.Add(note);
         panel.Children.Add(frame);panel.Children.Add(UI.Text("Drag the example header · close button dims this example",10,UI.Muted));return panel;
     }
-    private FrameworkElement CompanionExample()
-    {
-        var s=app.Settings;var panel=new StackPanel();bool notch=s.Preset=="Mac";double h=32,shoulder=notch?h*.36:0;
-        var pair=new Canvas{Width=228,Height=42,HorizontalAlignment=HorizontalAlignment.Left};
-        FrameworkElement Segment(double w,string text){var grid=new Grid{Width=w,Height=h};grid.Children.Add(new IslandSurface{Width=w,Height=h,SurfaceWidth=w,SurfaceHeight=h,Radius=s.Radius,Notch=notch,Fill=UI.Brush(s.Background),GlassStyle=s.GlassStyle});grid.Children.Add(new TextBlock{Text=text,FontSize=11,Foreground=Brushes.White,VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center});return grid;}
-        var music=Segment(144,"Night Drive");pair.Children.Add(music);var companion=Segment(76+2*shoulder,s.SatelliteSource switch{"RAM"=>"RAM 42%","Clock"=>DateTime.Now.ToString("HH:mm"),"Calendar"=>"14:30","Countdown"=>"08:42",_=>"CPU 12%"});Canvas.SetLeft(companion,144-2*shoulder+8);pair.Children.Add(companion);
-        pair.MouseEnter+=(_,_)=>Motion.Fade(companion,0,180);pair.MouseLeave+=(_,_)=>Motion.Fade(companion,1,180);panel.Children.Add(pair);panel.Children.Add(UI.Text("Hover this example: the companion withdraws as the island opens.",11,UI.Muted));panel.Children.Add(UI.Text("Example values · real readings appear on the island",10,UI.Muted));return panel;
-    }
     private FrameworkElement ClipboardExample()
     {
         var panel=new StackPanel();panel.Children.Add(UI.Heading("Smart clipboard",16));

@@ -20,9 +20,9 @@ public sealed partial class SettingsWindow
     {
         "Layout"=>new[]{"Display","Dock placement","Move & resize","Closed island","Open panel","Hover preview","Layout profile"},
         "Content"=>new[]{"Feature usage","Enabled widgets & order","Individual tools","Hover pages","Focus sessions","Stopwatch"},
-        "Controls"=>new[]{"Hover & swipe","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Two live activities","Notch gestures","Global hotkey"},
+        "Controls"=>new[]{"Hover & swipe","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Notch gestures","Global hotkey"},
         "Audio"=>new[]{"Visualizer","Lyrics","Closed media display","Volume mixer","Waveform source","Live signal","Live feedback","Audio behavior","Header wheel"},
-        "System"=>new[]{"Clock","Monitor details"},"Launch"=>new[]{"Launch display","Shortcuts","Activity actions"},"AI"=>new[]{"AI companion"},
+        "System"=>new[]{"Clock","Monitor details"},"Launch"=>new[]{"Launch display","Shortcuts"},"AI"=>new[]{"AI companion"},
         "Application"=>new[]{"Language & accessibility","Updates","Behavior","Local storage","Private diagnostics","Reset preferences","About NabyScape"},_=>Array.Empty<string>()
     });
     private static SettingsSearchItem[] BuildSettingsSearchIndex()

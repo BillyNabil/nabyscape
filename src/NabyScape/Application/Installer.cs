@@ -56,12 +56,12 @@ internal static class Installer
     {
         ValidateArchitecture(Environment.ProcessPath??throw new IOException("Installer executable is unavailable."));
         string previous=InstallDirectory;string target=InstallPaths.Validate(directory??previous);
-        foreach(string processName in new[]{"LumaIsland","BillyNabilaIsland","NabyScape"})
+        foreach(string processName in new[]{"LumaIsland","BillyNabilaIsland","NabyScape","NabyScape.UI","NabyScape.Core"})
         foreach(var process in Process.GetProcessesByName(processName))
         {
             using(process)
             {
-                try {if(process.Id!=Environment.ProcessId && new[]{target,previous}.Any(folder=>new[]{"LumaIsland.exe","BillyNabilaIsland.exe","NabyScape.exe"}.Any(name=>string.Equals(process.MainModule?.FileName,Path.Combine(folder,name),StringComparison.OrdinalIgnoreCase))))throw new IOException("Quit NabyScape from the system tray before updating.");}
+                try {if(process.Id!=Environment.ProcessId && new[]{target,previous}.Any(folder=>new[]{"LumaIsland.exe","BillyNabilaIsland.exe","NabyScape.exe","NabyScape.UI.exe","NabyScape.Core.exe"}.Any(name=>string.Equals(process.MainModule?.FileName,Path.Combine(folder,name),StringComparison.OrdinalIgnoreCase))))throw new IOException("Quit NabyScape from the system tray before updating.");}
                 catch(System.ComponentModel.Win32Exception) { }
             }
         }
@@ -72,6 +72,7 @@ internal static class Installer
         {
             File.Copy(source,executable+".new",true);File.Move(executable+".new",executable,true);
         }
+        RemoveRetiredHostFiles(target,source);
         File.WriteAllText(Path.Combine(target,"Uninstall.ps1"),Uninstaller);
         foreach(var name in new[]{"LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
         {
@@ -124,8 +125,16 @@ internal static class Installer
         if(File.Exists(legacyExecutable) && !string.Equals(source,legacyExecutable,StringComparison.OrdinalIgnoreCase))File.Delete(legacyExecutable);
         }
     }
+    // Only migration cleanup: the application no longer contains a separate renderer/worker.
+    internal static readonly string[] RetiredHostFiles={"NabyScape.UI.exe","NabyScape.Core.exe","NabyScape.ico","NATIVE-ThirdPartyNotices.txt","RUST-Library-COPYRIGHT.html"};
+    internal static void RemoveRetiredHostFiles(string folder,string source)
+    {
+        foreach(string name in RetiredHostFiles)
+        {string path=Path.Combine(folder,name);if(!string.Equals(path,source,StringComparison.OrdinalIgnoreCase)&&File.Exists(path))File.Delete(path);}
+    }
     private static void RemovePreviousFiles(string folder,string source)
     {
+        RemoveRetiredHostFiles(folder,source);
         // Moving an installation removes only shipped files, never unrelated files.
         foreach(string name in new[]{"NabyScape.exe","LumaIsland.exe","BillyNabilaIsland.exe","Uninstall.ps1","LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
         {

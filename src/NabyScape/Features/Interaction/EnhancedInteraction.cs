@@ -131,7 +131,7 @@ public sealed partial class OverlayWindow
     {
         var s=app.Settings;
         bool Includes(string id)=>AmbientPolicy.Includes(s,id,app.Media.SourceDisabled);
-        bool allowed=!noticeShowing && (assistantOpen || assistantPeeking?Includes("ai"):commandOpen || activitiesOpen?Includes("shortcuts"):expanded?
+        bool allowed=!noticeShowing && (assistantOpen || assistantPeeking?Includes("ai"):commandOpen?Includes("shortcuts"):expanded?
             PanelWidgets.Any(w=>(!s.CompactLayout || PageFor(w.Id)==activePage) && Includes(w.Id)):
             peeking?Includes(peekId):Includes("closed"));
         allowed &= (expanded || peeking || s.ClosedAmbient && !IdleContent) && !IsTucked && !userHidden;

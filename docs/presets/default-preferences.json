@@ -43,8 +43,6 @@
   "DropReveal": true,
   "DetachablePreviews": false,
   "CoverGestures": true,
-  "ActivitySatellite": false,
-  "SatelliteSource": "Auto",
   "GlassStyle": false,
   "SettingsMaterial": "Solid",
   "LiveActivity": true,
@@ -146,7 +144,6 @@
     }
   ],
   "ClipboardHistory": true,
-  "ActivitiesEnabled": false,
   "Tools": [
     {
       "Id": "files",

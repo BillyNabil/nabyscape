@@ -66,6 +66,9 @@ public sealed class MediaService : IDisposable
     { dispatcher=System.Windows.Threading.Dispatcher.CurrentDispatcher; this.log=log; }
     internal void SetEnabled(bool value)
     {
+        // Deterministic diagnostic playback must not be overwritten by the user's
+        // real Windows media session after an asynchronous Settings update.
+        if(DiagnosticFixture && value)return;
         if(disposed || !value && !enabled)return;enabled=value;
         if(value){if(manager==null)_=Initialize();return;}
         managerGeneration++;

@@ -128,7 +128,7 @@ public sealed partial class OverlayWindow
         double width=PeekSurfaceWidth,height=AssistantPeekHeight;LayoutAssistantPeek();assistantPeek.Visibility=Visibility.Visible;assistantPeek.IsHitTestVisible=true;
         AssistantIslandChanged();Motion.Fade(assistantPeek,1,app.Settings.AnimationMs);Motion.Enter(peekAssistant,8);Motion.Enter(assistantPeekWords,6,Motion.Enabled?60:0);
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,width,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.SurfaceHeightProperty,height,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.GlassLiftProperty,1,app.Settings.AnimationMs);
-        outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>VisiblePoint(p));UpdateSatellite();WakeLiveRendering();
+        outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,Collapse,p=>VisiblePoint(p));SyncAssistantVisibility();WakeLiveRendering();
     }
     private void HideAssistantPeek()
     {
@@ -139,7 +139,7 @@ public sealed partial class OverlayWindow
     internal void OpenAssistant(bool activate=true)
     {
         activate&=!DiagnosticRun;
-        FlushNotes();commandOpen=activitiesOpen=false;hoverPanelWidget=null;
+        FlushNotes();commandOpen=false;hoverPanelWidget=null;
         if(!assistantOpen){assistantOpen=true;bodyDirty=true;}
         Reveal(activate);ResizeToolPanel();RefreshAssistantCharacter();if(activate)Dispatcher.BeginInvoke(()=>islandAssistantView?.FocusComposer());
     }

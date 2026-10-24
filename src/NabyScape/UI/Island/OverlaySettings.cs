@@ -10,7 +10,7 @@ internal readonly record struct OverlaySettingsState(int Content,int Reflow,int 
 {
     internal static OverlaySettingsState Capture(Settings s)
     {
-        var content=new HashCode();content.Add(s.CompactLayout);content.Add(s.CategoryStyle);content.Add(s.LaunchStyle);content.Add(s.ActivitiesEnabled);content.Add(s.LiveActivity);content.Add(s.MonitorNetwork);content.Add(s.MonitorStorage);content.Add(s.MonitorProcesses);
+        var content=new HashCode();content.Add(s.CompactLayout);content.Add(s.CategoryStyle);content.Add(s.LaunchStyle);content.Add(s.LiveActivity);content.Add(s.MonitorNetwork);content.Add(s.MonitorStorage);content.Add(s.MonitorProcesses);
         foreach(var widget in s.Widgets){content.Add(widget.Id);content.Add(widget.Enabled);}foreach(var tool in s.Tools){content.Add(tool.Id);content.Add(tool.Enabled);}foreach(var shortcut in s.Shortcuts){content.Add(shortcut.Name);content.Add(shortcut.Target);content.Add(shortcut.AppId);}
         int reflow=HashCode.Combine(s.PanelWidth,s.PanelPadding,s.PanelScale,s.SectionGap);
         int geometry=HashCode.Combine(HashCode.Combine(s.Width,s.Height,s.Radius,s.Preset,s.Horizontal,s.Top,s.Monitor),s.PanelMaxHeight,s.HoverWidth,s.HoverHeight,s.DisplayMode,HashCode.Combine(s.PanelAutoHeight,s.DockEdge,s.DockVertical,s.DockInset));

@@ -77,8 +77,6 @@ public sealed partial class SettingsWindow
         ["Reveal shelf when dragging files"]="Shows a drop target when files reach the island. Originals stay in place.",
         ["Allow detachable previews"]="Drag the preview grip out to open a small movable window with the same data.",
         ["Control playback from album cover"]="Click the closed cover to play or pause. Hold it to choose a media app.",
-        ["Show companion beside music"]="Adds a small CPU, memory, clock, event or countdown beside the closed island.",
-        ["Companion beside music"]="Choose what appears beside music. Automatic prefers a countdown or upcoming event.",
         ["Closed media icon"]="Choose an audio indicator, album cover or None at the left of the island.",
         ["Closed media content"]="Choose waveform, synced lyrics, song title or None for the closed dock.",
         ["Performance profile"]="Auto follows the display; Eco uses fewer frames; Maximum favors smooth motion.",
@@ -90,5 +88,5 @@ public sealed partial class SettingsWindow
         ["Visibility hotkey modifiers"]="First keys of the shortcut that hides or restores the entire island.",
         ["Visibility hotkey key"]="Letter to press with the modifier keys to hide or restore the island.",
     };
-    internal static string SettingDescription(string name)=>name.EndsWith(" tool")?"Show "+name[..^5]+" in Tools and its enabled hover pages. Hiding keeps saved data.":name=="Enable Activities"?"Show activity routines in Launch and command search. Disable to stop a running routine.":SettingDescriptions.TryGetValue(name,out var help)?help:"";
+    internal static string SettingDescription(string name)=>name.EndsWith(" tool")?"Show "+name[..^5]+" in Tools and its enabled hover pages. Hiding keeps saved data.":SettingDescriptions.TryGetValue(name,out var help)?help:"";
 }

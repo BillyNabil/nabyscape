@@ -114,6 +114,10 @@ public sealed partial class Store
             if(!settings.ContainsKey(nameof(Settings.PanelWidth)))settings[nameof(Settings.PanelWidth)]=452;
             if(!settings.ContainsKey(nameof(Settings.PanelMaxHeight)))settings[nameof(Settings.PanelMaxHeight)]=634;
         }
+        // Retired renderer preference is removed on the next normal settings save.
+        // Preserve every other unknown field and never rewrite a document just by loading it.
+        if(typeof(T)==typeof(Settings) && migrated is JsonObject preferences)
+            foreach(string retired in new[]{"RendererMode","ActivitySatellite","SatelliteSource","ActivitiesEnabled"})preferences.Remove(retired);
         return migrated;
     }
 

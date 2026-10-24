@@ -119,6 +119,10 @@ internal static class Diagnostics
         {
 
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--closed-lyrics-fallback-only")){await ClosedLyricsFallbackDiagnostics.Run(app,overlay,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--removed-activities-only")){await RemovedActivitiesDiagnostics.Run(app,overlay,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--assistant-transform-only")){await AssistantTransformDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--hover-responsiveness-only")){await HoverResponsivenessDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--recent-ux-only")){await RecentUxDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--welcome-only")){await WelcomeDiagnostics.Run(app,directory,Check);return;}
 
@@ -851,13 +855,13 @@ internal static class Diagnostics
 
                 app.Settings.CategoryStyle=mode;app.Settings.LaunchStyle=mode;app.ChangeSettings();overlay.SelectPage("access");await Task.Delay(400);CaptureContour("launch-"+mode);
 
-                var mediaCategory=ActionButton("Media");Check("Category presentation remains accessible: "+mode,mediaCategory.ToolTip?.ToString()=="Media" && Descendants(mediaCategory).OfType<TextBlock>().Any()==(mode!="Icons"));
+                var mediaCategory=ActionButton("Media");Check("Legacy category style becomes accessible dot navigation: "+mode,app.Settings.CategoryStyle=="Dots" && mediaCategory.ToolTip?.ToString()=="Media" && AutomationProperties.GetName(mediaCategory)=="Media" && mediaCategory.Content is System.Windows.Shapes.Rectangle dot && dot.Height==5 && dot.RadiusX>0 && !Descendants(mediaCategory).OfType<TextBlock>().Any());
 
                 var firstShortcut=ActionButton(app.Settings.Shortcuts[0].Name);Check("Launch presentation respects its label style: "+mode,Descendants(firstShortcut).OfType<TextBlock>().Any(t=>t.IsVisible)==(mode!="Icons" || !Descendants(firstShortcut).OfType<Image>().Any(i=>i.Source!=null)));
 
             }
 
-            app.Settings.CategoryStyle="IconsLabels";app.Settings.LaunchStyle="IconsLabels";app.Settings.BoldMediaTitle=false;app.Settings.BoldHeadings=true;app.ChangeSettings();overlay.ShowCommands(false);await Task.Delay(100);
+            app.Settings.CategoryStyle="Dots";app.Settings.LaunchStyle="IconsLabels";app.Settings.BoldMediaTitle=false;app.Settings.BoldHeadings=true;app.ChangeSettings();overlay.ShowCommands(false);await Task.Delay(100);
 
             Check("Bold heading option affects tool titles independently",Descendants(overlay).OfType<TextBlock>().Any(t=>t.Text=="Command bar" && t.FontWeight==FontWeights.SemiBold));
 
@@ -1162,7 +1166,7 @@ internal static class Diagnostics
 
                     overlay.DiagnosticFeedFeedback(false,42);Check("Volume feedback temporarily replaces album artwork",!overlay.ClosedCoverVisible && !overlay.ClosedTitleWaveVisible && overlay.HeaderLabel.Text=="42%");await WaitUntil(()=>overlay.FeedbackHasExpired,4500);Check("Album artwork and title waveform return after feedback expires",overlay.ClosedCoverVisible && overlay.ClosedTitleWaveVisible);
 
-                    app.Session.Timer.Start(60,DateTimeOffset.UtcNow);app.SaveSession();await Task.Delay(150);Check("Concurrent timer keeps music in the main island",overlay.ClosedCoverVisible && overlay.ClosedTitleWaveVisible);app.Session.Timer=new();app.SaveSession();
+                    app.Session.Timer.Start(60,DateTimeOffset.UtcNow);app.SaveSession();await Task.Delay(150);Check("Concurrent timer takes the closed dock while music keeps playing",!overlay.ClosedCoverVisible && !overlay.ClosedTitleWaveVisible && overlay.HeaderLabel.Text.StartsWith("Timer",StringComparison.Ordinal) && app.Media.Playing);app.Session.Timer=new();app.SaveSession();
 
                     app.Settings.ClosedMediaContent="Title";app.Settings.ClosedMediaIcon="Waveform";app.ChangeSettings();Check("Song title and waveform icon remain selectable independently",!overlay.ClosedCoverVisible && !overlay.ClosedTitleWaveVisible);
 

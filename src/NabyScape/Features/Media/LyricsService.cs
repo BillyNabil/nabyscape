@@ -38,6 +38,20 @@ internal static class LyricTiming
     }
     internal static int Index(IReadOnlyList<LyricLine> lines,double seconds)
     {int low=0,high=lines.Count-1,result=-1;while(low<=high){int middle=(low+high)/2;if(lines[middle].At<=seconds){result=middle;low=middle+1;}else high=middle-1;}return result;}
+    // Use timestamped blank/section markers as breaks, never guess from line length
+    // or audio level: a long sung line must remain visible until its next timestamp.
+    internal static int VocalIndex(IReadOnlyList<LyricLine> lines,double seconds)
+    {
+        int index=Index(lines,seconds);
+        if(index<0)return -1;
+        string text=lines[index].Text.Trim();
+        if(text.Length==0 || text.Trim('♪','♫','♬','♩',' ','\t').Length==0 || text is "🎵" or "🎶")return -1;
+        string marker=text.Trim('[',']','(',')',' ','\t');
+        if(marker.Equals("instrumental",StringComparison.OrdinalIgnoreCase) || marker.Equals("instrumental break",StringComparison.OrdinalIgnoreCase))return -1;
+        bool section=text[0] is '[' or '(';
+        if(section && (marker.Equals("music",StringComparison.OrdinalIgnoreCase) || marker.Equals("interlude",StringComparison.OrdinalIgnoreCase) || marker.Equals("intro",StringComparison.OrdinalIgnoreCase) || marker.Equals("outro",StringComparison.OrdinalIgnoreCase) || marker.Equals("solo",StringComparison.OrdinalIgnoreCase)))return -1;
+        return index;
+    }
     internal static bool CanUse(MediaService media)=>media.Available && !string.IsNullOrWhiteSpace(media.Title) && !string.IsNullOrWhiteSpace(media.Artist) && media.Artist!=media.Selected?.SourceAppUserModelId && media.Timeline().duration>0;
     internal static bool IsSpotify(string? source)=>source?.Contains("spotify",StringComparison.OrdinalIgnoreCase)==true;
 }

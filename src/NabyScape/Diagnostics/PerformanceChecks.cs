@@ -19,7 +19,7 @@ internal static class PerformanceChecks
         SettingsWindow? settings=null;
         try
         {
-            var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.SmartActivities=false;s.ActivitySatellite=false;s.LiveActivity=true;s.ReduceMotion=false;s.AnimationMs=420;s.PanelWidth=514;s.PanelMaxHeight=504;s.CompactLayout=true;
+            var s=app.Settings;s.HideFullscreen=s.HideMaximized=false;s.SmartActivities=false;s.LiveActivity=true;s.ReduceMotion=false;s.AnimationMs=420;s.PanelWidth=514;s.PanelMaxHeight=504;s.CompactLayout=true;
             // This suite isolates waveform demand. Audio-reactive ambient has its
             // own sampler-demand tests and legitimately reads an otherwise quiet UI.
             s.CoverAmbient=false;

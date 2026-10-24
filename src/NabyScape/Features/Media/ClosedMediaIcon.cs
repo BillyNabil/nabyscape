@@ -14,15 +14,23 @@ public sealed partial class OverlayWindow
     private readonly Image closedCoverImage=new(){Width=20,Height=20,Stretch=Stretch.UniformToFill};
     private readonly Border closedCover=new(){Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,9,0),VerticalAlignment=VerticalAlignment.Center,Visibility=Visibility.Collapsed,IsHitTestVisible=true};
     internal bool ClosedCoverVisible=>closedCover.Visibility==Visibility.Visible && closedCoverImage.Source!=null;
+    private bool UpdateClosedMediaWaveform()
+    {
+        bool waveform=app.Notifications.Current==null && !expanded && !peeking && !FeedbackVisible && ActiveCountdown()==null && !ClosedVoiceActivity && ClosedMediaActive &&
+            (app.Settings.ClosedMediaContent=="Waveform" || app.Settings.ClosedMediaContent=="Lyrics" && ClosedLyricIndex<0);
+        bool changed=(closedTitleWave.Visibility==Visibility.Visible)!=waveform;
+        closedTitleWave.Visibility=waveform?Visibility.Visible:Visibility.Collapsed;summary.Visibility=waveform?Visibility.Collapsed:Visibility.Visible;
+        compact.ToolTip=waveform?app.Media.Title+" · click to open · Esc to close":"Click to open · Esc to close";
+        if(changed)ConfigureLiveActivity();
+        return waveform;
+    }
     private void UpdateClosedMediaIcon()
     {
         compact.Visibility=expanded?Visibility.Collapsed:Visibility.Visible;
         var now=DateTimeOffset.Now;
-        bool countdown=!ShowMediaPrimary && (WidgetOn("focus") && app.Session.Focus.Remaining(now)>0 || WidgetOn("timer") && app.Session.Timer.Remaining(now)>0);
+        bool countdown=(WidgetOn("focus") && app.Session.Focus.Remaining(now)>0 || WidgetOn("timer") && app.Session.Timer.Remaining(now)>0);
         bool cover=!FeedbackVisible && !countdown && !ClosedVoiceActivity && app.Settings.ClosedMediaIcon=="Artwork" && ClosedMediaActive && app.Media.Artwork!=null;
-        bool waveform=app.Notifications.Current==null && !expanded && !peeking && !FeedbackVisible && !countdown && !ClosedVoiceActivity && ClosedMediaActive && app.Settings.ClosedMediaContent=="Waveform";
-        closedTitleWave.Visibility=waveform?Visibility.Visible:Visibility.Collapsed;summary.Visibility=waveform?Visibility.Collapsed:Visibility.Visible;
-        compact.ToolTip=waveform?app.Media.Title+" · click to open · Esc to close":"Click to open · Esc to close";
+        bool waveform=UpdateClosedMediaWaveform();
         if(!app.Media.Playing || app.Audio.MediaMeterMuted || app.Settings.ReduceMotion || !app.Settings.LiveActivity)closedTitleWave.Sample(0,1,0,false,false,false,0);
         closedCover.Visibility=cover?Visibility.Visible:Visibility.Collapsed;
         activity.Visibility=FeedbackVisible || cover || waveform || ClosedVoiceActivity || ((app.Settings.ClosedMediaContent is "Lyrics" or "None" || app.Settings.ClosedMediaIcon=="None") && !countdown) || !(countdown || ClosedMediaActive)?Visibility.Collapsed:Visibility.Visible;

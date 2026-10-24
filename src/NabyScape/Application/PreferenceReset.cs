@@ -19,10 +19,10 @@ internal static class PreferenceReset
         ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings RecentColors".Split(' '),
         ["Layout"]="FollowMonitorAnimation FollowMonitorDuration DockUnlocked PanelAutoHeight Width Height Horizontal DockEdge DockVertical DockInset Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
         ["Content"]="HoverFollowsWidgets Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
-        ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures ActivitySatellite SatelliteSource WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers".Split(' '),
+        ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers".Split(' '),
         ["Audio"]="MediaIntegrationEnabled WaveformSource WaveformSensitivity LyricsEnabled LyricsAnimation LyricsOffset ClosedMediaIcon ClosedMediaContent ReactiveFeedback WaveformIdleMotion VolumeFeedback BrightnessFeedback".Split(' '),
         ["System"]="Clock24Hour ClockSeconds ShowDate MonitorNetwork MonitorStorage MonitorProcesses".Split(' '),
-        ["Launch"]="LaunchStyle ActivitiesEnabled".Split(' '),
+        ["Launch"]="LaunchStyle".Split(' '),
         ["AI"]=Array.Empty<string>(),
         ["Application"]="AutoCheckUpdates AutoDownloadUpdates UiLanguage AccessibilityTextScale AccessibilityHighContrast".Split(' ')
     };
@@ -42,7 +42,7 @@ internal static class PreferenceReset
             "Controls"=>"hover timing, gestures, tuck rules and global shortcuts",
             "Audio"=>"closed media display, waveform and feedback",
             "System"=>"clock format and monitor readings",
-            "Launch"=>"launch appearance and Activities availability",
+            "Launch"=>"launch appearance",
             "Application"=>"update checks and automatic downloads, interface language, text size and contrast",
             _=>"update checks, notification delivery and download monitoring"
         };

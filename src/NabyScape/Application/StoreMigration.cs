@@ -25,7 +25,7 @@ public sealed partial class Store
             string settings=Path.Combine(staging,"settings.json");
             if(File.Exists(settings))
             {var preferences=JsonSerializer.Deserialize<Settings>(File.ReadAllText(settings))??throw new InvalidDataException("Settings are empty.");preferences.Normalize();}
-            ValidateDocument<ProductivityData>(staging,"productivity");ValidateDocument<SessionState>(staging,"session");ValidateDocument<ActivityActionsData>(staging,"activities");ValidateDocument<System.Collections.Generic.List<CalendarEvent>>(staging,"calendar");
+            ValidateDocument<ProductivityData>(staging,"productivity");ValidateDocument<SessionState>(staging,"session");ValidateDocument<System.Collections.Generic.Dictionary<string,System.Text.Json.JsonElement>>(staging,"activities");ValidateDocument<System.Collections.Generic.List<CalendarEvent>>(staging,"calendar");
             string productivity=Path.Combine(staging,"productivity.json");
             if(File.Exists(productivity))
             {

@@ -28,8 +28,8 @@ internal static class RefinementDiagnostics
         {Check("requires no existing detached windows",false);return;}
         var output=Path.Combine(directory,"refinement234");Directory.CreateDirectory(output);
         var settings=JsonSerializer.Serialize(app.Settings);var p=app.Productivity;
-        bool hidden=overlay.UserHidden,diagnostic=overlay.DiagnosticRun,media=overlay.DiagnosticSatelliteMedia;
-        bool pointer=overlay.DiagnosticPointerPresent,satellitePointer=overlay.DiagnosticSatellitePointerPresent;
+        bool hidden=overlay.UserHidden,diagnostic=overlay.DiagnosticRun;
+        bool pointer=overlay.DiagnosticPointerPresent;
         bool clipboardEnabled=p.ClipboardEnabled,paused=p.ClipboardPaused,motion=Motion.Enabled;
         var clips=p.Clips.ToArray();var shelf=p.Shelf.ToArray();string note=p.Note;
         var selection=(HashSet<string>)Field(overlay,"shelfSelection")!;var selectedFiles=selection.ToArray();
@@ -41,39 +41,15 @@ internal static class RefinementDiagnostics
         SettingsWindow? settingsWindow=null;var created=new List<Window>();
         async Task Settle(int milliseconds=360){await Task.Delay(milliseconds);overlay.UpdateLayout();}
         void Fits(string name,FrameworkElement element){string overflow=HorizontalOverflow(element);Check(name+(overflow.Length==0?"":": "+overflow),overflow.Length==0);}
-        void UpdateSatellite()=>Call(overlay,"UpdateSatellite");
-        Window? Satellite()=>Field(overlay,"satelliteWindow") as Window;
         void ResetWheel()=>((PeekWheelAccumulator)Field(overlay,"panelWheel")!).Reset();
         void Click(DependencyObject root,string name)=>Tree(root).OfType<Button>().Single(b=>AutomationProperties.GetName(b)==name).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         try
         {
-            overlay.DiagnosticRun=true;overlay.DiagnosticPointerPresent=false;overlay.DiagnosticSatellitePointerPresent=false;
+            overlay.DiagnosticRun=true;overlay.DiagnosticPointerPresent=false;
             if(hidden)overlay.ToggleVisibility();overlay.Collapse();
-            var s=app.Settings;s.ReduceMotion=true;s.CompactLayout=true;s.PanelSwipe=true;s.ActivitySatellite=true;s.SatelliteSource="CPU";
+            var s=app.Settings;s.ReduceMotion=true;s.CompactLayout=true;s.PanelSwipe=true;
             s.HideFullscreen=false;s.HideMaximized=false;s.DetachablePreviews=true;s.HoverPeek=true;s.Horizontal=50;s.Width=240;s.PanelWidth=460;s.PanelMaxHeight=520;
             foreach(var widget in s.Widgets)widget.Enabled=true;foreach(var view in s.HoverViews)view.Enabled=true;
-            app.ChangeSettings();overlay.DiagnosticSatelliteMedia=true;await Settle();UpdateSatellite();
-            var satellite=Satellite();Check("injected CPU companion is visible when closed",satellite?.IsVisible==true);
-            if(satellite!=null)
-            {
-                Motion.Enabled=false;Call(overlay,"OpenSatellite",false);UpdateSatellite();
-                Check("reduced motion removes CPU companion as preview opens",overlay.IsPeeking && !satellite.IsVisible);
-                Capture(overlay,Path.Combine(output,"cpu-preview-companion-withdrawn.png"));
-                overlay.Collapse();await Settle(600);UpdateSatellite();Check("CPU companion returns after closing preview",satellite.IsVisible);
-                s.ReduceMotion=false;app.ChangeSettings();Motion.Enabled=true;await Settle();UpdateSatellite();await Settle();
-                Call(overlay,"OpenSatellite",false);UpdateSatellite();
-                Check("animated preview starts companion withdrawal",overlay.IsPeeking && satellite.IsVisible);
-                await Settle(70);Check("CPU companion opacity decreases during withdrawal",satellite.Opacity<overlay.Opacity-.01);
-                await Settle(320);Check("CPU companion is hidden after its fade",!satellite.IsVisible);
-                overlay.Collapse();UpdateSatellite();await Settle(750);Check("animated close returns CPU companion",satellite.IsVisible && satellite.Opacity>.1);
-                Call(overlay,"OpenSatellite",false);UpdateSatellite();await Settle(40);overlay.Collapse();UpdateSatellite();await Settle(40);
-                Call(overlay,"OpenSatellite",false);UpdateSatellite();await Settle(360);
-                Check("rapid preview close and reopen does not strand CPU companion",overlay.IsPeeking && !satellite.IsVisible);
-                overlay.Collapse();UpdateSatellite();await Settle(750);Check("rapid transition remains reversible",satellite.IsVisible && satellite.Opacity>.1);
-                overlay.OpenFeaturePage("notes");UpdateSatellite();await Settle();
-                Check("expanded non-system panel leaves no stagnant CPU companion",overlay.IsExpanded && !satellite.IsVisible && !overlay.SystemSummaryVisible);
-                Capture(overlay,Path.Combine(output,"expanded-notes-no-companion.png"));
-            }
             s.ReduceMotion=true;app.ChangeSettings();Motion.Enabled=false;overlay.Reveal(false);overlay.SelectPage("media",false);await Settle();
             var normalPanelText=Tree(overlay).OfType<TextBlock>().First(t=>t.IsVisible && t.ActualWidth>0);
             string before=overlay.ActivePage;ResetWheel();bool handled=overlay.RoutePanelWheel(-120,false,normalPanelText);
@@ -136,7 +112,7 @@ internal static class RefinementDiagnostics
             var controlsHeading=Tree(settingsWindow).OfType<TextBlock>().Single(t=>t.Text=="Buttons & input fields");controlsHeading.BringIntoView();await Settle();Capture(settingsWindow,Path.Combine(output,"settings-control-colors.png"));
             form.ScrollToTop();Click(settingsWindow,"Preview Panel");
             var examples=Tree(settingsWindow).OfType<ComboBox>().Single(c=>AutomationProperties.GetName(c)=="Preview content");
-            foreach(string example in new[]{"Control colors","Typography","Panel navigation","Drop zone","Detached preview","Cover gestures","Two activities","Activities","Smart clipboard"})
+            foreach(string example in new[]{"Control colors","Typography","Panel navigation","Drop zone","Detached preview","Cover gestures","Smart clipboard"})
             {
                 examples.SelectedItem=example;await Settle();var preview=(Border)Field(settingsWindow,"preview")!;
                 Check("Settings preview selects and renders "+example,examples.SelectedItem?.ToString()==example && preview.Child!=null && preview.ActualWidth>0);
@@ -148,7 +124,7 @@ internal static class RefinementDiagnostics
         finally
         {
             settingsWindow?.Close();foreach(var window in created.Where(w=>Application.Current.Windows.Cast<Window>().Contains(w)).ToArray())window.Close();
-            overlay.Collapse();overlay.DiagnosticSatelliteMedia=media;overlay.DiagnosticPointerPresent=pointer;overlay.DiagnosticSatellitePointerPresent=satellitePointer;
+            overlay.Collapse();overlay.DiagnosticPointerPresent=pointer;
             var restored=JsonSerializer.Deserialize<Settings>(settings)!;foreach(var property in typeof(Settings).GetProperties().Where(prop=>prop.CanRead && prop.CanWrite))property.SetValue(app.Settings,property.GetValue(restored));
             app.ChangeSettings();p.SetClipboardEnabled(clipboardEnabled);p.ClipboardPaused=paused;p.Clips.Clear();
             if(Directory.Exists(cache))foreach(var file in Directory.GetFiles(cache,"*.png").Where(file=>!images.ContainsKey(file)))File.Delete(file);

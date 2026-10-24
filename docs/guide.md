@@ -90,7 +90,7 @@ The panel, visibility and tuck global shortcuts are configurable. Buttons retain
 
 Controls follow the Windows media sessions exposed by each app. Choose the app in **Media**. Waveforms read matching sessions across active outputs, so a selected Spotify session is not driven by Discord audio.
 
-Choose **Music & sound → Closed media display** for Waveform, Live lyrics, Song title or None. Live lyrics shows one timed line with a short transition and falls back to the song title if unavailable. None leaves playback alone and shows idle or the running timer. The media icon separately supports artwork, waveform or None. Countdown, voice and notification feedback keep priority.
+Choose **Music & sound → Closed media display** for Waveform, Live lyrics, Song title or None. Live lyrics shows one timed line with a short transition and switches to the waveform when lyrics are unavailable, before the first timed line, or during timestamped blank/instrumental sections. Lyrics return at the next vocal line. Instrumental breaks need markers in the LRC data; the app does not infer vocals from the audio. None leaves playback alone and shows idle or the running timer. The media icon separately supports artwork, waveform or None. Countdown, voice and notification feedback keep priority. Waveform animation follows your existing Live animation and Reduce Motion preferences.
 
 Waveforms show amplitude history, not a frequency spectrum. They do not record audio or use the microphone. Optional gentle motion during quiet or unavailable readings is decorative. Unsupported app identities may use this fallback. Muted sessions return to a quiet baseline.
 
@@ -208,7 +208,7 @@ The repository root contains the solution, build entry point and project documen
 | `Features/Media/` | Media sessions, waveform input, audio devices, mixer and feedback. |
 | `Features/System/` | System/hardware sampling and monitor views. |
 | `Features/Productivity/` | Notes, tasks, clipboard, calendar and utility views/services. |
-| `Features/Activities/` | Activity runner, editor and live activity visuals. |
+| `Features/Activities/` | Live activity visuals and shared stopwatch state. |
 | `Features/Interaction/` | Drop shelf, detached previews and shared gesture behavior. |
 | `Features/Launch/` | App catalog, icons, target picker and launcher presentation. |
 | `UI/Island/` | Closed/hover/expanded surfaces, carousel, panel navigation and feedback. |
