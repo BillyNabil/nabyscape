@@ -76,7 +76,7 @@ internal static class LyricsAutomaticTests
         });
         test("Automatic races bounded public sources, falls back after failures and cancels the loser",()=>Task.Run(async()=>
         {
-            bool cancelled=false;
+            var cancelled=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var fake=new Fake(async(request,token)=>
             {
                 switch(request.RequestUri!.Host)
@@ -84,11 +84,11 @@ internal static class LyricsAutomaticTests
                     case "lrclib.net":return Json("[]");
                     case "lyrics-api.binimum.org":return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                     case "lyrics-api.boidu.dev":await Task.Delay(30,token);return Json("{\"lyrics\":\"[00:01]The little paper moon is waiting by the window.\"}");
-                    default:try{await Task.Delay(5000,token);}catch(OperationCanceledException){cancelled=true;throw;}return Json("{}");
+                    default:try{await Task.Delay(5000,token);}catch(OperationCanceledException){cancelled.TrySetResult();throw;}return Json("{}");
                 }
             });
             using var service=new LyricsService(fake,new AssistantMemoryKeys());await service.Load("Song (Official Video)","Artist - Topic",180,true,true);
-            await Task.Delay(30);Assert(service.Result.Lines.Length==1 && service.Result.Status.Contains("BetterLyrics") && fake.Maximum<=2 && cancelled);
+            await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));Assert(service.Result.Lines.Length==1 && service.Result.Status.Contains("BetterLyrics") && fake.Maximum<=2);
             Assert(fake.Requests.All(r=>!r.Contains("youtube",StringComparison.OrdinalIgnoreCase) && !r.Contains("apikey",StringComparison.OrdinalIgnoreCase)));
         }).GetAwaiter().GetResult());
         test("Automatic uses cleaned browser metadata and reuses successful lyrics after dock collapse",()=>Task.Run(async()=>

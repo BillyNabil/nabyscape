@@ -22,6 +22,14 @@ jobs:
       - name: Publish x64 and ARM64, run native-host checks, package and hash
         shell: pwsh
         run: ./tools/Build-Release.ps1 -Tag "$env:GITHUB_REF_NAME" -OutputDirectory "$env:RUNNER_TEMP/release"
+      - name: Preserve native-host test reports
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: NabyScape-release-test-reports
+          path: ${{ runner.temp }}/release/publish/*/unit-report.txt*
+          if-no-files-found: warn
+          retention-days: 14
       - name: Create draft only after checks; never overwrite an existing release
         shell: pwsh
         env:

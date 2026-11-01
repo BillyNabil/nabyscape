@@ -40,7 +40,10 @@ foreach ($notice in @('LUCIDE-LICENSE.txt', 'NAudio-LICENSE.txt', 'System.Speech
 }
 if (!$SkipTests -and $canExecute) {
     $testProcess = Start-Process -FilePath $executable -ArgumentList @('--self-test', '--report', ('"' + (Join-Path $outputPath 'unit-report.txt') + '"')) -WindowStyle Hidden -PassThru -Wait
-    if ($testProcess.ExitCode -ne 0) { throw 'Logic tests failed.' }
+    if ($testProcess.ExitCode -ne 0) {
+        Get-Content -LiteralPath (Join-Path $outputPath 'unit-report.txt') -ErrorAction SilentlyContinue | Where-Object { $_ -like 'FAIL  *' -or $_ -like 'RESULT:*' } | Write-Output
+        throw 'Logic tests failed. See unit-report.txt.'
+    }
 } else { Write-Output "Runtime checks not executed for $Runtime (SkipTests=$SkipTests; native host=$hostArchitecture)." }
 if ($RunDiagnostics) {
     $diagnosticPath = Join-Path $outputPath 'diagnostics'
