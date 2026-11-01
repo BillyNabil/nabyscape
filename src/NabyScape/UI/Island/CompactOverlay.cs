@@ -89,6 +89,18 @@ public sealed partial class OverlayWindow
         timelinePanel.RowDefinitions.Add(new(){Height=GridLength.Auto});timelinePanel.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var labels=new DockPanel();DockPanel.SetDock(duration,Dock.Right);labels.Children.Add(duration);labels.Children.Add(elapsed);timelinePanel.Children.Add(labels);
         Grid.SetRow(seekSlider,1);timelinePanel.Children.Add(seekSlider);UI.LocalizedName(seekSlider,"Playback position");
+        seekSlider.PreviewMouseLeftButtonDown+=(_,e)=>
+        {
+            if(!seekSlider.IsEnabled || updating)return;
+            seekSlider.ApplyTemplate();
+            if(seekSlider.Template.FindName("PART_Track",seekSlider) is not System.Windows.Controls.Primitives.Track track)return;
+            // Thumb gestures keep native dragging. Track clicks seek without depending
+            // on whether WPF has assigned keyboard focus before ValueChanged fires.
+            if(track.Thumb?.IsMouseOver==true)return;
+            double target=track.ValueFromPoint(e.GetPosition(track));if(!double.IsFinite(target))return;
+            seekSlider.Focus();seekSlider.SetCurrentValue(System.Windows.Controls.Primitives.RangeBase.ValueProperty,Math.Clamp(target,seekSlider.Minimum,seekSlider.Maximum));
+            seekDelay.Stop();seekDelay.Start();e.Handled=true;
+        };
         seekSlider.ValueChanged+=(_,_)=>{if(!updating && (seekSlider.IsMouseCaptureWithin || seekSlider.IsKeyboardFocusWithin)){seekDelay.Stop();seekDelay.Start();}};
         seekDelay.Tick+=async(_,_)=>{seekDelay.Stop();await app.Media.Seek(seekSlider.Value);};
     }
