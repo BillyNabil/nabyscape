@@ -18,7 +18,7 @@ public sealed partial class OverlayWindow
         !(ClosedMediaActive) &&
         !(WidgetOn("focus") && app.Session.Focus.Remaining(DateTimeOffset.UtcNow)>0) &&
         !(WidgetOn("timer") && app.Session.Timer.Remaining(DateTimeOffset.UtcNow)>0);
-    private double ClosedSurfaceWidth=>app.Settings.Width;
+    private double ClosedSurfaceWidth=>ClosedLyricsWidth;
     private double ClosedContentWidth=>Math.Max(120,Math.Min(ClosedSurfaceWidth,expandedWidth)-(surface.Notch?32:12));
     private string ClosedVoiceLabel=>app.Assistant.State switch
     {

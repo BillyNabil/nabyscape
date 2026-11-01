@@ -37,12 +37,16 @@ internal static class TimedLyricsDocument
                 if(text.Length>0)result.Append(Stamp(start)).AppendLine(text);
             }
         }
-        foreach(var paragraph in xml.Descendants().Where(e=>e.Name.LocalName=="p").Take(5000))
+        var paragraphs=xml.Descendants().Where(e=>e.Name.LocalName=="p").Take(5000).ToArray();
+        for(int i=0;i<paragraphs.Length;i++)
         {
+            var paragraph=paragraphs[i];
             var at=Time(paragraph.Attribute("begin")?.Value);if(at==null)continue;
             string text=string.Join(" ",paragraph.Value.Split((char[]?)null,StringSplitOptions.RemoveEmptyEntries));if(text.Length==0)continue;
             result.Append(Stamp(at.Value)).AppendLine(text);
-            var end=Time(paragraph.Attribute("end")?.Value);if(end>at)result.AppendLine(Stamp(end.Value));
+            var end=Time(paragraph.Attribute("end")?.Value);
+            var following=paragraphs.Skip(i+1).Select(p=>Time(p.Attribute("begin")?.Value)).FirstOrDefault(t=>t!=null);
+            if(end>at && (following==null || following.Value-end.Value>1))result.AppendLine(Stamp(end.Value));
         }
         return result.ToString();
     }

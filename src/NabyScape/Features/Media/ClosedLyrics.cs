@@ -16,6 +16,29 @@ public sealed partial class OverlayWindow
     private string[] lyricPhrases=Array.Empty<string>();
     private readonly object closedLyricConsumer=new();
     private bool closedLyricAttached,closedLyricsDisposed;
+    private string measuredLyricKey="";
+    private double measuredLyricWidth;
+    private double ClosedLyricsWidth
+    {
+        get
+        {
+            double baseline=app.Settings.Width;
+            if(!WantsClosedLyrics)return baseline;
+            var lines=app.Lyrics.Result.Lines;int index=ClosedLyricIndex;if(index<0)return baseline;
+            string text=lines[index].Text;
+            double dpi=VisualTreeHelper.GetDpi(summary).PixelsPerDip;
+            string key=text+"|"+summary.FontFamily+"|"+summary.FontSize+"|"+summary.FontWeight+"|"+dpi;
+            if(key!=measuredLyricKey)
+            {
+                measuredLyricKey=key;
+                var formatted=new FormattedText(text,System.Globalization.CultureInfo.CurrentUICulture,summary.FlowDirection,new Typeface(summary.FontFamily,summary.FontStyle,summary.FontWeight,summary.FontStretch),summary.FontSize,summary.Foreground,dpi);
+                measuredLyricWidth=Math.Ceiling(formatted.WidthIncludingTrailingWhitespace+Math.Max(0,formatted.OverhangTrailing));
+            }
+            // Keep artwork, clock, character and notch clear of the lyric text.
+            double chrome=180+compact.Padding.Left+compact.Padding.Right;
+            return Math.Max(baseline,Math.Min(expandedWidth,measuredLyricWidth+chrome));
+        }
+    }
     private bool ClosedMediaActive=>app.Settings.ClosedMediaContent!="None" && WidgetOn("media") && app.Media.Available && app.Media.Playing;
     private bool WantsClosedLyrics=>!closedLyricsDisposed && app.Settings.ClosedMediaContent=="Lyrics" && ClosedMediaActive &&
         IsVisible && WindowState!=WindowState.Minimized && !userHidden && !IsTucked && !TuckRequested && !expanded && !peeking && !FeedbackVisible && app.Notifications.Current==null && !ClosedVoiceActivity && ActiveCountdown()==null;
@@ -54,7 +77,7 @@ public sealed partial class OverlayWindow
     }
     private void PaintClosedLyrics()
     {
-        if(!WantsClosedLyrics)return;SetClosedSummary(ClosedMediaText);UpdateClosedMediaWaveform();
+        if(!WantsClosedLyrics)return;RefreshIdleDock();SetClosedSummary(ClosedMediaText);UpdateClosedMediaWaveform();
         if(app.Lyrics.Result.Lines.Length>0 && LyricTiming.CanUse(app.Media) && !closedLyricTick.IsEnabled)closedLyricTick.Start();
     }
     private void SetClosedSummary(string text)

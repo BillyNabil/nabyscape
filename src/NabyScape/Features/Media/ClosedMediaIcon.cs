@@ -10,7 +10,9 @@ public sealed partial class OverlayWindow
     private readonly ActivityVisual closedTitleWave=new(){Width=double.NaN,MaxWidth=104,Height=22,WaveOnly=true,Slender=true,HorizontalAlignment=HorizontalAlignment.Stretch,Visibility=Visibility.Collapsed};
     internal double ClosedTitleWaveWidth=>closedTitleWave.ActualWidth;
     internal double ClosedTitleWaveLevel=>closedTitleWave.Envelope;
-    internal bool ClosedTitleWaveVisible=>closedTitleWave.Visibility==Visibility.Visible && summary.Visibility==Visibility.Collapsed;
+    private bool? closedWaveTarget;
+    private int closedWaveTransition;
+    internal bool ClosedTitleWaveVisible=>closedWaveTarget==true;
     private readonly Image closedCoverImage=new(){Width=20,Height=20,Stretch=Stretch.UniformToFill};
     private readonly Border closedCover=new(){Width=20,Height=20,CornerRadius=new(5),Clip=new RectangleGeometry(new Rect(0,0,20,20),5,5),Margin=new(0,0,9,0),VerticalAlignment=VerticalAlignment.Center,Visibility=Visibility.Collapsed,IsHitTestVisible=true};
     internal bool ClosedCoverVisible=>closedCover.Visibility==Visibility.Visible && closedCoverImage.Source!=null;
@@ -18,8 +20,32 @@ public sealed partial class OverlayWindow
     {
         bool waveform=app.Notifications.Current==null && !expanded && !peeking && !FeedbackVisible && ActiveCountdown()==null && !ClosedVoiceActivity && ClosedMediaActive &&
             (app.Settings.ClosedMediaContent=="Waveform" || app.Settings.ClosedMediaContent=="Lyrics" && ClosedLyricIndex<0);
-        bool changed=(closedTitleWave.Visibility==Visibility.Visible)!=waveform;
-        closedTitleWave.Visibility=waveform?Visibility.Visible:Visibility.Collapsed;summary.Visibility=waveform?Visibility.Collapsed:Visibility.Visible;
+        bool changed=closedWaveTarget!=waveform;
+        bool crossfade=app.Settings.ClosedMediaContent=="Lyrics" && ClosedMediaActive && !expanded && !peeking && !FeedbackVisible && ActiveCountdown()==null && !ClosedVoiceActivity && app.Notifications.Current==null && Motion.Enabled && !app.Settings.ReduceMotion;
+        if(changed || !crossfade)
+        {
+            bool initialized=closedWaveTarget.HasValue;closedWaveTarget=waveform;int revision=++closedWaveTransition;
+            double waveOpacity=closedTitleWave.Opacity,textOpacity=closedSummaryHost.Opacity;
+            closedTitleWave.BeginAnimation(OpacityProperty,null);closedSummaryHost.BeginAnimation(OpacityProperty,null);
+            closedTitleWave.Opacity=waveOpacity;closedSummaryHost.Opacity=textOpacity;
+            if(crossfade && initialized)
+            {
+                closedTitleWave.Visibility=Visibility.Visible;summary.Visibility=Visibility.Visible;
+                void Fade(FrameworkElement element,double target)
+                {
+                    var animation=new System.Windows.Media.Animation.DoubleAnimation(element.Opacity,target,TimeSpan.FromMilliseconds(300)){EasingFunction=new System.Windows.Media.Animation.SineEase{EasingMode=System.Windows.Media.Animation.EasingMode.EaseInOut}};
+                    System.Windows.Media.Animation.Timeline.SetDesiredFrameRate(animation,Motion.FrameLimit);
+                    animation.Completed+=(_,_)=>{if(revision!=closedWaveTransition)return;element.BeginAnimation(OpacityProperty,null);element.Opacity=target;if(ReferenceEquals(element,closedTitleWave) && !waveform)closedTitleWave.Visibility=Visibility.Collapsed;};
+                    element.BeginAnimation(OpacityProperty,animation);
+                }
+                Fade(closedTitleWave,waveform?1:0);Fade(closedSummaryHost,waveform?0:1);
+            }
+            else
+            {
+                closedTitleWave.Opacity=waveform?1:0;closedSummaryHost.Opacity=waveform?0:1;
+                closedTitleWave.Visibility=waveform?Visibility.Visible:Visibility.Collapsed;summary.Visibility=waveform?Visibility.Collapsed:Visibility.Visible;
+            }
+        }
         compact.ToolTip=waveform?app.Media.Title+" · click to open · Esc to close":"Click to open · Esc to close";
         if(changed)ConfigureLiveActivity();
         return waveform;

@@ -35,6 +35,13 @@ internal static class MediaExperienceTests
         LyricsProviderTests.Run(test);
         LyricsAutomaticTests.Run(test);
         LyricsRomajiTests.Run(test);
+        test("Short vocal gaps keep lyrics while genuine instrumental breaks retain waveform",()=>
+        {
+            var lines=LyricTiming.Parse("[00:01]First\n[00:02]\n[00:02.5]Next\n[00:04]\n[00:08]Last");
+            Assert(LyricTiming.VocalIndex(lines,2.2)==0 && LyricTiming.VocalIndex(lines,5)==-1);
+            var ttml=TimedLyricsDocument.ToLrc("<tt><p begin='1s' end='2s'>First</p><p begin='2.2s' end='5s'>Next</p><p begin='4s' end='6s'>Overlap</p></tt>");
+            Assert(LyricTiming.VocalIndex(LyricTiming.Parse(ttml),2.1)>=0 && LyricTiming.VocalIndex(LyricTiming.Parse(ttml),5.2)>=0);
+        });
         test("Provider TTML converts real timestamps without invented word timing or external entities",()=>
         {
             var lrc=TimedLyricsDocument.ToLrc("<tt xmlns='http://www.w3.org/ns/ttml'><body><p begin='00:01.25' end='3s'>Original <span>fixture</span></p><p begin='00:05.0'>Second</p></body></tt>");

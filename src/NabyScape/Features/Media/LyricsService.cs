@@ -45,6 +45,9 @@ internal static class LyricTiming
         int index=Index(lines,seconds);
         if(index<0)return -1;
         string text=lines[index].Text.Trim();
+        // Brief timestamp gaps between vocal lines are transitions, not instrumental breaks.
+        if(text.Length==0 && index>0 && index+1<lines.Count && lines[index+1].At-lines[index].At<=1 && lines[index+1].Text.Trim().Length>0 && lines[index-1].Text.Trim().Length>0)
+        {index--;text=lines[index].Text.Trim();}
         if(text.Length==0 || text.Trim('♪','♫','♬','♩',' ','\t').Length==0 || text is "🎵" or "🎶")return -1;
         string marker=text.Trim('[',']','(',')',' ','\t');
         if(marker.Equals("instrumental",StringComparison.OrdinalIgnoreCase) || marker.Equals("instrumental break",StringComparison.OrdinalIgnoreCase))return -1;

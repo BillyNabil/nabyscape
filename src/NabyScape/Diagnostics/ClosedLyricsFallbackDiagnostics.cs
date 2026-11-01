@@ -20,8 +20,18 @@ internal static class ClosedLyricsFallbackDiagnostics
         void Paint()=>typeof(OverlayWindow).GetMethod("PaintClosedLyrics",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(dock,null);
         Import("[00:00]Vocal");app.ChangeSettings();dock.Collapse();await Task.Delay(350);
         check("Lyrics fallback: vocal line hides waveform ("+dock.HeaderLabel.Text+")",!dock.ClosedTitleWaveVisible && dock.HeaderLabel.Text=="Vocal");
+        double Width()=> (double)typeof(OverlayWindow).GetProperty("ClosedSurfaceWidth",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(dock)!;
+        double originalWidth=Width();
+        Import("[00:00]This is a longer lyric line that needs more room across the closed dock");await Task.Delay(120);
+        check("Closed lyrics expand for a long line",Width()>originalWidth);
+        double panelWidth=(double)typeof(OverlayWindow).GetField("expandedWidth",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(dock)!;
+        check("Closed lyrics width stays inside the existing screen-bounded host",Width()<=Math.Max(s.Width,panelWidth));
+        Import("[00:00]Vocal");await Task.Delay(120);check("Closed lyrics restore the saved width for short lines",Math.Abs(Width()-originalWidth)<.5);
         Import("[00:00]\n[04:00]Fixture later line");await Task.Delay(120);
         check("Lyrics fallback: blank timed section shows waveform",dock.ClosedTitleWaveVisible);
+        var wave=(System.Windows.FrameworkElement)typeof(OverlayWindow).GetField("closedTitleWave",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(dock)!;
+        var textHost=(System.Windows.FrameworkElement)typeof(OverlayWindow).GetField("closedSummaryHost",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(dock)!;
+        if(Motion.Enabled)check("Waveform and lyrics share intermediate crossfade opacity",wave.Opacity>0 && wave.Opacity<1 && textHost.Opacity>0 && textHost.Opacity<1);
         check("Lyrics fallback: waveform responds to existing audio meter",dock.ClosedTitleWaveLevel>0 && dock.ClosedTitleWaveWidth>0);
         Import("[00:00][Instrumental]");await Task.Delay(100);
         check("Lyrics fallback: instrumental marker shows waveform",dock.ClosedTitleWaveVisible);
