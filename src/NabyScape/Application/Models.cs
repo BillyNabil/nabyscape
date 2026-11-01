@@ -66,7 +66,7 @@ public sealed partial class Settings
     public List<WidgetSetting> HoverViews { get; set; }=new[]{"media","timer","focus","calendar","notes","files","system"}.Select(id=>new WidgetSetting{Id=id,Enabled=id!="system"}).ToList();
     public bool ClipboardHistory { get; set; }
     public List<WidgetSetting> Tools {get;set;}=ToolNames.Keys.Select(id=>new WidgetSetting{Id=id}).ToList();
-    public static readonly Dictionary<string,string> ToolNames=new(){["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["weather"]="Weather"};
+    public static readonly Dictionary<string,string> ToolNames=new(){["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["power"]="Power plan",["weather"]="Weather"};
     public bool ToolEnabled(string id)=>Widgets.FirstOrDefault(t=>t.Id==id)?.Enabled ?? (Widgets.Any(w=>w.Id=="tools" && w.Enabled) && Tools.Any(t=>t.Id==id && t.Enabled));
     public string Performance { get; set; } = "Auto";
     public string WheelAction { get; set; } = "volume";
@@ -120,9 +120,9 @@ public sealed partial class Settings
     {
         ["voice"]="Naby voice", ["media"]="Media", ["volume"]="Volume", ["timer"]="Timer", ["stopwatch"]="Stopwatch", ["focus"]="Focus mode",
         ["clock"]="Clock & date", ["system"]="System monitor", ["battery"]="Battery", ["shortcuts"]="Shortcuts",["tools"]="Everyday tools",
-        ["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["weather"]="Weather"
+        ["files"]="File shelf",["notes"]="Notes",["tasks"]="Tasks",["clips"]="Clipboard",["calendar"]="Calendar",["awake"]="Keep awake",["links"]="Clean links",["power"]="Power plan",["weather"]="Weather"
     };
-    public static List<WidgetSetting> Defaults() => Names.Keys.Where(id=>id!="tools").Select(id => new WidgetSetting { Id=id,Enabled=id is not ("stopwatch" or "voice") }).ToList();
+    public static List<WidgetSetting> Defaults() => Names.Keys.Where(id=>id!="tools").Select(id => new WidgetSetting { Id=id,Enabled=id is not ("stopwatch" or "voice" or "power") }).ToList();
     public void Normalize()
     {
         NormalizeLanguageAccessibility();
@@ -167,7 +167,7 @@ public sealed partial class Settings
             bool enabled=Widgets[legacy].Enabled;Widgets.RemoveAt(legacy);
             foreach(var tool in Tools)if(!Widgets.Any(w=>w.Id==tool.Id))Widgets.Insert(legacy++,new(){Id=tool.Id,Enabled=enabled && tool.Enabled});
         }
-        foreach(var id in Names.Keys.Where(id=>id!="tools")) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id=="weather" || id is not ("stopwatch" or "voice") && !ToolNames.ContainsKey(id)});
+        foreach(var id in Names.Keys.Where(id=>id!="tools")) if(!Widgets.Any(w=>w.Id==id)) Widgets.Add(new(){Id=id,Enabled=id=="weather" || id is not ("stopwatch" or "voice" or "power") && !ToolNames.ContainsKey(id)});
         // Legacy availability also gates hover pages. Hiding a main-panel widget
         // must not remove an independently enabled hover page.
         foreach(var tool in Tools)tool.Enabled|=Widgets.Any(w=>w.Id==tool.Id && w.Enabled);

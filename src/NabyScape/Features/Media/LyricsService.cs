@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace NabyScape;
 
 internal sealed record LyricLine(double At,string Text);
-internal sealed record LyricResult(LyricLine[] Lines,string Status);
+internal sealed record LyricResult(LyricLine[] Lines,string Status,string Plain="");
 internal static class LyricTiming
 {
     private static readonly Regex stamps=new(@"\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));
@@ -52,15 +52,17 @@ internal static class LyricTiming
         if(section && (marker.Equals("music",StringComparison.OrdinalIgnoreCase) || marker.Equals("interlude",StringComparison.OrdinalIgnoreCase) || marker.Equals("intro",StringComparison.OrdinalIgnoreCase) || marker.Equals("outro",StringComparison.OrdinalIgnoreCase) || marker.Equals("solo",StringComparison.OrdinalIgnoreCase)))return -1;
         return index;
     }
-    internal static bool CanUse(MediaService media)=>media.Available && !string.IsNullOrWhiteSpace(media.Title) && !string.IsNullOrWhiteSpace(media.Artist) && media.Artist!=media.Selected?.SourceAppUserModelId && media.Timeline().duration>0;
+    internal static bool CanUse(MediaService media)=>media.Available && !string.IsNullOrWhiteSpace(media.Title) && media.Timeline().duration>0 &&
+        (!string.IsNullOrWhiteSpace(media.Artist) && media.Artist!=media.Selected?.SourceAppUserModelId || LyricsMetadata.Queries(media.Title,"").Length>0);
     internal static bool IsSpotify(string? source)=>source?.Contains("spotify",StringComparison.OrdinalIgnoreCase)==true;
 }
 
-// Explicitly enabled external metadata lookup. No cookies, provider keys, profile
-// files or screen contents are read. Memory-only, bounded per-session cache.
-internal sealed class LyricsService : IDisposable
+// Explicitly enabled metadata lookup. No cookies, profile files or screen contents
+// are read. Manual authenticated sources use Credential Manager; Automatic uses public sources.
+internal sealed partial class LyricsService : IDisposable
 {
     private readonly HttpClient client;
+    private readonly IAssistantKeys lyricKeys;
     private readonly Dictionary<string,LyricResult> cache=new();
     private CancellationTokenSource? pending;
     private string key="";
@@ -70,23 +72,39 @@ internal sealed class LyricsService : IDisposable
     internal void Release(object owner)
     {
         if(!consumers.Remove(owner) || consumers.Count>0)return;
-        Cancel();key="";cache.Clear();Set(new(Array.Empty<LyricLine>(),"Lyrics are off."));
+        Cancel();key="";Set(new(Array.Empty<LyricLine>(),"Lyrics are off."));
     }
     internal LyricResult Result {get;private set;}=new(Array.Empty<LyricLine>(),"Lyrics are off.");
     internal event Action? Changed;
     private static string TrackKey(string title,string artist,double duration)=>title+"\n"+artist+"\n"+Math.Round(duration);
-    internal LyricsService(HttpMessageHandler? handler=null)
-    {client=new(handler??new HttpClientHandler{AllowAutoRedirect=false,UseCookies=false}){Timeout=TimeSpan.FromSeconds(8)};client.DefaultRequestHeaders.UserAgent.ParseAdd("NabyScape/2.7.0 (+https://github.com/BillyNabil/nabyscape)");}
-    internal async Task Load(string title,string artist,double duration,bool enabled,bool compatible)
+    internal LyricsService(HttpMessageHandler? handler=null,IAssistantKeys? providerKeys=null)
+    {lyricKeys=providerKeys??new AssistantKeys();client=new(handler??new HttpClientHandler{AllowAutoRedirect=false,UseCookies=false}){Timeout=TimeSpan.FromSeconds(8),MaxResponseContentBufferSize=2*1024*1024};client.DefaultRequestHeaders.UserAgent.ParseAdd("NabyScape/2.7.0 (+https://github.com/BillyNabil/nabyscape)");}
+    internal async Task Load(string title,string artist,double duration,bool enabled,bool compatible,string? mediaSource=null)
     {
         if(disposed)return;
         if(!enabled || !compatible){Cancel();key="";Set(new(Array.Empty<LyricLine>(),enabled?"Choose a music session with a title, artist and playback timeline.":"Lyrics are off."));return;}
-        string next=TrackKey(title,artist,duration);if(next==key)return;Cancel();key=next;
+        string selectedSource=SelectedSource;string next=selectedSource+"\n"+TrackKey(title,artist,duration);if(next==key)return;Cancel();key=next;
         if(cache.TryGetValue(next,out var found)){Set(found);return;}
         var request=new CancellationTokenSource();pending=request;Set(new(Array.Empty<LyricLine>(),"Finding synced lyrics…"));
         try
         {
+            if(selectedSource=="Automatic")
+            {
+                var match=await FindAutomatic(title,artist==mediaSource?"":artist,duration,request.Token);
+                if(request.IsCancellationRequested || disposed || key!=next)return;
+                var automatic=match==null?new LyricResult(Array.Empty<LyricLine>(),"No matching English, Japanese or Korean lyrics. Try another source or LRC."):new LyricResult(LyricTiming.Parse(match.Value.Choice.Lrc),"Synced lyrics · "+match.Value.Source+" · Automatic");
+                if(automatic.Lines.Length>0){if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=automatic;}
+                Set(automatic);return;
+            }
             if(string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist))throw new InvalidDataException("Track details are unavailable.");
+            if(selectedSource!="LRCLIB")
+            {
+                var choices=await FetchProvider(selectedSource,title,artist,duration,request.Token);
+                if(request.IsCancellationRequested || disposed || key!=next)return;
+                var chosen=choices.FirstOrDefault();
+                var providerResult=chosen==null?new LyricResult(Array.Empty<LyricLine>(),"No synced lyrics · "+selectedSource):new LyricResult(LyricTiming.Parse(chosen.Lrc),(chosen.Plain.Length>0?"Plain lyrics · ":"Synced lyrics · ")+selectedSource,chosen.Plain);
+                if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=providerResult;Set(providerResult);return;
+            }
             string query="https://lrclib.net/api/get?track_name="+Uri.EscapeDataString(title)+"&artist_name="+Uri.EscapeDataString(artist);
             if(duration>=1 && duration<=3600)query+="&duration="+Math.Round(duration).ToString(CultureInfo.InvariantCulture);
             using var response=await client.GetAsync(query,HttpCompletionOption.ResponseHeadersRead,request.Token);
@@ -107,17 +125,79 @@ internal sealed class LyricsService : IDisposable
             if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=result;Set(result);
         }
         catch(OperationCanceledException){if(!request.IsCancellationRequested && !disposed && key==next)Set(new(Array.Empty<LyricLine>(),"Lyrics request timed out. Tap Retry."));}
-        catch(Exception ex) when(ex is HttpRequestException or IOException or JsonException or RegexMatchTimeoutException)
+        catch(Exception ex) when(ex is HttpRequestException or IOException or InvalidDataException or JsonException or RegexMatchTimeoutException or System.Xml.XmlException or FormatException)
         {if(!request.IsCancellationRequested && !disposed && key==next)Set(new(Array.Empty<LyricLine>(),"Lyrics unavailable. Tap Retry."));}
         finally{if(ReferenceEquals(pending,request))pending=null;request.Dispose();}
     }
-    private void Set(LyricResult result){if(Result==result)return;Result=result;Changed?.Invoke();}
-    internal void Import(string title,string artist,double duration,string lrc)
+    internal async Task<LyricChoice[]> Search(string title,string artist,CancellationToken token,Uri? endpoint=null)
+    {
+        var baseUri=endpoint??new Uri("https://lrclib.net/");
+        if(!baseUri.IsAbsoluteUri || !(baseUri.Scheme=="https" || baseUri.Scheme=="http" && baseUri.IsLoopback) || baseUri.UserInfo.Length>0 || baseUri.Query.Length>0 || baseUri.Fragment.Length>0)throw new InvalidDataException("Use an HTTPS API base URL, or a local HTTP server.");
+        var url=new Uri(baseUri.AbsoluteUri.TrimEnd('/')+"/api/search?track_name="+Uri.EscapeDataString(title)+"&artist_name="+Uri.EscapeDataString(artist));
+        string json=await client.GetStringAsync(url,token);
+        using var document=JsonDocument.Parse(json);var result=new List<LyricChoice>();
+        if(document.RootElement.ValueKind!=JsonValueKind.Array)return result.ToArray();
+        foreach(var entry in document.RootElement.EnumerateArray().Take(30))
+        {
+            if(entry.ValueKind!=JsonValueKind.Object)continue;
+            string Text(string key)=>entry.TryGetProperty(key,out var v) && v.ValueKind==JsonValueKind.String?v.GetString()??"":"";
+            string lrc=Text("syncedLyrics");if(lrc.Length==0 || lrc.Length>512*1024)continue;
+            double seconds=entry.TryGetProperty("duration",out var d) && d.ValueKind==JsonValueKind.Number && d.TryGetDouble(out double n)?n:0;
+            result.Add(new(Text("trackName"),Text("artistName"),Text("albumName"),seconds,lrc));
+        }
+        return result.ToArray();
+    }
+    internal async Task<LyricChoice[]> SearchBini(string title,string artist,CancellationToken token,int limit=8)
+    {
+        string json=await ReadBiniDocument(new Uri("https://lyrics-api.binimum.org/getLyrics?track="+Uri.EscapeDataString(title)+"&artist="+Uri.EscapeDataString(artist)),token);
+        using var doc=JsonDocument.Parse(json);var choices=new List<LyricChoice>();
+        if(!doc.RootElement.TryGetProperty("results",out var entries) || entries.ValueKind!=JsonValueKind.Array)return choices.ToArray();
+        foreach(var item in entries.EnumerateArray().Take(Math.Clamp(limit,1,8)))
+        {
+            if(item.ValueKind!=JsonValueKind.Object)continue;
+            string Text(string key)=>item.TryGetProperty(key,out var v) && v.ValueKind==JsonValueKind.String?v.GetString()??"":"";
+            if(!Uri.TryCreate(Text("lyricsUrl"),UriKind.Absolute,out var url) || url.Scheme!="https" || url.UserInfo.Length>0 || !url.IsDefaultPort || !(url.Host=="lrc.red" || url.Host=="lyrics-api.binimum.org"))continue;
+            string body=await ReadBiniDocument(url,token);string lrc=TimedLyricsDocument.ToLrc(body);
+            if(lrc.Length==0)continue;
+            double seconds=item.TryGetProperty("duration",out var d) && d.ValueKind==JsonValueKind.Number && d.TryGetDouble(out var n)?n:0;
+            choices.Add(new(Text("track_name"),Text("artist_name"),Text("album_name"),seconds,lrc));
+        }
+        return choices.ToArray();
+    }
+    private async Task<string> ReadBiniDocument(Uri url,CancellationToken token)
+    {
+        using var budget=CancellationTokenSource.CreateLinkedTokenSource(token);budget.CancelAfter(TimeSpan.FromSeconds(8));token=budget.Token;
+        for(int redirects=0;redirects<=3;redirects++)
+        {
+            if(url.Scheme!="https" || !url.IsDefaultPort || url.UserInfo.Length>0 || url.Host is not ("lyrics-api.binimum.org" or "lrc.red"))throw new InvalidDataException("Lyrics redirect is outside the trusted provider hosts.");
+            using var request=new HttpRequestMessage(HttpMethod.Get,url);
+            using var response=await client.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,token);
+            if((int)response.StatusCode is 301 or 302 or 303 or 307 or 308)
+            {
+                if(response.Headers.Location==null)throw new InvalidDataException("Lyrics redirect has no destination.");
+                url=new Uri(url,response.Headers.Location);continue;
+            }
+            response.EnsureSuccessStatusCode();
+            await using var stream=await response.Content.ReadAsStreamAsync(token);using var buffer=new MemoryStream();var chunk=new byte[8192];int count;
+            while((count=await stream.ReadAsync(chunk,token))>0){if(buffer.Length+count>2*1024*1024)throw new InvalidDataException("Lyrics response is too large.");buffer.Write(chunk,0,count);}
+            return System.Text.Encoding.UTF8.GetString(buffer.ToArray());
+        }
+        throw new InvalidDataException("Too many lyrics redirects.");
+    }
+    private void Set(LyricResult result){if(ReferenceEquals(originalResult,result))return;originalResult=result;Present(result);}
+    internal void Import(string title,string artist,double duration,string lrc,string origin="Local LRC · this session")
     {
         var lines=LyricTiming.Parse(lrc);if(lines.Length==0)throw new InvalidDataException("Choose an LRC file with [mm:ss] line timestamps.");
-        Cancel();key=TrackKey(title,artist,duration);var result=new LyricResult(lines,"Local LRC · this session");if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[key]=result;Set(result);
+        Cancel();key=SelectedSource+"\n"+TrackKey(title,artist,duration);var result=new LyricResult(lines,origin);if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[key]=result;Set(result);
+    }
+    internal void ImportPlain(string title,string artist,double duration,string text,string origin)
+    {
+        if(string.IsNullOrWhiteSpace(text) || text.Length>100000)throw new InvalidDataException("Plain lyrics are empty or too large.");
+        Cancel();key=SelectedSource+"\n"+TrackKey(title,artist,duration);var result=new LyricResult(Array.Empty<LyricLine>(),origin,text);if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[key]=result;Set(result);
     }
     internal void Retry(){cache.Remove(key);key="";}
     internal void Cancel(){if(pending!=null){pending.Cancel();pending=null;key="";}}
-    public void Dispose(){disposed=true;Cancel();client.Dispose();cache.Clear();}
+    public void Dispose(){disposed=true;Cancel();++textRevision;romanizing?.Cancel();romanizing=null;romanized.Clear();client.Dispose();cache.Clear();}
 }
+
+internal sealed record LyricChoice(string Title,string Artist,string Album,double Duration,string Lrc,string Plain="");

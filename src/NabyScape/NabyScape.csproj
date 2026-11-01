@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\island.ico</ApplicationIcon>
     <AssemblyName>NabyScape</AssemblyName>
     <RootNamespace>NabyScape</RootNamespace>
-    <Version>2.24.0</Version>
+    <Version>2.25.0</Version>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
@@ -25,6 +25,8 @@
     <PackageReference Include="System.Management" Version="10.0.0" />
     <PackageReference Include="System.Speech" Version="10.0.13" />
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Lucene.Net.Analysis.Kuromoji" Version="4.8.0-beta00018" />
+    <PackageReference Include="NTextCat" Version="0.3.65" />
     <Resource Include="Assets\island.ico" />
     <EmbeddedResource Include="..\..\docs\presets\default-preferences.json" LogicalName="NabyScape.DefaultPreferences.json" />
     <EmbeddedResource Include="..\..\tools\Uninstall-NabyScape.ps1" LogicalName="NabyScape.Uninstall.ps1" />
@@ -36,5 +38,8 @@
     <EmbeddedResource Include="..\..\licenses\LUCIDE-LICENSE.txt" LogicalName="NabyScape.LUCIDE-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\DOTNET-LICENSE.txt" LogicalName="NabyScape.DOTNET-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\DOTNET-ThirdPartyNotices.txt" LogicalName="NabyScape.DOTNET-ThirdPartyNotices.txt" />
+    <EmbeddedResource Include="..\..\licenses\ROMAJI-ThirdPartyNotices.txt" LogicalName="NabyScape.ROMAJI-ThirdPartyNotices.txt" />
+    <EmbeddedResource Include="..\..\licenses\LYRICS-LANGUAGE-LICENSE.txt" LogicalName="NabyScape.LYRICS-LANGUAGE-LICENSE.txt" />
+    <EmbeddedResource Include="Assets\lyrics-languages.profile.xml.gz" LogicalName="NabyScape.LyricsLanguages" />
   </ItemGroup>
 </Project>

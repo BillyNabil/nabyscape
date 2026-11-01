@@ -119,6 +119,11 @@ internal static class Diagnostics
         {
 
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--lyrics-language-live-only")){await LyricsPopoverDiagnostics.RunLanguageLive(app,directory);return;}
+            if(Environment.GetCommandLineArgs().Contains("--lyrics-automatic-live-only")){await LyricsPopoverDiagnostics.RunAutomaticLive(app,directory);return;}
+            if(Environment.GetCommandLineArgs().Contains("--lyrics-provider-live-only")){await LyricsPopoverDiagnostics.RunLive(app,directory);return;}
+            if(Environment.GetCommandLineArgs().Contains("--lyrics-popover-only")){await LyricsPopoverDiagnostics.Run(app,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--lyrics-power-ui-only")){await LyricsPowerDiagnostics.Run(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--closed-lyrics-fallback-only")){await ClosedLyricsFallbackDiagnostics.Run(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--removed-activities-only")){await RemovedActivitiesDiagnostics.Run(app,overlay,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--assistant-transform-only")){await AssistantTransformDiagnostics.Run(app,overlay,directory,Check);return;}

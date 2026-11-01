@@ -24,6 +24,7 @@
   "MediaIntegrationEnabled": true,
   "LyricsEnabled": true,
   "LyricsAnimation": "Slide",
+  "LyricsTextMode": "Original",
   "LyricsOffset": 0,
   "CountdownSound": "Bell",
   "CountdownSoundVolume": 1,

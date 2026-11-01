@@ -265,7 +265,7 @@ public sealed partial class AudioService : IDisposable
     {
         int version=endpointGeneration;
         if(disposed || dispatcher.HasShutdownStarted)return;
-        try{dispatcher.BeginInvoke(()=>{if(disposed || version!=endpointGeneration)return;Volume=data.MasterVolume;Muted=data.Muted;Changed?.Invoke();});}
+        try{dispatcher.BeginInvoke(()=>{if(disposed || version!=endpointGeneration)return;if(Math.Abs(Volume-data.MasterVolume)<.0005f && Muted==data.Muted)return;Volume=data.MasterVolume;Muted=data.Muted;Changed?.Invoke();});}
         catch(Exception ex){AudioError(ex);}
     }
     internal float Peak()
@@ -303,7 +303,14 @@ public sealed partial class AudioService : IDisposable
     public void SetVolume(double value)
     {
         if(!CheckAudioActive(AudioOperation.SetVolume))return;
-        try { using var d=EndpointEnumerator.GetDefaultAudioEndpoint(DataFlow.Render,Role.Multimedia);d.AudioEndpointVolume.MasterVolumeLevelScalar=(float)Math.Clamp(value,0,1);LastError=null; }
+        try {
+            if(!double.IsFinite(value))return;
+            if(meterDevice==null)Read();
+            if(meterDevice==null)return;
+            float target=(float)Math.Clamp(value,0,1);
+            if(Math.Abs(Volume-target)<.001f)return;
+            meterDevice.AudioEndpointVolume.MasterVolumeLevelScalar=target;Volume=target;LastError=null;
+        }
         catch(Exception ex){AudioError(ex,AudioOperation.SetVolume);Available=false;}
     }
     public void ToggleMute()

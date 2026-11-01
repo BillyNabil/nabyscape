@@ -53,8 +53,8 @@ foreach($architecture in @('x64','arm64')) {
 foreach($name in @('NabyScape-win-x64-Portable.zip','NabyScape-win-arm64-Portable.zip','NabyScape-Notices.zip')) {
     $zip=[IO.Compression.ZipFile]::OpenRead((Join-Path $root $name))
     try {
-        foreach($notice in @('LICENSE','LUCIDE-LICENSE.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt')) { if (!$zip.GetEntry($notice)) { throw "Missing $notice in $name" } }
-        Write-Output "PASS $name contents and all six notices"
+        foreach($notice in @('LICENSE','LUCIDE-LICENSE.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt','ROMAJI-ThirdPartyNotices.txt','LYRICS-LANGUAGE-LICENSE.txt')) { if (!$zip.GetEntry($notice)) { throw "Missing $notice in $name" } }
+        Write-Output "PASS $name contents and all eight notices"
     } finally { $zip.Dispose() }
 }
 if ($ValidateWinGet) { winget validate --manifest (Join-Path $root 'winget') --disable-interactivity; if ($LASTEXITCODE -ne 0) { throw 'WinGet validation failed.' } }

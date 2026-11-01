@@ -74,7 +74,7 @@ internal static class Installer
         }
         RemoveRetiredHostFiles(target,source);
         File.WriteAllText(Path.Combine(target,"Uninstall.ps1"),Uninstaller);
-        foreach(var name in new[]{"LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
+        foreach(var name in new[]{"LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt","ROMAJI-ThirdPartyNotices.txt","LYRICS-LANGUAGE-LICENSE.txt"})
         {
             using var license=typeof(Installer).Assembly.GetManifestResourceStream("NabyScape."+name);
             if(license!=null){using var reader=new StreamReader(license);File.WriteAllText(Path.Combine(target,name),reader.ReadToEnd());}
@@ -136,7 +136,7 @@ internal static class Installer
     {
         RemoveRetiredHostFiles(folder,source);
         // Moving an installation removes only shipped files, never unrelated files.
-        foreach(string name in new[]{"NabyScape.exe","LumaIsland.exe","BillyNabilaIsland.exe","Uninstall.ps1","LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
+        foreach(string name in new[]{"NabyScape.exe","LumaIsland.exe","BillyNabilaIsland.exe","Uninstall.ps1","LICENSE","LUCIDE-LICENSE.txt","NAudio-LICENSE.txt","System.Speech-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt","ROMAJI-ThirdPartyNotices.txt","LYRICS-LANGUAGE-LICENSE.txt"})
         {
             string path=Path.Combine(folder,name);if(string.Equals(path,source,StringComparison.OrdinalIgnoreCase))continue;
             try{if(File.Exists(path))File.Delete(path);}catch(IOException){}catch(UnauthorizedAccessException){}

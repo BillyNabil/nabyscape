@@ -40,7 +40,7 @@ public sealed partial class OverlayWindow
     private string? peekFilePath;
     private string? peekShelfArtPath;
     private readonly Image peekShelfArt=new(){Width=44,Height=44,Stretch=Stretch.Uniform,Margin=new(0,0,12,0),Visibility=Visibility.Collapsed};
-    private bool PeekInteractionActive=>dockEditing || peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true || audioMenu?.IsOpen==true;
+    private bool PeekInteractionActive=>LyricsSourcesControl.MenuOpen || dockEditing || peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true || audioMenu?.IsOpen==true;
     internal string PeekPage=>peekId;
     internal string[] HoverDeckIds=>PeekPages();
     internal bool PeekTabSafe=>peekViews.Where(pair=>pair.Key!=peekId).All(pair=>KeyboardNavigation.GetTabNavigation(pair.Value)==KeyboardNavigationMode.None);
@@ -67,7 +67,7 @@ public sealed partial class OverlayWindow
         controls.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
         var previous=PeekIcon("previous","Previous track in preview",()=>_=app.Media.Command("previous"));var next=PeekIcon("next","Next track in preview",()=>_=app.Media.Command("next"));var mute=PeekIcon("volume","Mute preview audio",()=>{app.Audio.ToggleMute();app.Audio.Read();Update();});var output=PeekIcon("chevron","Choose preview audio output",OpenAudioMenu);
         peekTrackPrevious=previous;peekTrackNext=next;peekMute=mute;peekOutput=output;controls.Children.Add(previous);Grid.SetColumn(next,1);controls.Children.Add(next);Grid.SetColumn(mute,2);controls.Children.Add(mute);
-        peekVolume=new Slider{Minimum=0,Maximum=100,Height=26,Margin=new(7,0,9,0),VerticalAlignment=VerticalAlignment.Center};UI.Named(peekVolume,"Preview volume");peekVolume.ValueChanged+=(_,_)=>{if(!updating){app.Audio.SetVolume(peekVolume.Value/100);app.Audio.Read();}};Grid.SetColumn(peekVolume,3);controls.Children.Add(peekVolume);Grid.SetColumn(output,4);controls.Children.Add(output);var mixerButton=PeekIcon("mixer","Open mixer from preview",OpenMixer);Grid.SetColumn(mixerButton,5);controls.Children.Add(mixerButton);Grid.SetRow(controls,3);Grid.SetColumnSpan(controls,3);peekMedia.Children.Add(controls);AddPeekView("media",peekMedia);
+        peekVolume=new Slider{Minimum=0,Maximum=100,Height=26,Margin=new(7,0,9,0),VerticalAlignment=VerticalAlignment.Center};UI.Named(peekVolume,"Preview volume");peekVolume.ValueChanged+=(_,_)=>{if(!updating){app.Audio.SetVolume(peekVolume.Value/100);}};Grid.SetColumn(peekVolume,3);controls.Children.Add(peekVolume);Grid.SetColumn(output,4);controls.Children.Add(output);var mixerButton=PeekIcon("mixer","Open mixer from preview",OpenMixer);Grid.SetColumn(mixerButton,5);controls.Children.Add(mixerButton);Grid.SetRow(controls,3);Grid.SetColumnSpan(controls,3);peekMedia.Children.Add(controls);AddPeekView("media",peekMedia);
         var footer=new Grid{Margin=new(0,2,0,0)};peekFooter=footer;footer.ColumnDefinitions.Add(new(){Width=new GridLength(50)});footer.ColumnDefinitions.Add(new());footer.ColumnDefinitions.Add(new(){Width=new GridLength(48)});footer.ColumnDefinitions.Add(new(){Width=new GridLength(74)});footer.Children.Add(peekPageName);
         var dots=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center};peekDotStrip=dots;Grid.SetColumn(dots,1);footer.Children.Add(dots);
         foreach(var id in HoverPagePolicy.Ids)

@@ -82,6 +82,7 @@ public sealed partial class App : Application
     public static new App Current=>(App)Application.Current;
     [STAThread] public static void Main(string[] args)
     {
+        if(args.Length==1 && args[0]=="--lyrics-romaji-worker"){LyricsRomajiWorker.Run();return;}
         if(args.Length==2 && args[0]=="--speech-worker"){AssistantSpeechWorker.Run(args[1]).GetAwaiter().GetResult();return;}
         if(Array.Exists(args,a=>a=="--widget-mcp")){AssistantWidgetBridge.RunStdio().GetAwaiter().GetResult();return;}
         var culture=System.Globalization.CultureInfo.GetCultureInfo("en-US");

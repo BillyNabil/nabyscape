@@ -73,7 +73,7 @@ public sealed partial class OverlayWindow : Window
         PreviewKeyDown+=(_,e)=> {if(e.Key==Key.Escape && mediaControls?.Close()==true){e.Handled=true;return;}if(dockEditing){if(e.Key==Key.Escape){foreach(var grip in new[]{moveGrip,resizeLeft,resizeRight})if(grip.IsDragging)grip.CancelDrag();e.Handled=true;}return;}if(e.Key==Key.K && Keyboard.Modifiers==ModifierKeys.Control){ShowCommands();e.Handled=true;}else if(e.Key==Key.Escape){if(assistantOpen || assistantPeeking){app.Assistant.StopSession();CloseAssistant();}else if(commandOpen)CloseCommands();else Collapse();e.Handled=true;}};
         PreviewMouseDown+=(_,e)=>{if(mediaControls?.IsOpen==true && !mediaControls.ContainsControl(e.OriginalSource as DependencyObject))mediaControls.Close(false);};
         Closing+=(_,e)=> {if(!app.Quitting){e.Cancel=true;SetVisibility(false);}};
-        Deactivated+=(_,_)=> {if((expanded || peeking) && !DiagnosticRun && audioMenu?.IsOpen!=true && !MinimalWidgets.MenuOpen(this))DismissMediaOrCollapse();};
+        Deactivated+=(_,_)=> {if((expanded || peeking) && !DiagnosticRun && audioMenu?.IsOpen!=true && !MinimalWidgets.MenuOpen(this) && !LyricsSourcesControl.MenuOpen)DismissMediaOrCollapse();};
         app.SettingsChanged+=ApplySettings;app.Updated+=Update;Microsoft.Win32.SystemEvents.DisplaySettingsChanged+=DisplayChanged;
         volume.ValueChanged+=(_,_)=> {if(!updating){app.Audio.SetVolume(volume.Value/100);volumeText.Text=$"{volume.Value:0}%";mediaControls?.Refresh(volume.Value,app.Audio.Muted,app.Audio.Available,false);}};
         sessions.SelectionChanged+=(_,_)=> {if(!updating && sessions.SelectedIndex>=0 && sessions.SelectedIndex<app.Media.Sessions.Count)app.Media.Select(app.Media.Sessions[sessions.SelectedIndex]);};
@@ -195,7 +195,7 @@ public sealed partial class OverlayWindow : Window
         ConfigurePerformance();motion.Go(surface,IslandSurface.SurfaceWidthProperty,expandedWidth,app.Settings.AnimationMs);motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,app.Settings.AnimationMs);motion.OnComplete(()=>{});
         motion.Go(surface,IslandSurface.GlassLiftProperty,1,app.Settings.AnimationMs);WakeLiveRendering();
         Motion.Fade(scroll,1,Math.Min(260,app.Settings.AnimationMs));Motion.To(bodySlide,TranslateTransform.YProperty,0,320);
-        if(activate){Activate();if(app.Settings.CompactLayout && compactTabs.TryGetValue(activePage,out var focusTab))focusTab.Focus();else scroll.Focus();}outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,DismissMediaOrCollapse,p=>VisiblePoint(p) || sessions.IsDropDownOpen || audioMenu?.IsOpen==true || MinimalWidgets.MenuOpen(this),WakeLiveRendering,()=>!liveRendering && app.Settings.GlassStyle && app.Settings.LiveActivity && Motion.Enabled);Update();
+        if(activate){Activate();if(app.Settings.CompactLayout && compactTabs.TryGetValue(activePage,out var focusTab))focusTab.Focus();else scroll.Focus();}outside?.Dispose();outside=DiagnosticRun?null:new OutsideClick(this,DismissMediaOrCollapse,p=>VisiblePoint(p) || sessions.IsDropDownOpen || audioMenu?.IsOpen==true || MinimalWidgets.MenuOpen(this) || LyricsSourcesControl.MenuOpen,WakeLiveRendering,()=>!liveRendering && app.Settings.GlassStyle && app.Settings.LiveActivity && Motion.Enabled);Update();
     }
     public void Collapse()
     {

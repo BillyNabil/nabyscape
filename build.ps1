@@ -35,7 +35,7 @@ Copy-Item -LiteralPath $executable -Destination (Join-Path $outputPath "NabyScap
 # Retain the local build alias; official release assets always use the RID-qualified name.
 Copy-Item -LiteralPath $executable -Destination (Join-Path $outputPath 'NabyScape-Setup.exe') -Force
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'LICENSE') -Destination (Join-Path $outputPath 'LICENSE') -Force
-foreach ($notice in @('LUCIDE-LICENSE.txt', 'NAudio-LICENSE.txt', 'System.Speech-LICENSE.txt', 'DOTNET-LICENSE.txt', 'DOTNET-ThirdPartyNotices.txt')) {
+foreach ($notice in @('LUCIDE-LICENSE.txt', 'NAudio-LICENSE.txt', 'System.Speech-LICENSE.txt', 'DOTNET-LICENSE.txt', 'DOTNET-ThirdPartyNotices.txt','ROMAJI-ThirdPartyNotices.txt','LYRICS-LANGUAGE-LICENSE.txt')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "licenses\$notice") -Destination (Join-Path $outputPath $notice) -Force
 }
 if (!$SkipTests -and $canExecute) {

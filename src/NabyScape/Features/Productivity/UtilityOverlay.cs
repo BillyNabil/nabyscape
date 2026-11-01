@@ -54,7 +54,7 @@ public sealed partial class OverlayWindow
     private string toolsMode="home";
     private string taskDraft="";
     private bool utilityMutating;
-    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("weather","Weather") };
+    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("weather","Weather"),("power","Power plan") };
     private bool ToolOn(string id)=>app.Settings.ToolEnabled(id) || app.Settings.HoverViews.Any(view=>view.Id==id && view.Enabled && HoverPagePolicy.Available(app.Settings,id));
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private ContextMenu? audioMenu;
@@ -100,6 +100,7 @@ public sealed partial class OverlayWindow
             "notes" or "tasks"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
             "clips"=>"M9,5 L5,5 5,21 19,21 19,5 15,5 M9,3 L15,3 15,7 9,7 Z",
             "calendar"=>"M3,6 L21,6 21,21 3,21 Z M3,11 L21,11 M8,3 L8,8 M16,3 L16,8 M8,15 L10,15 M14,15 L16,15",
+            "power"=>"M12,2 L12,12 M6,5 A9,9 0 1 0 18,5",
             "awake"=>"M4,8 L17,8 17,16 Q17,20 13,20 L8,20 Q4,20 4,16 Z M17,9 L20,9 Q24,13 17,15 M8,3 L8,5 M13,2 L13,5",
             _=>"M10,14 L14,10 M9,16 L7,18 A4,4 0 0 1 2,12 L7,7 A4,4 0 0 1 13,8 M11,16 A4,4 0 0 0 17,17 L22,12 A4,4 0 0 0 17,6 L15,8"};
         return new System.Windows.Shapes.Path{Data=Geometry.Parse(data),Stroke=UI.Brush("#C6C8CE"),StrokeThickness=1.5,StrokeStartLineCap=PenLineCap.Round,StrokeEndLineCap=PenLineCap.Round,StrokeLineJoin=PenLineJoin.Round,Width=20,Height=20,Stretch=Stretch.Uniform};
@@ -155,6 +156,7 @@ public sealed partial class OverlayWindow
         {
             BuildNotes();
         }
+        else if(toolsMode=="power")toolsContent.Children.Add(new PowerPlanView());
         else if(toolsMode=="weather")toolsContent.Children.Add(BuildWeatherPage());
         else if(toolsMode=="calendar")BuildCalendar(toolsContent);
         else if(toolsMode=="awake")BuildAwake(toolsContent);

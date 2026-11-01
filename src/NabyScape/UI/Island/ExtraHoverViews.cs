@@ -33,6 +33,7 @@ public sealed partial class OverlayWindow
             "volume"=>app.Audio.Available?$"{app.Audio.Volume*100:0}% · {(app.Audio.Muted?"Muted":"Output volume")}":"No output device",
             "battery"=>System.Windows.Forms.SystemInformation.PowerStatus.BatteryChargeStatus.HasFlag(System.Windows.Forms.BatteryChargeStatus.NoSystemBattery)?"Connected to power":$"{System.Windows.Forms.SystemInformation.PowerStatus.BatteryLifePercent*100:0}% battery",
             "shortcuts"=>"Your favorite apps, one click away",
+            "power"=>"Open to choose a Windows power plan",
             "awake"=>"Keep your computer awake while you work",
             "links"=>"Remove tracking parameters from a link",
             "voice"=>app.Assistant.VoiceConnected?"Voice session active":"A dedicated space to talk with Naby",

@@ -25,14 +25,16 @@ internal sealed class LyricsView : Grid
     internal void SetFixture(LyricResult result,double seconds,double duration){fixture=(result,seconds,duration);tick.Stop();Paint();}
     internal LyricsView(App app)
     {
-        this.app=app;Height=130;Margin=new(0,6,0,12);ClipToBounds=true;
+        this.app=app;Height=158;Margin=new(0,6,0,12);ClipToBounds=true;
         for(int i=0;i<4;i++)RowDefinitions.Add(new(){Height=i==1?new GridLength(1,GridUnitType.Star):GridLength.Auto});
         previous.TextTrimming=next.TextTrimming=TextTrimming.CharacterEllipsis;previous.TextWrapping=next.TextWrapping=TextWrapping.NoWrap;previous.Opacity=.4;next.Opacity=.6;previous.Margin=new(0,0,0,5);next.Margin=new(0,5,0,8);
         foreach(var text in new[]{current,highlight}){text.FontWeight=FontWeights.SemiBold;text.VerticalAlignment=VerticalAlignment.Center;text.MaxHeight=52;text.TextTrimming=TextTrimming.CharacterEllipsis;}
         highlight.IsHitTestVisible=false;highlight.Clip=sweep;line.Children.Add(current);line.Children.Add(highlight);
-        Children.Add(previous);SetRow(line,1);Children.Add(line);SetRow(next,2);Children.Add(next);
-        var footer=new DockPanel();retry=UI.Button("Retry lyrics",()=>{app.Lyrics.Retry();Refresh();});retry.Content="Retry";retry.MinHeight=22;retry.FontSize=9;retry.Padding=new(4,0,4,0);retry.Margin=new(6,0,0,0);retry.Background=Brushes.Transparent;DockPanel.SetDock(retry,Dock.Right);footer.Children.Add(retry);
-        var local=UI.Button("Load local timed lyrics",()=>{credit.Text=LyricsFiles.Import(app,Window.GetWindow(this));});local.Content="Local LRC…";local.MinHeight=22;local.FontSize=9;local.Padding=new(4,0,4,0);local.Margin=new(6,0,0,0);local.Background=Brushes.Transparent;DockPanel.SetDock(local,Dock.Right);footer.Children.Add(local);footer.Children.Add(credit);SetRow(footer,3);Children.Add(footer);
+        Children.Add(previous);SetRow(line,1);var lineScroll=new ScrollViewer{Content=line,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};SetRow(lineScroll,1);Children.Add(lineScroll);SetRow(next,2);Children.Add(next);
+        var footer=new StackPanel();
+        retry=UI.Button("Retry lyrics",()=>{app.Lyrics.Retry();Refresh();});
+        var sources=new LyricsSourcesControl(app,()=>{app.Lyrics.Retry();Refresh();},()=>{credit.Text=LyricsFiles.Import(app,Window.GetWindow(this));});
+        credit.FontSize=11;credit.TextWrapping=TextWrapping.Wrap;credit.Margin=new(0,7,0,0);footer.Children.Add(sources);footer.Children.Add(credit);SetRow(footer,3);Children.Add(footer);
         Loaded+=(_,_)=>Attach();Unloaded+=(_,_)=>Detach();IsVisibleChanged+=(_,_)=>{if(IsVisible)Attach();else Detach();};
         tick.Tick+=(_,_)=>Paint();
     }
@@ -50,7 +52,7 @@ internal sealed class LyricsView : Grid
     {
         if(!attached)return;if(!ElementVisibility.InViewport(this)){tick.Stop();if(fixture==null)app.Lyrics.Release(this);return;}
         if(fixture!=null){Paint();return;}
-        app.Lyrics.Acquire(this);_=app.Lyrics.Load(app.Media.Title,app.Media.Artist,app.Media.Timeline().duration,app.Settings.LyricsEnabled,LyricTiming.CanUse(app.Media));
+        app.Lyrics.SetTextMode(app.Settings.LyricsTextMode);app.Lyrics.Acquire(this);_=app.Lyrics.Load(app.Media.Title,app.Media.Artist,app.Media.Timeline().duration,app.Settings.LyricsEnabled,LyricTiming.CanUse(app.Media),app.Media.Selected?.SourceAppUserModelId);
         Paint();if(app.Media.Playing && app.Settings.LyricsEnabled && LyricTiming.CanUse(app.Media))tick.Start();else tick.Stop();
     }
     private void Paint()
@@ -60,7 +62,7 @@ internal sealed class LyricsView : Grid
         credit.Text=result.Status;retry.Visibility=lines.Length==0 && !result.Status.StartsWith("Finding")?Visibility.Visible:Visibility.Collapsed;
         if(change)
         {
-            previous.Text=now>0?lines[now-1].Text:"";current.Text=highlight.Text=now>=0?lines[now].Text:lines.Length>0?"♪":"Lyrics";next.Text=now+1<lines.Length?lines[now+1].Text:"";
+            previous.Text=now>0?lines[now-1].Text:"";current.MaxHeight=lines.Length==0 && result.Plain.Length>0?double.PositiveInfinity:52;current.Text=highlight.Text=result.Plain.Length>0?result.Plain:now>=0?lines[now].Text:lines.Length>0?"♪":"No lyrics yet";next.Text=now+1<lines.Length?lines[now+1].Text:"";
             current.Foreground=style=="Karaoke"?UI.Muted:Brushes.White;highlight.Visibility=style=="Karaoke" && now>=0?Visibility.Visible:Visibility.Collapsed;
             if(Motion.Enabled && !app.Settings.ReduceMotion)
             {

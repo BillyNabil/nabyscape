@@ -16,6 +16,15 @@ internal static class MediaExperienceTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
         {Requests++;LastUri=request.RequestUri;return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("{\"syncedLyrics\":\"[00:01.00]Original fixture line\\n[00:03.00]Another sample line\",\"instrumental\":false}")});}
     }
+    private sealed class SearchFake : HttpMessageHandler
+    {
+        internal Uri? Requested;
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken token)
+        {
+            Requested=request.RequestUri;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("[{\"trackName\":\"Fixture\",\"artistName\":\"Artist\",\"albumName\":\"Album\",\"duration\":120,\"syncedLyrics\":\"[00:01]Vocal\"},{\"trackName\":\"Plain only\",\"syncedLyrics\":null}]")});
+        }
+    }
     private sealed class Delayed : HttpMessageHandler
     {
         internal readonly TaskCompletionSource<HttpResponseMessage> First=new(TaskCreationOptions.RunContinuationsAsynchronously);private int count;
@@ -23,6 +32,32 @@ internal static class MediaExperienceTests
     }
     internal static void Run(Action<string,Action> test)
     {
+        LyricsProviderTests.Run(test);
+        LyricsAutomaticTests.Run(test);
+        LyricsRomajiTests.Run(test);
+        test("Provider TTML converts real timestamps without invented word timing or external entities",()=>
+        {
+            var lrc=TimedLyricsDocument.ToLrc("<tt xmlns='http://www.w3.org/ns/ttml'><body><p begin='00:01.25' end='3s'>Original <span>fixture</span></p><p begin='00:05.0'>Second</p></body></tt>");
+            var lines=LyricTiming.Parse(lrc);Assert(lines.Length==3 && lines[0].At==1.25 && lines[0].Text=="Original fixture" && lines[1].Text=="" && lines[2].At==5);
+            Assert(LyricTiming.Parse(TimedLyricsDocument.ToLrc("<tt><p begin='1500ms'>Fixture</p><p begin='59.999s'>Boundary</p></tt>"))[0].At==1.5);
+            Assert(LyricTiming.Parse(TimedLyricsDocument.ToLrc("<tt><p begin='59.999s'>Boundary</p></tt>"))[0].At==60);
+            Assert(LyricTiming.Parse(TimedLyricsDocument.ToLrc("<tt><p begin='1s'><span>First</span> <span>second</span></p></tt>"))[0].Text=="First second");
+            bool rejected=false;try{TimedLyricsDocument.ToLrc("<!DOCTYPE tt [<!ENTITY secret SYSTEM 'file:///secret'>]><tt><p begin='1s'>&secret;</p></tt>");}catch(System.Xml.XmlException){rejected=true;}Assert(rejected);
+        });
+        test("Power plans parse localized names and mark only the Windows active scheme",()=>
+        {
+            var plans=PowerPlanView.Parse("Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *\nPower Scheme GUID: a1841308-3541-4fab-bc81-f71556f20b4a  (Economy (OEM))");
+            Assert(plans.Length==2 && plans[0].Active && !plans[1].Active && plans[1].Name=="Economy (OEM)" && PowerPlanView.Parse("Unavailable").Length==0);
+        });
+        test("Lyrics search returns selectable timed versions and validates custom destinations",()=>Task.Run(async()=>
+        {
+            var fake=new SearchFake();using var service=new LyricsService(fake);
+            var choices=await service.Search("A & B","Artist",CancellationToken.None);
+            Assert(choices.Length==1 && choices[0].Title=="Fixture" && fake.Requested!.Host=="lrclib.net" && fake.Requested.Query.Contains("%26"));
+            await service.Search("Fixture","Artist",CancellationToken.None,new Uri("https://example.com/lyrics/"));Assert(fake.Requested!.AbsolutePath=="/lyrics/api/search");
+            bool refused=false;try{await service.Search("T","A",CancellationToken.None,new Uri("http://example.com/"));}catch(System.IO.InvalidDataException){refused=true;}Assert(refused);
+            service.Import("T","A",120,choices[0].Lrc,"Selected lyrics · fixture");Assert(service.Result.Status=="Selected lyrics · fixture" && service.Result.Lines.Length==1);
+        }).GetAwaiter().GetResult());
         test("None survives session enumeration and external current-source changes until explicitly reselected",()=>
         {
             var selection=new MediaSourceSelection();var sessions=new[]{"Spotify.exe","chrome.exe"};
@@ -72,16 +107,16 @@ internal static class MediaExperienceTests
         });
         test("Lyrics require consent and usable metadata, and cache without repeated requests",()=>Task.Run(async()=>
         {
-            var fake=new Fake();using var service=new LyricsService(fake);await service.Load("Sample title","Sample artist",180,false,true);await service.Load("Sample title","Sample artist",180,true,false);Assert(fake.Requests==0);
+            var fake=new Fake();using var service=new LyricsService(fake){SelectedSource="LRCLIB"};await service.Load("Sample title","Sample artist",180,false,true);await service.Load("Sample title","Sample artist",180,true,false);Assert(fake.Requests==0);
             await service.Load("Sample title","Sample artist",180,true,true);await service.Load("Sample title","Sample artist",180,true,true);Assert(fake.Requests==1 && service.Result.Lines.Length==2 && fake.LastUri!.Host=="lrclib.net" && !fake.LastUri.Query.Contains("key"));
             service.Retry();await service.Load("Sample title","Sample artist",180,true,true);Assert(fake.Requests==2);
             service.Import("Sample title","Sample artist",180,"[00:01.0]Original offline sample");await service.Load("Sample title","Sample artist",180,true,true);Assert(fake.Requests==2 && service.Result.Lines[0].Text=="Original offline sample");
         }).GetAwaiter().GetResult());
         test("Shared lyric consumers retain a result until the last view releases it",()=>Task.Run(async()=>
         {
-            var fake=new Fake();using var service=new LyricsService(fake);var dock=new object();var panel=new object();service.Acquire(dock);service.Acquire(panel);
+            var fake=new Fake();using var service=new LyricsService(fake){SelectedSource="LRCLIB"};var dock=new object();var panel=new object();service.Acquire(dock);service.Acquire(panel);
             await service.Load("Track","Artist",180,true,true);service.Release(dock);Assert(service.Result.Lines.Length==2);
-            service.Release(panel);Assert(service.Result.Lines.Length==0);service.Acquire(dock);await service.Load("Track","Artist",180,true,true);Assert(fake.Requests==2);
+            service.Release(panel);Assert(service.Result.Lines.Length==0);service.Acquire(dock);await service.Load("Track","Artist",180,true,true);Assert(fake.Requests==1);
         }).GetAwaiter().GetResult());
         test("All closed dock modes and optional icon survive normalization",()=>
         {foreach(string mode in new[]{"Title","Waveform","Lyrics","None"}){var s=new Settings{ClosedMediaContent=mode,ClosedMediaIcon="None"};s.Normalize();Assert(s.ClosedMediaContent==mode && s.ClosedMediaIcon=="None" && s.MediaIntegrationEnabled);}});
@@ -92,7 +127,7 @@ internal static class MediaExperienceTests
         });
         test("Cancelled lyric replies cannot overwrite a new track or hide an offline state",()=>Task.Run(async()=>
         {
-            var delayed=new Delayed();using var service=new LyricsService(delayed);var old=service.Load("Old sample","Fixture",180,true,true);await service.Load("New sample","Fixture",180,true,true);Assert(service.Result.Status.Contains("unavailable",StringComparison.OrdinalIgnoreCase));
+            var delayed=new Delayed();using var service=new LyricsService(delayed){SelectedSource="LRCLIB"};var old=service.Load("Old sample","Fixture",180,true,true);await service.Load("New sample","Fixture",180,true,true);Assert(service.Result.Status.Contains("unavailable",StringComparison.OrdinalIgnoreCase));
             delayed.First.SetResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent("{\"syncedLyrics\":\"[00:01.0]Old sample line\"}")});await old;Assert(service.Result.Lines.Length==0 && service.Result.Status.Contains("unavailable",StringComparison.OrdinalIgnoreCase));
         }).GetAwaiter().GetResult());
         test("Dock visible edges can reach monitor sides despite its larger transparent host",()=>
