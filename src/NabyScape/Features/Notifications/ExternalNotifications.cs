@@ -101,7 +101,16 @@ internal sealed class ExternalNotificationWatcher : IDisposable
 internal static class ExternalAppIcons
 {
     private static readonly Dictionary<string,ImageSource?> cache=new(StringComparer.OrdinalIgnoreCase);
+    private static readonly HashSet<string> fullBleed=new(StringComparer.OrdinalIgnoreCase);
     internal static ImageSource? Get(string? appId){if(string.IsNullOrEmpty(appId))return null;lock(cache)return cache.TryGetValue(appId,out var image)?image:null;}
+    internal static bool FullBleed(string? appId){if(string.IsNullOrEmpty(appId))return false;lock(cache)return fullBleed.Contains(appId);}
+    // Opaque corners mean the logo already has its own background plate.
+    internal static bool OpaqueCorner(BitmapSource bitmap)
+    {
+        var converted=new FormatConvertedBitmap(bitmap,PixelFormats.Bgra32,null,0);var pixel=new byte[4];
+        int x=Math.Min(2,converted.PixelWidth-1),y=Math.Min(2,converted.PixelHeight-1);converted.CopyPixels(new System.Windows.Int32Rect(x,y,1,1),pixel,4,0);
+        return pixel[3]>200;
+    }
     internal static async Task LoadAsync(UserNotification item)
     {
         string appId;try{appId=item.AppInfo?.AppUserModelId??"";}catch{return;}
@@ -109,10 +118,11 @@ internal static class ExternalAppIcons
         ImageSource? image=null;
         try
         {
-            var logo=item.AppInfo!.DisplayInfo.GetLogo(new Windows.Foundation.Size(48,48));
+            var logo=item.AppInfo!.DisplayInfo.GetLogo(new Windows.Foundation.Size(96,96));
             using var stream=await logo.OpenReadAsync();
             using var source=stream.AsStreamForRead();var copy=new MemoryStream();await source.CopyToAsync(copy);copy.Position=0;
-            var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.DecodePixelWidth=48;bitmap.StreamSource=copy;bitmap.EndInit();bitmap.Freeze();image=bitmap;
+            var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.DecodePixelWidth=96;bitmap.StreamSource=copy;bitmap.EndInit();bitmap.Freeze();image=bitmap;
+            if(OpaqueCorner(bitmap))lock(cache)fullBleed.Add(appId);
         }
         catch{/* Fall back to the bell glyph. */}
         lock(cache)cache[appId]=image;

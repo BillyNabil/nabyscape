@@ -37,6 +37,7 @@
   "ExternalNotifications": false,
   "ExternalNotificationPopup": true,
   "ExternalNotificationText": true,
+  "ExternalNotificationQuietHours": false,
   "ExternalNotificationMuted": [],
   "DownloadsEnabled": true,
   "Preset": "Mac",

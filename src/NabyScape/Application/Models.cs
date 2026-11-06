@@ -30,6 +30,7 @@ public sealed partial class Settings
     public bool ExternalNotifications {get;set;}
     public bool ExternalNotificationPopup {get;set;}=true;
     public bool ExternalNotificationText {get;set;}=true;
+    public bool ExternalNotificationQuietHours {get;set;}
     public List<string> ExternalNotificationMuted {get;set;}=new();
     public bool DownloadsEnabled {get;set;}
     public string DownloadsFolder {get;set;}="";

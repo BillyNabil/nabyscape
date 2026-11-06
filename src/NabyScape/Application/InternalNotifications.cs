@@ -39,6 +39,7 @@ internal sealed class InternalNotifications
         if(history.Count>HistoryLimit)history.RemoveRange(HistoryLimit,history.Count-HistoryLimit);
     }
     internal int Count=>queue.Count;
+    internal bool CurrentDisplayed=>queue.Count>0 && queue[0].Displayed;
     internal InternalNotice? Current=>queue.FirstOrDefault().Notice;
     internal void MarkDisplayed()
     {
@@ -47,12 +48,14 @@ internal sealed class InternalNotifications
     }
     internal event Action? Changed;
     private void Publish(){try{Changed?.Invoke();}catch{/* Never notify about notification-delivery failures. */}}
-    internal static bool Enabled(Settings s,string kind)=>kind switch{"external"=>s.ExternalNotifications,"timer"=>s.NotifyTimer,"focus"=>s.NotifyFocus,"downloads"=>s.NotifyDownloads,"updates"=>s.NotifyUpdates,_=>s.NotifyFailures};
+    internal static bool Enabled(Settings s,string kind)=>kind switch{"test"=>true,"external"=>s.ExternalNotifications,"timer"=>s.NotifyTimer,"focus"=>s.NotifyFocus,"downloads"=>s.NotifyDownloads,"updates"=>s.NotifyUpdates,_=>s.NotifyFailures};
     internal static (bool Notch,bool Windows) Route(string mode,bool hidden)=>mode switch{"Windows"=>(false,true),"Both"=>(!hidden,true),"Off"=>(false,false),_=>(!hidden,hidden)};
     internal void Post(Settings settings,InternalNotice notice,bool hidden,Action<InternalNotice> windows,DateTimeOffset now)
     {
         if(!Enabled(settings,notice.Kind))return;
-        if(NotificationPolicy.Quiet(settings,now)){if(notice.Kind!="preview"){Record(notice,now,false);Publish();}return;}
+        // A test the person asked for always shows, even in quiet hours.
+        bool quietAllowed=notice.Kind=="test" || notice.Kind=="external" && settings.ExternalNotificationQuietHours;
+        if(NotificationPolicy.Quiet(settings,now) && !quietAllowed){if(notice.Kind!="preview"){Record(notice,now,false);Publish();}return;}
         // Watcher iterations can deliver up to 128 arrivals. Bound each payload before
         // either delivery route, so every original remains accessible after dismissal.
         if(notice.Kind=="downloads" && notice.Files is {Length:>40} arrivals)
@@ -64,6 +67,7 @@ internal sealed class InternalNotifications
         var route=Route(settings.NotificationDelivery,hidden);
         // Mirrored alerts already appeared in Windows: never send them back, and pop up only on request.
         if(notice.Kind=="external")route=(route.Notch && settings.ExternalNotificationPopup && !hidden,false);
+        if(notice.Kind=="test")route=(!hidden,hidden);
         if(notice.Kind!="preview")Record(notice,now,false);
         if(route.Windows)try{windows(notice);}catch{/* Do not recurse on delivery failures. */}
         if(!route.Notch){Publish();return;}
@@ -78,6 +82,7 @@ internal sealed class InternalNotifications
     }
     internal void Tick(DateTimeOffset now,bool busy,double seconds=12)
     {if(busy){if(queue.Count>0)queue[0]=(queue[0].Notice,now,queue[0].Displayed);return;}if(queue.Count>0 && now-queue[0].At>TimeSpan.FromSeconds(seconds)){queue.RemoveAt(0);Publish();}}
-    internal void Dismiss(){if(queue.Count>0){queue.RemoveAt(0);Publish();}}
+    // The next alert gets its full lifetime from the moment it reaches the front, not from arrival.
+    internal void Dismiss(){if(queue.Count>0){queue.RemoveAt(0);if(queue.Count>0)queue[0]=(queue[0].Notice,DateTimeOffset.UtcNow,queue[0].Displayed);Publish();}}
     internal void Clear(){queue.Clear();Publish();}
 }

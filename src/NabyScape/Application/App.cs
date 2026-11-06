@@ -43,6 +43,11 @@ public sealed partial class App : Application
         });
     }
     internal void OpenNotifications()=>overlay?.OpenNotificationCenter();
+    // Shows exactly how an alert appears on the dock and in the notification center.
+    internal void SendTestNotification()
+    {
+        Notifications.Post(Settings,new("test",Localization.Text("Test notification"),Localization.Text("This is how alerts appear on your dock. Click it, or let it fold away on its own."),null,"NabyScape"),overlay?.ManuallyHidden==true,n=>tray?.ShowBalloonTip(4500,n.Title,n.Detail,Forms.ToolTipIcon.Info),DateTimeOffset.UtcNow);
+    }
     private void ConfigureDownloads()
     {
         if(diagnosticMode)return;
@@ -134,6 +139,7 @@ public sealed partial class App : Application
         menu.Items.Add(Localization.Text("Open island"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.Reveal()));
         menu.Items.Add(Localization.Text("Command bar"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ShowCommands()));
         menu.Items.Add(Localization.Text("Notifications"),null,(_,_)=>Dispatcher.Invoke(OpenNotifications));
+        menu.Items.Add(Localization.Text("Send test notification"),null,(_,_)=>Dispatcher.Invoke(SendTestNotification));
         menu.Items.Add(Localization.Text("Settings"),null,(_,_)=>Dispatcher.Invoke(ShowSettings));
         menu.Items.Add(Localization.Text("Move & resize island"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleDockEditing()));
         menu.Items.Add(Localization.Text("AI companion"),null,(_,_)=>Dispatcher.Invoke(ShowAssistant));
@@ -165,7 +171,7 @@ public sealed partial class App : Application
         tick=new DispatcherTimer{Interval=TimeSpan.FromSeconds(1)};
         tick.Tick+=(_,_)=>
         {
-            CheckCountdowns();if(NotificationPolicy.Quiet(Settings,DateTimeOffset.UtcNow) && Notifications.Count>0 && Notifications.Current?.Kind!="preview")Notifications.Clear();else Notifications.Tick(DateTimeOffset.UtcNow,overlay.NotificationBusy,Settings.NotificationSeconds);
+            CheckCountdowns();if(NotificationPolicy.Quiet(Settings,DateTimeOffset.UtcNow) && Notifications.Count>0 && Notifications.Current?.Kind!="preview" && !(Notifications.Current?.Kind=="external" && Settings.ExternalNotificationQuietHours))Notifications.Clear();else Notifications.Tick(DateTimeOffset.UtcNow,overlay.NotificationBusy,Settings.NotificationSeconds);
             try{Awake.Tick(DateTimeOffset.UtcNow);}catch(Exception ex){Store.Log(ex);Notify("Could not update keep awake",ex.Message);}
             var changed=RuntimeChange.Clock;
             if(Session.Timer.Running || Session.Focus.Running || Session.Stopwatch.Running)changed|=RuntimeChange.Countdown;

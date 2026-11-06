@@ -30,6 +30,7 @@ public sealed partial class OverlayWindow
     private TextBlock? centerSummary;
     private Button? centerClear;
     private ScrollViewer? centerViewport;
+    private Grid? centerFrame;
     private HashSet<NoticeEntry> centerUnseen=new();
     private readonly List<WeakReference<FrameworkElement>> bellBadges=new();
     internal bool NotificationCenterOpen=>centerShowing && noticeShowing;
@@ -40,29 +41,35 @@ public sealed partial class OverlayWindow
         if(expanded)Collapse();
         if(fileDragActive || dockEditing)return;
         if(noticeCard!=null)visuals.Children.Remove(noticeCard);
-        StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;centerShowing=true;peekPanel.Visibility=Visibility.Collapsed;SyncAssistantVisibility();
+        StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;centerShowing=true;RefreshNoticeEdge();peekPanel.Visibility=Visibility.Collapsed;SyncAssistantVisibility();
         centerUnseen=app.Notifications.History.Where(e=>!e.Read).ToHashSet();
-        var content=new StackPanel();
+        // Header and actions stay put; only the list scrolls.
+        var content=new Grid();for(int row=0;row<4;row++)content.RowDefinitions.Add(new(){Height=row==2?new GridLength(1,GridUnitType.Star):GridLength.Auto});
         var header=new DockPanel{Margin=new(0,0,0,4)};
         centerClear=UI.CaptionButton("Clear all",()=>app.Notifications.ClearHistory());centerClear.FontSize=11;centerClear.MinHeight=28;centerClear.Padding=new(10,3,10,3);centerClear.VerticalAlignment=VerticalAlignment.Center;DockPanel.SetDock(centerClear,Dock.Right);header.Children.Add(centerClear);
-        var badge=new Border{Width=30,Height=30,CornerRadius=new(10),Background=UI.Brush("#19FFFFFF"),Margin=new(0,0,10,0),Child=Icons.Create("bell",15)};header.Children.Add(badge);
+        var badge=new Border{Width=30,Height=30,CornerRadius=new(15),Background=UI.Brush("#19FFFFFF"),Margin=new(0,0,10,0),Child=Icons.Create("bell",15)};header.Children.Add(badge);
         var heading=UI.Heading(Localization.Text("Notifications"),17);heading.FontWeight=FontWeights.SemiBold;heading.VerticalAlignment=VerticalAlignment.Center;header.Children.Add(heading);
         content.Children.Add(header);
-        centerSummary=UI.Text("",11,UI.Muted);centerSummary.Margin=new(40,0,0,12);content.Children.Add(centerSummary);
-        centerList=new StackPanel();content.Children.Add(centerList);
+        centerSummary=UI.Text("",11,UI.Muted);centerSummary.Margin=new(40,0,0,12);Grid.SetRow(centerSummary,1);content.Children.Add(centerSummary);
+        centerList=new StackPanel();
         var footer=new WrapPanel{Margin=new(0,8,0,0)};
-        foreach(var action in new[]{UI.CaptionButton("Notification settings",()=>{Collapse();app.ShowSettings("Notifications");}),UI.CaptionButton("Close",Collapse)})
+        foreach(var action in new[]{UI.CaptionButton("Send test",()=>{Collapse();app.SendTestNotification();}),UI.CaptionButton("Notification settings",()=>{Collapse();app.ShowSettings("Notifications");}),UI.CaptionButton("Close",Collapse)})
         {action.FontSize=11;action.MinHeight=30;action.Padding=new(10,4,10,4);action.Margin=new(0,0,6,0);footer.Children.Add(action);}
-        content.Children.Add(footer);
+        Grid.SetRow(footer,3);content.Children.Add(footer);
         var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);
-        double width=Math.Min(Math.Clamp(app.Settings.HoverWidth,340,400),Math.Max(220,screen.WorkingArea.Width/scale-24));
-        centerViewport=new ScrollViewer{Content=content,MaxHeight=Math.Max(140,Math.Min(440,screen.WorkingArea.Height/scale-48)),VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
-        UI.LocalizedName(centerViewport,"Notification center");
-        noticeCard=new(){Child=centerViewport,Width=width-(surface.Notch?64:32),Margin=new(0,16,0,0),VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Center};
+        // Panel width and Maximum panel height from Position & size; the host window is sized to them.
+        Dimensions();if(Width<WindowHostWidth)Width=WindowHostWidth;if(Height<HostHeight)Height=HostHeight;
+        double width=Math.Clamp(app.Settings.PanelWidth,300,Math.Max(300,WindowHostWidth));
+        centerViewport=new ScrollViewer{Content=centerList,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
+        UI.LocalizedName(centerViewport,"Notification center");Grid.SetRow(centerViewport,2);content.Children.Add(centerViewport);
+        content.MaxHeight=Math.Max(160,HostHeight-40);centerFrame=content;
+        noticeCard=new(){Child=content,Width=width-(surface.Notch?64:32),Margin=new(0,16,0,0),VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Center};
         visuals.Children.Add(noticeCard);compact.IsHitTestVisible=false;compact.Opacity=0;Show();Dimensions();
         FillNotificationCenter();
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,width,app.Settings.AnimationMs);
         ResizeNotificationCenter();
+        // Text wrapping settles after the first layout pass; size again once it has.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,new Action(()=>{if(NotificationCenterOpen)ResizeNotificationCenter();}));
         ControlFeedback.Notice(noticeCard,app.Settings.NotificationAnimation);
         // Opening from the tray or a shortcut: take focus so Esc and clicking elsewhere close it.
         if(!DiagnosticRun)Activate();
@@ -70,9 +77,9 @@ public sealed partial class OverlayWindow
     }
     private void ResizeNotificationCenter()
     {
-        if(centerViewport==null || noticeCard==null)return;
-        centerViewport.Measure(new Size(noticeCard.Width,double.PositiveInfinity));
-        motion.Go(surface,IslandSurface.SurfaceHeightProperty,Math.Min(centerViewport.MaxHeight,centerViewport.DesiredSize.Height)+32,app.Settings.AnimationMs);
+        if(centerFrame==null || noticeCard==null)return;
+        centerFrame.InvalidateMeasure();centerFrame.Measure(new Size(noticeCard.Width,double.PositiveInfinity));
+        motion.Go(surface,IslandSurface.SurfaceHeightProperty,Math.Min(centerFrame.MaxHeight,centerFrame.DesiredSize.Height)+36,app.Settings.AnimationMs);
     }
     private void RefreshNotificationCenter(){if(!NotificationCenterOpen)return;FillNotificationCenter();ResizeNotificationCenter();}
     private void FillNotificationCenter()
@@ -93,31 +100,40 @@ public sealed partial class OverlayWindow
         var now=DateTimeOffset.UtcNow;
         foreach(var entry in history)centerList.Children.Add(NotificationRow(entry,centerUnseen.Contains(entry),now));
     }
+    // One alert: sender and time on top, title, two lines of text. The whole row opens the
+    // sender (or its folder / update page); the remove button appears on hover.
     private Border NotificationRow(NoticeEntry entry,bool fresh,DateTimeOffset now)
     {
         var notice=entry.Notice;
-        var grid=new Grid();grid.ColumnDefinitions.Add(new(){Width=new GridLength(38)});grid.ColumnDefinitions.Add(new());grid.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
-        var icon=new Grid{Width=28,Height=28,VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Left};
-        icon.Children.Add(new Border{CornerRadius=new(9),Background=UI.Brush("#19FFFFFF"),Child=OverlayWindow.NoticeGlyph(notice,13)});
-        if(fresh)icon.Children.Add(new Border{Width=8,Height=8,CornerRadius=new(4),Background=UI.Brush(app.Settings.Accent),BorderBrush=UI.Brush("#101114"),BorderThickness=new(1.5),HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Margin=new(0,-2,-2,0)});
+        var grid=new Grid();grid.ColumnDefinitions.Add(new(){Width=GridLength.Auto});grid.ColumnDefinitions.Add(new());grid.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
+        var icon=NoticeAvatar.Create(notice,38);icon.Margin=new(0,0,12,0);
         grid.Children.Add(icon);
         var text=new StackPanel();Grid.SetColumn(text,1);
-        var title=UI.Text(notice.Title,13);title.FontWeight=fresh?FontWeights.SemiBold:FontWeights.Normal;title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;text.Children.Add(title);
-        if(notice.Detail.Length>0){var detail=UI.Text(notice.Detail,11,UI.Muted);detail.MaxHeight=30;detail.TextTrimming=TextTrimming.CharacterEllipsis;detail.Margin=new(0,2,0,0);detail.ToolTip=notice.Detail;text.Children.Add(detail);}
-        var meta=UI.Text(NotificationCenterText.Kind(notice)+" · "+NotificationCenterText.Ago(now,entry.At),10,UI.Muted);meta.Margin=new(0,4,0,0);meta.Opacity=.8;text.Children.Add(meta);
-        string[] files=(notice.Files??Array.Empty<string>()).Where(File.Exists).ToArray();
-        Button? action=null;
-        if(files.Length>0)action=UI.CaptionButton("Show in folder",()=>
-        {
-            try{var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=false};info.ArgumentList.Add("/select,");info.ArgumentList.Add(files[0]);System.Diagnostics.Process.Start(info);}
-            catch(Exception ex){app.Store.Log(ex);}
-        });
-        else if(notice.Kind=="updates")action=UI.CaptionButton("Open updates",()=>{Collapse();app.ShowSettings("Application");});
-        else if(notice.Kind=="external" && !string.IsNullOrEmpty(notice.AppId))action=UI.CaptionButton("Open app",()=>{Collapse();ExternalAppLauncher.Open(notice.AppId);});
-        if(action!=null){action.FontSize=11;action.MinHeight=26;action.Padding=new(9,2,9,2);action.Margin=new(0,8,0,0);action.HorizontalAlignment=HorizontalAlignment.Left;text.Children.Add(action);}
+        var top=new DockPanel();
+        var when=UI.Text(NotificationCenterText.Ago(now,entry.At),10,UI.Muted);when.Opacity=.85;when.VerticalAlignment=VerticalAlignment.Center;when.Margin=new(8,0,0,0);DockPanel.SetDock(when,Dock.Right);top.Children.Add(when);
+        if(fresh){var dot=new Border{Width=6,Height=6,CornerRadius=new(3),Background=UI.Brush(app.Settings.Accent),Margin=new(0,0,6,0),VerticalAlignment=VerticalAlignment.Center};top.Children.Add(dot);}
+        var sender=UI.Text(NotificationCenterText.Kind(notice),11,UI.Muted);sender.FontWeight=FontWeights.SemiBold;sender.TextWrapping=TextWrapping.NoWrap;sender.TextTrimming=TextTrimming.CharacterEllipsis;sender.VerticalAlignment=VerticalAlignment.Center;top.Children.Add(sender);
+        text.Children.Add(top);
+        var title=UI.Text(notice.Title,13);title.FontWeight=FontWeights.SemiBold;title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;title.Margin=new(0,3,0,0);text.Children.Add(title);
+        if(notice.Detail.Length>0){var detail=UI.Text(notice.Detail,12,UI.Muted);detail.MaxHeight=34;detail.LineHeight=17;detail.LineStackingStrategy=LineStackingStrategy.BlockLineHeight;detail.TextTrimming=TextTrimming.CharacterEllipsis;detail.Margin=new(0,2,0,0);detail.ToolTip=notice.Detail;text.Children.Add(detail);}
         grid.Children.Add(text);
-        var remove=Icons.Button("x","Remove notification",()=>app.Notifications.Remove(entry),false,24);remove.Background=Brushes.Transparent;remove.Opacity=.55;remove.Margin=new(6,0,0,0);remove.MouseEnter+=(_,_)=>remove.Opacity=1;remove.MouseLeave+=(_,_)=>remove.Opacity=.55;remove.VerticalAlignment=VerticalAlignment.Top;Grid.SetColumn(remove,2);grid.Children.Add(remove);
-        var row=new Border{Child=grid,Background=UI.Brush(fresh?"#1CFFFFFF":"#0EFFFFFF"),CornerRadius=new(12),Padding=new(10,10,6,10),Margin=new(0,0,0,6)};
+        var remove=Icons.Button("x","Remove notification",()=>app.Notifications.Remove(entry),false,24);remove.Background=Brushes.Transparent;remove.Margin=new(6,-2,-2,0);remove.VerticalAlignment=VerticalAlignment.Top;remove.Opacity=0;Grid.SetColumn(remove,2);grid.Children.Add(remove);
+        string[] files=(notice.Files??Array.Empty<string>()).Where(File.Exists).ToArray();
+        Action? open=null;string hint="";
+        if(notice.Kind=="external" && !string.IsNullOrEmpty(notice.AppId)){open=()=>{Collapse();ExternalAppLauncher.Open(notice.AppId);};hint="Click to open the app";}
+        else if(files.Length>0){open=()=>{try{var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=false};info.ArgumentList.Add("/select,");info.ArgumentList.Add(files[0]);System.Diagnostics.Process.Start(info);}catch(Exception ex){app.Store.Log(ex);}};hint="Click to show in folder";}
+        else if(notice.Kind=="updates"){open=()=>{Collapse();app.ShowSettings("Application");};hint="Click to open updates";}
+        var idle=UI.Brush(fresh?"#17FFFFFF":"#0DFFFFFF");var hover=UI.Brush("#24FFFFFF");
+        var row=new Border{Child=grid,Background=idle,CornerRadius=new(14),Padding=new(12,11,8,11),Margin=new(0,0,0,6)};
+        row.MouseEnter+=(_,_)=>{row.Background=hover;remove.Opacity=.8;};row.MouseLeave+=(_,_)=>{row.Background=idle;remove.Opacity=0;};
+        remove.GotKeyboardFocus+=(_,_)=>remove.Opacity=.8;remove.LostKeyboardFocus+=(_,_)=>remove.Opacity=0;
+        if(open!=null)
+        {
+            row.Cursor=System.Windows.Input.Cursors.Hand;row.ToolTip=Localization.Text(hint);
+            row.MouseLeftButtonUp+=(_,e)=>{if(e.OriginalSource is DependencyObject source && IsInside(source,remove))return;e.Handled=true;open();};
+            // Keyboard: the row's action is also reachable as a button for screen readers.
+            var action=UI.CaptionButton(notice.Kind=="external"?"Open app":files.Length>0?"Show in folder":"Open updates",open);action.Width=1;action.Height=1;action.MinHeight=1;action.Padding=new(0);action.Margin=new(0);action.Opacity=0;action.HorizontalAlignment=HorizontalAlignment.Left;action.VerticalAlignment=VerticalAlignment.Top;Grid.SetColumn(action,1);grid.Children.Add(action);
+        }
         System.Windows.Automation.AutomationProperties.SetName(row,notice.Title);
         return row;
     }

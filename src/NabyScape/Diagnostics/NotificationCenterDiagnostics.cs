@@ -63,7 +63,32 @@ internal static class NotificationCenterDiagnostics
         check("Message text stays hidden in pop-ups when turned off",!Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text=="Private text"));
         s.ExternalNotificationText=true;island.Collapse();await Task.Delay(80);app.Notifications.Clear();
         island.OpenNotificationCenter();await Task.Delay(400);Capture("external-center");
-        check("Center shows other apps with their names",Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text.StartsWith("Claude ·")) && Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text.StartsWith("Unigram ·")));
+        check("Center shows other apps with their names",Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text=="Claude") && Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text=="Unigram"));
+        island.Collapse();app.Notifications.ClearHistory();
+        // A new alert grows out of the closed dock and folds back on its own.
+        island.Collapse();app.Notifications.Clear();app.Notifications.ClearHistory();await Task.Delay(100);
+        s.NotificationSeconds=4;app.ChangeSettings();island.DiagnosticBanners=true;
+        app.Notifications.Post(external,new("external","AI TOOLS","ElevenLabs Creator Plan 3M + Eleven Reader Ultra Plan 12M - 10 Days Warranty",null,"Unigram","Unigram.App"),false,_=>{},DateTimeOffset.UtcNow);
+        app.Notifications.Post(external,new("external","Your answer is ready","Claude finished replying.",null,"Claude","Claude.App"),false,_=>{},DateTimeOffset.UtcNow);
+        await Task.Delay(500);Capture("dock-banner");
+        check("A new alert opens the dock banner without a click",island.NoticeBannerOpen && !island.IsExpanded);
+        check("The banner names the sender and shows the message",Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text.StartsWith("Unigram")) && Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text=="AI TOOLS"));
+        await Task.Delay(4600);
+        bool bannerTimerOn=Field<System.Windows.Threading.DispatcherTimer>("bannerTimer").IsEnabled;
+        check($"The banner folds back and the next alert follows (open {island.NoticeBannerOpen}, peeking {island.IsPeeking}, queue {app.Notifications.Count}, current {app.Notifications.Current?.Title}, timer {bannerTimerOn})",island.NoticeBannerOpen && Diagnostics.Descendants(Field<Border>("noticeCard")).OfType<TextBlock>().Any(t=>t.Text=="Your answer is ready"));
+        await Task.Delay(4600);
+        check("After the last banner the dock returns, alerts stay in the center",!island.NoticeBannerOpen && !island.IsPeeking && app.Notifications.History.Count==2);
+        app.SendTestNotification();await Task.Delay(500);Capture("test-banner");
+        check("Send test notification opens a banner even in quiet hours",island.NoticeBannerOpen && app.Notifications.History.Any(e=>e.Notice.Kind=="test"));
+        island.Collapse();await Task.Delay(100);app.Notifications.Clear();
+        app.Notifications.Post(external,new("external","Nabyscape workspace review","build passed 573/573 tests; banner feature installed & ready to try",null,"Claude","Claude.App"),false,_=>{},DateTimeOffset.UtcNow);
+        app.Notifications.Post(new Settings{NotificationDelivery="Notch"},new("failure","Downloads unavailable","This folder has too many files to monitor safely (limit 10,000)."),false,_=>{},DateTimeOffset.UtcNow);
+        app.Notifications.Post(new Settings{NotificationDelivery="Notch"},new("failure","Settings recovered","Both NabyScape and LumaIsland data exist. NabyScape data is in use; review the older folder before removing it."),false,_=>{},DateTimeOffset.UtcNow);
+        island.Collapse();app.Notifications.Clear();
+        island.DiagnosticBanners=false;island.OpenNotificationCenter();await Task.Delay(500);Capture("center-redesign");
+        var centerCard=Field<Border>("noticeCard");
+        check($"The center fits inside the dock (card {centerCard.ActualHeight:0} + margins within surface {island.PaintedHeight:0}, host {island.ActualHeight:0})",centerCard.ActualHeight+16<=island.PaintedHeight+1 && island.PaintedHeight<=island.ActualHeight+1);
+        check($"The center follows Panel width ({island.PaintedWidth:0} vs setting {s.PanelWidth:0})",Math.Abs(island.PaintedWidth-Math.Clamp(s.PanelWidth,300,island.ActualWidth))<2);
         island.Collapse();app.Notifications.ClearHistory();
         // Real Windows read from inside NabyScape (names only).
         try{var apps=await ExternalNotificationWatcher.CurrentAppsAsync();check($"NabyScape can read Windows notifications ({apps.Length} apps in Action Center)",true);File.WriteAllText(Path.Combine(directory,"external-apps.txt"),string.Join(Environment.NewLine,apps));}

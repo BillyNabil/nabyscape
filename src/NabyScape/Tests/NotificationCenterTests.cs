@@ -50,6 +50,19 @@ internal static class NotificationCenterTests
         test("NabyScape's own Windows balloons are never mirrored back",ExternalNotificationPolicy.IsOwn("NabyScape","") && ExternalNotificationPolicy.IsOwn("App","BillyNabil.NabyScape") && !ExternalNotificationPolicy.IsOwn("Claude","Claude"));
         test("First line becomes the title and the rest the message",ExternalNotificationPolicy.Split("Claude",new[]{"Done"," Your file is ready ","Open it"})==("Done","Your file is ready · Open it") && ExternalNotificationPolicy.Split("Claude",System.Array.Empty<string>())==("Claude",""));
         test("The first snapshot is a baseline; later snapshots report only new ids",ExternalNotificationPolicy.Fresh(new uint[]{1,2},null).Length==0 && ExternalNotificationPolicy.Fresh(new uint[]{1,2,3},new(){1,2}).SequenceEqual(new uint[]{3}));
+        var night=new Settings{NotificationDelivery="Notch",ExternalNotifications=true,NotificationsSnoozedUntil=now.AddHours(1)};var quiet=new InternalNotifications();
+        quiet.Post(night,new("external","Late message","x",null,"Telegram",""),false,_=>{},now);
+        test("Quiet hours keep other apps silent unless allowed",quiet.Count==0 && quiet.History.Count==1);
+        night.ExternalNotificationQuietHours=true;quiet.Post(night,new("external","Allowed","y",null,"Telegram",""),false,_=>{},now);
+        test("Show during quiet hours lets other apps pop up",quiet.Count==1 && !quiet.CurrentDisplayed);
+        quiet.MarkDisplayed();test("A shown banner is not shown again",quiet.CurrentDisplayed);
+        test("Banner lifetime stays short and readable",OverlayWindow.BannerSeconds(new Settings{NotificationSeconds=30})==12 && OverlayWindow.BannerSeconds(new Settings{NotificationSeconds=2})==4);
+        var tester=new InternalNotifications();int toWindows=0;
+        tester.Post(new Settings{NotificationDelivery="Off",NotifyFailures=false,NotificationsSnoozedUntil=now.AddHours(1)},new("test","Test notification","x",null,"NabyScape"),false,_=>toWindows++,now);
+        test("A test notification always reaches the dock and the center",tester.Count==1 && tester.History.Count==1 && toWindows==0);
+        tester.Post(new Settings(),new("test","Test","x",null,"NabyScape"),true,_=>toWindows++,now);
+        test("A hidden dock sends the test to Windows instead",toWindows==1);
+        test("Avatars without a logo use a stable initial and colour",NoticeAvatar.Initial(" telegram")=="T" && NoticeAvatar.Initial("")=="?" && NoticeAvatar.Color("Claude")==NoticeAvatar.Color("claude"));
         test("Relative times read naturally",NotificationCenterText.Ago(now,now.AddSeconds(-20))=="Just now" && NotificationCenterText.Ago(now,now.AddMinutes(-5))=="5 min ago" && NotificationCenterText.Ago(now,now.AddHours(-3))=="3 h ago");
     }
 }

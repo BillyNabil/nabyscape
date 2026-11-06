@@ -46,6 +46,7 @@ public sealed partial class SettingsWindow
         var enable=Check("Show notifications from other apps",s.ExternalNotifications,v=>{s.ExternalNotifications=v;Dispatcher.BeginInvoke(()=>{Refresh();if(v)LoadApps();});});
         options.Children.Add(Check("Pop up on the island",s.ExternalNotificationPopup,v=>s.ExternalNotificationPopup=v));
         options.Children.Add(Check("Show message text in pop-ups",s.ExternalNotificationText,v=>s.ExternalNotificationText=v));
+        options.Children.Add(Check("Show during quiet hours",s.ExternalNotificationQuietHours,v=>s.ExternalNotificationQuietHours=v));
         options.Children.Add(appsLabel);options.Children.Add(apps);
         page.Children.Add(Section("Other apps",enable,status,privacy,options,
             UI.Text("NabyScape reads the alerts Windows already shows from apps such as Claude, ChatGPT or Telegram, checks for new ones every 1.5 seconds while this is on, and keeps them only for this session. Reply buttons from the original notification stay in Windows; use Open app to answer.",11,UI.Muted)));

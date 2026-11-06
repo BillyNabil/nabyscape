@@ -17,7 +17,11 @@ public sealed partial class OverlayWindow
     private void RefreshNoticeEdge()
     {
         if(noticeEdge==null){noticeEdge=new(){Width=18,Height=2,CornerRadius=new(1),Background=Brushes.White,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,IsHitTestVisible=false};visuals.Children.Add(noticeEdge);}
-        noticeEdge.Margin=new(0,app.Settings.Height-3,0,0);noticeEdge.Visibility=IsTucked && app.Notifications.Current!=null?Visibility.Visible:Visibility.Collapsed;
+        // A short accent line under the closed dock means unread alerts are waiting in the center.
+        noticeEdge.Width=20;noticeEdge.Height=3;noticeEdge.CornerRadius=new(1.5);noticeEdge.Background=UI.Brush(app.Settings.Accent);
+        noticeEdge.Margin=new(0,app.Settings.Height-4,0,0);
+        bool waiting=app.Notifications.Current!=null || app.Notifications.Unread>0;
+        noticeEdge.Visibility=waiting && !expanded && !peeking?Visibility.Visible:Visibility.Collapsed;
     }
     internal bool ManuallyHidden=>userHidden;
     internal bool NotificationBusy=>expanded || peeking || FeedbackVisible || fileDragActive || PeekInteractionActive || PointerInside();
@@ -30,14 +34,15 @@ public sealed partial class OverlayWindow
         UpdateBellBadges();
         if(centerShowing){RefreshNotificationCenter();app.PublishUpdate(RuntimeChange.Clock);return;}
         if(app.Notifications.Current==null && noticeShowing)Collapse();
+        QueueNoticeBanner();
         // Never replace controls under a pointer, keyboard editor, or active drag.
         app.PublishUpdate(RuntimeChange.Clock);
     }
-    private void HideNotice(){noticeShowing=false;centerShowing=false;if(noticeCard!=null)noticeCard.Visibility=Visibility.Collapsed;}
+    private void HideNotice(){noticeShowing=false;centerShowing=false;bannerShowing=false;bannerTimer.Stop();if(noticeCard!=null)noticeCard.Visibility=Visibility.Collapsed;}
     internal void OpenNotice(bool requested=false)
     {
         // An open notification center already lists new alerts; never replace it with a popup.
-        if(centerShowing && !requested)return;
+        if((centerShowing || bannerShowing) && !requested)return;
         if(centerShowing)Collapse();
         var notice=app.Notifications.Current;
         if(requested && expanded)Collapse();
@@ -45,12 +50,12 @@ public sealed partial class OverlayWindow
         if(peeking && !noticeShowing)return;
         if(noticeCard!=null)visuals.Children.Remove(noticeCard);
         app.Notifications.MarkDisplayed();
-        StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;peekPanel.Visibility=Visibility.Collapsed;SyncAssistantVisibility();
+        StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;RefreshNoticeEdge();peekPanel.Visibility=Visibility.Collapsed;SyncAssistantVisibility();
         var content=new StackPanel();
         var header=new DockPanel{Margin=new(0,0,0,12)};
         noticeQueue=UI.Text(app.Notifications.Count>1?app.Notifications.Count+" queued":"",10,UI.Muted);DockPanel.SetDock(noticeQueue,Dock.Right);header.Children.Add(noticeQueue);
         var kind=UI.Text(notice.Kind=="external"?(notice.Source??"App").ToUpperInvariant():notice.Kind switch{"timer"=>"TIMER","focus"=>"FOCUS","downloads"=>"DOWNLOADS","updates"=>"UPDATE",_=>"NABYSCAPE"},10,UI.Muted);
-        var icon=new Border{Width=28,Height=28,CornerRadius=new(9),Background=UI.Brush("#19FFFFFF"),Margin=new(0,0,9,0),Child=NoticeGlyph(notice,14)};
+        var icon=NoticeAvatar.Create(notice,30);icon.Margin=new(0,0,10,0);icon.VerticalAlignment=VerticalAlignment.Center;
         header.Children.Add(icon);header.Children.Add(kind);content.Children.Add(header);
         var noticeTitle=UI.Heading(notice.Title,18);noticeTitle.FontWeight=FontWeights.SemiBold;noticeTitle.Margin=new(0,0,0,6);content.Children.Add(noticeTitle);
         // Message text from other apps can be private; the setting keeps it off the screen edge.
@@ -88,8 +93,8 @@ public sealed partial class OverlayWindow
         var all=UI.CaptionButton("View all",()=>{Collapse();app.Notifications.Clear();OpenNotificationCenter();});
         foreach(var action in new[]{dismiss,noticeNext,clear,all}){action.FontSize=11;action.MinHeight=30;action.Padding=new(9,4,9,4);action.Margin=new(0,0,6,0);actions.Children.Add(action);}content.Children.Add(actions);
         var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);
-        double width=Math.Min(Math.Min(370,app.Settings.HoverWidth),Math.Max(180,screen.WorkingArea.Width/scale-24));
-        var viewport=new ScrollViewer{Content=content,MaxHeight=Math.Max(100,Math.Min(370,screen.WorkingArea.Height/scale-48)),VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
+        double width=Math.Max(260,PeekSurfaceWidth);
+        var viewport=new ScrollViewer{Content=content,MaxHeight=Math.Max(100,Math.Min(HostHeight-40,screen.WorkingArea.Height/scale-48)),VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
         noticeCard=new(){Child=viewport,Width=width-(surface.Notch?64:32),Margin=new(0,16,0,0),VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Center};
         visuals.Children.Add(noticeCard);compact.IsHitTestVisible=false;compact.Opacity=0;Show();Dimensions();
         viewport.Measure(new Size(noticeCard.Width,double.PositiveInfinity));
@@ -97,10 +102,5 @@ public sealed partial class OverlayWindow
         motion.Go(surface,IslandSurface.SurfaceHeightProperty,viewport.DesiredSize.Height+32,app.Settings.AnimationMs);
         ControlFeedback.Notice(noticeCard,app.Settings.NotificationAnimation);
     }
-    // App logo for mirrored alerts, otherwise the kind's glyph.
-    internal static FrameworkElement NoticeGlyph(InternalNotice notice,double size)
-    {
-        if(notice.Kind=="external" && ExternalAppIcons.Get(notice.AppId) is {} logo){var image=new Image{Source=logo,Width=size+4,Height=size+4};RenderOptions.SetBitmapScalingMode(image,BitmapScalingMode.HighQuality);return image;}
-        return Icons.Create(NotificationCenterText.Icon(notice.Kind),size);
-    }
+    internal static FrameworkElement NoticeGlyph(InternalNotice notice,double size)=>NoticeAvatar.Create(notice,size);
 }

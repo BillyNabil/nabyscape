@@ -11,7 +11,7 @@ public sealed partial class SettingsWindow
             delivery,
             Check("Timer finished",s.NotifyTimer,v=>s.NotifyTimer=v),Check("Focus finished",s.NotifyFocus,v=>s.NotifyFocus=v),Check("Downloads ready",s.NotifyDownloads,v=>s.NotifyDownloads=v),Check("Update available",s.NotifyUpdates,v=>s.NotifyUpdates=v),Check("Important app failures",s.NotifyFailures,v=>s.NotifyFailures=v),
             UI.Text("Notch shows a compact indicator. Hover or click for details. Manually hidden islands use Windows instead. Volume and brightness take priority; panels and editors stay undisturbed. The notification center keeps this session's last 50 alerts; nothing is saved to disk.",11,UI.Muted),
-            UI.CaptionButton("Open notification center",app.OpenNotifications),UI.Text("Open it from the bell in the island panel, the tray menu, or Ctrl+K → Notifications. Windows delivery follows your Windows notification preferences.",11,UI.Muted)));
+            UI.Row(UI.CaptionButton("Send test notification",app.SendTestNotification,true),UI.CaptionButton("Open notification center",app.OpenNotifications)),UI.Text("Open it from the bell in the island panel, the tray menu, or Ctrl+K → Notifications. Windows delivery follows your Windows notification preferences.",11,UI.Muted)));
         ExternalNotificationSettings();
         NotificationPresentationSettings();
         var folder=UI.Text(s.DownloadsFolder.Length==0?"Windows Downloads known folder (including relocated folders)":s.DownloadsFolder,11,UI.Muted);
