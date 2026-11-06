@@ -72,19 +72,20 @@ public sealed partial class SettingsWindow
         Add("Test microphone and speech","AI","AI companion","Speech checks","microphone not working test transcription asr tts play sample speaker voice");
         Add("Timer & focus duration","Content","Focus sessions","","focus timer pomodoro menit durasi break istirahat");
         Add("Notification sounds","Notifications","Completion sound","","notifikasi notif suara sound bunyi timer fokus");
+        Add("Notifications from other apps","Notifications","Other apps","Show notifications from other apps","claude chatgpt telegram whatsapp discord windows toast notif aplikasi lain other apps");
         Add("Quiet hours","Notifications","Notification presentation","","quiet hours mute silent senyap diam jadwal malam");
         Add("Launch at Windows startup","Application","Behavior","Start automatically when signing in to Windows","startup autostart windows mulai otomatis login");
         return items.ToArray();
     }
-    private void InitializeSettingsSearch(Grid main,Grid workspace)
+    private void InitializeSettingsSearch(Grid main,Grid workspace,Border fieldHost)
     {
         settingsSearchIndex=BuildSettingsSearchIndex();settingsSearch=UI.Input("Search settings","");settingsSearch.Background=Brushes.Transparent;settingsSearch.BorderThickness=new(0);settingsSearch.Margin=new(0);settingsSearch.Padding=new(0,6,0,6);settingsSearch.MinHeight=34;
         var row=new DockPanel();var glyph=Icons.Create("search",15,UI.Muted);glyph.Margin=new(0,0,10,0);DockPanel.SetDock(glyph,Dock.Left);row.Children.Add(glyph);
         var clear=Icons.Button("x","Clear settings search",()=>settingsSearch.Clear(),false,28);clear.Background=Brushes.Transparent;clear.Margin=new(5,0,0,0);clear.Visibility=Visibility.Collapsed;DockPanel.SetDock(clear,Dock.Right);row.Children.Add(clear);
-        var inputHost=new Grid();inputHost.Children.Add(settingsSearch);var hint=UI.Caption("Search settings…  Ctrl+F",12,UI.Muted);hint.IsHitTestVisible=false;inputHost.Children.Add(hint);row.Children.Add(inputHost);
-        var field=new Border{Child=row,Background=UI.Brush("#1A1D23"),BorderBrush=UI.Brush("#30353F"),BorderThickness=new(.7),CornerRadius=new(10),Padding=new(12,0,6,0),Margin=new(20,13,20,9)};settingsSearchHeader=field;main.Children.Add(field);Grid.SetRow(field,0);
+        var inputHost=new Grid();inputHost.Children.Add(settingsSearch);var hint=UI.Caption("Search  ·  Ctrl+F",12,UI.Muted);hint.IsHitTestVisible=false;inputHost.Children.Add(hint);row.Children.Add(inputHost);
+        var field=new Border{Child=row,Background=SettingsTheme.Card,BorderBrush=SettingsTheme.Line,BorderThickness=new(1),CornerRadius=new(10),Padding=new(12,0,6,0),Margin=new(0)};settingsSearchHeader=field;fieldHost.Child=field;
         var resultsScroll=UI.Scroll(settingsResults);resultsScroll.HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled;
-        searchResultsHost=new Border{Child=resultsScroll,Background=UI.Brush("#181B21"),BorderBrush=UI.Brush("#3C4350"),BorderThickness=new(.8),CornerRadius=new(12),Padding=new(8),Margin=new(20,0,20,10),VerticalAlignment=VerticalAlignment.Top,Visibility=Visibility.Collapsed};UI.LocalizedName(searchResultsHost,"Settings search results");Grid.SetRow(searchResultsHost,1);Panel.SetZIndex(searchResultsHost,40);main.Children.Add(searchResultsHost);
+        searchResultsHost=new Border{Child=resultsScroll,Background=SettingsTheme.CardRaised,BorderBrush=SettingsTheme.Line,BorderThickness=new(1),CornerRadius=new(14),Padding=new(8),Margin=new(36,48,36,10),VerticalAlignment=VerticalAlignment.Top,Visibility=Visibility.Collapsed,Effect=new System.Windows.Media.Effects.DropShadowEffect{BlurRadius=28,ShadowDepth=8,Opacity=.5,Color=Colors.Black}};UI.LocalizedName(searchResultsHost,"Settings search results");Grid.SetRow(searchResultsHost,0);Panel.SetZIndex(searchResultsHost,40);main.Children.Add(searchResultsHost);
         workspace.SizeChanged+=(_,_)=>resultsScroll.MaxHeight=Math.Max(80,Math.Min(430,workspace.ActualHeight-28));
         settingsSearch.TextChanged+=(_,_)=>{bool empty=string.IsNullOrWhiteSpace(settingsSearch.Text);hint.Visibility=empty?Visibility.Visible:Visibility.Collapsed;clear.Visibility=empty?Visibility.Collapsed:Visibility.Visible;ShowSettingsSearch();};
         settingsSearch.GotKeyboardFocus+=(_,_)=>ShowSettingsSearch();
@@ -114,7 +115,7 @@ public sealed partial class SettingsWindow
     }
     private void OpenSettingsSearchResult(SettingsSearchItem item)
     {
-        settingsSearch?.Clear();Navigate(item.Category);
+        settingsSearch?.Clear();revealAllNext=!app.Settings.SettingsShowAll && !EssentialSetting(item.Category,item.Section);if(revealAllNext && item.Category==current)revealAllSettings=false;Navigate(item.Category);
         Dispatcher.BeginInvoke(DispatcherPriority.Loaded,()=>
         {
             if(current!=item.Category)return;if(item.Category=="Weather")SettingTree(page).OfType<WeatherView>().FirstOrDefault()?.OpenLocationEditor();

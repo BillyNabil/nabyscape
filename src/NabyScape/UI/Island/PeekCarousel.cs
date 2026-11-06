@@ -40,7 +40,7 @@ public sealed partial class OverlayWindow
     private string? peekFilePath;
     private string? peekShelfArtPath;
     private readonly Image peekShelfArt=new(){Width=44,Height=44,Stretch=Stretch.Uniform,Margin=new(0,0,12,0),Visibility=Visibility.Collapsed};
-    private bool PeekInteractionActive=>LyricsSourcesControl.MenuOpen || dockEditing || peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true || audioMenu?.IsOpen==true;
+    private bool PeekInteractionActive=>OwnedPopupOpen || dockEditing || peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true;
     internal string PeekPage=>peekId;
     internal string[] HoverDeckIds=>PeekPages();
     internal bool PeekTabSafe=>peekViews.Where(pair=>pair.Key!=peekId).All(pair=>KeyboardNavigation.GetTabNavigation(pair.Value)==KeyboardNavigationMode.None);

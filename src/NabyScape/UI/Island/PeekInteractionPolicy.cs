@@ -22,6 +22,8 @@ internal static class VisibilityPolicy
 {
     // Own/menu and shell foregrounds must not replace the external window sampled before them.
     internal static IntPtr LatestExternalForeground(IntPtr externalForeground,IntPtr previous,bool previousEligible)=>externalForeground!=IntPtr.Zero?externalForeground:previousEligible?previous:IntPtr.Zero;
+    // While a transient shell surface or NabyScape itself is foreground, the last external app still covers the display.
+    internal static IntPtr RuleWindow(IntPtr externalForeground,IntPtr lastExternal,bool transientForeground)=>externalForeground!=IntPtr.Zero?externalForeground:transientForeground?lastExternal:IntPtr.Zero;
     internal static IntPtr RetainOverride(IntPtr current,IntPtr externalForeground)=>current!=IntPtr.Zero && externalForeground!=IntPtr.Zero && current!=externalForeground?IntPtr.Zero:current;
     internal static bool CarouselOwnsWheel(bool peeking,bool horizontal,bool focusedNote,bool overNote)=>peeking && (horizontal || !focusedNote || !overNote);
 }
@@ -52,6 +54,9 @@ internal static class PeekInteractionTests
         test("New external foreground wins over a stale retained window",VisibilityPolicy.LatestExternalForeground(appB,appA,false)==appB);
         test("Own windows retain foreground override",VisibilityPolicy.RetainOverride(appA,IntPtr.Zero)==appA);
         test("Same app retains foreground override",VisibilityPolicy.RetainOverride(appA,appA)==appA);
+        test("Taskbar or own window keeps the covering app as the tuck rule",VisibilityPolicy.RuleWindow(IntPtr.Zero,appA,true)==appA);
+        test("Desktop or no foreground releases the tuck rule",VisibilityPolicy.RuleWindow(IntPtr.Zero,appA,false)==IntPtr.Zero);
+        test("A real external foreground always decides the tuck rule",VisibilityPolicy.RuleWindow(appB,appA,true)==appB);
         test("Another external app clears foreground override",VisibilityPolicy.RetainOverride(appA,appB)==IntPtr.Zero);
         test("Focused note keeps vertical wheel only over editor",!VisibilityPolicy.CarouselOwnsWheel(true,false,true,true) && VisibilityPolicy.CarouselOwnsWheel(true,false,true,false) && VisibilityPolicy.CarouselOwnsWheel(true,true,true,true));
         test("Expanded and closed bypass preview wheel",!VisibilityPolicy.CarouselOwnsWheel(false,false,false,false));

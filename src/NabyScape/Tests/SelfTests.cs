@@ -103,6 +103,8 @@ internal static class SelfTests
         Test("Frame pacing preserves 60 Hz cadence on a 180 Hz callback stream",()=>{var p=new FramePacer();int accepted=0;for(int i=0;i<=180;i++)if(p.Accept(TimeSpan.FromSeconds(i/180d),60))accepted++;Assert(accepted is >=60 and <=62,$"Accepted {accepted}");});
         MediaExperienceTests.Run(Test);
         AutoTuckTests.Run((name,result)=>Test("Auto tuck: "+name,()=>Assert(result)));
+        NotificationCenterTests.Run((name,result)=>Test("Notification center: "+name,()=>Assert(result)));
+        OwnedPopupTests.Run((name,result)=>Test("Island popups: "+name,()=>Assert(result)));
         PeekInteractionTests.Run((name,result)=>Test("Peek: "+name,()=>Assert(result)));
         AudioDeviceTests.Run((name,result)=>Test("Audio: "+name,()=>Assert(result)));
         AudioMixerTests.Run((name,result)=>Test("Mixer: "+name,()=>Assert(result)));

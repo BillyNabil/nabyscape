@@ -69,7 +69,13 @@ public sealed partial class OverlayWindow
         root.MouseEnter+=(_,_)=>{if(DiagnosticRun)return;if(IsTucked){RevealTuckedPreview();return;}leaveDelay.Stop();if(peeking){automaticPreview=false;activityDismiss.Stop();}else{previewKind=activityTitle=activityDetail="";}if(!coverGesture.Pressed && !expanded && !peeking && app.Settings.HoverPeek && app.Settings.CompactLayout && !userHidden && !TuckRequested)hoverDelay.Start();};
         root.MouseLeave+=(_,_)=>{if(DiagnosticRun)return;hoverDelay.Stop();if(peeking || TuckRequested)leaveDelay.Start();};
         hoverDelay.Tick+=(_,_)=>{hoverDelay.Stop();if(assistantCharacterButton.IsMouseOver){PreviewAssistant();return;}if(PointerInside() && !expanded && !userHidden && !TuckRequested)PreviewActivity();};
-        leaveDelay.Tick+=(_,_)=>{leaveDelay.Stop();if((peeking || TuckRequested) && !AssistantReplyVisible && !PointerInside() && !PeekInteractionActive && !fileDragActive)Collapse();};
+        leaveDelay.Tick+=(_,_)=>
+        {
+            leaveDelay.Stop();if(!(peeking || TuckRequested) || AssistantReplyVisible || PointerInside() || fileDragActive)return;
+            // A drop-down hanging outside the panel keeps it open; collapse once it closes with the pointer outside.
+            if(OwnedPopupOpen){leaveDelay.Start();return;}
+            if(!PeekInteractionActive)Collapse();
+        };
         peekMedia.HorizontalAlignment=HorizontalAlignment.Center;peekMedia.VerticalAlignment=VerticalAlignment.Top;peekMedia.Width=286;peekMedia.Height=100;peekMedia.Margin=new(0);
         peekMedia.RowDefinitions.Add(new(){Height=new GridLength(56)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});peekMedia.RowDefinitions.Add(new(){Height=new GridLength(18)});
         peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});peekMedia.ColumnDefinitions.Add(new());peekMedia.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
@@ -146,9 +152,11 @@ public sealed partial class OverlayWindow
         if(timelinePanel.Parent is Panel old)old.Children.Remove(timelinePanel);
         title.FontSize=18;artist.FontSize=12;artwork.Width=artwork.Height=88;clock.FontSize=26;
         var navigation=new Grid{Tag="panel-navigation",Margin=new(0,0,0,app.Settings.SectionGap)};
-        navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});navigation.ColumnDefinitions.Add(new());navigation.ColumnDefinitions.Add(new(){Width=new GridLength(28)});
-        navigation.Children.Add(AssistantLauncher());
-        var settings=Icons.Button("settings","Settings",app.ShowSettings,false,28);settings.Margin=new(0);settings.Background=Brushes.Transparent;Grid.SetColumn(settings,2);navigation.Children.Add(settings);
+        // Equal side columns keep the page dots centered: Naby on the left, notifications and Settings on the right.
+        navigation.ColumnDefinitions.Add(new(){Width=new GridLength(60)});navigation.ColumnDefinitions.Add(new());navigation.ColumnDefinitions.Add(new(){Width=new GridLength(60)});
+        var launcher=AssistantLauncher();launcher.HorizontalAlignment=HorizontalAlignment.Left;navigation.Children.Add(launcher);
+        var settings=Icons.Button("settings","Settings",app.ShowSettings,false,28);settings.Margin=new(4,0,0,0);settings.Background=Brushes.Transparent;
+        var trailing=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right};trailing.Children.Add(NotificationBell(28));trailing.Children.Add(settings);Grid.SetColumn(trailing,2);navigation.Children.Add(trailing);
         int categoryCount=Math.Max(1,PanelWidgets.Select(w=>PageFor(w.Id)).Distinct().Count());
         var tabRow=new System.Windows.Controls.Primitives.UniformGrid{Columns=categoryCount,Rows=1,Width=categoryCount*18,HorizontalAlignment=HorizontalAlignment.Center};var navScroll=new ScrollViewer{Content=tabRow,HorizontalScrollBarVisibility=ScrollBarVisibility.Hidden,VerticalScrollBarVisibility=ScrollBarVisibility.Disabled,HorizontalContentAlignment=HorizontalAlignment.Center};Grid.SetColumn(navScroll,1);KeyboardNavigation.SetDirectionalNavigation(tabRow,KeyboardNavigationMode.Cycle);navScroll.PanningMode=PanningMode.HorizontalOnly;navScroll.ToolTip=Localization.Text("Panel navigation · scroll for more panels");navScroll.PreviewMouseWheel+=(_,e)=>{if(navScroll.ScrollableWidth>0){navScroll.ScrollToHorizontalOffset(navScroll.HorizontalOffset-e.Delta*.5);e.Handled=true;}};navigation.Children.Add(navScroll);body.Children.Add(navigation);body.Children.Add(compactPageHost);
         bodyReflow.Add(()=>

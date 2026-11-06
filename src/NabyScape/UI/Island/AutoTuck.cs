@@ -92,6 +92,9 @@ internal static class AutoTuckTests
         }
         test("Manual hide cannot become an automatic tuck",!AutoTuckPolicy.ShouldTuck(true,true,false,false,false) && !AutoTuckPolicy.CanHover(true,true,true));
         test("Ending automatic suppression restores the normal state",!AutoTuckPolicy.ShouldTuck(false,false,false,false,false) && !AutoTuckPolicy.CanHover(false,false,true));
+        var work=new System.Drawing.Rectangle(0,0,1920,1032);
+        test("A window filling the work area counts as maximized",Native.CoversArea(new Native.Rect{Left=0,Top=0,Right=1920,Bottom=1032},work,2) && Native.CoversArea(new Native.Rect{Left=1,Top=-1,Right=1919,Bottom=1033},work,2));
+        test("Snapped halves and floating windows are not maximized",!Native.CoversArea(new Native.Rect{Left=0,Top=0,Right=960,Bottom=1032},work,2) && !Native.CoversArea(new Native.Rect{Left=40,Top=40,Right=1880,Bottom=1000},work,2));
         test("Only a tucked automatic edge can reveal a hover",AutoTuckPolicy.CanHover(false,true,true) && !AutoTuckPolicy.CanHover(false,true,false));
         foreach(bool notch in new[]{false,true})
         {

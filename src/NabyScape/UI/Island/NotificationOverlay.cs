@@ -27,13 +27,18 @@ public sealed partial class OverlayWindow
         RefreshNoticeEdge();
         if(noticeQueue!=null)noticeQueue.Text=app.Notifications.Count>1?app.Notifications.Count+" queued":"";
         if(noticeNext!=null)noticeNext.IsEnabled=app.Notifications.Count>1;
+        UpdateBellBadges();
+        if(centerShowing){RefreshNotificationCenter();app.PublishUpdate(RuntimeChange.Clock);return;}
         if(app.Notifications.Current==null && noticeShowing)Collapse();
         // Never replace controls under a pointer, keyboard editor, or active drag.
         app.PublishUpdate(RuntimeChange.Clock);
     }
-    private void HideNotice(){noticeShowing=false;if(noticeCard!=null)noticeCard.Visibility=Visibility.Collapsed;}
+    private void HideNotice(){noticeShowing=false;centerShowing=false;if(noticeCard!=null)noticeCard.Visibility=Visibility.Collapsed;}
     internal void OpenNotice(bool requested=false)
     {
+        // An open notification center already lists new alerts; never replace it with a popup.
+        if(centerShowing && !requested)return;
+        if(centerShowing)Collapse();
         var notice=app.Notifications.Current;
         if(requested && expanded)Collapse();
         if(notice==null || userHidden || expanded || fileDragActive || PeekInteractionActive || FeedbackVisible)return;
@@ -44,11 +49,13 @@ public sealed partial class OverlayWindow
         var content=new StackPanel();
         var header=new DockPanel{Margin=new(0,0,0,12)};
         noticeQueue=UI.Text(app.Notifications.Count>1?app.Notifications.Count+" queued":"",10,UI.Muted);DockPanel.SetDock(noticeQueue,Dock.Right);header.Children.Add(noticeQueue);
-        var kind=UI.Text(notice.Kind switch{"timer"=>"TIMER","focus"=>"FOCUS","downloads"=>"DOWNLOADS","updates"=>"UPDATE",_=>"NABYSCAPE"},10,UI.Muted);
-        var icon=new Border{Width=28,Height=28,CornerRadius=new(9),Background=UI.Brush("#19FFFFFF"),Margin=new(0,0,9,0),Child=Icons.Create(notice.Kind switch{"timer"=>"timer","focus"=>"focus","downloads"=>"shelf","updates"=>"settings",_=>"nav-status"},14)};
+        var kind=UI.Text(notice.Kind=="external"?(notice.Source??"App").ToUpperInvariant():notice.Kind switch{"timer"=>"TIMER","focus"=>"FOCUS","downloads"=>"DOWNLOADS","updates"=>"UPDATE",_=>"NABYSCAPE"},10,UI.Muted);
+        var icon=new Border{Width=28,Height=28,CornerRadius=new(9),Background=UI.Brush("#19FFFFFF"),Margin=new(0,0,9,0),Child=NoticeGlyph(notice,14)};
         header.Children.Add(icon);header.Children.Add(kind);content.Children.Add(header);
         var noticeTitle=UI.Heading(notice.Title,18);noticeTitle.FontWeight=FontWeights.SemiBold;noticeTitle.Margin=new(0,0,0,6);content.Children.Add(noticeTitle);
-        var detail=UI.Text(notice.Detail,12,UI.Muted);detail.LineHeight=18;content.Children.Add(detail);
+        // Message text from other apps can be private; the setting keeps it off the screen edge.
+        bool hideText=notice.Kind=="external" && !app.Settings.ExternalNotificationText;
+        var detail=UI.Text(hideText?Localization.Text("Open the notification center to read it."):notice.Detail,12,UI.Muted);detail.LineHeight=18;content.Children.Add(detail);
         var accent=new LinearGradientBrush(UI.Brush("#C4C9D2").Color,UI.Brush("#30343C").Color,0);accent.Freeze();content.Children.Add(new Border{Height=2,CornerRadius=new(1),Background=accent,Margin=new(0,15,0,4)});
         string[] paths=(notice.Files??Array.Empty<string>()).Where(File.Exists).Take(40).ToArray();
         if(paths.Length>0)
@@ -73,11 +80,13 @@ public sealed partial class OverlayWindow
         }
         else if(notice.Kind=="downloads")content.Children.Add(UI.Text("These files are no longer available.",11,UI.Muted));
         if(notice.Kind=="updates")content.Children.Add(UI.Button("Open Settings",app.ShowSettings));
+        if(notice.Kind=="external" && !string.IsNullOrEmpty(notice.AppId))content.Children.Add(UI.CaptionButton("Open app",()=>{Collapse();app.Notifications.Dismiss();ExternalAppLauncher.Open(notice.AppId);}));
         var actions=new WrapPanel{Margin=new(0,10,0,0)};
         var dismiss=UI.Button("Dismiss",()=>{Collapse();app.Notifications.Dismiss();});
         noticeNext=UI.Button("Next",()=>{Collapse();app.Notifications.Dismiss();OpenNotice(true);});noticeNext.IsEnabled=app.Notifications.Count>1;
         var clear=UI.Button("Clear all",()=>{Collapse();app.Notifications.Clear();});
-        foreach(var action in new[]{dismiss,noticeNext,clear}){action.FontSize=11;action.MinHeight=30;action.Padding=new(9,4,9,4);action.Margin=new(0,0,6,0);actions.Children.Add(action);}content.Children.Add(actions);
+        var all=UI.CaptionButton("View all",()=>{Collapse();app.Notifications.Clear();OpenNotificationCenter();});
+        foreach(var action in new[]{dismiss,noticeNext,clear,all}){action.FontSize=11;action.MinHeight=30;action.Padding=new(9,4,9,4);action.Margin=new(0,0,6,0);actions.Children.Add(action);}content.Children.Add(actions);
         var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);
         double width=Math.Min(Math.Min(370,app.Settings.HoverWidth),Math.Max(180,screen.WorkingArea.Width/scale-24));
         var viewport=new ScrollViewer{Content=content,MaxHeight=Math.Max(100,Math.Min(370,screen.WorkingArea.Height/scale-48)),VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
@@ -87,5 +96,11 @@ public sealed partial class OverlayWindow
         motion.Go(surface,IslandSurface.SurfaceWidthProperty,width,app.Settings.AnimationMs);
         motion.Go(surface,IslandSurface.SurfaceHeightProperty,viewport.DesiredSize.Height+32,app.Settings.AnimationMs);
         ControlFeedback.Notice(noticeCard,app.Settings.NotificationAnimation);
+    }
+    // App logo for mirrored alerts, otherwise the kind's glyph.
+    internal static FrameworkElement NoticeGlyph(InternalNotice notice,double size)
+    {
+        if(notice.Kind=="external" && ExternalAppIcons.Get(notice.AppId) is {} logo){var image=new Image{Source=logo,Width=size+4,Height=size+4};RenderOptions.SetBitmapScalingMode(image,BitmapScalingMode.HighQuality);return image;}
+        return Icons.Create(NotificationCenterText.Icon(notice.Kind),size);
     }
 }

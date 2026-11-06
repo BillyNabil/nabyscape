@@ -10,7 +10,7 @@
     <ApplicationIcon>Assets\island.ico</ApplicationIcon>
     <AssemblyName>NabyScape</AssemblyName>
     <RootNamespace>NabyScape</RootNamespace>
-    <Version>2.25.3</Version>
+    <Version>2.26.0</Version>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <Title>NabyScape</Title>
     <Product>NabyScape</Product>
@@ -28,6 +28,10 @@
     <PackageReference Include="Lucene.Net.Analysis.Kuromoji" Version="4.8.0-beta00018" />
     <PackageReference Include="NTextCat" Version="0.3.65" />
     <Resource Include="Assets\island.ico" />
+    <Resource Include="Assets\naby-chrome.png" />
+    <Resource Include="Assets\Fonts\Manrope-Medium.ttf" />
+    <Resource Include="Assets\Fonts\Manrope-SemiBold.ttf" />
+    <Resource Include="Assets\Fonts\Manrope-Bold.ttf" />
     <EmbeddedResource Include="..\..\docs\presets\default-preferences.json" LogicalName="NabyScape.DefaultPreferences.json" />
     <EmbeddedResource Include="..\..\tools\Uninstall-NabyScape.ps1" LogicalName="NabyScape.Uninstall.ps1" />
     <EmbeddedResource Include="..\..\docs\presets\default-layout.json" LogicalName="NabyScape.DefaultLayout.json" />
@@ -36,6 +40,7 @@
     <EmbeddedResource Include="..\..\licenses\NAudio-LICENSE.txt" LogicalName="NabyScape.NAudio-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\System.Speech-LICENSE.txt" LogicalName="NabyScape.System.Speech-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\LUCIDE-LICENSE.txt" LogicalName="NabyScape.LUCIDE-LICENSE.txt" />
+    <EmbeddedResource Include="..\..\licenses\MANROPE-OFL.txt" LogicalName="NabyScape.MANROPE-OFL.txt" />
     <EmbeddedResource Include="..\..\licenses\DOTNET-LICENSE.txt" LogicalName="NabyScape.DOTNET-LICENSE.txt" />
     <EmbeddedResource Include="..\..\licenses\DOTNET-ThirdPartyNotices.txt" LogicalName="NabyScape.DOTNET-ThirdPartyNotices.txt" />
     <EmbeddedResource Include="..\..\licenses\ROMAJI-ThirdPartyNotices.txt" LogicalName="NabyScape.ROMAJI-ThirdPartyNotices.txt" />

@@ -19,6 +19,7 @@ public sealed partial class App : Application
     private OverlayWindow? overlay;
     private bool quitting;
     internal InternalNotifications Notifications {get;}=new();
+    internal ExternalNotificationWatcher? ExternalNotifications {get;private set;}
     internal LyricsService Lyrics {get;}=new();
     internal WeatherService Weather {get;private set;}=null!;
     internal CountdownAudio CountdownAudio {get;}=new();
@@ -41,7 +42,7 @@ public sealed partial class App : Application
             if(epoch==downloadEpoch && Settings.DownloadsEnabled)Notify("Downloads unavailable",error);
         });
     }
-    internal void OpenNotifications()=>overlay?.OpenNotice(true);
+    internal void OpenNotifications()=>overlay?.OpenNotificationCenter();
     private void ConfigureDownloads()
     {
         if(diagnosticMode)return;
@@ -132,6 +133,7 @@ public sealed partial class App : Application
         var menu=new Forms.ContextMenuStrip();
         menu.Items.Add(Localization.Text("Open island"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.Reveal()));
         menu.Items.Add(Localization.Text("Command bar"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ShowCommands()));
+        menu.Items.Add(Localization.Text("Notifications"),null,(_,_)=>Dispatcher.Invoke(OpenNotifications));
         menu.Items.Add(Localization.Text("Settings"),null,(_,_)=>Dispatcher.Invoke(ShowSettings));
         menu.Items.Add(Localization.Text("Move & resize island"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleDockEditing()));
         menu.Items.Add(Localization.Text("AI companion"),null,(_,_)=>Dispatcher.Invoke(ShowAssistant));
@@ -149,6 +151,10 @@ public sealed partial class App : Application
         Updates.UpdateAvailable+=release=>Dispatcher.BeginInvoke(()=>PostNotice(new("updates","Update available",release.Version+" · Open Settings > Application to review.")));
         Updates.DownloadReady+=()=>Dispatcher.BeginInvoke(()=>PostNotice(new("updates",Localization.Text("Update ready to install"),Localization.Text("Open Settings > Application to install and restart when ready."))));
         Downloads=new(DownloadReady,DownloadFailed);
+        ExternalNotifications=new(ex=>Store.Log(ex));
+        ExternalNotifications.Arrived+=toast=>{if(ExternalNotificationPolicy.Allowed(Settings,toast.App))PostNotice(new("external",toast.Title,toast.Body,null,toast.App,toast.AppId));};
+        void ConfigureExternal()=>ExternalNotifications?.Configure(Settings.ExternalNotifications && !diagnosticMode);
+        SettingsChanged+=ConfigureExternal;ConfigureExternal();
         ConfigureDownloads();
         Media.Changed+=()=>PublishUpdate(RuntimeChange.Media);
         Audio.Changed+=()=>{PrivateDiagnostics.SetServiceState(DiagnosticService.Audio,Audio.Available?DiagnosticServiceState.Ready:DiagnosticServiceState.Degraded);PublishUpdate(RuntimeChange.Audio);};
@@ -224,6 +230,7 @@ public sealed partial class App : Application
         ConfigureDownloads();if(Settings.NotificationDelivery is "Off" or "Windows" || NotificationPolicy.Quiet(Settings,DateTimeOffset.UtcNow))Notifications.Clear();
         Previews?.ApplySettings();SettingsChanged?.Invoke();PublishUpdate(RuntimeChange.Settings);
     }
+    internal void ShowSettings(string category){ShowSettings();settingsWindow?.OpenCategory(category);}
     public void ShowSettings()
     {
         overlay?.Collapse();
@@ -239,7 +246,7 @@ public sealed partial class App : Application
     {
         DisposeRuntimeRecovery();
         if(Assistant!=null)Assistant.Changed-=RefreshAssistantTray;Assistant?.Dispose();assistantWindow?.Close();
-        welcomeWindow?.Close();tick?.Stop();Weather?.Dispose();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();Updates?.Dispose();
+        welcomeWindow?.Close();tick?.Stop();Weather?.Dispose();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();ExternalNotifications?.Dispose();Updates?.Dispose();
         if(Session!=null) SaveSession();
         Previews?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();
         if(tray!=null) { tray.Visible=false;tray.Dispose(); }

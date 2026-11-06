@@ -34,7 +34,7 @@ internal static class IntegrationSettingsDiagnostics
                 var preview=Diagnostics.Descendants(window).OfType<Expander>().Single(e=>AutomationProperties.GetName(e)=="Settings live preview");
                 var chooser=Diagnostics.Descendants(window).OfType<ComboBox>().Single(e=>AutomationProperties.GetName(e)=="Settings category");
                 check($"Matrix {tag} viewport {window.ActualWidth:0.##}x{window.ActualHeight:0.##} DIP incl 48 DIP taskbar; form {form.ActualHeight:0.##}",Math.Abs(window.ActualWidth-width)<1 && Math.Abs(window.ActualHeight-height)<1 && form.ActualHeight>=64);
-                check($"Matrix {tag} category chooser and preview collapse",chooser.IsVisible==(width<760) && (width>=1100 && height>=600 || !preview.IsExpanded));
+                check($"Matrix {tag} category chooser and preview collapse (chooser {chooser.IsVisible}, preview {preview.IsExpanded})",chooser.IsVisible==(width<760) && (width>=1100 && height>=600 || !preview.IsExpanded));
                 foreach(string category in new[]{"Appearance","Layout","Content","Controls","Audio","System","Launch","Application"})
                 {
                     navigate.Invoke(window,new object[]{category});window.UpdateLayout();

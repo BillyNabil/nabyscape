@@ -25,7 +25,7 @@ public sealed partial class SettingsWindow
         new("System","Clock & system","Features","Choose the clock format and computer information shown in widgets.","clock jam tanggal date battery cpu ram network storage system"),
         new("Launch","Shortcuts","Features","Choose your favorite apps, folders and websites.","apps launch aplikasi shortcuts explorer"),
         new("AI","Naby AI","Features","Connect an AI provider and manage companion preferences.","ai naby hermes gemini live voice provider api key chat model token"),
-        new("Notifications","Notifications","App","Choose which alerts appear, their sounds and quiet hours.","notifications notif pemberitahuan alert sound bunyi quiet hours downloads",new[]{"Notifications","Notification presentation","Downloads","Completion sound"}),
+        new("Notifications","Notifications","App","Choose which alerts appear, their sounds and quiet hours.","notifications notif pemberitahuan alert sound bunyi quiet hours downloads other apps claude telegram windows",new[]{"Notifications","Other apps","Notification presentation","Downloads","Completion sound"}),
         new("Application","General","App","Manage startup, updates, local data and app preferences.","general startup update version install storage data reset backup mulai windows")
     };
     private static SettingsCategory Category(string id)=>SettingsCategories.FirstOrDefault(c=>c.Id==id)??SettingsCategories[0];
@@ -39,7 +39,7 @@ public sealed partial class SettingsWindow
     private void FilterSettingsCategory(string id)
     {
         var definition=Category(id);
-        var excluded=id switch{"Content"=>new[]{"Clipboard history"},"Application"=>Category("Notifications").Sections!,"Controls"=>Category("Visibility").Sections!,_=>Array.Empty<string>()};
+        var excluded=id switch{"Content"=>ShowAllSettings?new[]{"Clipboard history"}:Array.Empty<string>(),"Application"=>Category("Notifications").Sections!,"Controls"=>Category("Visibility").Sections!,_=>Array.Empty<string>()};
         foreach(var section in page.Children.OfType<Border>().Where(b=>b.Tag is string).ToArray())
         {
             string key=(string)section.Tag;

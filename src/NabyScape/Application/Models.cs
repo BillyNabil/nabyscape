@@ -26,6 +26,11 @@ public sealed partial class Settings
     public bool NotifyDownloads {get;set;}=true;
     public bool NotifyUpdates {get;set;}=true;
     public bool NotifyFailures {get;set;}=true;
+    // Alerts other apps show in Windows (Claude, Telegram, ...). Off until the person turns it on.
+    public bool ExternalNotifications {get;set;}
+    public bool ExternalNotificationPopup {get;set;}=true;
+    public bool ExternalNotificationText {get;set;}=true;
+    public List<string> ExternalNotificationMuted {get;set;}=new();
     public bool DownloadsEnabled {get;set;}
     public string DownloadsFolder {get;set;}="";
     public string Preset { get; set; } = "Mac";
@@ -39,6 +44,8 @@ public sealed partial class Settings
     public bool CoverGestures { get; set; } = true;
     public bool GlassStyle { get; set; } = true;
     public string SettingsMaterial { get; set; } = "";
+    // Settings opens in essentials mode; this reveals every section and detailed help.
+    public bool SettingsShowAll { get; set; }
     public bool LiveActivity { get; set; } = true;
     public string ClosedMediaIcon { get; set; }="Waveform";
     public string ClosedMediaContent { get; set; }="Title";
@@ -128,6 +135,7 @@ public sealed partial class Settings
         NormalizeLanguageAccessibility();
         if(Array.IndexOf(SettingsBackdrop.Choices,SettingsMaterial)<0)SettingsMaterial="";
         if(NotificationDelivery is not ("Notch" or "Windows" or "Both" or "Off"))NotificationDelivery="Notch";
+        ExternalNotificationMuted=(ExternalNotificationMuted??new()).Where(n=>!string.IsNullOrWhiteSpace(n)).Select(n=>n.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Take(100).ToList();
         DownloadsFolder??="";
         static double Clamp(double value,double min,double max,double fallback) => double.IsFinite(value) ? Math.Clamp(value,min,max) : fallback;
         TuckEdge=Clamp(TuckEdge,0,12,6);

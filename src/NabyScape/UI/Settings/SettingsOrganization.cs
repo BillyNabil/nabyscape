@@ -30,6 +30,8 @@ public sealed partial class SettingsWindow
             var title=(FrameworkElement)content.Children[0];content.Children.RemoveAt(0);
             var head=new DockPanel{Margin=new(0,0,0,12)};
             title.Margin=new(0);head.Children.Add(title);content.Children.Insert(0,head);
+            AddSectionHint(content,(string)section.Tag);
+            CompactSettingRows(section);
         }
         // Every settings section remains directly visible; the sidebar supplies navigation.
     }

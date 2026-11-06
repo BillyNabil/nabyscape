@@ -63,6 +63,5 @@ public sealed partial class SettingsWindow
             app.Weather.Cached?.Key==WeatherService.Key(app.Settings)?("Forecast saved","Open Weather to view the forecast and its update time.","Open weather"):
             ("Needs a forecast","Your city is selected. Open Weather to load its forecast.","Open weather"),()=>Navigate("Weather"));
         page.Children.Add(Section("Your setup",group));
-        page.Children.Add(UI.CaptionButton("Run quick setup again",app.ShowWelcome));
     }
 }

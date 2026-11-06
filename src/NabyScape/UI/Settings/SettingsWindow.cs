@@ -20,16 +20,17 @@ public sealed partial class SettingsWindow : Window
     private readonly Border sectionIndexHost=new(){Margin=new(28,12,28,8)};
     private int navigationRevision,previewRevision;
     private int? previewBuildKey;
-    private bool applyingSettings;
+    private bool applyingSettings,previewDefaultPending;
     private readonly Button retrySave=UI.CaptionButton("Retry save",()=>{});
     private System.Text.Json.JsonElement savedSettings;
     private Action? refreshSettingsLayout;
     private readonly System.Collections.Generic.List<SettingsScene> settingExamples=new();
     private string current="Home";
-    private readonly TextBlock categoryHeading=UI.Caption("",26),categoryDescription=UI.Caption("",13,UI.Muted);
+    private readonly TextBlock categoryHeading=UI.Caption("",30),categoryDescription=UI.Caption("",13,UI.Muted),categoryEyebrow=UI.Text("",11);
     private readonly TextBlock previewHelp=UI.Caption("",11,UI.Muted);
     private ComboBox? categorySelector;
     private AssistantProviderSettings? aiSettings;
+    internal void OpenCategory(string id)=>Navigate(id);
     internal void OpenAiSettings(){Navigate("AI");aiSettings?.OpenSetupOverview();}
     internal void OpenAiHermesSettings(){Navigate("AI");Dispatcher.BeginInvoke(()=>aiSettings?.OpenHermesSetup());}
     internal void OpenAiVoiceSettings(){Navigate("AI");Dispatcher.BeginInvoke(()=>aiSettings?.OpenVoiceSetup());}
@@ -40,72 +41,81 @@ public sealed partial class SettingsWindow : Window
     public SettingsWindow(App app)
     {
         this.app=app;savedSettings=System.Text.Json.JsonSerializer.SerializeToElement(app.Settings);UI.LocalizedName(status,"Settings status");Accessibility.Live(status);Title=Localization.Text("NabyScape · Settings");Width=1100;Height=780;MinWidth=480;MinHeight=300;WindowStartupLocation=WindowStartupLocation.Manual;
-        Background=Accessibility.HighContrast?SystemColors.WindowBrush:UI.Brush("#111214");Foreground=Accessibility.HighContrast?SystemColors.WindowTextBrush:UI.Brush("#F3F4F6");FontFamily=new FontFamily("Segoe UI Variable, Segoe UI");FontSize=13;
+        Background=Accessibility.HighContrast?SystemColors.WindowBrush:SettingsTheme.Void;Foreground=Accessibility.HighContrast?SystemColors.WindowTextBrush:SettingsTheme.Bone;FontFamily=SettingsTheme.Body;FontSize=13;
         Icon=System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/Assets/island.ico"));
         Resources[typeof(CheckBox)]=FindResource("SettingsSwitch");
         InitializeSettingsBounds();InitializeMaterial();
-        var root=new Grid();root.RowDefinitions.Add(new(){Height=GridLength.Auto});root.RowDefinitions.Add(new());root.ColumnDefinitions.Add(new(){Width=new GridLength(228)});root.ColumnDefinitions.Add(new());
-        var navigation=new StackPanel{Orientation=Orientation.Vertical,Margin=new(14,26,12,18)};var brand=UI.Caption("NabyScape",20);brand.TextWrapping=TextWrapping.NoWrap;brand.FontWeight=FontWeights.SemiBold;brand.Margin=new(12,0,0,28);navigation.Children.Add(brand);
-        string lastGroup="";
-        foreach(var category in SettingsCategories)
-        {
-            if(category.Group!=lastGroup){var label=UI.Caption(category.Group,10,UI.Muted);label.Margin=new(12,category.Group=="Personalize"?0:18,0,6);navigation.Children.Add(label);lastGroup=category.Group;}
-            var item=category;var button=UI.CaptionButton(item.Title,()=>Navigate(item.Id));button.HorizontalContentAlignment=HorizontalAlignment.Left;button.Padding=new(12,8,12,8);button.Margin=new(0,1,0,1);button.Tag=new CornerRadius(8);button.FontSize=13;button.MinHeight=40;button.ToolTip=Localization.Text(item.Description);navigationButtons[item.Id]=button;navigation.Children.Add(button);
-        }
-        var navigationScroll=UI.Scroll(navigation);UI.LocalizedName(navigationScroll,"Settings category viewport");
-        var navBorder=new Border{Background=UI.Brush("#141619"),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,0,1,0),Child=navigationScroll};root.Children.Add(navBorder);
-        var categories=new ComboBox{Margin=new(16,7,16,7),ItemsSource=SettingsCategories.Select(c=>Localization.Text(c.Title)).ToArray(),SelectedItem=CategoryTitle(current),Visibility=Visibility.Collapsed};categorySelector=categories;UI.LocalizedName(categories,"Settings category");
-        categories.SelectionChanged+=(_,_)=>{if(categories.SelectedItem is string name && CategoryId(name)!=current)Navigate(CategoryId(name));};Grid.SetColumnSpan(categories,2);root.Children.Add(categories);
-        var main=new Grid();Grid.SetColumn(main,1);Grid.SetRowSpan(main,2);Grid.SetRowSpan(navBorder,2);root.Children.Add(main);main.RowDefinitions.Add(new(){Height=GridLength.Auto});main.RowDefinitions.Add(new(){Height=new GridLength(1,GridUnitType.Star)});main.RowDefinitions.Add(new(){Height=GridLength.Auto});
-        var workspace=new Grid();workspace.RowDefinitions.Add(new(){Height=GridLength.Auto});workspace.RowDefinitions.Add(new(){Height=GridLength.Auto});workspace.RowDefinitions.Add(new());workspace.ColumnDefinitions.Add(new());workspace.ColumnDefinitions.Add(new(){Width=new GridLength(300)});Grid.SetRow(workspace,1);main.Children.Add(workspace);InitializeSettingsSearch(main,workspace);
-        var pageHeader=new StackPanel{Margin=new(30,18,30,16)};categoryHeading.FontWeight=FontWeights.SemiBold;pageHeader.Children.Add(categoryHeading);categoryDescription.Margin=new(0,6,0,0);pageHeader.Children.Add(categoryDescription);Grid.SetRow(pageHeader,0);workspace.Children.Add(pageHeader);
-        var form=new Grid();form.RowDefinitions.Add(new(){Height=GridLength.Auto});form.RowDefinitions.Add(new());Grid.SetRow(form,2);workspace.Children.Add(form);
-        var scroll=UI.Scroll(page);scroll.Padding=new(0,0,8,0);form.Children.Add(scroll);Grid.SetRow(scroll,1);settingsScroll=scroll;InitializePinnedAmbientPreview(form,scroll);Grid.SetRow(sectionIndexHost,1);workspace.Children.Add(sectionIndexHost);
+        // Shell: a full-height sidebar (brand, search, navigation) beside one scrolling column
+        // that holds the page header, the preview stage and the settings themselves.
+        var root=new Grid();root.RowDefinitions.Add(new(){Height=GridLength.Auto});root.RowDefinitions.Add(new());root.ColumnDefinitions.Add(new(){Width=new GridLength(SidebarWidth)});root.ColumnDefinitions.Add(new());
+        var chromeResources=SettingsTheme.ChromeResources();
+        var sidebar=new DockPanel{LastChildFill=true};
+        var brandBlock=SidebarBrand();DockPanel.SetDock(brandBlock,Dock.Top);sidebar.Children.Add(brandBlock);
+        var sidebarSearchHost=new Border{Margin=new(16,0,16,14)};DockPanel.SetDock(sidebarSearchHost,Dock.Top);sidebar.Children.Add(sidebarSearchHost);
+        var navigation=new StackPanel{Orientation=Orientation.Vertical,Margin=new(12,0,12,16)};
+        BuildNavigation(navigation);
+        var sidebarFooter=SidebarFooter();DockPanel.SetDock(sidebarFooter,Dock.Bottom);sidebar.Children.Add(sidebarFooter);
+        var navigationScroll=UI.Scroll(navigation);UI.LocalizedName(navigationScroll,"Settings category viewport");sidebar.Children.Add(navigationScroll);
+        var navBorder=new Border{Background=Accessibility.HighContrast?SystemColors.WindowBrush:SettingsTheme.Sidebar,BorderBrush=SettingsTheme.Line,BorderThickness=new(0,0,1,0),Child=sidebar,Resources=chromeResources};root.Children.Add(navBorder);
+        var compactBar=new Grid{Margin=new(16,50,16,8),Visibility=Visibility.Collapsed};compactBar.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});compactBar.ColumnDefinitions.Add(new(){Width=new GridLength(1,GridUnitType.Star)});
+        var categories=new ComboBox{Margin=new(0,0,8,0),ItemsSource=SettingsCategories.Select(c=>Localization.Text(c.Title)).ToArray(),SelectedItem=CategoryTitle(current)};categorySelector=categories;UI.LocalizedName(categories,"Settings category");compactBar.Children.Add(categories);
+        var compactSearchHost=new Border();Grid.SetColumn(compactSearchHost,1);compactBar.Children.Add(compactSearchHost);
+        categories.SelectionChanged+=(_,_)=>{if(categories.SelectedItem is string name && CategoryId(name)!=current)Navigate(CategoryId(name));};RefreshNavigationMode();Grid.SetColumnSpan(compactBar,2);compactBar.Resources=chromeResources;root.Children.Add(compactBar);
+        var main=new Grid{Resources=chromeResources};Grid.SetColumn(main,1);Grid.SetRowSpan(main,2);Grid.SetRowSpan(navBorder,2);root.Children.Add(main);main.RowDefinitions.Add(new(){Height=new GridLength(1,GridUnitType.Star)});main.RowDefinitions.Add(new(){Height=GridLength.Auto});
+        var workspace=new Grid();Grid.SetRow(workspace,0);main.Children.Add(workspace);
+        var form=new Grid();form.RowDefinitions.Add(new(){Height=GridLength.Auto});form.RowDefinitions.Add(new());workspace.Children.Add(form);
+        var column=new StackPanel{HorizontalAlignment=HorizontalAlignment.Left};
+        var pageHeader=new StackPanel{Margin=new(0,0,0,20)};categoryEyebrow.FontFamily=SettingsTheme.Display;categoryEyebrow.FontWeight=FontWeights.Bold;categoryEyebrow.FontSize=11;categoryEyebrow.Foreground=SettingsTheme.Lime;categoryEyebrow.Margin=new(0,0,0,6);pageHeader.Children.Add(categoryEyebrow);
+        categoryHeading.FontFamily=SettingsTheme.Display;categoryHeading.FontWeight=FontWeights.Bold;categoryHeading.Foreground=SettingsTheme.Bone;pageHeader.Children.Add(categoryHeading);categoryDescription.Foreground=SettingsTheme.Quiet;categoryDescription.Margin=new(0,6,0,0);pageHeader.Children.Add(categoryDescription);column.Children.Add(pageHeader);
+        var scroll=UI.Scroll(column);scroll.Padding=new(0,0,8,0);form.Children.Add(scroll);Grid.SetRow(scroll,1);settingsScroll=scroll;InitializePinnedAmbientPreview(form,scroll);
+        InitializeSettingsSearch(main,workspace,sidebarSearchHost);
         preview=new Border{HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top};
-        var previewColumn=new StackPanel{Margin=new(20,28,20,20)};var previewTitle=UI.Caption("Live preview",14);previewTitle.FontWeight=FontWeights.SemiBold;previewColumn.Children.Add(previewTitle);previewFocus.Margin=new(0,7,0,0);previewColumn.Children.Add(previewFocus);
-        var modes=new Grid{Margin=new(0,14,0,12)};for(int i=0;i<3;i++)modes.ColumnDefinitions.Add(new());int column=0;foreach(string mode in new[]{"Closed","Hover","Panel"}){var button=UI.CaptionButton(mode,()=>{previewMode=mode;RefreshPreview();});button.FontSize=10;button.Padding=new(3,7,3,7);button.Margin=new(0,0,4,0);button.Tag=new CornerRadius(7);UI.Named(button,"Preview "+mode);Grid.SetColumn(button,column++);modes.Children.Add(button);previewModeButtons[mode]=button;}previewColumn.Children.Add(modes);
-        previewStage=new Border{Height=238,Background=UI.Brush("#202226"),CornerRadius=new(10),ClipToBounds=true,Child=new System.Windows.Controls.Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=preview,VerticalAlignment=VerticalAlignment.Top}};previewColumn.Children.Add(previewStage);
-        previewDimensions.Margin=new(0,12,0,18);previewColumn.Children.Add(previewDimensions);var sample=UI.Caption("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,7);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Stopwatch","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Smart clipboard","Control colors","Typography","Panel navigation","Visibility","Tasks","Startup","AI"})examples.Items.Add(item);examples.SelectedIndex=0;UI.LocalizedName(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=previewHelp;hint.Margin=new(0,15,0,0);previewColumn.Children.Add(hint);
-        var previewExpander=new Expander{Header=UI.Caption("Live preview",12,UI.Muted),Foreground=UI.Muted,Margin=new(8,0,0,0),Content=UI.Scroll(previewColumn),IsExpanded=true};
-        var rail=new Border{BorderBrush=UI.Brush("#24262B"),BorderThickness=new(1,0,0,0),Child=previewExpander};Grid.SetColumn(rail,1);Grid.SetRowSpan(rail,3);workspace.Children.Add(rail);
-        var saveRow=new DockPanel();undoSettings.Visibility=Visibility.Collapsed;undoSettings.Click+=(_,_)=>UndoSettings();DockPanel.SetDock(undoSettings,Dock.Right);saveRow.Children.Add(undoSettings);retrySave.Visibility=Visibility.Collapsed;retrySave.HorizontalAlignment=HorizontalAlignment.Right;retrySave.Click+=(_,_)=>CommitSettings();DockPanel.SetDock(retrySave,Dock.Right);saveRow.Children.Add(retrySave);saveRow.Children.Add(status);
-        var footer=new Border{Padding=new(26,12,26,14),BorderBrush=UI.Brush("#24262B"),BorderThickness=new(0,1,0,0),Background=Accessibility.HighContrast?SystemColors.WindowBrush:UI.Brush("#181B20"),Child=saveRow};
+        var previewColumn=new StackPanel{Margin=new(18,18,18,16)};var previewTitle=UI.Caption("Preview",11);previewTitle.FontFamily=SettingsTheme.Display;previewTitle.FontWeight=FontWeights.Bold;previewTitle.Foreground=SettingsTheme.Quiet;previewColumn.Children.Add(previewTitle);previewFocus.Margin=new(0,4,0,0);previewFocus.Foreground=SettingsTheme.Bone;previewColumn.Children.Add(previewFocus);
+        var modes=new Grid{Margin=new(0,12,0,12)};for(int i=0;i<3;i++)modes.ColumnDefinitions.Add(new());int modeColumn=0;foreach(string mode in new[]{"Closed","Hover","Panel"}){var button=UI.CaptionButton(mode,()=>{previewMode=mode;RefreshPreview();});button.FontSize=11;button.Padding=new(3,6,3,6);button.Margin=new(0,0,4,0);button.MinHeight=30;button.Tag=new CornerRadius(15);UI.Named(button,"Preview "+mode);Grid.SetColumn(button,modeColumn++);modes.Children.Add(button);previewModeButtons[mode]=button;}previewColumn.Children.Add(modes);
+        previewStage=new Border{Height=StageHeight,Background=Brushes.Transparent,ClipToBounds=true,Child=new System.Windows.Controls.Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Child=preview,VerticalAlignment=VerticalAlignment.Top,Margin=new(16,3,16,10)}};
+        previewDimensions.Margin=new(0,0,0,12);previewColumn.Children.Add(previewDimensions);var sample=UI.Caption("Preview content",11,UI.Muted);sample.Margin=new(0,0,0,5);previewColumn.Children.Add(sample);var examples=new ComboBox();previewExamples=examples;foreach(string item in new[]{"Music","Timer","Focus","Stopwatch","Calendar","Note","Shelf","Tools","System","Launch","Navigation","Volume feedback","Drop zone","Detached preview","Cover gestures","Smart clipboard","Control colors","Typography","Panel navigation","Visibility","Tasks","Startup","AI"})examples.Items.Add(item);examples.SelectedIndex=0;UI.LocalizedName(examples,"Preview content");examples.SelectionChanged+=(_,_)=>{previewContent=examples.SelectedItem?.ToString()??"Music";RefreshPreview();};previewColumn.Children.Add(examples);var hint=previewHelp;hint.Margin=new(0,10,0,0);previewColumn.Children.Add(hint);
+        var stage=StageFrame(previewStage,previewColumn);
+        var previewExpander=new Expander{Header=UI.Caption("Live preview",12,UI.Muted),Foreground=UI.Muted,Margin=new(0,0,0,20),Content=stage,IsExpanded=true};
+        var rail=new Border{Child=previewExpander};column.Children.Add(rail);
+        sectionIndexHost.Visibility=Visibility.Collapsed;column.Children.Add(sectionIndexHost);column.Children.Add(page);
+        var saveRow=new DockPanel();undoSettings.Visibility=Visibility.Collapsed;undoSettings.Click+=(_,_)=>UndoSettings();DockPanel.SetDock(undoSettings,Dock.Right);saveRow.Children.Add(undoSettings);retrySave.Visibility=Visibility.Collapsed;retrySave.HorizontalAlignment=HorizontalAlignment.Right;retrySave.Click+=(_,_)=>CommitSettings();DockPanel.SetDock(retrySave,Dock.Right);saveRow.Children.Add(retrySave);
+        var savedDot=new System.Windows.Shapes.Ellipse{Width=6,Height=6,Fill=SettingsTheme.Lime,Margin=new(0,0,9,0),VerticalAlignment=VerticalAlignment.Center};saveRow.Children.Add(savedDot);status.VerticalAlignment=VerticalAlignment.Center;status.Foreground=SettingsTheme.Quiet;saveRow.Children.Add(status);
+        var footer=new Border{Padding=new(40,10,26,12),BorderBrush=SettingsTheme.LineSoft,BorderThickness=new(0,1,0,0),Background=Accessibility.HighContrast?SystemColors.WindowBrush:SettingsTheme.Void,Child=saveRow};
         bool? previousNarrow=null;
         bool? previousShort=null;
         void Responsive()
         {
             bool noPreview=current is not ("Appearance" or "Ambience" or "Layout" or "Motion" or "Audio");
             bool narrow=ActualWidth<1100,compactNav=ActualWidth<760,shortScreen=ActualHeight<600,veryShort=ActualHeight<340;
-            categories.Margin=new Thickness(16,veryShort?3:7,16,veryShort?3:7);
-            if(settingsSearchHeader!=null)settingsSearchHeader.Margin=veryShort?new Thickness(20,4,20,4):new Thickness(20,13,20,9);
-            footer.Padding=veryShort?new Thickness(20,4,20,6):new Thickness(26,12,26,14);
-            root.ColumnDefinitions[0].Width=compactNav?new GridLength(0):new GridLength(228);
-            navBorder.Visibility=compactNav?Visibility.Collapsed:Visibility.Visible;categories.Visibility=compactNav?Visibility.Visible:Visibility.Collapsed;
+            compactBar.Margin=new Thickness(16,veryShort?44:50,16,veryShort?3:8);
+            footer.Padding=veryShort?new Thickness(20,4,20,6):new Thickness(compactNav?20:40,10,26,12);
+            root.ColumnDefinitions[0].Width=compactNav?new GridLength(0):new GridLength(SidebarWidth);
+            navBorder.Visibility=compactNav?Visibility.Collapsed:Visibility.Visible;compactBar.Visibility=compactNav?Visibility.Visible:Visibility.Collapsed;categories.Visibility=compactBar.Visibility;
+            if(settingsSearchHeader!=null){var host=compactNav?compactSearchHost:sidebarSearchHost;if(settingsSearchHeader.Parent!=host){if(settingsSearchHeader.Parent is Border old)old.Child=null;host.Child=settingsSearchHeader;}}
             if(categories.SelectedItem?.ToString()!=CategoryTitle(current))categories.SelectedItem=CategoryTitle(current);
             Grid.SetRow(main,compactNav?1:0);Grid.SetRowSpan(main,compactNav?1:2);Grid.SetColumn(main,compactNav?0:1);Grid.SetColumnSpan(main,compactNav?2:1);
             rail.Visibility=noPreview?Visibility.Collapsed:Visibility.Visible;
-            workspace.ColumnDefinitions[1].Width=narrow || noPreview?new GridLength(0):new GridLength(284);Grid.SetColumn(rail,narrow?0:1);Grid.SetRowSpan(rail,narrow?1:3);
-            if(previousNarrow!=narrow || previousShort!=shortScreen){previewExpander.IsExpanded=!narrow && !shortScreen;previousNarrow=narrow;previousShort=shortScreen;}
-            previewTitle.Visibility=Visibility.Collapsed;
-            double previewHeight=Math.Clamp(workspace.ActualHeight-sectionIndexHost.ActualHeight-100,50,210);
-            previewExpander.MaxHeight=narrow?previewHeight:double.PositiveInfinity;
-            rail.Height=double.NaN;
-            modes.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
-            previewStage.Height=narrow?Math.Max(40,previewHeight-65):238;
-            previewColumn.Margin=narrow?new Thickness(18,6,18,8):new Thickness(18,18,18,18);hint.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;previewDimensions.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;sample.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;examples.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
-            sectionIndexHost.Margin=narrow?(veryShort?new Thickness(20,3,20,2):new Thickness(20,8,20,4)):new Thickness(28,14,28,4);
+            // Each page opens with the preview at its default for the window size; manual toggles last until you switch pages or resize past a breakpoint.
+            if(previousNarrow!=narrow || previousShort!=shortScreen || previewDefaultPending){previewExpander.IsExpanded=!narrow && !shortScreen;previousNarrow=narrow;previousShort=shortScreen;previewDefaultPending=false;}
+            previewStage.Height=narrow?Math.Clamp(ActualHeight*.24,90,StageHeight):StageHeight;
+            StageCompact(stage,narrow);
+            hint.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;sample.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;examples.Visibility=narrow?Visibility.Collapsed:Visibility.Visible;
+            categoryEyebrow.Visibility=shortScreen?Visibility.Collapsed:Visibility.Visible;
             categoryDescription.Visibility=shortScreen?Visibility.Collapsed:Visibility.Visible;
-            categoryHeading.FontSize=shortScreen?18:26;
-            pageHeader.Margin=new Thickness(narrow?20:30,shortScreen?3:16,narrow?20:30,shortScreen?3:16);
-            page.Margin=narrow?new Thickness(20,8,20,24):new Thickness(30,8,30,32);
-            double available=workspace.ActualWidth-(narrow || noPreview?0:284)-80;
-            page.Width=Math.Max(260,Math.Min(900,available));
+            categoryHeading.FontSize=shortScreen?20:30;
+            pageHeader.Margin=new Thickness(0,0,0,shortScreen?8:20);pageHeader.Visibility=current=="Home"?Visibility.Collapsed:Visibility.Visible;
+            double side=compactNav?18:narrow?28:44;
+            column.Margin=new Thickness(side,compactNav?(veryShort?4:12):(shortScreen?44:52),side,28);
+            // Leave room for the vertical scrollbar so card borders are never clipped.
+            double available=workspace.ActualWidth-side*2-28;
+            column.Width=Math.Max(240,Math.Min(MaxContentWidth,available));
+            page.Width=column.Width;page.Margin=new Thickness(0);
         }
         refreshSettingsLayout=Responsive;
         UI.LocalizedName(previewExpander,"Settings live preview");UI.LocalizedName(scroll,"Settings form viewport");UI.LocalizedName(rail,"Settings preview rail");UI.LocalizedName(navBorder,"Settings navigation");
         SizeChanged+=(_,_)=>Responsive();workspace.SizeChanged+=(_,_)=>Responsive();Loaded+=(_,_)=>Responsive();
-        page.MaxWidth=900;page.HorizontalAlignment=HorizontalAlignment.Left;
-        Grid.SetRow(footer,2);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);InitializeAmbientPreview();
+        page.HorizontalAlignment=HorizontalAlignment.Left;
+        Grid.SetRow(footer,1);main.Children.Add(footer);Content=SettingsFrame(root);InitializePreviewMotion(previewColumn);InitializeAmbientPreview();
         saveTimer.Tick+=(_,_)=>CommitSettings();
         app.Updates.Changed+=UpdateControls;
         app.SettingsChanged+=SettingsApplied;app.Updated+=UpdateFrameStatus;
@@ -153,16 +163,16 @@ public sealed partial class SettingsWindow : Window
     {
         if(searchResultsHost!=null)searchResultsHost.Visibility=Visibility.Collapsed;
         Accessibility.Announce(status,Localization.Text(name=="AI"?"Connection fields use Save provider. Voice and wake word changes use their Save buttons.":"Changes save automatically on this device."));previewHelp.Text=Localization.Text(name=="AI"?"Preview only. Apply connection edits with Save provider.":"Changes apply automatically. The preview uses your current shape, size and colors.");
-        bool same=name==current && page.Children.Count>0;double offset=settingsScroll.VerticalOffset;int revision=++navigationRevision;
+        bool same=name==current && page.Children.Count>0;previewDefaultPending|=!same;revealAllSettings=revealAllNext || same && revealAllSettings;revealAllNext=false;double offset=settingsScroll.VerticalOffset;int revision=++navigationRevision;
         var expanded=SettingTree(page).OfType<Expander>().Where(e=>e.IsExpanded).Select(e=>e.Header?.ToString()).ToHashSet();
         string focused=System.Windows.Input.Keyboard.FocusedElement is DependencyObject oldFocus?UI.Identity(oldFocus):"";
-        previewRevision++;settingExamples.Clear();HidePinnedAmbientPreview();current=name;categoryHeading.Text=CategoryTitle(name);categoryDescription.Text=Localization.Text(Category(name).Description);if(categorySelector!=null && categorySelector.SelectedItem?.ToString()!=CategoryTitle(name))categorySelector.SelectedItem=CategoryTitle(name);previewFocus.Text=name+" overview";previewContent="Music";previewMode="Closed";if(name=="Launch"){previewContent="Launch";previewMode="Panel";}if(name=="Content"){previewContent="Navigation";previewMode="Panel";}if(name=="Controls"){previewContent="Music";previewMode="Hover";}if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}if(name=="AI"){previewContent="AI";previewMode="Panel";}if(name=="Application"){previewContent="Startup";previewMode="Panel";}if(!same)settingsScroll.ScrollToTop();page.Children.Clear();
-        foreach(var entry in navigationButtons){entry.Value.FontWeight=entry.Key==name?FontWeights.SemiBold:FontWeights.Normal;entry.Value.Background=entry.Key==name?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==name?Brushes.White:UI.Muted;}
-        switch(SettingsRoot(name)){case "Home":SettingsHome();break;case "Weather":WeatherSettingsPage();break;case "Appearance":Appearance();break;case "Layout":LayoutSettings();break;case "Content":ContentSettings();break;case "Launch":LaunchSettings();break;case "Controls":Interactions();break;case "Audio":AudioSettings();break;case "System":SystemSettings();break;case "AI":AiSettings();break;default:General();break;}FilterSettingsCategory(name);if(PreferenceReset.Categories.TryGetValue(current,out var resetKeys) && resetKeys.Length>0)page.Children.Add(UI.CaptionButton("Reset this category",()=>ResetPreferences(current)));OrganizeSettings();if(same){foreach(var group in SettingTree(page).OfType<Expander>())group.IsExpanded=expanded.Contains(group.Header?.ToString());page.UpdateLayout();settingsScroll.ScrollToVerticalOffset(offset);Dispatcher.BeginInvoke(DispatcherPriority.Loaded,()=>{if(revision!=navigationRevision)return;var replacement=SettingTree(page).OfType<Control>().FirstOrDefault(c=>focused.Length>0 && UI.Identity(c)==focused);replacement?.Focus();settingsScroll.ScrollToVerticalOffset(offset);});}refreshSettingsLayout?.Invoke();RefreshPreview();
+        previewRevision++;settingExamples.Clear();HidePinnedAmbientPreview();current=name;categoryHeading.Text=CategoryTitle(name);categoryEyebrow.Text=CategoryEyebrow(name);categoryDescription.Text=Localization.Text(Category(name).Description);if(categorySelector!=null && categorySelector.SelectedItem?.ToString()!=CategoryTitle(name))categorySelector.SelectedItem=CategoryTitle(name);previewFocus.Text=name+" overview";previewContent="Music";previewMode="Closed";if(name=="Launch"){previewContent="Launch";previewMode="Panel";}if(name=="Content"){previewContent="Navigation";previewMode="Panel";}if(name=="Controls"){previewContent="Music";previewMode="Hover";}if(name=="System"){previewContent="System";previewMode="Panel";}if(name=="Audio"){previewContent="Music";previewMode="Panel";}if(name=="AI"){previewContent="AI";previewMode="Panel";}if(name=="Application"){previewContent="Startup";previewMode="Panel";}if(!same)settingsScroll.ScrollToTop();page.Children.Clear();
+        StyleNavigationSelection(name);
+        switch(SettingsRoot(name)){case "Home":SettingsHome();break;case "Weather":WeatherSettingsPage();break;case "Appearance":Appearance();break;case "Layout":LayoutSettings();break;case "Content":ContentSettings();break;case "Launch":LaunchSettings();break;case "Controls":Interactions();break;case "Audio":AudioSettings();break;case "System":SystemSettings();break;case "AI":AiSettings();break;default:General();break;}FilterSettingsCategory(name);if(PreferenceReset.Categories.TryGetValue(current,out var resetKeys) && resetKeys.Length>0)page.Children.Add(UI.CaptionButton("Reset this category",()=>ResetPreferences(current)));ApplyEssentialsFilter();RefreshNavigationMode();OrganizeSettings();if(same){foreach(var group in SettingTree(page).OfType<Expander>())group.IsExpanded=expanded.Contains(group.Header?.ToString());page.UpdateLayout();settingsScroll.ScrollToVerticalOffset(offset);Dispatcher.BeginInvoke(DispatcherPriority.Loaded,()=>{if(revision!=navigationRevision)return;var replacement=SettingTree(page).OfType<Control>().FirstOrDefault(c=>focused.Length>0 && UI.Identity(c)==focused);replacement?.Focus();settingsScroll.ScrollToVerticalOffset(offset);});}refreshSettingsLayout?.Invoke();RefreshPreview();
     }
     private Border Section(string title,params UIElement[] children)
     {
-        var content=new StackPanel();var label=UI.Caption(FriendlySection(title),16);label.FontWeight=FontWeights.SemiBold;label.Margin=new(0,0,0,12);content.Children.Add(label);
+        var content=new StackPanel();var label=UI.Caption(FriendlySection(title),15);label.FontFamily=SettingsTheme.Display;label.FontWeight=FontWeights.Bold;label.Foreground=SettingsTheme.Bone;label.Margin=new(0,0,0,12);content.Children.Add(label);
         // The dedicated preview rail already shows visual changes; avoid duplicate preview drawers.
         var details=new StackPanel();
         foreach(var child in children)
@@ -172,7 +182,7 @@ public sealed partial class SettingsWindow : Window
             if(child is TextBlock paragraph && paragraph.Text.Length>220 && title!="Clipboard history")details.Children.Add(child);else content.Children.Add(child);
         }
         if(details.Children.Count>0)content.Children.Add(new Expander{Header=Localization.Text("More details")+" · "+Localization.Text(FriendlySection(title)),Content=details,Foreground=UI.Muted,IsExpanded=false,FontSize=11,Margin=new(0,10,0,0)});
-        return new Border{Tag=title,Background=UI.Brush("#17191D"),BorderBrush=UI.Brush("#2A2E36"),BorderThickness=new(.7),CornerRadius=new(12),Padding=new(16),Margin=new(0,0,0,15),Child=content};
+        return new Border{Tag=title,Background=Accessibility.HighContrast?SystemColors.WindowBrush:SettingsTheme.Card,BorderBrush=SettingsTheme.LineSoft,BorderThickness=new(1),CornerRadius=new(14),Padding=new(20,17,20,13),Margin=new(0,0,0,14),Child=content};
     }
     private static Expander Advanced(string title,UIElement content)
     {
@@ -181,18 +191,21 @@ public sealed partial class SettingsWindow : Window
     }
     private void AddSlider(StackPanel target,string label,double value,double min,double max,Action<double> change,string unit="",double step=1)
     {
-        var row=new Grid{Margin=new(0,2,0,0)};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=new GridLength(72)});row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.Children.Add(UI.Caption(label,12));var number=UI.Input(label+" value",value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture));number.Padding=new(6,4,6,4);number.Margin=new(0);number.HorizontalContentAlignment=HorizontalAlignment.Right;number.ToolTip=$"{min:0.##} to {max:0.##} {unit}";Grid.SetColumn(number,1);row.Children.Add(number);var suffix=UI.Text(unit.Trim(),10,UI.Muted);suffix.Margin=new(7,0,0,0);Grid.SetColumn(suffix,2);row.Children.Add(suffix);target.Children.Add(row);
-        var slider=new Slider{Minimum=min,Maximum=max,Value=value,TickFrequency=step,IsSnapToTickEnabled=true,Margin=new(0,6,0,14)};UI.LocalizedName(slider,label);slider.ValueChanged+=(_,_)=>{if(!number.IsKeyboardFocusWithin)number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);change(slider.Value);ConfigurePreviewForSetting(label);if(label is "Panel width" or "Maximum panel height" or "Content inset" or "Content size" or "Section spacing")previewMode="Panel";else if(label.StartsWith("Preview"))previewMode="Hover";else if(label.StartsWith("Closed") || label=="Corner radius")previewMode="Closed";Save();};
+        var row=new Grid{Margin=new(0,5,0,5)};row.ColumnDefinitions.Add(new());row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.ColumnDefinitions.Add(new(){Width=new GridLength(64)});row.ColumnDefinitions.Add(new(){Width=GridLength.Auto});row.RowDefinitions.Add(new(){Height=GridLength.Auto});row.RowDefinitions.Add(new(){Height=GridLength.Auto});var name=UI.Caption(label,12);name.VerticalAlignment=VerticalAlignment.Center;name.Margin=new(0,0,12,0);row.Children.Add(name);var number=UI.Input(label+" value",value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture));number.Padding=new(6,4,6,4);number.Margin=new(0);number.HorizontalContentAlignment=HorizontalAlignment.Right;number.ToolTip=$"{min:0.##} to {max:0.##} {unit}";Grid.SetColumn(number,2);row.Children.Add(number);var suffix=UI.Text(unit.Trim(),10,UI.Muted);suffix.Margin=new(7,0,0,0);suffix.MinWidth=unit.Trim().Length>0?22:0;Grid.SetColumn(suffix,3);row.Children.Add(suffix);target.Children.Add(row);
+        var slider=new Slider{Minimum=min,Maximum=max,Value=value,TickFrequency=step,IsSnapToTickEnabled=true,VerticalAlignment=VerticalAlignment.Center};row.Children.Add(slider);
+        bool? inline=null;
+        void Arrange(){bool fits=row.ActualWidth<=0 || row.ActualWidth>=380;if(inline==fits)return;inline=fits;Grid.SetRow(slider,fits?0:1);Grid.SetColumn(slider,fits?1:0);Grid.SetColumnSpan(slider,fits?1:4);slider.Width=fits?190:double.NaN;slider.Margin=fits?new Thickness(0,0,12,0):new Thickness(0,8,0,4);}
+        Arrange();row.SizeChanged+=(_,_)=>Arrange();UI.LocalizedName(slider,label);slider.ValueChanged+=(_,_)=>{if(!number.IsKeyboardFocusWithin)number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);change(slider.Value);ConfigurePreviewForSetting(label);if(label is "Panel width" or "Maximum panel height" or "Content inset" or "Content size" or "Section spacing")previewMode="Panel";else if(label.StartsWith("Preview"))previewMode="Hover";else if(label.StartsWith("Closed") || label=="Corner radius")previewMode="Closed";Save();};
         WireSettingPreview(slider,label);WireSettingPreview(number,label);
         void Commit(){if(double.TryParse(number.Text,System.Globalization.NumberStyles.Float,System.Globalization.CultureInfo.InvariantCulture,out double n) && double.IsFinite(n)){slider.Value=Math.Clamp(Math.Round(n/step)*step,min,max);number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);}else{number.Text=slider.Value.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture);Accessibility.Announce(status,Localization.Format("Enter a number from {0} to {1} {2}.",min.ToString("0.##"),max.ToString("0.##"),unit));}}
-        number.LostKeyboardFocus+=(_,_)=>Commit();number.KeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Enter){Commit();e.Handled=true;}};target.Children.Add(slider);string help=SettingDescription(label);if(help.Length>0){var hint=UI.Caption(help,11,UI.Muted);hint.Margin=new(0,-6,0,16);target.Children.Add(hint);}
+        number.LostKeyboardFocus+=(_,_)=>Commit();number.KeyDown+=(_,e)=>{if(e.Key==System.Windows.Input.Key.Enter){Commit();e.Handled=true;}};string help=SettingDescription(label);if(help.Length>0){var hint=UI.Caption(help,11,UI.Muted);hint.Margin=new(0,-2,0,10);target.Children.Add(hint);}
     }
     private CheckBox Check(string name,bool value,Action<bool> change)
     {
-        var label=new StackPanel{Margin=new(0,7,0,7)};var stateLabel=UI.Text(Localization.Text(name)+" · "+Localization.Text(value?"On":"Off"),12);label.Children.Add(stateLabel);
+        // The switch itself shows On/Off; the label stays a plain name so rows scan quickly.
+        var label=new StackPanel{Margin=new(0,7,0,7)};var stateLabel=UI.Text(Localization.Text(name),12);label.Children.Add(stateLabel);
         string help=SettingDescription(name);if(help.Length>0){var description=UI.Caption(help,11,UI.Muted);description.Margin=new(0,4,0,0);label.Children.Add(description);}
         var check=new CheckBox{Content=label,IsChecked=value};UI.LocalizedName(check,name);check.ToolTip=help.Length>0?help:null;
-        check.Checked+=(_,_)=>stateLabel.Text=Localization.Text(name)+" · "+Localization.Text("On");check.Unchecked+=(_,_)=>stateLabel.Text=Localization.Text(name)+" · "+Localization.Text("Off");
         WireSettingPreview(check,name);check.Click+=(_,_)=> {change(check.IsChecked==true);ConfigurePreviewForSetting(name);Save();};return check;
     }
     private void Appearance()

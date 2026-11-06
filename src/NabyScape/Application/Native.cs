@@ -90,8 +90,27 @@ internal static class Native
     public static bool FullscreenOn(Forms.Screen screen,IntPtr own)=>IsFullscreenWindow(screen,GetForegroundWindow(),own);
     internal static bool ShouldHideOn(Forms.Screen screen,IntPtr window,bool fullscreen,bool maximized)
     {
-        if(!IsExternalWindow(window) || MonitorFromWindow(window,2)!=MonitorFromPoint(new(){X=screen.Bounds.Left+screen.Bounds.Width/2,Y=screen.Bounds.Top+screen.Bounds.Height/2},2))return false;
-        return (maximized && IsZoomed(window)) || (fullscreen && IsFullscreenWindow(screen,window,IntPtr.Zero));
+        if(!IsExternalWindow(window) || IsCloaked(window) || MonitorFromWindow(window,2)!=MonitorFromPoint(new(){X=screen.Bounds.Left+screen.Bounds.Width/2,Y=screen.Bounds.Top+screen.Bounds.Height/2},2))return false;
+        return (maximized && (IsZoomed(window) || FillsWorkArea(screen,window))) || (fullscreen && IsFullscreenWindow(screen,window,IntPtr.Zero));
+    }
+    // Custom-frame apps and snap layouts can fill the work area without reporting WS_MAXIMIZE.
+    internal static bool FillsWorkArea(Forms.Screen screen,IntPtr hwnd)
+    {
+        if(DwmGetWindowAttribute(hwnd,9,out var r,Marshal.SizeOf<Rect>())!=0 && !GetWindowRect(hwnd,out r))return false;
+        return CoversArea(r,screen.WorkingArea,2);
+    }
+    internal static bool CoversArea(Rect window,System.Drawing.Rectangle area,int tolerance)=>window.Left<=area.Left+tolerance && window.Top<=area.Top+tolerance && window.Right>=area.Right-tolerance && window.Bottom>=area.Bottom-tolerance;
+    [DllImport("dwmapi.dll")] private static extern int DwmGetWindowAttribute(IntPtr hwnd,int attribute,out Rect value,int size);
+    [DllImport("dwmapi.dll",EntryPoint="DwmGetWindowAttribute")] private static extern int DwmGetCloaked(IntPtr hwnd,int attribute,out int value,int size);
+    // Windows on another virtual desktop stay "visible" but are cloaked and cover nothing.
+    private static bool IsCloaked(IntPtr hwnd)=>DwmGetCloaked(hwnd,14,out int cloaked,sizeof(int))==0 && cloaked!=0;
+    // Taskbar, tray overflow, Start/search and NabyScape's own windows sit above apps without uncovering them.
+    internal static bool ForegroundIsTransientShellOrOwn()
+    {
+        var window=GetForegroundWindow();if(window==IntPtr.Zero)return true;
+        GetWindowThreadProcessId(window,out uint process);if(process==Environment.ProcessId)return true;
+        var name=new System.Text.StringBuilder(128);GetClassName(window,name,128);
+        return name.ToString() is "Shell_TrayWnd" or "Shell_SecondaryTrayWnd" or "NotifyIconOverflowWindow" or "TopLevelWindowForOverflowXamlIsland" or "Windows.UI.Core.CoreWindow" or "XamlExplorerHostIslandWindow";
     }
     internal static bool IsFullscreenWindow(Forms.Screen screen,IntPtr hwnd,IntPtr own)
     {

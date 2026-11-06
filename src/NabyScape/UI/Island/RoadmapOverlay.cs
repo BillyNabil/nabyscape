@@ -52,7 +52,7 @@ public sealed partial class OverlayWindow
     private IEnumerable<(string title,string detail,Action run)> Commands()
     {
         yield return ("AI companion","Chat, voice and reviewed actions · configure your own provider",app.ShowAssistant);
-        yield return ("Notifications","View pending notifications and Downloads · Enter",()=>{CloseCommands();OpenNotice(true);});
+        yield return ("Notifications","See every recent alert, including Downloads · Enter",()=>{CloseCommands();OpenNotificationCenter();});
         yield return ("Tuck / Return to automatic","Toggle the manual tuck latch; hover the edge to preview",()=>{CloseCommands();ToggleTuck();});
         yield return ("Open Settings","Appearance, widgets, and interaction",app.ShowSettings);
         foreach(var pair in new[]{("media","Media controls"),("focus","Timers & focus"),("status","System status"),("access","Quick launch")})

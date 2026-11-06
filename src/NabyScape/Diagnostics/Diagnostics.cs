@@ -38,6 +38,9 @@ internal static class Diagnostics
 
         Directory.CreateDirectory(directory);var report=new List<string>();int failures=0;
 
+        // Integration checks reach every Settings control; the gallery covers the essentials view.
+        app.Settings.SettingsShowAll=!Environment.GetCommandLineArgs().Contains("--settings-gallery-only");
+
         // Ignore physical input only inside this temporary diagnostic application's UI.
 
         // Programmatic RaiseEvent/Focus and native geometry checks remain available.
@@ -180,6 +183,10 @@ internal static class Diagnostics
             if(Environment.GetCommandLineArgs().Contains("--showcase")){await ShowcaseDiagnostics.Run(app,overlay,directory);return;}
 
             if(Environment.GetCommandLineArgs().Contains("--stage6-only")){await Task.Delay(500);await Stage6Diagnostics.Run(app,overlay,directory,Check);return;}
+
+            if(Environment.GetCommandLineArgs().Contains("--notification-center-only")){await Task.Delay(400);await NotificationCenterDiagnostics.Run(app,overlay,directory,Check);return;}
+
+            if(Environment.GetCommandLineArgs().Contains("--settings-gallery-only")){await SettingsGalleryDiagnostics.Run(app,overlay,directory,Check);return;}
 
             if(Environment.GetCommandLineArgs().Contains("--integration-settings-only")){await IntegrationSettingsDiagnostics.Run(app,overlay,directory,Check);return;}
 

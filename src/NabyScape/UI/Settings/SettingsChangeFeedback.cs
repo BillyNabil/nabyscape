@@ -17,7 +17,7 @@ internal static class SettingsChangeFeedback
         ["AutoDownloadUpdates"]="Automatic update downloads",["Width"]="Closed dock width",
         ["Height"]="Closed dock height",["TuckEdge"]="Tucked edge height",["Widgets"]="Widgets & order",
         ["HoverViews"]="Hover pages",["Tools"]="Tools & order",["Shortcuts"]="Shortcuts",
-        ["Performance"]="Animation performance",["AutoStart"]="Start with Windows"
+        ["Performance"]="Animation performance",["AutoStart"]="Start with Windows",["SettingsShowAll"]="Show all settings"
     };
     internal static string Describe(JsonElement before,Settings settings)
     {

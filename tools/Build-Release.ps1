@@ -10,7 +10,7 @@ if (Test-Path -LiteralPath $output) { throw 'Release output must be a new empty 
 New-Item -ItemType Directory -Path $output | Out-Null
 & $Dotnet clean (Join-Path $repo 'src\NabyScape\NabyScape.csproj') -c Release --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Clean failed.' }
-$notices=@('LICENSE','LUCIDE-LICENSE.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt','ROMAJI-ThirdPartyNotices.txt','LYRICS-LANGUAGE-LICENSE.txt')
+$notices=@('LICENSE','LUCIDE-LICENSE.txt','MANROPE-OFL.txt','NAudio-LICENSE.txt','System.Speech-LICENSE.txt','DOTNET-LICENSE.txt','DOTNET-ThirdPartyNotices.txt','ROMAJI-ThirdPartyNotices.txt','LYRICS-LANGUAGE-LICENSE.txt')
 $assets=@()
 foreach($rid in @('win-x64','win-arm64')) {
     $publish=Join-Path $output "publish/$rid"
