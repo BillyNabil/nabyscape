@@ -61,7 +61,7 @@ internal sealed partial class LyricsService
                 foreach(var query in queries)
                 {
                     var choices=source=="LRCLIB"?await Search(query.Title,query.Artist,attempt.Token):source=="BiniLyrics"?await SearchBini(query.Title,query.Artist,attempt.Token,2):await FetchProvider(source,query.Title,query.Artist,duration,attempt.Token);
-                    var selected=await Task.Run(()=>LyricsMetadata.Best(choices,query,duration,true),attempt.Token);
+                    var selected=await Task.Run(()=>LyricsMetadata.Best(choices,query,duration,false),attempt.Token);
                     if(selected!=null)return (selected,source);
                 }
             }
