@@ -42,22 +42,34 @@ internal static class LyricsAutomaticTests
             Assert(LyricsMetadata.Best(new[]{spanish,japanese},new("Nanairo Symphony - TV Size","COALAMODE."),92,true)==japanese);
             Assert(LyricsMetadata.Best(new[]{spanish},new("Nanairo Symphony - TV Size","COALAMODE."),92,true)==null);
         });
-        test("A fast Spanish response cannot cancel the matching Japanese source",()=>Task.Run(async()=>
+                test("Automatic accepts Russian lyrics from LRCLIB",()=>Task.Run(async()=>
         {
             var fake=new Fake(async(request,token)=>
             {
-                if(request.RequestUri!.Host=="lrclib.net")return Json(JsonSerializer.Serialize(new[]{new{trackName="Song",artistName="Artist",duration=180,syncedLyrics="[00:01]Y le doy vueltas y vueltas. Siento que el tiempo se ha parado y espero. Intentando olvidarlas, rememoras todo."}}));
-                if(request.RequestUri.Host=="lyrics-api.binimum.org"){await Task.Delay(50,token);return Json("{\"results\":[{\"track_name\":\"Song\",\"artist_name\":\"Artist\",\"duration\":180,\"lyricsUrl\":\"https://lrc.red/s/FIXTURE.ttml\"}]}");}
-                return Json("<tt><p begin='1s'>君の声が聞こえる</p></tt>");
+                if(request.RequestUri!.Host=="lrclib.net")
+                    return Json(JsonSerializer.Serialize(new[]{new{
+                        trackName="Song",artistName="Artist",duration=180,
+                        syncedLyrics="[00:01]Я смотрю на огни города вечером"
+                    }}));
+                if(request.RequestUri.Host=="lyrics-api.binimum.org")
+                {
+                    await Task.Delay(50,token);
+                    return Json("{\"results\":[]}");
+                }
+                return Json("{}");
             });
-            using var service=new LyricsService(fake,new AssistantMemoryKeys());await service.Load("Song","Artist",180,true,true);
-            Assert(service.Result.Status.Contains("BiniLyrics",StringComparison.Ordinal) && service.Result.Lines[0].Text=="君の声が聞こえる");
+            using var service=new LyricsService(fake,new AssistantMemoryKeys());
+            await service.Load("Song","Artist",180,true,true);
+            Assert(service.Result.Lines.Length==1 &&
+                   service.Result.Lines[0].Text=="Я смотрю на огни города вечером" &&
+                   service.Result.Status.Contains("LRCLIB",StringComparison.Ordinal));
         }).GetAwaiter().GetResult());
         test("Automatic public-provider access failures produce an empty result without escaping the fallback",()=>Task.Run(async()=>
         {
             var fake=new Fake((request,token)=>Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden)));
             using var service=new LyricsService(fake,new AssistantMemoryKeys());await service.Load("Song","Artist",180,true,true);
-            Assert(service.Result.Lines.Length==0 && service.Result.Status.Contains("English, Japanese or Korean",StringComparison.Ordinal));
+            Assert(service.Result.Lines.Length==0 &&
+                service.Result.Status==Localization.Text("No matching synced lyrics. Try another source or LRC."));
         }).GetAwaiter().GetResult());
         test("Browser lyric queries remove presentation labels but preserve real song versions",()=>
         {
