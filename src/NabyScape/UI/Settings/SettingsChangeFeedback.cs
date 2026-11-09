@@ -32,8 +32,8 @@ internal static class SettingsChangeFeedback
                 JsonValueKind.Number=>property.Name=="AmbientStrength"?(property.Value.GetDouble()*100).ToString("0")+"%":property.Value.GetRawText(),
                 _=>""
             };
-            changes.Add(Localization.Text(label)+(value.Length>0?": "+value:" updated"));
+            changes.Add(Localization.Text(label)+(value.Length>0?": "+value:" · "+Localization.Text("updated")));
         }
-        return changes.Count==0?"Saved on this device.":"Saved · "+string.Join(" · ",changes.Take(3))+(changes.Count>3?" · +"+(changes.Count-3)+" more":"");
+        return changes.Count==0?Localization.Text("Saved on this device."):Localization.Format("Saved · {0}",string.Join(" · ",changes.Take(3)))+(changes.Count>3?" · "+Localization.Format("+{0} more",changes.Count-3):"");
     }
 }

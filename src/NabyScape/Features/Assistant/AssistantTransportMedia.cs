@@ -18,25 +18,25 @@ internal sealed partial class AssistantTransport
         if(file.Text!=null){yield return PartText(provider,$"Attached document: {file.Name}\n{file.Note}\n<attachment>\n{file.Text}\n</attachment>");yield break;}
         if(file.IsImage)
         {
-            if(!provider.Vision)throw new InvalidOperationException("Enable Image input in AI settings for a model that supports images.");
+            if(!provider.Vision)throw new InvalidOperationException(Localization.Text("Enable Image input in AI settings for a model that supports images."));
             yield return PartImage(provider,file.Source);yield break;
         }
         bool video=file.Mime.StartsWith("video/",StringComparison.Ordinal);
         bool pdf=file.Mime=="application/pdf";
         if(provider.Protocol=="Gemini")
         {
-            if((pdf || video) && !provider.Vision)throw new InvalidOperationException("Enable Image input for this multimodal model before sending PDFs or video.");
+            if((pdf || video) && !provider.Vision)throw new InvalidOperationException(Localization.Text("Enable Image input for this multimodal model before sending PDFs or video."));
             yield return new JsonObject{["inlineData"]=new JsonObject{["mimeType"]=file.Mime,["data"]=Inline(file.Source,file.Mime)}};yield break;
         }
         if(video || pdf && provider.Backend=="Hermes")
         {
-            if(!provider.Vision)throw new InvalidOperationException("This provider receives PDF pages and video frames as images. Enable Image input for a compatible model.");
-            if(file.Frames is not {Count:>0})throw new InvalidOperationException("Windows could not create video frames. Use a Gemini video model, or attach a supported MP4 video.");
+            if(!provider.Vision)throw new InvalidOperationException(Localization.Text("This provider receives PDF pages and video frames as images. Enable Image input for a compatible model."));
+            if(file.Frames is not {Count:>0})throw new InvalidOperationException(Localization.Text("Windows could not create video frames. Use a Gemini video model, or attach a supported MP4 video."));
             yield return PartText(provider,$"Attached {file.Name}. {file.Note}. These images are ordered pages or evenly sampled frames; do not claim to have read unseen pages, full motion or audio.");
             foreach(string frame in file.Frames)yield return PartImage(provider,frame);yield break;
         }
-        if(!pdf)throw new InvalidOperationException("Audio files require a Gemini model with audio input. Choose that provider or attach a transcript.");
-        if(!provider.Vision)throw new InvalidOperationException("Enable Image input for a PDF-capable model before sending PDFs.");
+        if(!pdf)throw new InvalidOperationException(Localization.Text("Audio files require a Gemini model with audio input. Choose that provider or attach a transcript."));
+        if(!provider.Vision)throw new InvalidOperationException(Localization.Text("Enable Image input for a PDF-capable model before sending PDFs."));
         Inline(file.Source,file.Mime);
         yield return provider.Protocol switch
         {
@@ -60,17 +60,17 @@ internal sealed partial class AssistantTransport
     private static string Inline(string source,string mime)
     {
         string prefix="data:"+mime+";base64,";
-        if(!source.StartsWith(prefix,StringComparison.Ordinal) || source.Length<=prefix.Length || source.Length>AssistantAttachments.MaximumPayload)throw new InvalidOperationException("Invalid or oversized attachment data.");
-        if(!AssistantBase64.IsValid(source.AsSpan(prefix.Length)))throw new InvalidOperationException("Invalid attachment encoding.");return source[prefix.Length..];
+        if(!source.StartsWith(prefix,StringComparison.Ordinal) || source.Length<=prefix.Length || source.Length>AssistantAttachments.MaximumPayload)throw new InvalidOperationException(Localization.Text("Invalid or oversized attachment data."));
+        if(!AssistantBase64.IsValid(source.AsSpan(prefix.Length)))throw new InvalidOperationException(Localization.Text("Invalid attachment encoding."));return source[prefix.Length..];
     }
     internal static void CheckAttachments(AssistantProvider provider,IReadOnlyList<AssistantAttachment>? files)
     {
         if(files==null)return;
-        if(files.Count>AssistantAttachments.MaximumFiles || files.Sum(f=>f.Weight)>AssistantAttachments.MaximumPayload)throw new InvalidOperationException("Attach up to 6 files and 24 MB of prepared content per message.");
-        if(files.Sum(f=>f.Text?.Length??0)>100000)throw new InvalidOperationException("Attached documents exceed 100,000 text characters in total. Split them into separate messages.");
+        if(files.Count>AssistantAttachments.MaximumFiles || files.Sum(f=>f.Weight)>AssistantAttachments.MaximumPayload)throw new InvalidOperationException(Localization.Text("Attach up to 6 files and 24 MB of prepared content per message."));
+        if(files.Sum(f=>f.Text?.Length??0)>100000)throw new InvalidOperationException(Localization.Text("Attached documents exceed 100,000 text characters in total. Split them into separate messages."));
         foreach(var file in files)
         {
-            if(file.Name.Length>180 || file.Text?.Length>AssistantAttachments.MaximumFileText || file.Name.Any(char.IsControl))throw new InvalidOperationException("The attachment name or text is too long.");
+            if(file.Name.Length>180 || file.Text?.Length>AssistantAttachments.MaximumFileText || file.Name.Any(char.IsControl))throw new InvalidOperationException(Localization.Text("The attachment name or text is too long."));
             foreach(var _ in AttachmentParts(provider,file)){ }
         }
     }
@@ -79,11 +79,11 @@ internal sealed partial class AssistantTransport
     {
         try
         {
-            string result=mediaMarkdown.Replace(text,m=>{int count=files.Count;AddMedia(files,provider,m.Groups["name"].Value,"image/png",m.Groups["url"].Value);return files.Count>count || files.Any(f=>f.Source==m.Groups["url"].Value)?"":"[Image unavailable: the returned address is not accessible from this app.]";});
-            result=Regex.Replace(result,@"(?m)^\s*MEDIA:\s*(?<url>https?://[^\s]+)\s*$",m=>{AddMedia(files,provider,"Agent image","image/png",m.Groups["url"].Value);return "";},RegexOptions.None,TimeSpan.FromMilliseconds(100));
-            return Regex.Replace(result,@"!\[[^\]\r\n]*\]\((?:/|file:|[A-Za-z]:[\\/])[^)\r\n]+\)|(?m)^\s*MEDIA:\s*(?:/|file:|[A-Za-z]:[\\/])[^\r\n]+", "[Image unavailable: the agent returned a server-local file path. Ask it to return image data or an accessible image URL.]",RegexOptions.None,TimeSpan.FromMilliseconds(100));
+            string result=mediaMarkdown.Replace(text,m=>{int count=files.Count;AddMedia(files,provider,m.Groups["name"].Value,"image/png",m.Groups["url"].Value);return files.Count>count || files.Any(f=>f.Source==m.Groups["url"].Value)?"":Localization.Text("[Image unavailable: the returned address is not accessible from this app.]");});
+            result=Regex.Replace(result,@"(?m)^\s*MEDIA:\s*(?<url>https?://[^\s]+)\s*$",m=>{AddMedia(files,provider,Localization.Text("Agent image"),"image/png",m.Groups["url"].Value);return "";},RegexOptions.None,TimeSpan.FromMilliseconds(100));
+            return Regex.Replace(result,@"!\[[^\]\r\n]*\]\((?:/|file:|[A-Za-z]:[\\/])[^)\r\n]+\)|(?m)^\s*MEDIA:\s*(?:/|file:|[A-Za-z]:[\\/])[^\r\n]+", Localization.Text("[Image unavailable: the agent returned a server-local file path. Ask it to return image data or an accessible image URL.]"),RegexOptions.None,TimeSpan.FromMilliseconds(100));
         }
-        catch(RegexMatchTimeoutException){throw new IOException("The media reply is too complex to display.");}
+        catch(RegexMatchTimeoutException){throw new IOException(Localization.Text("The media reply is too complex to display."));}
     }
     private static void AddMedia(List<AssistantAttachment> files,AssistantProvider provider,string name,string mime,string source)
     {
@@ -99,7 +99,7 @@ internal sealed partial class AssistantTransport
             try{MediaUri(source,provider.BaseUrl);}catch(InvalidOperationException){return;}
             if(mime.StartsWith("image/",StringComparison.Ordinal)){string extension=Path.GetExtension(new Uri(source).AbsolutePath).ToLowerInvariant();mime=extension switch{".jpg" or ".jpeg"=>"image/jpeg",".gif"=>"image/gif",".webp"=>"image/webp",_=>mime};}
         }
-        name=new string(name.Where(c=>!char.IsControl(c)).Take(180).ToArray());if(name.Length==0)name="Image "+(files.Count+1);
+        name=new string(name.Where(c=>!char.IsControl(c)).Take(180).ToArray());if(name.Length==0)name=Localization.Text("Image ")+(files.Count+1);
         files.Add(new(name,mime,source,Note:"From "+provider.Name,ProviderId:provider.Id,Origin:provider.BaseUrl));
     }
     private static bool ReadMedia(JsonElement part,AssistantProvider provider,List<AssistantAttachment> files)
@@ -124,9 +124,9 @@ internal sealed partial class AssistantTransport
     }
     internal static Uri MediaUri(string source,string origin)
     {
-        if(source.Length>8192 || !Uri.TryCreate(source,UriKind.Absolute,out var uri) || uri.UserInfo.Length>0 || uri.Fragment.Length>0)throw new InvalidOperationException("Invalid image address.");
+        if(source.Length>8192 || !Uri.TryCreate(source,UriKind.Absolute,out var uri) || uri.UserInfo.Length>0 || uri.Fragment.Length>0)throw new InvalidOperationException(Localization.Text("Invalid image address."));
         var clean=new UriBuilder(uri){Query="",Fragment=""};ValidateEndpoint(clean.Uri.AbsoluteUri);
-        if(IsLocalHost(uri.Host) && (!Uri.TryCreate(origin,UriKind.Absolute,out var allowed) || allowed.Scheme!=uri.Scheme || allowed.Host!=uri.Host || allowed.Port!=uri.Port))throw new InvalidOperationException("Local media must belong to the connected provider.");
+        if(IsLocalHost(uri.Host) && (!Uri.TryCreate(origin,UriKind.Absolute,out var allowed) || allowed.Scheme!=uri.Scheme || allowed.Host!=uri.Host || allowed.Port!=uri.Port))throw new InvalidOperationException(Localization.Text("Local media must belong to the connected provider."));
         return uri;
     }
     internal async Task<byte[]> DownloadMedia(AssistantAttachment file,AssistantProvider? provider,string? key,CancellationToken token)

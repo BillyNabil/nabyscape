@@ -63,7 +63,7 @@ public sealed partial class OverlayWindow
             if(app.Settings.WheelAction=="volume"){app.Audio.SetVolume(app.Audio.Volume+Math.Sign(e.Delta)*app.Settings.VolumeStep/100d);app.Audio.Read();Update();e.Handled=true;}
             else if(app.Settings.WheelAction=="pages"){Reveal();CyclePage(Math.Sign(e.Delta));e.Handled=true;}
         };
-        root.PreviewMouseDown+=(_,e)=>{if(e.ChangedButton!=MouseButton.Middle || (expanded && e.GetPosition(this).Y>app.Settings.Height))return;if(app.Settings.MiddleAction=="toggle")_=app.Media.Command("toggle");else if(app.Settings.MiddleAction=="microphone" && !app.Audio.ToggleMicrophoneMute())app.Notify("Could not change microphone",app.Audio.LastError??"Device unavailable.");e.Handled=app.Settings.MiddleAction!="none";};
+        root.PreviewMouseDown+=(_,e)=>{if(e.ChangedButton!=MouseButton.Middle || (expanded && e.GetPosition(this).Y>app.Settings.Height))return;if(app.Settings.MiddleAction=="toggle")_=app.Media.Command("toggle");else if(app.Settings.MiddleAction=="microphone" && !app.Audio.ToggleMicrophoneMute())app.Notify(Localization.Text("Could not change microphone"),app.Audio.LastError??Localization.Text("Device unavailable."));e.Handled=app.Settings.MiddleAction!="none";};
         PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Tab && Keyboard.Modifiers.HasFlag(ModifierKeys.Control)){if(commandOpen)CloseCommands();CyclePage(Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)?-1:1);e.Handled=true;}};
 
     }
@@ -80,9 +80,9 @@ public sealed partial class OverlayWindow
         if(tuckHotkeyRegistered)UnregisterHotKey(hwnd,TuckHotkeyId);
         hotkeyRegistered=visibilityHotkeyRegistered=tuckHotkeyRegistered=false;HotkeyError=HotkeyPolicy.Conflict(app.Settings,"Panel");VisibilityHotkeyError=HotkeyPolicy.Conflict(app.Settings,"Visibility");TuckHotkeyError=HotkeyPolicy.Conflict(app.Settings,"Tuck");
         static uint Modifiers(string value)=>value switch{"Ctrl+Shift"=>6u,"Alt+Shift"=>5u,_=>3u};
-        if(app.Settings.HotkeyEnabled && HotkeyError.Length==0){hotkeyRegistered=RegisterConfiguredHotkey(hwnd,HotkeyId,Modifiers(app.Settings.HotkeyModifiers)|0x4000,(uint)app.Settings.HotkeyKey[0]);if(!hotkeyRegistered)HotkeyError="Open / close hotkey is in use. Choose another combination in Settings.";}
-        if(app.Settings.VisibilityHotkeyEnabled && VisibilityHotkeyError.Length==0){visibilityHotkeyRegistered=RegisterConfiguredHotkey(hwnd,VisibilityHotkeyId,Modifiers(app.Settings.VisibilityHotkeyModifiers)|0x4000,(uint)app.Settings.VisibilityHotkeyKey[0]);if(!visibilityHotkeyRegistered)VisibilityHotkeyError="Hide / show hotkey is in use. Choose another combination in Settings.";}
-        if(app.Settings.TuckHotkeyEnabled && TuckHotkeyError.Length==0){tuckHotkeyRegistered=RegisterConfiguredHotkey(hwnd,TuckHotkeyId,Modifiers(app.Settings.TuckHotkeyModifiers)|0x4000,(uint)app.Settings.TuckHotkeyKey[0]);if(!tuckHotkeyRegistered)TuckHotkeyError="Tuck hotkey is in use. Choose another combination in Settings.";}
+        if(app.Settings.HotkeyEnabled && HotkeyError.Length==0){hotkeyRegistered=RegisterConfiguredHotkey(hwnd,HotkeyId,Modifiers(app.Settings.HotkeyModifiers)|0x4000,(uint)app.Settings.HotkeyKey[0]);if(!hotkeyRegistered)HotkeyError=Localization.Text("Open / close hotkey is in use. Choose another combination in Settings.");}
+        if(app.Settings.VisibilityHotkeyEnabled && VisibilityHotkeyError.Length==0){visibilityHotkeyRegistered=RegisterConfiguredHotkey(hwnd,VisibilityHotkeyId,Modifiers(app.Settings.VisibilityHotkeyModifiers)|0x4000,(uint)app.Settings.VisibilityHotkeyKey[0]);if(!visibilityHotkeyRegistered)VisibilityHotkeyError=Localization.Text("Hide / show hotkey is in use. Choose another combination in Settings.");}
+        if(app.Settings.TuckHotkeyEnabled && TuckHotkeyError.Length==0){tuckHotkeyRegistered=RegisterConfiguredHotkey(hwnd,TuckHotkeyId,Modifiers(app.Settings.TuckHotkeyModifiers)|0x4000,(uint)app.Settings.TuckHotkeyKey[0]);if(!tuckHotkeyRegistered)TuckHotkeyError=Localization.Text("Tuck hotkey is in use. Choose another combination in Settings.");}
     }
 
     private void AutomaticActivity(string kind,string heading,string detail)
@@ -102,7 +102,7 @@ public sealed partial class OverlayWindow
         {
             if(!WidgetOn(id) || !c.Running || c.Remaining(now)>30 || c.Remaining(now)<=0)continue;
             if(id=="timer"){if(warnedTimer==c.Deadline)continue;warnedTimer=c.Deadline;}else{if(warnedFocus==c.Deadline)continue;warnedFocus=c.Deadline;}
-            AutomaticActivity(id,(id=="timer"?"Timer":"Focus")+" · "+c.Display(now),"Ending soon");
+            AutomaticActivity(id,(id=="timer"?Localization.Text("Timer"):Localization.Text("Focus"))+" · "+c.Display(now),Localization.Text("Ending soon"));
         }
     }
     private FrameworkElement WrapArtwork(Image current)

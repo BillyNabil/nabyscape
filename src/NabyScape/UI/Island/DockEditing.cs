@@ -27,7 +27,7 @@ public sealed partial class OverlayWindow
     {
         Thumb Grip(string name,Cursor cursor,bool move,bool left=false)
         {
-            var handle=new Thumb{Width=move?42:16,Height=move?9:16,Cursor=cursor,Focusable=true,ToolTip=name+" · arrow keys adjust · Esc cancels",Background=Brushes.Transparent};UI.Named(handle,name);
+            var handle=new Thumb{Width=move?42:16,Height=move?9:16,Cursor=cursor,Focusable=true,ToolTip=name+Localization.Text(" · arrow keys adjust · Esc cancels"),Background=Brushes.Transparent};UI.Named(handle,name);
             var shape=new FrameworkElementFactory(typeof(Border));shape.SetValue(Border.BackgroundProperty,UI.Brush("#989DA7"));shape.SetValue(Border.CornerRadiusProperty,new CornerRadius(2));shape.SetValue(WidthProperty,move?26d:6d);shape.SetValue(HeightProperty,move?3d:6d);shape.SetValue(OpacityProperty,.7);
             handle.Template=new ControlTemplate(typeof(Thumb)){VisualTree=shape};dockHandles.Children.Add(handle);
             handle.DragStarted+=(_,_)=>
@@ -75,10 +75,10 @@ public sealed partial class OverlayWindow
             };
             return handle;
         }
-        moveGrip=Grip("Move island",Cursors.SizeAll,true);resizeLeft=Grip("Resize island from left",Cursors.SizeNESW,false,true);resizeRight=Grip("Resize island from right",Cursors.SizeNWSE,false);
+        moveGrip=Grip(Localization.Text("Move island"),Cursors.SizeAll,true);resizeLeft=Grip(Localization.Text("Resize island from left"),Cursors.SizeNESW,false,true);resizeRight=Grip(Localization.Text("Resize island from right"),Cursors.SizeNWSE,false);
         root.Children.Add(dockHandles);surface.ContourChanged+=RefreshDockHandles;root.SizeChanged+=(_,_)=>RefreshDockHandles();app.SettingsChanged+=RefreshDockHandles;
         PreviewKeyDown+=(_,_)=>RefreshDockHandles();PreviewKeyUp+=(_,_)=>RefreshDockHandles();
-        var menu=new ContextMenu();var unlock=new MenuItem{Header="Move & resize island",IsCheckable=true};unlock.Click+=(_,_)=>ToggleDockEditing();menu.Opened+=(_,_)=>unlock.IsChecked=app.Settings.DockUnlocked;menu.Items.Add(unlock);compact.ContextMenu=menu;
+        var menu=new ContextMenu();var unlock=new MenuItem{Header=Localization.Text("Move & resize island"),IsCheckable=true};unlock.Click+=(_,_)=>ToggleDockEditing();menu.Opened+=(_,_)=>unlock.IsChecked=app.Settings.DockUnlocked;menu.Items.Add(unlock);compact.ContextMenu=menu;
         RefreshDockHandles();
     }
     private void RefreshDockHandles()

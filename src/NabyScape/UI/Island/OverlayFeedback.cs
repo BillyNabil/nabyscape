@@ -23,9 +23,9 @@ public sealed partial class OverlayWindow
     {
         if(!app.Settings.ReactiveFeedback || !(brightness?app.Settings.BrightnessFeedback:app.Settings.VolumeFeedback) || expanded || peeking || !IsVisible || TuckRequested || userHidden)return;
         feedbackBrightness=brightness;
-        feedbackText=muted?"Muted":$"{Math.Clamp(level,0,1)*100:0}%";
+        feedbackText=muted?Localization.Text("Muted"):$"{Math.Clamp(level,0,1)*100:0}%";
         feedbackIcon.Text=brightness?"\uE706":muted?"\uE74F":"\uE767";
-        feedbackIcon.ToolTip=brightness?"Brightness":"Volume";
+        feedbackIcon.ToolTip=brightness?Localization.Text("Brightness"):Localization.Text("Volume");
         feedbackUntil=DateTimeOffset.UtcNow.AddSeconds(2);
         double previous=feedbackLevel.Value;feedbackLevel.BeginAnimation(ProgressBar.ValueProperty,null);feedbackLevel.Value=muted?0:level;
         if(Motion.Enabled)feedbackLevel.BeginAnimation(ProgressBar.ValueProperty,new DoubleAnimation(previous,feedbackLevel.Value,TimeSpan.FromMilliseconds(170)){FillBehavior=FillBehavior.Stop});

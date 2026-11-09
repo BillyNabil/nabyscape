@@ -1,3 +1,23 @@
+# NabyScape — русская версия
+
+Форк [BillyNabil/nabyscape](https://github.com/BillyNabil/nabyscape) с русским интерфейсом. Текущая сборка: **2.26.1-ru.1**.
+
+Переведены настройки, подсказки, меню, встроенные виджеты, уведомления, помощник и его голосовые функции, установщик и удаление. Названия моделей, провайдеров, файлов и пользовательское содержимое сохраняются. Для новых и существующих профилей русский включается при первом запуске этой сборки; перед изменением существующих настроек создаётся `settings.before-russian-build.json`. Последующий выбор языка сохраняется.
+
+Обновления из оригинального проекта отключены, чтобы они не заменили русскую сборку. Изменение поведения панели при разделённом экране — следующий этап.
+
+Для самостоятельной сборки нужен .NET 10 SDK для Windows:
+
+```powershell
+./build.ps1 -OutputDirectory artifacts
+```
+
+Лицензия MIT и уведомления авторов сохранены. Ссылки на загрузки в документации оригинала ниже ведут к оригинальным сборкам.
+
+---
+
+## Документация оригинального проекта
+
 <p align="center"><a href="https://nabyscape.vercel.app/"><img src="Assets/showcase/readme-web3-cover.jpg" width="100%" alt="NabyScape: a black and chrome Naby companion, lime accents and a compact Windows dock."></a></p>
 
 <p align="center"><a href="https://github.com/BillyNabil/nabyscape/releases/latest"><strong>Download for Windows ↗</strong></a> &nbsp; · &nbsp; <a href="https://nabyscape.vercel.app/">Website</a> &nbsp; · &nbsp; <a href="docs/guide.md">User guide</a> &nbsp; · &nbsp; <a href="LICENSE">MIT licensed</a></p>

@@ -31,17 +31,17 @@ public sealed partial class OverlayWindow
         }
         var metadata=new DockPanel{Margin=new(6,4,6,0)};
         var icon=Icons.Create(kind.Kind switch{SmartClipKind.Image=>"image",SmartClipKind.Link=>"link",_=>"file-text"},13,UI.Muted);icon.Margin=new(0,0,8,0);metadata.Children.Add(icon);
-        string timestamp=item.Timestamp.ToLocalTime().ToString(item.Timestamp.LocalDateTime.Date==DateTime.Today?"HH:mm":"MMM d · HH:mm");
-        metadata.Children.Add(UI.Text((item.Pinned?"Pinned · ":"")+timestamp,10,UI.Muted));Grid.SetRow(metadata,1);layout.Children.Add(metadata);
-        var view=UI.Button("View "+kind.Kind,()=>
+        string timestamp=item.Timestamp.ToLocalTime().ToString(item.Timestamp.LocalDateTime.Date==DateTime.Today?"HH:mm":"d MMM · HH:mm",Localization.Culture);
+        metadata.Children.Add(UI.Text((item.Pinned?Localization.Text("Pinned · "):"")+timestamp,10,UI.Muted));Grid.SetRow(metadata,1);layout.Children.Add(metadata);
+        var view=UI.Button(Localization.Format("View {0}",Localization.Text(kind.Kind.ToString())),()=>
         {
             selectedClipId=selectedClipId==item.Id?null:item.Id;RefreshTools();ResizeToolPanel();
             Dispatcher.BeginInvoke(()=>{if(clipboardScroll?.Content is Panel content)foreach(FrameworkElement part in content.Children)if(part.Tag as string=="clip-detail"){part.BringIntoView();break;}});
         });
-        view.Content=layout;view.Padding=new(0);view.Margin=new(0);view.MinHeight=0;view.HorizontalContentAlignment=HorizontalAlignment.Stretch;view.Background=Brushes.Transparent;view.BorderThickness=new(selectedClipId==item.Id?1:0);view.BorderBrush=UI.Brush("#59616F");view.ToolTip="Open details · copy, pin or remove";
+        view.Content=layout;view.Padding=new(0);view.Margin=new(0);view.MinHeight=0;view.HorizontalContentAlignment=HorizontalAlignment.Stretch;view.Background=Brushes.Transparent;view.BorderThickness=new(selectedClipId==item.Id?1:0);view.BorderBrush=UI.Brush("#59616F");view.ToolTip=Localization.Text("Open details · copy, pin or remove");
         var tile=new Grid();tile.Children.Add(view);
-        Button? copy=null;copy=Icons.Button("copy","Quick copy "+kind.Kind.ToString().ToLowerInvariant(),()=>{copy!.ToolTip=p.TryCopyClip(item)?"Copied":"Clipboard is busy. Try again.";},false,27);
-        copy.Margin=new(7);copy.HorizontalAlignment=HorizontalAlignment.Right;copy.VerticalAlignment=VerticalAlignment.Top;copy.Background=UI.Brush("#DA1A1D23");copy.ToolTip="Copy "+kind.Kind.ToString().ToLowerInvariant();tile.Children.Add(copy);MinimalWidgets.Reveal(copy,tile);
+        Button? copy=null;copy=Icons.Button("copy",Localization.Format("Quick copy {0}",Localization.Text(kind.Kind.ToString())),()=>{copy!.ToolTip=p.TryCopyClip(item)?Localization.Text("Copied"):Localization.Text("Clipboard is busy. Try again.");},false,27);
+        copy.Margin=new(7);copy.HorizontalAlignment=HorizontalAlignment.Right;copy.VerticalAlignment=VerticalAlignment.Top;copy.Background=UI.Brush("#DA1A1D23");copy.ToolTip=Localization.Format("Copy {0}",Localization.Text(kind.Kind.ToString()));tile.Children.Add(copy);MinimalWidgets.Reveal(copy,tile);
         if(image!=null)thumbnails.Add(tile,image,pixels=>Task.FromResult(p.LoadClipImage(item,pixels)));
         return tile;
     }

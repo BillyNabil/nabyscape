@@ -1,4 +1,4 @@
-param([switch]$Quiet,[switch]$KeepData,[switch]$RemoveData)
+﻿param([switch]$Quiet,[switch]$KeepData,[switch]$RemoveData)
 $ErrorActionPreference = 'Stop'
 
 function Get-NabyDataRoots([string]$LocalRoot, [string]$TempRoot) {
@@ -25,14 +25,14 @@ function Assert-NabyOwnedPath([string]$Path,[string]$Root) {
     $base = [IO.Path]::GetFullPath($Root).TrimEnd('\','/')
     if ($base -eq [IO.Path]::GetPathRoot($base).TrimEnd('\','/') -or
         ($full -ne $base -and -not $full.StartsWith($base+[IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase))) {
-        throw 'Cleanup path is outside its dedicated application folder.'
+        throw 'Путь очистки находится вне отдельной папки приложения.'
     }
     # Validate ancestors too: no junction may redirect a validated root elsewhere.
     $cursor = $full
     while ($cursor) {
         if (Test-Path -LiteralPath $cursor) {
             if ((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) {
-                throw "Cleanup stopped because a linked folder or file was found: $cursor"
+                throw "Очистка остановлена: найдена ссылка на папку или файл: $cursor"
             }
         }
         $cursor = [IO.Path]::GetDirectoryName($cursor)
@@ -46,7 +46,7 @@ function New-NabyRemovalPlan([string[]]$Roots) {
     foreach ($root in $Roots) {
         $full = Assert-NabyOwnedPath $root $root
         if (-not (Test-Path -LiteralPath $full)) { continue }
-        if (-not (Test-Path -LiteralPath $full -PathType Container)) { throw "Expected an application folder: $full" }
+        if (-not (Test-Path -LiteralPath $full -PathType Container)) { throw "Ожидалась папка приложения: $full" }
         $pending = New-Object 'Collections.Generic.Stack[string]'
         $pending.Push($full)
         while ($pending.Count -gt 0) {
@@ -118,26 +118,26 @@ function New-NabyUninstallDialog([bool]$RemoveAll) {
     Add-Type -AssemblyName System.Windows.Forms
     [Windows.Forms.Application]::EnableVisualStyles()
     $form = New-Object Windows.Forms.Form
-    $form.Text='Uninstall NabyScape';$form.ClientSize=New-Object Drawing.Size(560,255)
+    $form.Text='Удаление NabyScape';$form.ClientSize=New-Object Drawing.Size(620,285)
     $form.FormBorderStyle='FixedDialog';$form.StartPosition='CenterScreen';$form.MaximizeBox=$false;$form.MinimizeBox=$false
-    $heading=New-Object Windows.Forms.Label;$heading.Text='Remove NabyScape from this PC?';$heading.Location=New-Object Drawing.Point(24,22);$heading.Size=New-Object Drawing.Size(515,28)
+    $heading=New-Object Windows.Forms.Label;$heading.Text='Удалить NabyScape с этого компьютера?';$heading.Location=New-Object Drawing.Point(24,22);$heading.Size=New-Object Drawing.Size(570,30)
     $heading.Font=New-Object Drawing.Font('Segoe UI',14);$form.Controls.Add($heading)
-    $choice=New-Object Windows.Forms.CheckBox;$choice.Text='Also remove my data and downloaded ASR / TTS models';$choice.Checked=$removeAll;$choice.Location=New-Object Drawing.Point(24,68);$choice.Size=New-Object Drawing.Size(515,32);$form.Controls.Add($choice)
-    $detail=New-Object Windows.Forms.Label;$detail.Text='Includes settings, history, caches, downloaded engines and saved API keys. Imported files outside NabyScape and shared Windows components are kept.';$detail.Location=New-Object Drawing.Point(24,108);$detail.Size=New-Object Drawing.Size(510,58);$form.Controls.Add($detail)
-    $confirm=New-Object Windows.Forms.Button;$confirm.Text='Uninstall';$confirm.DialogResult='OK';$confirm.Location=New-Object Drawing.Point(320,192);$confirm.Size=New-Object Drawing.Size(100,34);$form.Controls.Add($confirm)
-    $cancel=New-Object Windows.Forms.Button;$cancel.Text='Cancel';$cancel.DialogResult='Cancel';$cancel.Location=New-Object Drawing.Point(432,192);$cancel.Size=New-Object Drawing.Size(100,34);$form.Controls.Add($cancel)
+    $choice=New-Object Windows.Forms.CheckBox;$choice.Text='Также удалить мои данные и скачанные голосовые модели';$choice.Checked=$removeAll;$choice.Location=New-Object Drawing.Point(24,68);$choice.Size=New-Object Drawing.Size(570,38);$form.Controls.Add($choice)
+    $detail=New-Object Windows.Forms.Label;$detail.Text='Включает настройки, историю, кэши, скачанные движки и сохранённые ключи API. Файлы вне NabyScape и общие компоненты Windows сохранятся.';$detail.Location=New-Object Drawing.Point(24,108);$detail.Size=New-Object Drawing.Size(570,72);$form.Controls.Add($detail)
+    $confirm=New-Object Windows.Forms.Button;$confirm.Text='Удалить';$confirm.DialogResult='OK';$confirm.Location=New-Object Drawing.Point(380,222);$confirm.Size=New-Object Drawing.Size(100,34);$form.Controls.Add($confirm)
+    $cancel=New-Object Windows.Forms.Button;$cancel.Text='Отмена';$cancel.DialogResult='Cancel';$cancel.Location=New-Object Drawing.Point(492,222);$cancel.Size=New-Object Drawing.Size(100,34);$form.Controls.Add($cancel)
     $form.AcceptButton=$confirm;$form.CancelButton=$cancel
     $form.Tag=$choice
     return $form
 }
 
 function Invoke-NabyUninstall {
-    if ($KeepData -and $RemoveData) { throw 'Choose either KeepData or RemoveData.' }
+    if ($KeepData -and $RemoveData) { throw 'Выберите только один параметр: KeepData или RemoveData.' }
     $removeAll = -not $KeepData
     $islandTarget = [IO.Path]::GetFullPath($PSScriptRoot)
     $uninstallKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\NabyScape'
     $registered = (Get-ItemProperty -LiteralPath $uninstallKey -Name InstallLocation -ErrorAction Stop).InstallLocation
-    if ($islandTarget -ne [IO.Path]::GetFullPath($registered)) { throw 'Invalid uninstaller location.' }
+    if ($islandTarget -ne [IO.Path]::GetFullPath($registered)) { throw 'Неверное расположение программы удаления.' }
     $null = Assert-NabyOwnedPath $islandTarget $islandTarget
     if (-not $Quiet) {
         $form=New-NabyUninstallDialog $removeAll
@@ -156,7 +156,7 @@ function Invoke-NabyUninstall {
         $owned=$processPath.StartsWith($islandTarget.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)
         foreach ($root in $roots) { if ($processPath.StartsWith($root.TrimEnd('\')+'\',[StringComparison]::OrdinalIgnoreCase)) { $owned=$true } }
         if ($owned) {
-            try { if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction Stop };if(-not $process.WaitForExit(10000)){throw 'An application process did not stop. Retry after closing NabyScape.'} }
+            try { if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction Stop };if(-not $process.WaitForExit(10000)){throw 'Процесс приложения не завершился. Закройте NabyScape и повторите попытку.'} }
             catch { if (-not $process.HasExited) { throw } }
         }
     }
@@ -173,13 +173,13 @@ function Invoke-NabyUninstall {
     $programs=[Environment]::GetFolderPath('Programs')
     $shell=New-Object -ComObject WScript.Shell
     try {
-        foreach ($name in @('NabyScape.lnk','Uninstall NabyScape.lnk','Luma Island.lnk','BillyNabila Island.lnk')) {
+        foreach ($name in @('NabyScape.lnk','Удаление NabyScape.lnk','Luma Island.lnk','BillyNabila Island.lnk')) {
             $shortcut=Join-Path $programs $name
             if (-not (Test-Path -LiteralPath $shortcut)) { continue }
             $link=$shell.CreateShortcut($shortcut)
             try {
                 $ownedExecutables=@($appExe,(Join-Path $islandTarget 'LumaIsland.exe'),(Join-Path $islandTarget 'BillyNabilaIsland.exe'))
-                $ownedUninstall=$name -eq 'Uninstall NabyScape.lnk' -and $link.Arguments.Contains(('"'+(Join-Path $islandTarget 'Uninstall.ps1')+'"'))
+                $ownedUninstall=$name -eq 'Удаление NabyScape.lnk' -and $link.Arguments.Contains(('"'+(Join-Path $islandTarget 'Uninstall.ps1')+'"'))
                 if ($ownedExecutables -contains $link.TargetPath -or $ownedUninstall) { Remove-Item -LiteralPath $shortcut -Force }
             }
             finally { [Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) | Out-Null }
@@ -191,14 +191,14 @@ function Invoke-NabyUninstall {
     }
     if ((Test-Path -LiteralPath $islandTarget -PathType Container) -and -not (Get-ChildItem -LiteralPath $islandTarget -Force | Select-Object -First 1)) { [IO.Directory]::Delete($islandTarget,$false) }
     Remove-Item -LiteralPath $uninstallKey -Force
-    if (-not $Quiet) { [Windows.Forms.MessageBox]::Show('NabyScape has been uninstalled.','NabyScape') | Out-Null }
+    if (-not $Quiet) { [Windows.Forms.MessageBox]::Show('NabyScape удалён.','NabyScape') | Out-Null }
 }
 
 # Dot-source only exposes helpers for isolated fixture tests; no Registry or credential changes.
 if ($MyInvocation.InvocationName -eq '.') { return }
 try { Invoke-NabyUninstall }
 catch {
-    if (-not $Quiet) { Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.MessageBox]::Show(('Uninstall could not finish. '+$_.Exception.Message),'NabyScape') | Out-Null }
+    if (-not $Quiet) { Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.MessageBox]::Show(('Не удалось завершить удаление. '+$_.Exception.Message),'NabyScape') | Out-Null }
     else { [Console]::Error.WriteLine($_.Exception.Message) }
     exit 1
 }

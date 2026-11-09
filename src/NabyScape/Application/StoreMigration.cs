@@ -12,7 +12,7 @@ public sealed partial class Store
         legacy=Path.GetFullPath(legacy);destination=Path.GetFullPath(destination);warning=null;
         if(Directory.Exists(destination))
         {
-            if(Directory.Exists(legacy))warning="Both NabyScape and LumaIsland data exist. NabyScape data is in use; review the preserved LumaIsland backup before removing it.";
+            if(Directory.Exists(legacy))warning=Localization.Text("Both NabyScape and LumaIsland data exist. NabyScape data is in use; review the preserved LumaIsland backup before removing it.");
             return destination;
         }
         if(!Directory.Exists(legacy))return destination;
@@ -21,10 +21,10 @@ public sealed partial class Store
         {
             CopyDirectory(legacy,staging);
             foreach(string file in Directory.EnumerateFiles(staging,"*.json",SearchOption.AllDirectories))
-            {using var json=JsonDocument.Parse(File.ReadAllText(file));if(json.RootElement.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))throw new InvalidDataException("Invalid stored document: "+Path.GetFileName(file));}
+            {using var json=JsonDocument.Parse(File.ReadAllText(file));if(json.RootElement.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array))throw new InvalidDataException(Localization.Text("Invalid stored document: ")+Path.GetFileName(file));}
             string settings=Path.Combine(staging,"settings.json");
             if(File.Exists(settings))
-            {var preferences=JsonSerializer.Deserialize<Settings>(File.ReadAllText(settings))??throw new InvalidDataException("Settings are empty.");preferences.Normalize();}
+            {var preferences=JsonSerializer.Deserialize<Settings>(File.ReadAllText(settings))??throw new InvalidDataException(Localization.Text("Settings are empty."));preferences.Normalize();}
             ValidateDocument<ProductivityData>(staging,"productivity");ValidateDocument<SessionState>(staging,"session");ValidateDocument<System.Collections.Generic.Dictionary<string,System.Text.Json.JsonElement>>(staging,"activities");ValidateDocument<System.Collections.Generic.List<CalendarEvent>>(staging,"calendar");
             string productivity=Path.Combine(staging,"productivity.json");
             if(File.Exists(productivity))
@@ -37,35 +37,35 @@ public sealed partial class Store
                     string cache=Path.GetFullPath(Path.Combine(legacy,"clipboard-images"))+Path.DirectorySeparatorChar;
                     if(!Path.IsPathFullyQualified(path) || !Path.GetFullPath(path).StartsWith(cache,StringComparison.OrdinalIgnoreCase))continue;
                     string relative=Path.GetRelativePath(legacy,path);
-                    if(!File.Exists(Path.Combine(staging,relative)))throw new InvalidDataException("A saved clipboard image is missing.");
+                    if(!File.Exists(Path.Combine(staging,relative)))throw new InvalidDataException(Localization.Text("A saved clipboard image is missing."));
                     clip["ImagePath"]=Path.Combine(destination,relative);
                 }
                 File.WriteAllText(productivity,data.ToJsonString(Options));
             }
             // A same-volume directory rename publishes only the fully copied and validated tree.
             Directory.Move(staging,destination);
-            warning="Local data moved to NabyScape. The original LumaIsland folder is preserved as a backup.";
+            warning=Localization.Text("Local data moved to NabyScape. The original LumaIsland folder is preserved as a backup.");
             return destination;
         }
         catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException or ArgumentException or NotSupportedException)
         {
-            warning="Data migration could not complete; the original LumaIsland data remains in use. Review storage permissions and retry. "+ex.Message;
+            warning=Localization.Text("Data migration could not complete; the original LumaIsland data remains in use. Review storage permissions and retry. ")+ex.Message;
             return legacy;
         }
     }
     private static void ValidateDocument<T>(string directory,string name)
     {
         string file=Path.Combine(directory,name+".json");
-        if(File.Exists(file) && JsonSerializer.Deserialize<T>(File.ReadAllText(file))==null)throw new InvalidDataException(name+" data is empty.");
+        if(File.Exists(file) && JsonSerializer.Deserialize<T>(File.ReadAllText(file))==null)throw new InvalidDataException(name+Localization.Text(" data is empty."));
     }
     private static void CopyDirectory(string source,string destination)
     {
-        if((File.GetAttributes(source)&FileAttributes.ReparsePoint)!=0)throw new IOException("Data folders cannot be links during migration.");
+        if((File.GetAttributes(source)&FileAttributes.ReparsePoint)!=0)throw new IOException(Localization.Text("Data folders cannot be links during migration."));
         Directory.CreateDirectory(destination);
         foreach(string file in Directory.EnumerateFiles(source))
         {
-            if((File.GetAttributes(file)&FileAttributes.ReparsePoint)!=0)throw new IOException("Data files cannot be links during migration.");
-            if((File.GetAttributes(file)&FileAttributes.ReadOnly)!=0)throw new UnauthorizedAccessException("A legacy data file is read-only: "+Path.GetFileName(file));
+            if((File.GetAttributes(file)&FileAttributes.ReparsePoint)!=0)throw new IOException(Localization.Text("Data files cannot be links during migration."));
+            if((File.GetAttributes(file)&FileAttributes.ReadOnly)!=0)throw new UnauthorizedAccessException(Localization.Text("A legacy data file is read-only: ")+Path.GetFileName(file));
             File.Copy(file,Path.Combine(destination,Path.GetFileName(file)));
         }
         foreach(string directory in Directory.EnumerateDirectories(source))CopyDirectory(directory,Path.Combine(destination,Path.GetFileName(directory)));

@@ -33,7 +33,7 @@ internal sealed class InternalNotifications
         if(notice.Kind=="downloads" && history.FirstOrDefault() is {Notice.Kind:"downloads"} head && now-head.At<TimeSpan.FromSeconds(3))
         {
             var files=(head.Notice.Files??Array.Empty<string>()).Concat(notice.Files??Array.Empty<string>()).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-            if(files.Length<=40){head.Notice=new("downloads",files.Length==1?"Download ready":$"{files.Length} downloads ready",notice.Detail,files);head.At=now;head.Read&=read;return;}
+            if(files.Length<=40){head.Notice=new("downloads",files.Length==1?Localization.Text("Download ready"):Localization.Format("{0} downloads ready",files.Length),notice.Detail,files);head.At=now;head.Read&=read;return;}
         }
         history.Insert(0,new(notice,now){Read=read});
         if(history.Count>HistoryLimit)history.RemoveRange(HistoryLimit,history.Count-HistoryLimit);
@@ -61,7 +61,7 @@ internal sealed class InternalNotifications
         if(notice.Kind=="downloads" && notice.Files is {Length:>40} arrivals)
         {
             foreach(var files in arrivals.Distinct(StringComparer.OrdinalIgnoreCase).Chunk(40))
-                Post(settings,new("downloads",files.Length==1?"Download ready":$"{files.Length} downloads ready",notice.Detail,files),hidden,windows,now);
+                Post(settings,new("downloads",files.Length==1?Localization.Text("Download ready"):Localization.Format("{0} downloads ready",files.Length),notice.Detail,files),hidden,windows,now);
             return;
         }
         var route=Route(settings.NotificationDelivery,hidden);
@@ -74,7 +74,7 @@ internal sealed class InternalNotifications
         if(notice.Kind=="downloads" && queue.LastOrDefault() is var last && last.Notice?.Kind=="downloads" && !last.Displayed && (last.Notice.Files??Array.Empty<string>()).Concat(notice.Files??Array.Empty<string>()).Distinct(StringComparer.OrdinalIgnoreCase).Count()<=40 && now-lastDownloadAt<TimeSpan.FromSeconds(3))
         {
             var files=(last.Notice.Files??Array.Empty<string>()).Concat(notice.Files??Array.Empty<string>()).Distinct(StringComparer.OrdinalIgnoreCase).Take(40).ToArray();
-            queue[^1]=(new("downloads",files.Length==1?"Download ready":$"{files.Length} downloads ready",notice.Detail,files),now,false);
+            queue[^1]=(new("downloads",files.Length==1?Localization.Text("Download ready"):Localization.Format("{0} downloads ready",files.Length),notice.Detail,files),now,false);
         }
         else {if(queue.Count==10)queue.RemoveAt(9);queue.Add((notice,now,false));}
         if(notice.Kind=="downloads")lastDownloadAt=now;

@@ -102,10 +102,10 @@ internal sealed class DetachedPreviewWindow : Window
         var header=new DockPanel{Margin=new(8,4,2,10),LastChildFill=true,Background=Brushes.Transparent};DockPanel.SetDock(header,Dock.Top);layout.Children.Add(header);
         Button WindowButton(string symbol,string name,Action action)
         {var button=UI.Button(name,action);button.Content=Icons.Create(symbol=="×"?"x":"minus",13);button.Width=28;button.Height=28;button.MinHeight=28;button.Padding=new(0);button.Margin=new(2,0,0,0);button.ToolTip=name;button.FontSize=14;button.Background=Brushes.Transparent;button.BorderThickness=new(0);WindowChrome.SetIsHitTestVisibleInChrome(button,true);DockPanel.SetDock(button,Dock.Right);return button;}
-        header.Children.Add(WindowButton("×","Close "+NameFor(kind)+" · Alt+F4",Close));
-        header.Children.Add(WindowButton("−","Minimize "+NameFor(kind),()=>WindowState=WindowState.Minimized));
-        var pin=new CheckBox{Content="On top",IsChecked=false,Foreground=UI.Muted,VerticalAlignment=VerticalAlignment.Center,FontSize=10,MinHeight=28,Margin=new(8,0,6,0),ToolTip="Keep this mini window above other apps"};pin.Style=(Style)app.FindResource("SettingsSwitch");UI.Named(pin,"Always on top");pin.Checked+=(_,_)=>Topmost=true;pin.Unchecked+=(_,_)=>Topmost=false;DockPanel.SetDock(pin,Dock.Right);header.Children.Add(pin);
-        var handle=UI.Heading(NameFor(kind),13);handle.FontWeight=FontWeights.SemiBold;handle.Cursor=Cursors.SizeAll;handle.ToolTip="Drag to move · Alt+Space for window controls";header.Children.Add(handle);
+        header.Children.Add(WindowButton("×",Localization.Text("Close ")+NameFor(kind)+" · Alt+F4",Close));
+        header.Children.Add(WindowButton("−",Localization.Text("Minimize ")+NameFor(kind),()=>WindowState=WindowState.Minimized));
+        var pin=new CheckBox{Content=Localization.Text("On top"),IsChecked=false,Foreground=UI.Muted,VerticalAlignment=VerticalAlignment.Center,FontSize=10,MinHeight=28,Margin=new(8,0,6,0),ToolTip=Localization.Text("Keep this mini window above other apps")};pin.Style=(Style)app.FindResource("SettingsSwitch");UI.Named(pin,Localization.Text("Always on top"));pin.Checked+=(_,_)=>Topmost=true;pin.Unchecked+=(_,_)=>Topmost=false;DockPanel.SetDock(pin,Dock.Right);header.Children.Add(pin);
+        var handle=UI.Heading(NameFor(kind),13);handle.FontWeight=FontWeights.SemiBold;handle.Cursor=Cursors.SizeAll;handle.ToolTip=Localization.Text("Drag to move · Alt+Space for window controls");header.Children.Add(handle);
         header.MouseLeftButtonDown+=(_,e)=>{if(e.OriginalSource is not DependencyObject target || IsControl(target,header))return;if(e.ClickCount==1){BeginPointerDrag();e.Handled=true;}};
         view=new(app,kind,openMain);layout.Children.Add(view.Content);
         var lighting=new IslandSurface{Fill=Brushes.Transparent,IsHitTestVisible=false,Notch=false,Radius=16};
@@ -164,7 +164,7 @@ internal sealed class DetachedPreviewWindow : Window
         finally{clamping=wasClamping;}
         ScheduleSave();
     }
-    internal static string NameFor(string kind)=>kind switch{"media"=>"Music","files"=>"Shelf","notes"=>"Notes",_=>char.ToUpperInvariant(kind[0])+kind[1..]};
+    internal static string NameFor(string kind)=>kind switch{"media"=>Localization.Text("Music"),"files"=>Localization.Text("Shelf"),"notes"=>Localization.Text("Notes"),_=>Localization.Text(char.ToUpperInvariant(kind[0])+kind[1..])};
     private static Rect SafeRect(DetachedPreviewGeometry value)=>new(double.IsFinite(value.Left)?value.Left:80,double.IsFinite(value.Top)?value.Top:80,double.IsFinite(value.Width)&&value.Width>0?value.Width:350,double.IsFinite(value.Height)&&value.Height>0?value.Height:330);
     private IntPtr Messages(IntPtr hwnd,int message,IntPtr wparam,IntPtr lparam,ref bool handled)
     {if(message is 0x007E or 0x02E0)Dispatcher.BeginInvoke(ClampToMonitor,DispatcherPriority.Loaded);return IntPtr.Zero;}

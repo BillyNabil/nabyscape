@@ -12,7 +12,7 @@ internal static class SettingsBackdrop
     internal static readonly string[] Choices={"Solid","Simulated glass","Native Mica","Native Acrylic"};
     internal readonly record struct Conditions(bool Supported,bool HighContrast,bool Transparency,bool EnergySaver,bool Remote);
     internal readonly record struct Result(string Requested,string Actual,string Reason,int HResult=0)
-    {internal bool Native=>Actual is "Native Mica" or "Native Acrylic";internal string Status=>$"Requested: {Requested}. Actual: {Actual}. {Reason}";}
+    {internal bool Native=>Actual is "Native Mica" or "Native Acrylic";internal string Status=>Localization.Format("Requested: {0}. Actual: {1}. {2}",Localization.Text(Requested),Localization.Text(Actual),Localization.Text(Reason));}
     internal static string Requested(Settings s)=>Array.IndexOf(Choices,s.SettingsMaterial)>=0?s.SettingsMaterial:"Solid";
     internal static Result Resolve(string request,Conditions conditions,Func<int,int> apply)
     {
@@ -21,7 +21,7 @@ internal static class SettingsBackdrop
         string reason=!conditions.Supported?"Requires Windows 11 build 22621 or later.":conditions.HighContrast?"High contrast is enabled.":!conditions.Transparency?"Windows transparency effects are off.":conditions.EnergySaver?"Energy saver is active.":conditions.Remote?"Remote sessions use the fallback.":"";
         if(reason.Length>0)return new(request,"Solid",reason);
         int hr=apply(request=="Native Mica"?2:3);
-        return hr<0?new(request,"Solid",$"DWM could not enable the material (0x{hr:X8}).",hr):new(request,request,"DWM enabled; Windows controls the final appearance.",hr);
+        return hr<0?new(request,"Solid",Localization.Format("DWM could not enable the material (0x{0:X8}).",hr),hr):new(request,request,"DWM enabled; Windows controls the final appearance.",hr);
     }
     internal static Conditions ReadConditions()
     {

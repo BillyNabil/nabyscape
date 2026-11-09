@@ -39,7 +39,7 @@ public sealed partial class OverlayWindow
             if(!CanShelfDrop(e))return;
             if(e.Data.GetData(DataFormats.FileDrop) is string[] paths)
             {
-                utilityMutating=true;try{app.Productivity.AddFiles(paths);}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not stage files",ex.Message);}finally{utilityMutating=false;}
+                utilityMutating=true;try{app.Productivity.AddFiles(paths);}catch(Exception ex){app.Store.Log(ex);app.Notify(Localization.Text("Could not stage files"),ex.Message);}finally{utilityMutating=false;}
                 FinishFileDrop(true);
             }
             e.Handled=true;
@@ -67,7 +67,7 @@ public sealed partial class OverlayWindow
             var tile=new Border{Width=54,Height=58,CornerRadius=new(7),Background=UI.Brush("#34363C"),Padding=new(5),Margin=new Thickness(i*32-64,0,0,0),HorizontalAlignment=HorizontalAlignment.Center,RenderTransform=new RotateTransform((i-1)*7)};
             var image=new Image{Stretch=Stretch.Uniform};tile.Child=image;stack.Children.Add(tile);_=LoadShelfThumbnail(paths[i],image);
         }
-        var content=new StackPanel();content.Children.Add(stack);var text=UI.Text($"Drop {paths.Length} {(paths.Length==1?"item":"items")} onto your shelf",12);text.HorizontalAlignment=HorizontalAlignment.Center;text.Margin=new(0,6,0,0);content.Children.Add(text);
+        var content=new StackPanel();content.Children.Add(stack);var text=UI.Text(Localization.Format("Drop {0} items onto your shelf",paths.Length),12);text.HorizontalAlignment=HorizontalAlignment.Center;text.Margin=new(0,6,0,0);content.Children.Add(text);
         RemoveShelfDropPreview();
         shelfDropPreview=new Border{Background=Brushes.Black,CornerRadius=new(10),Child=content,IsHitTestVisible=false,Width=expanded?Math.Max(144,scroll.Width):PeekWidth,Height=124,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,Margin=expanded?new Thickness(0,app.Settings.Height+10,0,0):new Thickness(0)};
         if(expanded)visuals.Children.Add(shelfDropPreview);else peekViewport.Children.Add(shelfDropPreview);

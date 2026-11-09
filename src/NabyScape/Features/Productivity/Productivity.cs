@@ -34,7 +34,7 @@ public sealed class ClipItem
     public string ImagePath { get; set; } = "";
     public bool Pinned { get; set; }
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
-    [JsonIgnore] public string Label => Kind=="image" ? "Image" : Text.Replace('\r',' ').Replace('\n',' ');
+    [JsonIgnore] public string Label => Kind=="image" ? Localization.Text("Image") : Text.Replace('\r',' ').Replace('\n',' ');
 }
 
 public sealed class ProductivityData
@@ -345,7 +345,7 @@ public sealed class ProductivityService : IDisposable
     private void EnsureCache()
     {
         Directory.CreateDirectory(_cache);
-        if((File.GetAttributes(_cache)&FileAttributes.ReparsePoint)!=0)throw new IOException("The clipboard cache folder cannot be a link.");
+        if((File.GetAttributes(_cache)&FileAttributes.ReparsePoint)!=0)throw new IOException(Localization.Text("The clipboard cache folder cannot be a link."));
     }
     private bool ConfinedImage(string? path)
     {

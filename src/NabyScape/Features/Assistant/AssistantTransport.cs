@@ -59,7 +59,7 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
                 catch (OperationCanceledException) { socket.Dispose(); throw; }
                 catch (SocketException) { socket.Dispose(); }
             }
-            throw new HttpRequestException("The provider destination is unavailable or disallowed.");
+            throw new HttpRequestException(Localization.Text("The provider destination is unavailable or disallowed."));
         }
     };
 
@@ -69,12 +69,12 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
             || uri.UserInfo.Length != 0 || uri.Fragment.Length != 0 || uri.Query.Length != 0
             || (uri.Scheme != "https" && !(uri.Scheme == "http" && IsLocalHost(uri.Host)))
             || uri.Host.Length == 0 || uri.Host.EndsWith('.') || uri.Host.Contains('%'))
-            throw new InvalidOperationException("Use a public HTTPS provider base URL or localhost HTTP URL without credentials, query, or fragment.");
+            throw new InvalidOperationException(Localization.Text("Use a public HTTPS provider base URL or localhost HTTP URL without credentials, query, or fragment."));
         string host = uri.IdnHost.Trim('[', ']');
         if (!IsLocalHost(host) && (IPAddress.TryParse(host, out var ip) ? !IsPublicAddress(ip)
             : uri.HostNameType != UriHostNameType.Dns || !host.Contains('.') || host.EndsWith(".local", StringComparison.OrdinalIgnoreCase)
               || host.EndsWith(".internal", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException("The provider destination must be public or localhost.");
+            throw new InvalidOperationException(Localization.Text("The provider destination must be public or localhost."));
         return new Uri(uri.AbsoluteUri.TrimEnd('/') + "/", UriKind.Absolute);
     }
 
@@ -104,16 +104,16 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
         ArgumentNullException.ThrowIfNull(provider);
         var endpoint = ValidateEndpoint(provider.BaseUrl);
         ValidateInput(provider, messages, tools);
-        if (apiKey is { Length: > 4096 } || apiKey?.Any(char.IsControl) == true) throw new InvalidOperationException("The API key is invalid.");
+        if (apiKey is { Length: > 4096 } || apiKey?.Any(char.IsControl) == true) throw new InvalidOperationException(Localization.Text("The API key is invalid."));
         var activeTools = provider.Tools && provider.Backend!="Hermes" ? tools : Array.Empty<AssistantTool>();
         var body = Build(provider, messages, activeTools);
         byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(body);
-        if (bytes.Length > MaximumBodyBytes) throw new InvalidOperationException("The assistant request is too large. Reduce the conversation or image size.");
+        if (bytes.Length > MaximumBodyBytes) throw new InvalidOperationException(Localization.Text("The assistant request is too large. Reduce the conversation or image size."));
         string route = provider.Protocol switch
         {
             "ChatCompletions" => "chat/completions", "Responses" => "responses", "Anthropic" => "messages",
             "Gemini" => "models/" + Uri.EscapeDataString(provider.Model) + ":generateContent",
-            _ => throw new InvalidOperationException("Select a supported assistant protocol.")
+            _ => throw new InvalidOperationException(Localization.Text("Select a supported assistant protocol."))
         };
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(endpoint, route));
         request.Content = new ByteArrayContent(bytes);
@@ -121,10 +121,10 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         if(provider.Backend=="Hermes")
         {
-            if(provider.Protocol!="ChatCompletions")throw new InvalidOperationException("Hermes Agent uses Chat Completions. Select that protocol.");
+            if(provider.Protocol!="ChatCompletions")throw new InvalidOperationException(Localization.Text("Hermes Agent uses Chat Completions. Select that protocol."));
             if(provider.HermesSessionId.Length>0)
             {
-                if(!Guid.TryParseExact(provider.HermesSessionId,"N",out _))throw new InvalidOperationException("The Hermes session is invalid. Clear chat and try again.");
+                if(!Guid.TryParseExact(provider.HermesSessionId,"N",out _))throw new InvalidOperationException(Localization.Text("The Hermes session is invalid. Clear chat and try again."));
                 request.Headers.Add("X-Hermes-Session-Id","nabyscape-"+provider.HermesSessionId);
             }
             request.Headers.Add("Idempotency-Key",Guid.NewGuid().ToString("N"));
@@ -143,14 +143,14 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, deadline.Token).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)
                 throw new IOException(await Failure(response,apiKey,deadline.Token).ConfigureAwait(false));
-            if (response.Content.Headers.ContentLength > MaximumBodyBytes) throw new IOException("The provider response exceeded the size limit.");
+            if (response.Content.Headers.ContentLength > MaximumBodyBytes) throw new IOException(Localization.Text("The provider response exceeded the size limit."));
             await using var stream = await response.Content.ReadAsStreamAsync(deadline.Token).ConfigureAwait(false);
             using var buffer = new MemoryStream();
             byte[] chunk = new byte[16 * 1024];
             int count;
             while ((count = await stream.ReadAsync(chunk, deadline.Token).ConfigureAwait(false)) != 0)
             {
-                if (buffer.Length + count > MaximumBodyBytes) throw new IOException("The provider response exceeded the size limit.");
+                if (buffer.Length + count > MaximumBodyBytes) throw new IOException(Localization.Text("The provider response exceeded the size limit."));
                 buffer.Write(chunk, 0, count);
             }
             deadline.Token.ThrowIfCancellationRequested();
@@ -160,20 +160,20 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
                 return Parse(provider, document.RootElement, activeTools);
             }
             catch (Exception ex) when (ex is JsonException or InvalidOperationException or KeyNotFoundException or FormatException)
-            { throw new IOException("The provider returned an invalid or unsupported response."); }
+            { throw new IOException(Localization.Text("The provider returned an invalid or unsupported response.")); }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        { throw new TimeoutException("The assistant request timed out. Try again or check the provider."); }
-        catch (HttpRequestException) { throw new IOException("The assistant could not connect securely to the configured provider."); }
+        { throw new TimeoutException(Localization.Text("The assistant request timed out. Try again or check the provider.")); }
+        catch (HttpRequestException) { throw new IOException(Localization.Text("The assistant could not connect securely to the configured provider.")); }
     }
 
     private static void ValidateInput(AssistantProvider provider, IReadOnlyList<AssistantMessage> messages, IReadOnlyList<AssistantTool> tools)
     {
         ArgumentNullException.ThrowIfNull(messages); ArgumentNullException.ThrowIfNull(tools);
         if (string.IsNullOrWhiteSpace(provider.Model) || provider.Model.Length > 256 || provider.Model.Any(char.IsControl))
-            throw new InvalidOperationException("Enter the model identifier supplied by your provider.");
-        if (provider.Protocol is not ("ChatCompletions" or "Responses" or "Anthropic" or "Gemini")) throw new InvalidOperationException("Select a supported assistant protocol.");
-        if (messages.Count is < 1 or > 100 || tools.Count > 32) throw new InvalidOperationException("The assistant conversation or tool list is too large.");
+            throw new InvalidOperationException(Localization.Text("Enter the model identifier supplied by your provider."));
+        if (provider.Protocol is not ("ChatCompletions" or "Responses" or "Anthropic" or "Gemini")) throw new InvalidOperationException(Localization.Text("Select a supported assistant protocol."));
+        if (messages.Count is < 1 or > 100 || tools.Count > 32) throw new InvalidOperationException(Localization.Text("The assistant conversation or tool list is too large."));
         int textLength = 0, callCount = 0;
         long payloadCharacters = 0;
         var known = new HashSet<string>(StringComparer.Ordinal);
@@ -183,18 +183,18 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
         {
             if (tool == null || !ValidName(tool.Name) || !names.Add(tool.Name) || tool.Description == null || tool.Description.Length > 4096
                 || tool.Parameters.ValueKind != JsonValueKind.Object || tool.Parameters.GetRawText().Length > 32768)
-                throw new InvalidOperationException("The assistant tool definition is invalid.");
+                throw new InvalidOperationException(Localization.Text("The assistant tool definition is invalid."));
             payloadCharacters += tool.Description.Length + tool.Parameters.GetRawText().Length;
         }
         foreach (var message in messages)
         {
-            if (message == null || message.Text == null || message.Role is not ("system" or "user" or "assistant" or "tool")) throw new InvalidOperationException("The assistant message is invalid.");
+            if (message == null || message.Text == null || message.Role is not ("system" or "user" or "assistant" or "tool")) throw new InvalidOperationException(Localization.Text("The assistant message is invalid."));
             textLength += message.Text.Length;
             payloadCharacters += message.Text.Length;
-            if (textLength > MaximumTextCharacters) throw new InvalidOperationException("The conversation text is too large. Start a new chat.");
+            if (textLength > MaximumTextCharacters) throw new InvalidOperationException(Localization.Text("The conversation text is too large. Start a new chat."));
             if (message.ImageDataUrl != null)
             {
-                if (!provider.Vision || message.Role != "user") throw new InvalidOperationException("Enable vision only for a model that supports user images.");
+                if (!provider.Vision || message.Role != "user") throw new InvalidOperationException(Localization.Text("Enable vision only for a model that supports user images."));
                 Image(message.ImageDataUrl);
                 payloadCharacters += message.ImageDataUrl.Length;
             }
@@ -203,30 +203,30 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
                 CheckAttachments(provider,message.Attachments);
                 payloadCharacters+=message.Attachments.Sum(f=>f.Weight);
                 textLength+=message.Attachments.Sum(f=>f.Text?.Length??0);
-                if(textLength>MaximumTextCharacters)throw new InvalidOperationException("The attached text and conversation exceed 128,000 characters. Start a new chat or split the documents.");
+                if(textLength>MaximumTextCharacters)throw new InvalidOperationException(Localization.Text("The attached text and conversation exceed 128,000 characters. Start a new chat or split the documents."));
             }
             if (message.Calls is { Count: > 0 })
             {
-                if (!provider.Tools || message.Role != "assistant" || message.Calls.Count > MaximumCalls) throw new InvalidOperationException("Tool calls are not enabled or valid for this message.");
+                if (!provider.Tools || message.Role != "assistant" || message.Calls.Count > MaximumCalls) throw new InvalidOperationException(Localization.Text("Tool calls are not enabled or valid for this message."));
                 foreach (var call in message.Calls)
                 {
                     ValidateCall(call);
                     payloadCharacters += call.Arguments.Length + (call.ThoughtSignature?.Length ?? 0);
-                    if (++callCount > 128 || !known.Add(call.Id)) throw new InvalidOperationException("Duplicate or excessive tool calls in conversation.");
+                    if (++callCount > 128 || !known.Add(call.Id)) throw new InvalidOperationException(Localization.Text("Duplicate or excessive tool calls in conversation."));
                     pending.Add(call.Id);
                 }
             }
-            if (message.Role == "tool" && (message.CallId == null || !pending.Remove(message.CallId))) throw new InvalidOperationException("A tool result must match an earlier assistant call exactly once.");
+            if (message.Role == "tool" && (message.CallId == null || !pending.Remove(message.CallId))) throw new InvalidOperationException(Localization.Text("A tool result must match an earlier assistant call exactly once."));
             if (message.ProtocolItems != null)
             {
-                if (message.Role != "assistant" || message.ProtocolItems.Count > 128) throw new InvalidOperationException("Invalid provider continuation items.");
+                if (message.Role != "assistant" || message.ProtocolItems.Count > 128) throw new InvalidOperationException(Localization.Text("Invalid provider continuation items."));
                 foreach (var item in message.ProtocolItems)
                 {
-                    if (item.ValueKind != JsonValueKind.Object) throw new InvalidOperationException("Invalid provider continuation item.");
+                    if (item.ValueKind != JsonValueKind.Object) throw new InvalidOperationException(Localization.Text("Invalid provider continuation item."));
                     payloadCharacters += item.GetRawText().Length;
                 }
             }
-            if (payloadCharacters > MaximumBodyBytes) throw new InvalidOperationException("The assistant request is too large. Start a new chat or reduce the image size.");
+            if (payloadCharacters > MaximumBodyBytes) throw new InvalidOperationException(Localization.Text("The assistant request is too large. Start a new chat or reduce the image size."));
         }
     }
 
@@ -234,19 +234,19 @@ internal sealed partial class AssistantTransport : IAssistantTransport, IDisposa
     private static void ValidateCall(AssistantCall call)
     {
         if (call == null || call.Id is not { Length: > 0 and <= 256 } || call.Id.Any(char.IsControl) || !ValidName(call.Name)
-            || call.Arguments is not { Length: > 0 and <= 32768 } || call.ThoughtSignature?.Length > MaximumBodyBytes) throw new InvalidOperationException("The provider returned an invalid tool call.");
+            || call.Arguments is not { Length: > 0 and <= 32768 } || call.ThoughtSignature?.Length > MaximumBodyBytes) throw new InvalidOperationException(Localization.Text("The provider returned an invalid tool call."));
         using var args = JsonDocument.Parse(call.Arguments, new JsonDocumentOptions { MaxDepth = 32 });
-        if (args.RootElement.ValueKind != JsonValueKind.Object) throw new InvalidOperationException("Tool arguments must be a JSON object.");
+        if (args.RootElement.ValueKind != JsonValueKind.Object) throw new InvalidOperationException(Localization.Text("Tool arguments must be a JSON object."));
     }
 
     private static (string Mime, string Data) Image(string value)
     {
         int split = value.IndexOf(',');
-        if (split < 0 || value.Length > 3 * 1024 * 1024) throw new InvalidOperationException("The screenshot is invalid or too large.");
+        if (split < 0 || value.Length > 3 * 1024 * 1024) throw new InvalidOperationException(Localization.Text("The screenshot is invalid or too large."));
         string mime = value[..split] switch { "data:image/jpeg;base64" => "image/jpeg", "data:image/png;base64" => "image/png", _ => "" };
         string data = value[(split + 1)..];
-        if (mime.Length == 0 || data.Length == 0 || data.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '+' or '/' or '='))) throw new InvalidOperationException("Use an inline PNG or JPEG screenshot.");
-        if (!AssistantBase64.IsValid(data.AsSpan())) throw new InvalidOperationException("The screenshot encoding is invalid.");
+        if (mime.Length == 0 || data.Length == 0 || data.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '+' or '/' or '='))) throw new InvalidOperationException(Localization.Text("Use an inline PNG or JPEG screenshot."));
+        if (!AssistantBase64.IsValid(data.AsSpan())) throw new InvalidOperationException(Localization.Text("The screenshot encoding is invalid."));
         return (mime, data);
     }
 

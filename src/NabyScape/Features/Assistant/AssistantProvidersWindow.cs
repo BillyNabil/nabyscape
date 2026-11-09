@@ -8,9 +8,9 @@ internal sealed class AssistantProvidersWindow : Window
 {
     internal AssistantProvidersWindow(App app)
     {
-        Title="NabyScape · AI providers";AssistantWindowChrome.Place(this,app.Settings,600,740);
+        Title=Localization.Text("NabyScape · AI providers");AssistantWindowChrome.Place(this,app.Settings,600,740);
         var editor=new AssistantProviderSettings(app,false);
-        Content=AssistantWindowChrome.Frame(this,"NabyScape · AI providers",new ScrollViewer{Content=editor,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled});
+        Content=AssistantWindowChrome.Frame(this,Localization.Text("NabyScape · AI providers"),new ScrollViewer{Content=editor,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled});
         Closed+=(_,_)=>editor.ClearSecrets();
     }
 }

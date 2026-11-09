@@ -10,7 +10,7 @@ internal static class TimedLyricsDocument
 {
     internal static string ToLrc(string body)
     {
-        if(body.Length>1024*1024)throw new InvalidDataException("Lyrics document is too large.");
+        if(body.Length>1024*1024)throw new InvalidDataException(Localization.Text("Lyrics document is too large."));
         if(!body.TrimStart().StartsWith("<",StringComparison.Ordinal))return LyricTiming.Parse(body).Length>0?body:"";
         using var input=new StringReader(body);
         using var reader=XmlReader.Create(input,new XmlReaderSettings{DtdProcessing=DtdProcessing.Prohibit,XmlResolver=null,MaxCharactersInDocument=1024*1024});

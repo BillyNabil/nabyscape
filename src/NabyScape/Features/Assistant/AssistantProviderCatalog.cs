@@ -27,7 +27,7 @@ internal static class AssistantProviderCatalog
             "Custom Responses" => ("Responses", ""),
             "Custom Anthropic" => ("Anthropic", ""),
             "Custom Gemini" => ("Gemini", ""),
-            _ => throw new ArgumentException("Unknown provider preset.", nameof(name))
+            _ => throw new ArgumentException(Localization.Text("Unknown provider preset."), nameof(name))
         };
         return new AssistantProvider { Name = name, Protocol = protocol, BaseUrl = url, Model = name=="Hermes Agent"?"hermes-agent":"", Backend=name=="Hermes Agent"?"Hermes":"", Vision = false, Tools = false };
     }

@@ -20,6 +20,9 @@ internal sealed class OfficialUpdates : IDisposable
     internal static readonly Uri Endpoint=new("https://api.github.com/repos/BillyNabil/nabyscape/releases/latest");
     internal static Version InstalledVersion=>new(typeof(App).Assembly.GetName().Version!.ToString(3));
     private readonly HttpClient http;
+    // The original releases do not contain this fork's localization. Only injected test transports
+    // exercise the upstream protocol until a separate release channel is configured for the fork.
+    internal bool ChannelEnabled { get; }
     private readonly Store store;
     private readonly string stagingDirectory;
     private readonly Action<string,Version> inspect;
@@ -36,6 +39,8 @@ internal sealed class OfficialUpdates : IDisposable
     internal event Action? DownloadReady;
     internal OfficialUpdates(Store store,HttpMessageHandler? transport=null,Action<string,Version>? inspect=null,string? stagingDirectory=null)
     {
+        ChannelEnabled=transport!=null;
+        if(!ChannelEnabled)Status=Localization.Text("Upstream updates are disabled in this Russian build to preserve its changes.");
         this.store=store;this.stagingDirectory=Path.GetFullPath(stagingDirectory??UpdateHandoff.Folder);this.inspect=inspect??InspectSetup;state=store.Load<UpdateState>("update-state");
         http=new(transport??new HttpClientHandler{AllowAutoRedirect=false});http.Timeout=TimeSpan.FromSeconds(45);
         http.DefaultRequestHeaders.UserAgent.ParseAdd("NabyScape/"+InstalledVersion);http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
@@ -44,6 +49,7 @@ internal sealed class OfficialUpdates : IDisposable
     private void Report(string text){Status=text;Changed?.Invoke();}
     internal async Task Check(bool manual,bool enabled=true,bool autoDownload=false)
     {
+        if(!ChannelEnabled){Report(Localization.Text("Upstream updates are disabled in this Russian build to preserve its changes."));return;}
         if(!manual && (!enabled || DateTimeOffset.UtcNow-state.LastAttempt<TimeSpan.FromHours(24)))return;
         bool checkedRelease=false;
         await Operation(async token=>
@@ -59,6 +65,7 @@ internal sealed class OfficialUpdates : IDisposable
     }
     internal async Task Download()
     {
+        if(!ChannelEnabled)return;
         if(Available==null)return;
         await Operation(async token=>
         {

@@ -10,8 +10,8 @@ internal sealed partial class AssistantProviderSettings
     internal async Task<bool> ConfirmProviderChanges()
     {
         if(!HasProviderDraft)return true;
-        var dialog=new Window{Title="Unsaved provider changes",Width=420,SizeToContent=SizeToContent.Height,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,Owner=Window.GetWindow(this),Background=UI.Brush("#16191F"),Foreground=System.Windows.Media.Brushes.White};
-        var panel=new StackPanel{Margin=new(22)};panel.Children.Add(UI.Heading("Keep your connection changes?",18));panel.Children.Add(UI.Text("Save this provider before continuing, discard its changes, or keep editing.",12,UI.Muted));
+        var dialog=new Window{Title=Localization.Text("Unsaved provider changes"),Width=420,SizeToContent=SizeToContent.Height,ResizeMode=ResizeMode.NoResize,WindowStartupLocation=WindowStartupLocation.CenterOwner,Owner=Window.GetWindow(this),Background=UI.Brush("#16191F"),Foreground=System.Windows.Media.Brushes.White};
+        var panel=new StackPanel{Margin=new(22)};panel.Children.Add(UI.Heading(Localization.Text("Keep your connection changes?"),18));panel.Children.Add(UI.Text(Localization.Text("Save this provider before continuing, discard its changes, or keep editing."),12,UI.Muted));
         string choice="edit";var actions=new WrapPanel{Margin=new(0,16,0,0)};
         foreach(string label in new[]{"Save","Discard","Keep editing"}){string action=label;actions.Children.Add(AssistantWindow.Pill(label,()=>{choice=action;dialog.Close();},label=="Save"));}panel.Children.Add(actions);dialog.Content=panel;dialog.ShowDialog();
         if(choice=="Save")return await SaveProvider();

@@ -8,6 +8,8 @@ namespace NabyScape;
 
 internal static class UI
 {
+    // Presentation only: SelectedItem and serialized values keep their original identity.
+    internal static void LocalizeOptions(ComboBox combo)=>combo.ItemTemplate=LocalizedOptionPresentation.Template();
     private static readonly System.Collections.Generic.Dictionary<string,SolidColorBrush> brushes=new(StringComparer.OrdinalIgnoreCase);
     private static readonly System.Collections.Generic.Queue<string> brushOrder=new();
     public static SolidColorBrush Brush(string color)
@@ -59,6 +61,9 @@ internal static class UI
     }
     public static TextBox Input(string name,string text,string? tooltip=null)
     { var t=new TextBox{Text=text,ToolTip=tooltip};AutomationProperties.SetName(t,name);return t; }
+    // Localize only owned metadata, keeping editable user content verbatim.
+    internal static TextBox CaptionInput(string englishName,string text,string? englishTooltip=null)
+    {var input=Input(Localization.Text(englishName),text,englishTooltip==null?null:Localization.Text(englishTooltip));LocalizedName(input,englishName);return input;}
     public static void Named(DependencyObject control,string name)=>AutomationProperties.SetName(control,name);
     public static ScrollViewer Scroll(UIElement content)=>new(){Content=content,Padding=new(0)};
 }

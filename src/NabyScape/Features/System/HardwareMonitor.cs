@@ -31,7 +31,7 @@ internal sealed class HardwareCaptureWorker(Func<int,Task<MonitorHardware>> read
         Task<MonitorHardware> work;
         lock(sync)
         {
-            if(pending is {IsCompleted:false})return unavailable("Hardware provider busy · retrying");
+            if(pending is {IsCompleted:false})return unavailable(Localization.Text("Hardware provider busy · retrying"));
             if(pending!=null)
             {
                 var completed=TakeCompleted();
@@ -42,14 +42,14 @@ internal sealed class HardwareCaptureWorker(Func<int,Task<MonitorHardware>> read
         }
         try
         {
-            if(!(wait?.Invoke(work)??work.Wait(1200)))return unavailable("Hardware query timed out · retrying");
+            if(!(wait?.Invoke(work)??work.Wait(1200)))return unavailable(Localization.Text("Hardware query timed out · retrying"));
         }
         catch { /* Faults are observed and cleared by TakeCompleted below. */ }
         lock(sync)
         {
             if(ReferenceEquals(pending,work) && work.IsCompleted)
-                return TakeCompleted()??unavailable("Hardware sample expired · retrying");
-            return unavailable("Hardware sample reset · retrying");
+                return TakeCompleted()??unavailable(Localization.Text("Hardware sample expired · retrying"));
+            return unavailable(Localization.Text("Hardware sample reset · retrying"));
         }
     }
     // Called under sync. Consuming completion atomically prevents duplicate delivery.
@@ -121,7 +121,7 @@ internal static class HardwareMonitor
                     if(type is "Temperature" or "Fan" && value is double v && double.IsFinite(v))sensors.Add(new(Text(row,"Name"),type,v,entry.Key));
                 }
             }
-            return new(cpus??Array.Empty<HardwareCpu>(),models??Array.Empty<string>(),gpus,sensors,gpus.Length==0?"GPU performance counters unavailable":null);
+            return new(cpus??Array.Empty<HardwareCpu>(),models??Array.Empty<string>(),gpus,sensors,gpus.Length==0?Localization.Text("GPU performance counters unavailable"):null);
         }
     }
 
@@ -155,8 +155,8 @@ internal static class HardwareMonitor
         }
         return totals.GroupBy(p=>p.Key.Adapter).ToDictionary(g=>g.Key,g=>Math.Clamp(g.Max(p=>p.Value),0,100));
     }
-    internal static string Percent(double? value)=>value is double v && double.IsFinite(v) && v>=0 && v<=100?v.ToString("0.#",CultureInfo.InvariantCulture)+"%":"Unavailable / sampling";
-    internal static string SensorValue(HardwareSensor sensor)=>sensor.Value.ToString("0.#",CultureInfo.InvariantCulture)+(sensor.Type=="Fan"?" RPM":" °C");
+    internal static string Percent(double? value)=>value is double v && double.IsFinite(v) && v>=0 && v<=100?v.ToString("0.#",CultureInfo.InvariantCulture)+"%":Localization.Text("Unavailable / sampling");
+    internal static string SensorValue(HardwareSensor sensor)=>sensor.Value.ToString("0.#",CultureInfo.InvariantCulture)+(sensor.Type=="Fan"?Localization.Text(" RPM"):" °C");
 
     private static List<Dictionary<string,object?>> Query(string scope,string query)
     {

@@ -12,14 +12,14 @@ public sealed partial class SettingsWindow
     }
     private void ResetPreferences(string? category)
     {
-        if(MessageBox.Show(this,PreferenceReset.Summary(category),"Reset preferences",MessageBoxButton.OKCancel,MessageBoxImage.Question)!=MessageBoxResult.OK)return;
-        try{FlushPreferenceChanges();PreferenceReset.Reset(app.Store,app.Settings,category);app.ChangeSettings();Navigate(current);status.Text="Preferences reset. The backup can be restored in Application.";}
-        catch(Exception ex){status.Text="Reset aborted: "+ex.Message;app.Store.Log(ex);}
+        if(MessageBox.Show(this,PreferenceReset.Summary(category),Localization.Text("Reset preferences"),MessageBoxButton.OKCancel,MessageBoxImage.Question)!=MessageBoxResult.OK)return;
+        try{FlushPreferenceChanges();PreferenceReset.Reset(app.Store,app.Settings,category);app.ChangeSettings();Navigate(current);status.Text=Localization.Text("Preferences reset. The backup can be restored in Application.");}
+        catch(Exception ex){status.Text=Localization.Format("Reset aborted: {0}",ex.Message);app.Store.Log(ex);}
     }
     private void RestorePreferences()
     {
-        if(MessageBox.Show(this,"Restore the last preference backup? Startup, clipboard capture/history and saved content are kept.","Restore preferences",MessageBoxButton.OKCancel,MessageBoxImage.Question)!=MessageBoxResult.OK)return;
-        try{FlushPreferenceChanges();PreferenceReset.Restore(app.Store,app.Settings);app.ChangeSettings();Navigate(current);status.Text="Preference backup restored.";}
-        catch(Exception ex){status.Text="Restore aborted: "+ex.Message;app.Store.Log(ex);}
+        if(MessageBox.Show(this,Localization.Text("Restore the last preference backup? Startup, clipboard capture/history and saved content are kept."),Localization.Text("Restore preferences"),MessageBoxButton.OKCancel,MessageBoxImage.Question)!=MessageBoxResult.OK)return;
+        try{FlushPreferenceChanges();PreferenceReset.Restore(app.Store,app.Settings);app.ChangeSettings();Navigate(current);status.Text=Localization.Text("Preference backup restored.");}
+        catch(Exception ex){status.Text=Localization.Format("Restore aborted: {0}",ex.Message);app.Store.Log(ex);}
     }
 }

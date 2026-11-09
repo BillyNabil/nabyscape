@@ -30,24 +30,24 @@ internal static class PreferenceReset
     {
         string Detail(string name)=>name switch
         {
-            "Appearance"=>"dock shape, colors and text style",
-            "Ambience"=>"ambient colors, light shape, audio response and closed-dock glow",
-            "Motion"=>"animation, reduced motion and performance preferences",
-            "Clipboard"=>"clipboard capture preferences",
-            "Weather"=>"weather city and temperature units",
-            "Visibility"=>"hide, tuck, automatic previews and visibility shortcuts",
-            "Notifications"=>"notification delivery, sounds, quiet hours and download alerts",
-            "Layout"=>"island position, display and panel sizes",
-            "Content"=>"widget/tool order, hover pages and focus durations",
-            "Controls"=>"hover timing, gestures, tuck rules and global shortcuts",
-            "Audio"=>"closed media display, waveform and feedback",
-            "System"=>"clock format and monitor readings",
-            "Launch"=>"launch appearance",
-            "Application"=>"update checks and automatic downloads, interface language, text size and contrast",
-            _=>"update checks, notification delivery and download monitoring"
+            "Appearance"=>Localization.Text("dock shape, colors and text style"),
+            "Ambience"=>Localization.Text("ambient colors, light shape, audio response and closed-dock glow"),
+            "Motion"=>Localization.Text("animation, reduced motion and performance preferences"),
+            "Clipboard"=>Localization.Text("clipboard capture preferences"),
+            "Weather"=>Localization.Text("weather city and temperature units"),
+            "Visibility"=>Localization.Text("hide, tuck, automatic previews and visibility shortcuts"),
+            "Notifications"=>Localization.Text("notification delivery, sounds, quiet hours and download alerts"),
+            "Layout"=>Localization.Text("island position, display and panel sizes"),
+            "Content"=>Localization.Text("widget/tool order, hover pages and focus durations"),
+            "Controls"=>Localization.Text("hover timing, gestures, tuck rules and global shortcuts"),
+            "Audio"=>Localization.Text("closed media display, waveform and feedback"),
+            "System"=>Localization.Text("clock format and monitor readings"),
+            "Launch"=>Localization.Text("launch appearance"),
+            "Application"=>Localization.Text("update checks and automatic downloads, interface language, text size and contrast"),
+            _=>Localization.Text("update checks, notification delivery and download monitoring")
         };
-        string detail=category==null?string.Join("; ",Categories.Where(pair=>pair.Value.Length>0).Select(pair=>pair.Key+": "+Detail(pair.Key))):Detail(category);
-        return $"Reset {(category??"all preferences")} to defaults ({Keys(category).Length} preferences): {detail}. Startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets are kept. A preference backup is saved first.";
+        string detail=category==null?string.Join("; ",Categories.Where(pair=>pair.Value.Length>0).Select(pair=>Localization.Text(pair.Key)+": "+Detail(pair.Key))):Detail(category);
+        return Localization.Format("Reset {0} to defaults ({1} preferences): {2}. Startup, clipboard capture/history, shortcuts, Notes, Tasks, shelf, calendar and activity targets are kept. A preference backup is saved first.",Localization.Text(category??"all preferences"),Keys(category).Length,detail);
     }
     private static string[] Keys(string? category)=>category==null?Categories.Values.SelectMany(v=>v).Where(key=>key!=nameof(Settings.ClipboardHistory)).Distinct().ToArray():Categories[category];
     internal static void Reset(Store store,Settings target,string? category)
@@ -63,15 +63,15 @@ internal static class PreferenceReset
     {
         string file=Path.Combine(store.DirectoryPath,"preference-backup.json");
         using var json=JsonDocument.Parse(File.ReadAllText(file));
-        if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException("The preference backup is invalid.");
+        if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException(Localization.Text("The preference backup is invalid."));
         foreach(string key in Keys(null))
         {
             if(PremiumPreferences.Keys.Contains(key) || key is "DisplayMode" or "SettingsMaterial" || Categories["Application"].Contains(key))continue;
             bool nullable=Nullable.GetUnderlyingType(typeof(Settings).GetProperty(key)!.PropertyType)!=null;
             if(!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null && !nullable)
-                throw new InvalidDataException("The preference backup is incomplete: "+key);
+                throw new InvalidDataException(Localization.Text("The preference backup is incomplete: ")+key);
         }
-        var restored=json.RootElement.Deserialize<Settings>()??throw new InvalidDataException("The preference backup is empty.");
+        var restored=json.RootElement.Deserialize<Settings>()??throw new InvalidDataException(Localization.Text("The preference backup is empty."));
         var candidate=Clone(target);
         foreach(string key in Keys(null))Copy(restored,candidate,key);
         candidate.Normalize();Commit(store,target,candidate);
@@ -92,6 +92,6 @@ internal static class HotkeyPolicy
         var shortcuts=new[]{("Panel",s.HotkeyEnabled,s.HotkeyModifiers,s.HotkeyKey),("Visibility",s.VisibilityHotkeyEnabled,s.VisibilityHotkeyModifiers,s.VisibilityHotkeyKey),("Tuck",s.TuckHotkeyEnabled,s.TuckHotkeyModifiers,s.TuckHotkeyKey)};
         var own=shortcuts.First(v=>v.Item1==action);
         var other=shortcuts.FirstOrDefault(v=>v.Item1!=action && own.Item2 && v.Item2 && v.Item3==own.Item3 && v.Item4==own.Item4);
-        return other.Item1==null?"":$"{action} shortcut conflicts with {other.Item1}. Choose a different key or modifiers.";
+        return other.Item1==null?"":Localization.Format("{0} shortcut conflicts with {1}. Choose a different key or modifiers.",Localization.Text(action),Localization.Text(other.Item1));
     }
 }

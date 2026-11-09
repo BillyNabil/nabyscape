@@ -77,9 +77,9 @@ public sealed partial class OverlayWindow
             
             var choice=toolChoices[i];if(!ToolOn(choice.mode))continue;var content=new Grid();content.ColumnDefinitions.Add(new(){Width=new GridLength(28)});content.ColumnDefinitions.Add(new());content.ColumnDefinitions.Add(new(){Width=new GridLength(18)});
             var icon=ToolIcon(choice.mode);icon.Width=18;icon.Height=18;icon.HorizontalAlignment=HorizontalAlignment.Left;content.Children.Add(icon);
-            var label=UI.Text(choice.title,12);Grid.SetColumn(label,1);content.Children.Add(label);
+            var label=UI.Caption(choice.title,12);Grid.SetColumn(label,1);content.Children.Add(label);
             var arrow=new System.Windows.Shapes.Path{Data=Geometry.Parse("M1,1 L5,5 1,9"),Stroke=UI.Brush("#ADB0B7"),StrokeThickness=1.3,Width=5,Height=9,VerticalAlignment=VerticalAlignment.Center,HorizontalAlignment=HorizontalAlignment.Right,Opacity=0};Grid.SetColumn(arrow,2);content.Children.Add(arrow);
-            var row=new Button{Content=content,Template=(ControlTemplate)FindResource("ToolRowTemplate"),Height=32,MinHeight=32,Margin=new(0,0,0,0),Padding=new(10,0,13,0),HorizontalContentAlignment=HorizontalAlignment.Stretch,Background=Brushes.Transparent,Cursor=Cursors.Hand};UI.Named(row,choice.title);row.Click+=(_,_)=>NavigateTool(choice.mode);
+            var row=new Button{Content=content,Template=(ControlTemplate)FindResource("ToolRowTemplate"),Height=32,MinHeight=32,Margin=new(0,0,0,0),Padding=new(10,0,13,0),HorizontalContentAlignment=HorizontalAlignment.Stretch,Background=Brushes.Transparent,Cursor=Cursors.Hand};UI.LocalizedName(row,choice.title);row.Click+=(_,_)=>NavigateTool(choice.mode);
             var arrowMove=new TranslateTransform(-3,0);arrow.RenderTransform=arrowMove;
             void Feedback(bool pressed=false)
             {
@@ -90,7 +90,7 @@ public sealed partial class OverlayWindow
             row.MouseEnter+=(_,_)=>Feedback();row.MouseLeave+=(_,_)=>Feedback();row.GotKeyboardFocus+=(_,_)=>Feedback();row.LostKeyboardFocus+=(_,_)=>Feedback();row.PreviewMouseLeftButtonDown+=(_,_)=>Feedback(true);row.PreviewMouseLeftButtonUp+=(_,_)=>Feedback();row.LostMouseCapture+=(_,_)=>Feedback();
             row.PreviewKeyDown+=(_,e)=>{if(e.Key is Key.Space or Key.Enter)Feedback(true);};row.PreviewKeyUp+=(_,_)=>Feedback();list.Children.Add(row);
         }
-        if(list.Children.Count==0){list.Children.Add(UI.Text("All tools are hidden. Enable them in Settings → Widgets.",12,UI.Muted));list.Children.Add(UI.Button("Open Settings",app.ShowSettings));}toolsContent.Children.Add(list);
+        if(list.Children.Count==0){list.Children.Add(UI.Text(Localization.Text("All tools are hidden. Enable them in Settings → Widgets."),12,UI.Muted));list.Children.Add(UI.Button(Localization.Text("Open Settings"),app.ShowSettings));}toolsContent.Children.Add(list);
     }
 
     private static FrameworkElement ToolIcon(string mode)
@@ -107,14 +107,14 @@ public sealed partial class OverlayWindow
     }
     private void BuildNotes()
     {
-        if(toolsMode=="tasks"){BuildVisualTasks();return;}var p=app.Productivity;var heading=UI.Heading(toolsMode=="tasks"?"Tasks":"Notes",19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
+        if(toolsMode=="tasks"){BuildVisualTasks();return;}var p=app.Productivity;var heading=UI.Heading(toolsMode=="tasks"?Localization.Text("Tasks"):Localization.Text("Notes"),19);heading.FontWeight=FontWeights.SemiBold;heading.Margin=new(0,0,0,12);toolsContent.Children.Add(heading);
         var write=new StackPanel();var tasks=new StackPanel();toolsContent.Children.Add(toolsMode=="notes"?write:tasks);
         mainNoteEditor=null;
         if(toolsMode=="notes")
         {
-            var note=UI.Input("Quick notes",p.Note);mainNoteEditor=note;note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=136;note.VerticalContentAlignment=VerticalAlignment.Top;note.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;note.MaxLength=50000;note.Padding=new(13);note.Margin=new(0);
-            var editor=new Grid();editor.Children.Add(note);var placeholder=UI.Text("Capture a thought…",13,UI.Muted);placeholder.IsHitTestVisible=false;placeholder.VerticalAlignment=VerticalAlignment.Top;placeholder.Margin=new(14);editor.Children.Add(placeholder);write.Children.Add(editor);
-            var meta=UI.Text("Saved on this device",10,UI.Muted);meta.Margin=new(2,9,0,2);write.Children.Add(meta);
+            var note=UI.Input(Localization.Text("Quick notes"),p.Note);mainNoteEditor=note;note.AcceptsReturn=true;note.TextWrapping=TextWrapping.Wrap;note.Height=136;note.VerticalContentAlignment=VerticalAlignment.Top;note.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;note.MaxLength=50000;note.Padding=new(13);note.Margin=new(0);
+            var editor=new Grid();editor.Children.Add(note);var placeholder=UI.Text(Localization.Text("Capture a thought…"),13,UI.Muted);placeholder.IsHitTestVisible=false;placeholder.VerticalAlignment=VerticalAlignment.Top;placeholder.Margin=new(14);editor.Children.Add(placeholder);write.Children.Add(editor);
+            var meta=UI.Text(Localization.Text("Saved on this device"),10,UI.Muted);meta.Margin=new(2,9,0,2);write.Children.Add(meta);
             void Placeholder()=>placeholder.Visibility=note.Text.Length==0?Visibility.Visible:Visibility.Collapsed;Placeholder();
             note.TextChanged+=(_,_)=>{if(!syncingNote)p.Note=note.Text;Placeholder();noteSave.Stop();noteSave.Start();};
             return;
@@ -135,7 +135,7 @@ public sealed partial class OverlayWindow
         RefreshTools();
     }
     private void FlushNotes(){noteSave.Stop();if(app.Productivity!=null){utilityMutating=true;try{app.Productivity.Save();}finally{utilityMutating=false;}}}
-    private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not complete the action",ex.Message);}finally{utilityMutating=false;}RefreshTools();}
+    private void MutateUtility(Action action){utilityMutating=true;try{action();}catch(Exception ex){app.Store.Log(ex);app.Notify(Localization.Text("Could not complete the action"),ex.Message);}finally{utilityMutating=false;}RefreshTools();}
     internal void ShowTools(string mode,bool activate=true)
     {if(mode!="home" && !ToolOn(mode))return;if(commandOpen)CloseCommands();FlushNotes();toolsMode=mode;calendarEditing=false;scroll.ScrollToTop();if(mode=="home")mode=app.Settings.Widgets.FirstOrDefault(w=>w.Enabled && Settings.ToolNames.ContainsKey(w.Id))?.Id??"notes";toolsMode=mode;OpenHoverPanel(mode,activate);RefreshTools();}
     private void RefreshTools()
@@ -145,7 +145,7 @@ public sealed partial class OverlayWindow
         toolsContent.Children.Clear();var p=app.Productivity;if(p==null)return;
         if(toolsMode!="home" && !Settings.ToolNames.ContainsKey(activePage))
         {
-            var back=UI.Button("All tools",()=>NavigateTool("home"));var label=UI.Text("‹   All tools",11,UI.Muted);back.Content=label;back.HorizontalAlignment=HorizontalAlignment.Left;back.Background=Brushes.Transparent;back.BorderThickness=new(0);back.Padding=new(1,0,8,0);back.MinHeight=24;back.Margin=new(0,0,0,10);toolsContent.Children.Add(back);
+            var back=UI.Button(Localization.Text("All tools"),()=>NavigateTool("home"));var label=UI.Text(Localization.Text("‹   All tools"),11,UI.Muted);back.Content=label;back.HorizontalAlignment=HorizontalAlignment.Left;back.Background=Brushes.Transparent;back.BorderThickness=new(0);back.Padding=new(1,0,8,0);back.MinHeight=24;back.Margin=new(0,0,0,10);toolsContent.Children.Add(back);
         }
         if(toolsMode=="home")BuildToolLauncher();
         else if(toolsMode=="files")
@@ -173,13 +173,13 @@ public sealed partial class OverlayWindow
     {
         audioMenu=new ContextMenu{Background=UI.Brush("#191A1E"),Foreground=Brushes.White,BorderBrush=UI.Brush("#42434B"),Padding=new(5),HasDropShadow=false};
         if(mediaControls?.IsVisible==true){audioMenu.PlacementTarget=mediaControls.VolumeButton;audioMenu.Placement=System.Windows.Controls.Primitives.PlacementMode.Top;}
-        var mixerItem=new MenuItem{Header="Volume mixer",Foreground=Brushes.White};mixerItem.Click+=(_,_)=>OpenMixer();audioMenu.Items.Add(mixerItem);audioMenu.Items.Add(new Separator{Style=(Style)FindResource(typeof(Separator))});
+        var mixerItem=new MenuItem{Header=Localization.Text("Volume mixer"),Foreground=Brushes.White};mixerItem.Click+=(_,_)=>OpenMixer();audioMenu.Items.Add(mixerItem);audioMenu.Items.Add(new Separator{Style=(Style)FindResource(typeof(Separator))});
         foreach(var device in app.Audio.Outputs())
         {
             var item=new MenuItem{Header=device.Name,IsCheckable=true,IsChecked=device.Id==app.Audio.DefaultOutputId,Foreground=Brushes.White};
-            item.Click+=(_,_)=>{if(!app.Audio.SetOutput(device.Id))app.Notify("Could not switch output",app.Audio.LastError??"Device unavailable.");Update();};audioMenu.Items.Add(item);
+            item.Click+=(_,_)=>{if(!app.Audio.SetOutput(device.Id))app.Notify(Localization.Text("Could not switch output"),app.Audio.LastError??Localization.Text("Device unavailable."));Update();};audioMenu.Items.Add(item);
         }
-        if(audioMenu.Items.Count==0)audioMenu.Items.Add(new MenuItem{Header="No active output devices",IsEnabled=false});audioMenu.Items.Add(new Separator{Style=(Style)FindResource(typeof(Separator))});
-        var mic=new MenuItem{Header=(app.Audio.MicrophoneMuted?"Unmute":"Mute")+" microphone · "+app.Audio.MicrophoneName,IsEnabled=app.Audio.MicrophoneAvailable,Foreground=Brushes.White};mic.Click+=(_,_)=>{if(!app.Audio.ToggleMicrophoneMute())app.Notify("Could not change microphone",app.Audio.LastError??"Device unavailable.");};audioMenu.Items.Add(mic);audioMenu.Closed+=(_,_)=>{if(peeking && !DiagnosticRun && !PointerInside())leaveDelay.Start();};audioMenu.IsOpen=true;
+        if(audioMenu.Items.Count==0)audioMenu.Items.Add(new MenuItem{Header=Localization.Text("No active output devices"),IsEnabled=false});audioMenu.Items.Add(new Separator{Style=(Style)FindResource(typeof(Separator))});
+        var mic=new MenuItem{Header=(app.Audio.MicrophoneMuted?Localization.Text("Unmute"):Localization.Text("Mute"))+Localization.Text(" microphone · ")+app.Audio.MicrophoneName,IsEnabled=app.Audio.MicrophoneAvailable,Foreground=Brushes.White};mic.Click+=(_,_)=>{if(!app.Audio.ToggleMicrophoneMute())app.Notify(Localization.Text("Could not change microphone"),app.Audio.LastError??Localization.Text("Device unavailable."));};audioMenu.Items.Add(mic);audioMenu.Closed+=(_,_)=>{if(peeking && !DiagnosticRun && !PointerInside())leaveDelay.Start();};audioMenu.IsOpen=true;
     }
 }

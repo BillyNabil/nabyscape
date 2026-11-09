@@ -20,7 +20,7 @@ internal static class ProductionUiDiagnostics
         string language=s.UiLanguage;double textScale=s.AccessibilityTextScale;bool contrast=s.AccessibilityHighContrast;
         try
         {
-            foreach(string code in new[]{"en","es","id"})foreach(double scale in new[]{1d,1.5})
+            foreach(string code in new[]{"en","es","id","ru"})foreach(double scale in new[]{1d,1.5})
             {
                 s.UiLanguage=code;s.AccessibilityTextScale=scale;s.AccessibilityHighContrast=scale==1.5;Localization.Configure(s);UI.ApplyControlTheme(s);
                 var window=new SettingsWindow(app){ShowActivated=false,Width=600,Height=650};

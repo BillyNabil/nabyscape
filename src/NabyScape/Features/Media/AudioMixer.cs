@@ -15,7 +15,7 @@ internal sealed record MixerItem(MixerTarget Target,string Name,string OutputNam
 internal sealed record MixerSnapshot(IReadOnlyList<MixerItem> Outputs,IReadOnlyList<MixerItem> Apps,IReadOnlyList<string> Errors);
 internal sealed record MixerResult(int Changed,int Failed,IReadOnlyList<string> Errors)
 {
-    public string Summary=>$"{Changed} changed · {Failed} failed"+(Errors.Count>0?" · "+string.Join("; ",Errors):"");
+    public string Summary=>Localization.Format("{0} changed · {1} failed",Changed,Failed)+(Errors.Count>0?" · "+string.Join("; ",Errors):"");
 }
 
 internal sealed class AudioMixer
@@ -35,7 +35,7 @@ internal sealed class AudioMixer
     [DllImport("kernel32.dll",SetLastError=true)]private static extern SafeProcessHandle OpenProcess(uint access,bool inherit,uint pid);
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]private static extern bool QueryFullProcessImageName(SafeProcessHandle process,uint flags,StringBuilder name,ref int size);
     internal static bool IsControllableSession(int state)=>state is 0 or 1;
-    public static double BoundedVolume(double value)=>double.IsFinite(value)?Math.Clamp(value,0,1):throw new ArgumentException("Volume must be finite.");
+    public static double BoundedVolume(double value)=>double.IsFinite(value)?Math.Clamp(value,0,1):throw new ArgumentException(Localization.Text("Volume must be finite."));
 
     public MixerSnapshot Snapshot()
     {
@@ -47,7 +47,7 @@ internal sealed class AudioMixer
             {
                 using(device)
                 {
-                    string id="",name="Output";
+                    string id="",name=Localization.Text("Output");
                     try
                     {
                         id=device.ID;name=device.FriendlyName;
@@ -64,11 +64,11 @@ internal sealed class AudioMixer
                                 Check(session.GetState(out int state));if(!IsControllableSession(state))return;
                                 Check(session.GetSessionInstanceIdentifier(out string instance));
                                 Check(session.GetDisplayName(out string display));Check(session.GetProcessId(out uint pid));
-                                if(session.IsSystemSoundsSession()==0)display="System sounds";
+                                if(session.IsSystemSoundsSession()==0)display=Localization.Text("System sounds");
                                 else if(string.IsNullOrWhiteSpace(display))
                                 {
                                     try{using var process=Process.GetProcessById((int)pid);display=process.ProcessName;}
-                                    catch{display="App (PID "+pid+")";}
+                                    catch{display=Localization.Text("App (PID ")+pid+")";}
                                 }
                                 string pathKey=pid+"|"+instance;
                                 if(!processPaths.TryGetValue(pathKey,out string? processPath))
@@ -87,7 +87,7 @@ internal sealed class AudioMixer
                 }
             }
         }
-        catch(Exception ex){errors.Add("Audio unavailable: "+ex.Message);}
+        catch(Exception ex){errors.Add(Localization.Text("Audio unavailable: ")+ex.Message);}
         return new(outputs.OrderBy(x=>x.Name).ToArray(),apps.OrderBy(x=>x.Name).ThenBy(x=>x.OutputName).ToArray(),errors);
     }
 
@@ -101,7 +101,7 @@ internal sealed class AudioMixer
     // The injected writer keeps all-scope and stale-target tests entirely away from native audio writes.
     internal static MixerResult Adjust(MixerSnapshot snapshot,MixerScope scope,double delta,Func<MixerTarget,double,string?> write)
     {
-        if(!double.IsFinite(delta))throw new ArgumentException("Adjustment must be finite.");
+        if(!double.IsFinite(delta))throw new ArgumentException(Localization.Text("Adjustment must be finite."));
         int changed=0,failed=0;var errors=new List<string>();
         foreach(var item in (scope==MixerScope.Apps?snapshot.Apps:snapshot.Outputs).DistinctBy(x=>x.Target))
         {
@@ -121,7 +121,7 @@ internal sealed class AudioMixer
         {
             if(level.HasValue)level=BoundedVolume(level.Value);
             using var enumerator=new MMDeviceEnumerator();using var device=enumerator.GetDevice(target.OutputId);
-            if(device.State!=DeviceState.Active || device.DataFlow!=DataFlow.Render)throw new InvalidOperationException("Output disconnected. Refresh and try again.");
+            if(device.State!=DeviceState.Active || device.DataFlow!=DataFlow.Render)throw new InvalidOperationException(Localization.Text("Output disconnected. Refresh and try again."));
             if(target.Scope==MixerScope.Outputs)
             {
                 if(level.HasValue)device.AudioEndpointVolume.MasterVolumeLevelScalar=(float)level.Value;
@@ -138,7 +138,7 @@ internal sealed class AudioMixer
                     if(level.HasValue)Check(volume.SetMasterVolume((float)level.Value,ref context));
                     if(muted.HasValue)Check(volume.SetMute(muted.Value,ref context));
                 },_=>{});
-                if(!found)throw new InvalidOperationException("App session ended. Refresh and try again.");
+                if(!found)throw new InvalidOperationException(Localization.Text("App session ended. Refresh and try again."));
             }
             return null;
         }

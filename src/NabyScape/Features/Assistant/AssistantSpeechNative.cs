@@ -37,14 +37,14 @@ internal sealed class AssistantSpeechNative : IDisposable
         try
         {
             string libraryPath=Path.GetFullPath(setup.Library);
-            if(Path.GetFileName(libraryPath)!="sherpa-onnx-c-api.dll" || !File.Exists(libraryPath))throw new IOException("Prepare the pinned speech engine again.");
+            if(Path.GetFileName(libraryPath)!="sherpa-onnx-c-api.dll" || !File.Exists(libraryPath))throw new IOException(Localization.Text("Prepare the pinned speech engine again."));
             searchPath=AddDllDirectory(Path.GetFullPath(Path.Combine(Path.GetDirectoryName(libraryPath)!,"..","bin")));
             if(searchPath==IntPtr.Zero)throw new Win32Exception();
             library=LoadLibraryEx(libraryPath,IntPtr.Zero,0x100|0x1000);
             if(library==IntPtr.Zero)throw new Win32Exception();
             T Export<T>(string name) where T:Delegate=>Marshal.GetDelegateForFunctionPointer<T>(NativeLibrary.GetExport(library,name));
             string version=Marshal.PtrToStringUTF8(Export<Version>("SherpaOnnxGetVersionStr")())??"";
-            if(version.TrimStart('v')!="1.13.8")throw new IOException("The speech engine version differs from the pinned catalog. Prepare it again.");
+            if(version.TrimStart('v')!="1.13.8")throw new IOException(Localization.Text("The speech engine version differs from the pinned catalog. Prepare it again."));
             destroyEngine=Export<Destroy>("SherpaOnnxDestroyOfflineTts");destroyAudio=Export<Destroy>("SherpaOnnxDestroyOfflineTtsGeneratedAudio");generate=Export<Generate>("SherpaOnnxOfflineTtsGenerateWithConfig");
             IntPtr Text(string text){var p=Marshal.StringToCoTaskMemUTF8(text);strings.Add(p);return p;}
             IntPtr FilePath(string name)=>Text(Path.Combine(setup.Folder,name));
@@ -59,27 +59,27 @@ internal sealed class AssistantSpeechNative : IDisposable
                     var lexicons=new List<string>();foreach(string name in new[]{"lexicon-us-en.txt","lexicon-zh.txt"})if(File.Exists(Path.Combine(setup.Folder,name)))lexicons.Add(Path.Combine(setup.Folder,name));
                     config.Model.Kokoro=new(){Model=FilePath(weights),Voices=FilePath("voices.bin"),Tokens=FilePath("tokens.txt"),Data=FilePath("espeak-ng-data"),Length=1,Lexicon=Text(string.Join(",",lexicons)),Lang=Text(setup.Language=="zh"?"zh":"en-us"),Dict=Directory.Exists(Path.Combine(setup.Folder,"dict"))?FilePath("dict"):IntPtr.Zero};
                 }
-                else throw new IOException("This voice does not support the persistent native engine.");
+                else throw new IOException(Localization.Text("This voice does not support the persistent native engine."));
             }
             engine=Export<Create>("SherpaOnnxCreateOfflineTts")(ref config);
-            if(engine==IntPtr.Zero)throw new IOException("The voice model could not be loaded. Check the files or choose another voice.");
+            if(engine==IntPtr.Zero)throw new IOException(Localization.Text("The voice model could not be loaded. Check the files or choose another voice."));
         }
         catch{Dispose();throw;}
     }
     private static string FindWeights(string folder)
     {
-        string? result=null;foreach(string file in Directory.EnumerateFiles(folder,"*.onnx")){if(result!=null)throw new IOException("Choose a voice folder with one model file.");result=Path.GetFileName(file);}return result??throw new IOException("The voice model file is missing.");
+        string? result=null;foreach(string file in Directory.EnumerateFiles(folder,"*.onnx")){if(result!=null)throw new IOException(Localization.Text("Choose a voice folder with one model file."));result=Path.GetFileName(file);}return result??throw new IOException(Localization.Text("The voice model file is missing."));
     }
     internal byte[] Speak(string text)
     {
-        if(string.IsNullOrWhiteSpace(text) || text.Length>2000)throw new IOException("The voice segment is empty or too long.");
+        if(string.IsNullOrWhiteSpace(text) || text.Length>2000)throw new IOException(Localization.Text("The voice segment is empty or too long."));
         IntPtr extra=Marshal.StringToCoTaskMemUTF8(System.Text.Json.JsonSerializer.Serialize(new{lang=setup.Language}));IntPtr audio=IntPtr.Zero;
         try
         {
             var config=new Generation{Silence=.2f,Speed=1,Speaker=setup.Speaker,Steps=setup.Steps,Extra=extra};
-            audio=generate!(engine,text,ref config,IntPtr.Zero,IntPtr.Zero);if(audio==IntPtr.Zero)throw new IOException("The voice returned no audio.");
+            audio=generate!(engine,text,ref config,IntPtr.Zero,IntPtr.Zero);if(audio==IntPtr.Zero)throw new IOException(Localization.Text("The voice returned no audio."));
             var data=Marshal.PtrToStructure<Audio>(audio);
-            if(data.Samples==IntPtr.Zero || data.Rate is <8000 or >48000 || data.Count<=0 || data.Count>(long)data.Rate*120)throw new IOException("The generated voice exceeds its audio limit.");
+            if(data.Samples==IntPtr.Zero || data.Rate is <8000 or >48000 || data.Count<=0 || data.Count>(long)data.Rate*120)throw new IOException(Localization.Text("The generated voice exceeds its audio limit."));
             using var buffer=new MemoryStream();using var writer=new BinaryWriter(buffer);
             writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));writer.Write(36+data.Count*2);writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVEfmt "));writer.Write(16);writer.Write((short)1);writer.Write((short)1);writer.Write(data.Rate);writer.Write(data.Rate*2);writer.Write((short)2);writer.Write((short)16);writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));writer.Write(data.Count*2);
             var samples=new float[2048];for(int offset=0;offset<data.Count;offset+=samples.Length){int count=Math.Min(samples.Length,data.Count-offset);Marshal.Copy(IntPtr.Add(data.Samples,offset*4),samples,0,count);for(int i=0;i<count;i++)writer.Write((short)Math.Clamp(float.IsFinite(samples[i])?samples[i]*32767:0,-32768,32767));}

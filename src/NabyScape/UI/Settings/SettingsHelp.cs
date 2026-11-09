@@ -88,5 +88,5 @@ public sealed partial class SettingsWindow
         ["Visibility hotkey modifiers"]="First keys of the shortcut that hides or restores the entire island.",
         ["Visibility hotkey key"]="Letter to press with the modifier keys to hide or restore the island.",
     };
-    internal static string SettingDescription(string name)=>name.EndsWith(" tool")?"Show "+name[..^5]+" in Tools and its enabled hover pages. Hiding keeps saved data.":SettingDescriptions.TryGetValue(name,out var help)?help:"";
+    internal static string SettingDescription(string name)=>name.EndsWith(" tool")?Localization.Format("Show {0} in Tools and its enabled hover pages. Hiding keeps saved data.",Localization.Text(name[..^5])):SettingDescriptions.TryGetValue(name,out var help)?help:"";
 }

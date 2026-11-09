@@ -60,7 +60,7 @@ internal sealed class WeatherService : IDisposable
     }
     internal async Task<WeatherSnapshot> Get(Settings s,bool force,CancellationToken token)
     {
-        token.ThrowIfCancellationRequested();string key=Key(s);if(key.Length==0)throw new InvalidOperationException("Choose a city first.");
+        token.ThrowIfCancellationRequested();string key=Key(s);if(key.Length==0)throw new InvalidOperationException(Localization.Text("Choose a city first."));
         if(!force && Cached is {} saved && saved.Key==key && DateTimeOffset.UtcNow-saved.Updated<TimeSpan.FromMinutes(20))return saved;
         var request=pending;
         if(request==null || request.Task.IsCompleted || request.Cancellation.IsCancellationRequested || pendingKey!=key)
@@ -100,6 +100,6 @@ internal sealed class WeatherService : IDisposable
     private static double Number(JsonElement value,string name)=>value.TryGetProperty(name,out var field) && field.ValueKind==JsonValueKind.Number && field.TryGetDouble(out var n) && double.IsFinite(n)?n:0;
     private static double At(JsonElement value,string name,int index)=>value.TryGetProperty(name,out var field) && field.ValueKind==JsonValueKind.Array && index<field.GetArrayLength() && field[index].ValueKind==JsonValueKind.Number && field[index].TryGetDouble(out var n) && double.IsFinite(n)?n:0;
     private static string Text(JsonElement value,string name)=>value.TryGetProperty(name,out var field) && field.ValueKind==JsonValueKind.String?field.GetString()??"":"";
-    internal static string Condition(int code)=>code switch{0=>"Clear skies",1=>"Mostly clear",2=>"Partly cloudy",3=>"Cloudy",45 or 48=>"Foggy",>=51 and <=57=>"Drizzle",>=61 and <=67=>"Rain",>=71 and <=77=>"Snow",>=80 and <=82=>"Rain showers",85 or 86=>"Snow showers",>=95=>"Thunderstorms",_=>"Weather"};
+    internal static string Condition(int code)=>code switch{0=>Localization.Text("Clear skies"),1=>Localization.Text("Mostly clear"),2=>Localization.Text("Partly cloudy"),3=>Localization.Text("Cloudy"),45 or 48=>Localization.Text("Foggy"),>=51 and <=57=>Localization.Text("Drizzle"),>=61 and <=67=>Localization.Text("Rain"),>=71 and <=77=>Localization.Text("Snow"),>=80 and <=82=>Localization.Text("Rain showers"),85 or 86=>Localization.Text("Snow showers"),>=95=>Localization.Text("Thunderstorms"),_=>Localization.Text("Weather")};
     public void Dispose(){shutdown.Cancel();shutdown.Dispose();}
 }

@@ -57,7 +57,7 @@ public sealed partial class OverlayWindow
         var menu=new ContextMenu{PlacementTarget=closedCover};audioMenu=menu;
         foreach(var session in app.Media.Sessions.ToArray())
         {var selected=session;var item=new MenuItem{Header=MediaService.SessionName(session),IsCheckable=true,IsChecked=session==app.Media.Selected};item.Click+=(_,_)=>app.Media.Select(selected);menu.Items.Add(item);}
-        if(menu.Items.Count==0)menu.Items.Add(new MenuItem{Header="No media sessions",IsEnabled=false});
+        if(menu.Items.Count==0)menu.Items.Add(new MenuItem{Header=Localization.Text("No media sessions"),IsEnabled=false});
         menu.Closed+=(_,_)=>{if(audioMenu==menu)audioMenu=null;};menu.IsOpen=true;
     }
     internal bool SystemSummaryVisible=>IsVisible && (peeking && peekId=="system" || WidgetOn("system") && expanded && !commandOpen && (app.Settings.CompactLayout?activePage=="status":!classicMixerOpen));

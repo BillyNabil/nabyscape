@@ -57,7 +57,11 @@ internal sealed record AssistantAttachment(string Name,string Mime,string Source
     internal bool IsImage=>Mime.StartsWith("image/",StringComparison.Ordinal);
     internal long Weight=>Source.Length+(Text?.Length??0)+(Frames?.Sum(f=>(long)f.Length)??0);
 }
-internal sealed record AssistantMessage(string Role,string Text,string? ImageDataUrl=null,IReadOnlyList<AssistantCall>? Calls=null,string? CallId=null,IReadOnlyList<JsonElement>? ProtocolItems=null,IReadOnlyList<AssistantAttachment>? Attachments=null);
+internal sealed record AssistantMessage(string Role,string Text,string? ImageDataUrl=null,IReadOnlyList<AssistantCall>? Calls=null,string? CallId=null,IReadOnlyList<JsonElement>? ProtocolItems=null,IReadOnlyList<AssistantAttachment>? Attachments=null)
+{
+    internal string? UiNoticePrefix {get;init;}
+    internal string DisplayText=>UiNoticePrefix is string prefix && Text.StartsWith(prefix,StringComparison.Ordinal)?Localization.Text(prefix)+Text[prefix.Length..]:Text;
+}
 internal sealed record AssistantReply(string Text,IReadOnlyList<AssistantCall> Calls,IReadOnlyList<JsonElement>? ProtocolItems=null,IReadOnlyList<AssistantAttachment>? Attachments=null);
 internal interface IAssistantTransport
 {

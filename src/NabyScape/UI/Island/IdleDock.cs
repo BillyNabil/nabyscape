@@ -22,7 +22,7 @@ public sealed partial class OverlayWindow
     private double ClosedContentWidth=>Math.Max(120,Math.Min(ClosedSurfaceWidth,expandedWidth)-(surface.Notch?32:12));
     private string ClosedVoiceLabel=>app.Assistant.State switch
     {
-        AssistantState.Listening=>"Listening",AssistantState.Thinking=>"Thinking…",AssistantState.Speaking=>"Speaking",AssistantState.Connecting=>"Connecting…",AssistantState.Error=>"Voice needs attention",_=>app.Assistant.Desktop.Sharing?"Screen sharing":"Naby voice"
+        AssistantState.Listening=>Localization.Text("Listening"),AssistantState.Thinking=>Localization.Text("Thinking…"),AssistantState.Speaking=>Localization.Text("Speaking"),AssistantState.Connecting=>Localization.Text("Connecting…"),AssistantState.Error=>Localization.Text("Voice needs attention"),_=>app.Assistant.Desktop.Sharing?Localization.Text("Screen sharing"):Localization.Text("Naby voice")
     };
     private void RefreshIdleDock()
     {
@@ -44,7 +44,7 @@ public sealed partial class OverlayWindow
         idleDate.Visibility=idleClosed && app.Settings.ShowDate && compactClock.Visibility==Visibility.Visible && dateRoom>=80?Visibility.Visible:Visibility.Collapsed;
         if(idleDate.Visibility==Visibility.Visible && idleDateDay!=DateTime.Today)
         {
-            idleDateDay=DateTime.Today;var culture=System.Globalization.CultureInfo.GetCultureInfo("en-US");
+            idleDateDay=DateTime.Today;var culture=Localization.Culture;
             idleDate.Inlines.Clear();
             idleDate.Inlines.Add(new Run(idleDateDay.ToString("ddd",culture).ToUpperInvariant()){FontSize=9*Accessibility.TextScale,Foreground=Accessibility.HighContrast?SystemColors.WindowTextBrush:UI.Brush("#9DA3AD")});
             idleDate.Inlines.Add(new Run("  ·  "){FontSize=9*Accessibility.TextScale,Foreground=Accessibility.HighContrast?SystemColors.WindowTextBrush:UI.Brush("#626873")});

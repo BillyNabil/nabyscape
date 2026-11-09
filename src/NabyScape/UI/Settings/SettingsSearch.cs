@@ -79,7 +79,7 @@ public sealed partial class SettingsWindow
     }
     private void InitializeSettingsSearch(Grid main,Grid workspace,Border fieldHost)
     {
-        settingsSearchIndex=BuildSettingsSearchIndex();settingsSearch=UI.Input("Search settings","");settingsSearch.Background=Brushes.Transparent;settingsSearch.BorderThickness=new(0);settingsSearch.Margin=new(0);settingsSearch.Padding=new(0,6,0,6);settingsSearch.MinHeight=34;
+        settingsSearchIndex=BuildSettingsSearchIndex();settingsSearch=UI.Input("Search settings","");UI.LocalizedName(settingsSearch,"Search settings");settingsSearch.Background=Brushes.Transparent;settingsSearch.BorderThickness=new(0);settingsSearch.Margin=new(0);settingsSearch.Padding=new(0,6,0,6);settingsSearch.MinHeight=34;
         var row=new DockPanel();var glyph=Icons.Create("search",15,UI.Muted);glyph.Margin=new(0,0,10,0);DockPanel.SetDock(glyph,Dock.Left);row.Children.Add(glyph);
         var clear=Icons.Button("x","Clear settings search",()=>settingsSearch.Clear(),false,28);clear.Background=Brushes.Transparent;clear.Margin=new(5,0,0,0);clear.Visibility=Visibility.Collapsed;DockPanel.SetDock(clear,Dock.Right);row.Children.Add(clear);
         var inputHost=new Grid();inputHost.Children.Add(settingsSearch);var hint=UI.Caption("Search  ·  Ctrl+F",12,UI.Muted);hint.IsHitTestVisible=false;inputHost.Children.Add(hint);row.Children.Add(inputHost);
@@ -103,13 +103,13 @@ public sealed partial class SettingsWindow
     {
         if(settingsSearch==null || searchResultsHost==null)return;settingsResults.Children.Clear();string query=settingsSearch.Text.Trim();
         if(query.Length==0){searchResultsHost.Visibility=Visibility.Collapsed;return;}
-        var tokens=query.Split(' ',StringSplitOptions.RemoveEmptyEntries).Where(t=>t is not ("settings" or "setting" or "pengaturan" or "ubah" or "change" or "cara")).ToArray();if(tokens.Length==0)tokens=new[]{query};
-        var matches=settingsSearchIndex.Where(item=>tokens.All(t=>(Localization.Text(item.Title)+" "+item.Title+" "+item.Keywords).Contains(t,StringComparison.OrdinalIgnoreCase))).OrderByDescending(item=>item.Title.StartsWith(query,StringComparison.OrdinalIgnoreCase)).ThenByDescending(item=>item.Title.Contains(query,StringComparison.OrdinalIgnoreCase)).ThenByDescending(item=>item.Control.Length>0).Take(12).ToArray();
+        var tokens=query.Split(' ',StringSplitOptions.RemoveEmptyEntries).Where(t=>t is not ("settings" or "setting" or "pengaturan" or "ubah" or "change" or "cara" or "настройки" or "настройка" or "изменить" or "как")).ToArray();if(tokens.Length==0)tokens=new[]{query};
+        var matches=settingsSearchIndex.Where(item=>tokens.All(t=>(Localization.Text(item.Title)+" "+CategoryTitle(item.Category)+" "+Localization.Text(FriendlySection(item.Section))+" "+Localization.Text(item.Control)+" "+item.Title+" "+item.Keywords).Contains(t,StringComparison.OrdinalIgnoreCase))).OrderByDescending(item=>Localization.Text(item.Title).StartsWith(query,StringComparison.OrdinalIgnoreCase)).ThenByDescending(item=>Localization.Text(item.Title).Contains(query,StringComparison.OrdinalIgnoreCase)).ThenByDescending(item=>item.Control.Length>0).Take(12).ToArray();
         if(matches.Length==0){var empty=UI.Caption("No settings found. Try color, dock, lyrics, weather or notifications.",12,UI.Muted);empty.Margin=new(12);settingsResults.Children.Add(empty);}
         foreach(var item in matches)
         {
-            var result=item;var button=UI.Button("Open "+result.Title,()=>OpenSettingsSearchResult(result));button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.Padding=new(12,9,12,9);button.Margin=new(0,1,0,1);button.HorizontalContentAlignment=HorizontalAlignment.Stretch;
-            var labels=new StackPanel();labels.Children.Add(UI.Caption(result.Title,12));var path=UI.Text(CategoryTitle(result.Category)+(result.Section.Length>0?"  /  "+FriendlySection(result.Section):""),10,UI.Muted);path.Margin=new(0,3,0,0);labels.Children.Add(path);button.Content=labels;settingsResults.Children.Add(button);
+            var result=item;var button=UI.Button(Localization.Format("Open {0}",Localization.Text(result.Title)),()=>OpenSettingsSearchResult(result));button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.Padding=new(12,9,12,9);button.Margin=new(0,1,0,1);button.HorizontalContentAlignment=HorizontalAlignment.Stretch;
+            var labels=new StackPanel();labels.Children.Add(UI.Caption(result.Title,12));var path=UI.Text(CategoryTitle(result.Category)+(result.Section.Length>0?"  /  "+Localization.Text(FriendlySection(result.Section)):""),10,UI.Muted);path.Margin=new(0,3,0,0);labels.Children.Add(path);button.Content=labels;settingsResults.Children.Add(button);
         }
         searchResultsHost.Visibility=Visibility.Visible;
     }
@@ -127,7 +127,7 @@ public sealed partial class SettingsWindow
                 for(DependencyObject? node=target;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))if(node is Expander expander)expander.IsExpanded=true;
                 // Collapsed Expander content is logical before it is realized visually.
                 foreach(var expander in SettingTree((DependencyObject?)section??page).OfType<Expander>().Where(x=>SettingTree(x).Contains(target)))expander.IsExpanded=true;
-                page.UpdateLayout();target.Focus();target.BringIntoView();SetSaveFeedback("Opened · "+item.Title);
+                page.UpdateLayout();target.Focus();target.BringIntoView();SetSaveFeedback(Localization.Format("Opened · {0}",Localization.Text(item.Title)));
             }
             else if(section!=null){foreach(var parent in SettingTree(page).OfType<Expander>().Where(e=>SettingTree(e).Contains(section)))parent.IsExpanded=true;page.UpdateLayout();section.BringIntoView();ConfigurePreviewForSection(item.Section);RefreshPreview();}
         });

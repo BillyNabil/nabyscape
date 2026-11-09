@@ -33,7 +33,7 @@ internal sealed partial class LyricsService
     {
         using var response=await client.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,token);
         response.EnsureSuccessStatusCode();await using var input=await response.Content.ReadAsStreamAsync(token);using var output=new MemoryStream();var buffer=new byte[8192];int n;
-        while((n=await input.ReadAsync(buffer,token))>0){if(output.Length+n>2*1024*1024)throw new InvalidDataException("YouTube response is too large.");output.Write(buffer,0,n);}
+        while((n=await input.ReadAsync(buffer,token))>0){if(output.Length+n>2*1024*1024)throw new InvalidDataException(Localization.Text("YouTube response is too large."));output.Write(buffer,0,n);}
         return Encoding.UTF8.GetString(output.ToArray());
     }
     private async Task<LyricChoice[]> FetchYouTube(string source,string video,string title,string artist,double duration,CancellationToken token)
@@ -41,7 +41,7 @@ internal sealed partial class LyricsService
         bool music=source=="YouTube Music";string origin=music?"https://music.youtube.com":"https://www.youtube.com";
         using var homeRequest=new HttpRequestMessage(HttpMethod.Get,origin+"/");string home=await YouTubeBody(homeRequest,token);
         var match=Regex.Match(home,"\"INNERTUBE_CLIENT_VERSION\"\\s*:\\s*\"([^\"]{1,80})\"",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(200));
-        if(!match.Success)throw new InvalidDataException("YouTube client configuration is unavailable. This region or session may require account access.");
+        if(!match.Success)throw new InvalidDataException(Localization.Text("YouTube client configuration is unavailable. This region or session may require account access."));
         var context=new {client=new {clientName=music?"WEB_REMIX":"WEB",clientVersion=match.Groups[1].Value,hl="en",gl="US"}};
         async Task<JsonDocument> Post(string method,object payload)
         {
@@ -63,7 +63,7 @@ internal sealed partial class LyricsService
             foreach(var shelf in ObjectsWith(page.RootElement,"musicDescriptionShelfRenderer"))
             {
                 if(!shelf.TryGetProperty("description",out var description))continue;string plain=YouTubeText(description);
-                if(plain.Length>0)return new[]{new LyricChoice(title,artist,"YouTube Music · plain lyrics",duration,"",plain)};
+                if(plain.Length>0)return new[]{new LyricChoice(title,artist,Localization.Text("YouTube Music · plain lyrics"),duration,"",plain)};
             }
             return Array.Empty<LyricChoice>();
         }
@@ -76,6 +76,6 @@ internal sealed partial class LyricsService
             if(!long.TryParse(Text(cue,"startOffsetMs"),NumberStyles.Integer,CultureInfo.InvariantCulture,out long ms) || ms<0 || ms>86400000 || !cue.TryGetProperty("cue",out var text))continue;
             long cs=ms/10;lrc.Append('[').Append((cs/6000).ToString("00",CultureInfo.InvariantCulture)).Append(':').Append(((cs%6000)/100d).ToString("00.00",CultureInfo.InvariantCulture)).Append(']').AppendLine(YouTubeText(text).Replace('\n',' '));
         }
-        return lrc.Length==0?Array.Empty<LyricChoice>():new[]{new LyricChoice(title,artist,"YouTube captions",duration,lrc.ToString())};
+        return lrc.Length==0?Array.Empty<LyricChoice>():new[]{new LyricChoice(title,artist,Localization.Text("YouTube captions"),duration,lrc.ToString())};
     }
 }

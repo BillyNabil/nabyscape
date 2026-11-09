@@ -28,11 +28,11 @@ internal static class SystemMonitor
     internal static MonitorSnapshot Capture(bool network,bool storage,bool processes,bool processCounts=true,bool hardware=true,bool gpuOnly=false)
     {
         var errors=new List<string>();long? idle=null,totalCpu=null;
-        if(GetSystemTimes(out long i,out long k,out long u)){idle=i;totalCpu=k+u;}else errors.Add("CPU unavailable");
+        if(GetSystemTimes(out long i,out long k,out long u)){idle=i;totalCpu=k+u;}else errors.Add(Localization.Text("CPU unavailable"));
         var memory=new Memory{Length=(uint)Marshal.SizeOf<Memory>()};
-        bool hasMemory=GlobalMemoryStatusEx(ref memory);if(!hasMemory)errors.Add("Memory unavailable");
+        bool hasMemory=GlobalMemoryStatusEx(ref memory);if(!hasMemory)errors.Add(Localization.Text("Memory unavailable"));
         var (count,threads,partial,top)=processCounts || processes?CaptureProcesses(processes,Process.GetProcesses):(null,null,false,Array.Empty<MonitorProcess>());
-        if(processCounts && count==null)errors.Add("Process enumeration unavailable");
+        if(processCounts && count==null)errors.Add(Localization.Text("Process enumeration unavailable"));
         var networks=new List<MonitorNetwork>();
         if(network)try
         {
@@ -40,8 +40,8 @@ internal static class SystemMonitor
             {
                 if(adapter.OperationalStatus!=OperationalStatus.Up || adapter.NetworkInterfaceType==NetworkInterfaceType.Loopback)continue;
                 var stats=adapter.GetIPStatistics();networks.Add(new(adapter.Id,adapter.Name,stats.BytesReceived,stats.BytesSent));
-            }catch{errors.Add("An interface is unavailable");}
-        }catch{errors.Add("Network unavailable");}
+            }catch{errors.Add(Localization.Text("An interface is unavailable"));}
+        }catch{errors.Add(Localization.Text("Network unavailable"));}
         var drives=new List<MonitorDrive>();
         if(storage)try
         {
@@ -49,8 +49,8 @@ internal static class SystemMonitor
             {
                 if(drive.DriveType!=DriveType.Fixed || !drive.IsReady)continue;
                 drives.Add(new(drive.Name,drive.TotalFreeSpace,drive.TotalSize));
-            }catch{errors.Add("A volume is unavailable");}
-        }catch{errors.Add("Storage unavailable");}
+            }catch{errors.Add(Localization.Text("A volume is unavailable"));}
+        }catch{errors.Add(Localization.Text("Storage unavailable"));}
         return new(Stopwatch.GetTimestamp(),idle,totalCpu,hasMemory?memory.AvailablePhysical:null,hasMemory?memory.TotalPhysical:null,
             TimeSpan.FromMilliseconds(Environment.TickCount64),count,threads,partial,networks,drives,
             top,errors.Distinct().ToArray(),hardware?HardwareMonitor.Capture(gpuOnly):null);
@@ -76,7 +76,7 @@ internal static class SystemMonitor
     }
 
     internal static string ProcessCounts(int? count,int? threads,bool partial)=>
-        count is null || threads is null?"Unavailable":$"{count} / {(partial?"≥ ":"")}{threads}";
+        count is null || threads is null?Localization.Text("Unavailable"):$"{count} / {(partial?"≥ ":"")}{threads}";
 
     internal static double? Rate(long current,long? previous,double seconds)=>previous.HasValue && current>=previous.Value && seconds>0 && double.IsFinite(seconds)
         ?(current-previous.Value)/seconds:null;
@@ -88,11 +88,11 @@ internal static class SystemMonitor
     }
     internal static string Bytes(double bytes)
     {
-        if(!double.IsFinite(bytes) || bytes<0)return "Unavailable";
+        if(!double.IsFinite(bytes) || bytes<0)return Localization.Text("Unavailable");
         string[] units={"B","KiB","MiB","GiB","TiB","PiB"};int unit=0;
         while(bytes>=1024 && unit<units.Length-1){bytes/=1024;unit++;}
-        return bytes.ToString(unit==0?"0":"0.#",CultureInfo.InvariantCulture)+" "+units[unit];
+        return bytes.ToString(unit==0?"0":"0.#",CultureInfo.InvariantCulture)+" "+Localization.Text(units[unit]);
     }
-    internal static string RateText(double? rate)=>rate.HasValue?Bytes(rate.Value)+"/s":"Sampling…";
-    internal static string Uptime(TimeSpan value)=>$"{(int)value.TotalDays}d {value.Hours}h {value.Minutes}m";
+    internal static string RateText(double? rate)=>rate.HasValue?Bytes(rate.Value)+Localization.Text("/s"):Localization.Text("Sampling…");
+    internal static string Uptime(TimeSpan value)=>Localization.Format("{0}d {1}h {2}m",(int)value.TotalDays,value.Hours,value.Minutes);
 }

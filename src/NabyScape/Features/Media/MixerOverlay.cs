@@ -13,7 +13,7 @@ public sealed partial class OverlayWindow
 {
     private readonly AudioMixer audioMixer=new();
     private readonly StackPanel mixerRows=new();
-    private readonly TextBlock mixerStatus=UI.Text("Open mixer to load audio devices.",11,UI.Muted);
+    private readonly TextBlock mixerStatus=UI.Text(Localization.Text("Open mixer to load audio devices."),11,UI.Muted);
     private DateTime mixerReadAt=DateTime.MinValue;
     private bool classicMixerOpen;
     private MixerScope mixerScope=MixerScope.Apps;
@@ -43,11 +43,11 @@ public sealed partial class OverlayWindow
         if(mixerStatus.Parent is Panel statusParent)statusParent.Children.Remove(mixerStatus);
         var panel=new StackPanel();
         var header=new DockPanel{Margin=new(0,0,0,12)};
-        var back=MixerButton(app.Settings.CompactLayout?"Back to media":"Back to widgets",CloseMixer);DockPanel.SetDock(back,Dock.Left);header.Children.Add(back);
-        var title=UI.Heading("Audio mixer",16);title.Margin=new(12,0,0,0);header.Children.Add(title);panel.Children.Add(header);
+        var back=MixerButton(app.Settings.CompactLayout?Localization.Text("Back to media"):Localization.Text("Back to widgets"),CloseMixer);DockPanel.SetDock(back,Dock.Left);header.Children.Add(back);
+        var title=UI.Heading(Localization.Text("Audio mixer"),16);title.Margin=new(12,0,0,0);header.Children.Add(title);panel.Children.Add(header);
         mixerStatus.Margin=new(0,8,0,12);panel.Children.Add(mixerStatus);
         var scopes=new Grid{Margin=new(0,0,0,12)};scopes.ColumnDefinitions.Add(new());scopes.ColumnDefinitions.Add(new());
-        mixerAppsTab=UI.Button("Apps",()=>ChooseMixerScope(MixerScope.Apps));mixerOutputsTab=UI.Button("Outputs",()=>ChooseMixerScope(MixerScope.Outputs));UI.Named(mixerAppsTab,"Show app volumes");UI.Named(mixerOutputsTab,"Show output volumes");
+        mixerAppsTab=UI.Button(Localization.Text("Apps"),()=>ChooseMixerScope(MixerScope.Apps));mixerOutputsTab=UI.Button(Localization.Text("Outputs"),()=>ChooseMixerScope(MixerScope.Outputs));UI.Named(mixerAppsTab,Localization.Text("Show app volumes"));UI.Named(mixerOutputsTab,Localization.Text("Show output volumes"));
         foreach(var button in new[]{mixerAppsTab,mixerOutputsTab}){button.MinHeight=28;button.FontSize=11;button.Padding=new(5);button.Margin=new(0,0,4,0);scopes.Children.Add(button);}Grid.SetColumn(mixerOutputsTab,1);panel.Children.Add(scopes);UpdateMixerTabs();panel.Children.Add(mixerRows);return panel;
     }
 
@@ -94,7 +94,7 @@ public sealed partial class OverlayWindow
         mixerStatus.Visibility=string.IsNullOrWhiteSpace(mixerStatus.Text)?Visibility.Collapsed:Visibility.Visible;
         var items=mixerScope==MixerScope.Apps?snapshot.Apps:snapshot.Outputs;
         foreach(var item in items)rows.Add(Row(item));
-        if(items.Count==0)rows.Add(UI.Text(mixerScope==MixerScope.Apps?"No app audio sessions available.":"No active audio outputs.",12,UI.Muted));
+        if(items.Count==0)rows.Add(UI.Text(mixerScope==MixerScope.Apps?Localization.Text("No app audio sessions available."):Localization.Text("No active audio outputs."),12,UI.Muted));
         ReconcileMixerRows(mixerRows,rows);
         double previousHeight=expandedHeight;Dimensions();
         if(Math.Abs(previousHeight-expandedHeight)>.5)motion.Go(surface,IslandSurface.SurfaceHeightProperty,expandedHeight,Math.Min(300,app.Settings.AnimationMs));
@@ -107,9 +107,9 @@ public sealed partial class OverlayWindow
         mute=MixerButton(muted?"\uE74F":"\uE767",()=>
         {
             if(!ApplyMixer(item.Target,null,!muted))return;
-            muted=!muted;Motion.Icon(mute!,muted?"muted":"volume",16);UI.Named(mute!,accessible+" "+(muted?"unmute":"mute"));
-        });UI.Named(mute,accessible+" "+(muted?"unmute":"mute"));
-        Motion.Icon(mute,muted?"muted":"volume",16);mute.FontSize=13;mute.Padding=new(3);mute.ToolTip=accessible+" mute / unmute";
+            muted=!muted;Motion.Icon(mute!,muted?"muted":"volume",16);UI.Named(mute!,accessible+" "+(muted?Localization.Text("unmute"):Localization.Text("mute")));
+        });UI.Named(mute,accessible+" "+(muted?Localization.Text("unmute"):Localization.Text("mute")));
+        Motion.Icon(mute,muted?"muted":"volume",16);mute.FontSize=13;mute.Padding=new(3);mute.ToolTip=accessible+Localization.Text(" mute / unmute");
         var (panel,slider,percent)=CreateMixerRowLayout(item,mute);
         bool pending=false,refreshing=false;
         slider.ValueChanged+=(_,_)=>{percent.Text=Math.Round(slider.Value)+"%";if(!refreshing)pending=true;};
@@ -119,13 +119,13 @@ public sealed partial class OverlayWindow
         slider.LostKeyboardFocus+=(_,_)=>Commit();
         return (panel,latest=>
         {
-            muted=latest.Muted;Motion.Icon(mute,muted?"muted":"volume",16);UI.Named(mute,accessible+" "+(muted?"unmute":"mute"));
+            muted=latest.Muted;Motion.Icon(mute,muted?"muted":"volume",16);UI.Named(mute,accessible+" "+(muted?Localization.Text("unmute"):Localization.Text("mute")));
             refreshing=true;try{slider.Value=latest.Volume*100;}finally{refreshing=false;}
         });
     }
 
     private static string MixerAccessibleName(MixerItem item)
-        =>(item.Target.Scope==MixerScope.Apps?"App":"Output")+" "+item.Name+(item.Target.Scope==MixerScope.Apps?" on "+item.OutputName:"");
+        =>(item.Target.Scope==MixerScope.Apps?Localization.Text("App"):Localization.Text("Output"))+" "+item.Name+(item.Target.Scope==MixerScope.Apps?Localization.Text(" on ")+item.OutputName:"");
 
     // Shared by the live mixer and layout-only tests; constructing a row never writes audio.
     internal static (Grid View,Slider Slider,TextBlock Percent) CreateMixerRowLayout(MixerItem item,Button mute)
@@ -140,7 +140,7 @@ public sealed partial class OverlayWindow
         FrameworkElement icon=item.Target.Scope==MixerScope.Apps?new MixerAppIcon(item):Icons.Create("volume",20,UI.Muted);
         icon.Width=20;icon.Height=20;icon.VerticalAlignment=VerticalAlignment.Center;icon.Margin=new(0,0,8,0);
         var percent=UI.Text(Math.Round(item.Volume*100)+"%",11,UI.Muted);percent.Width=38;percent.TextAlignment=TextAlignment.Right;percent.VerticalAlignment=VerticalAlignment.Center;
-        var slider=new Slider{Minimum=0,Maximum=100,Value=item.Volume*100,SmallChange=1,LargeChange=5,TickFrequency=1,IsSnapToTickEnabled=true,IsMoveToPointEnabled=true,Height=24,VerticalAlignment=VerticalAlignment.Center};UI.Named(slider,accessible+" volume percent");slider.ToolTip=accessible+" volume";
+        var slider=new Slider{Minimum=0,Maximum=100,Value=item.Volume*100,SmallChange=1,LargeChange=5,TickFrequency=1,IsSnapToTickEnabled=true,IsMoveToPointEnabled=true,Height=24,VerticalAlignment=VerticalAlignment.Center};UI.Named(slider,accessible+Localization.Text(" volume percent"));slider.ToolTip=accessible+Localization.Text(" volume");
         // The global button style adds a trailing margin; reserve the full 30 DIP mute target.
         mute.Margin=new Thickness(0);
         var panel=new ResponsiveMixerRow(icon,header,slider,percent,mute);

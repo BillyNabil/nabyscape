@@ -19,7 +19,7 @@ internal sealed partial class AssistantProviderSettings
             foreach(var item in buttons)
             {
                 bool active=item.Key==id;item.Value.SetResourceReference(Control.BackgroundProperty,active?"SelectionFill":"ControlFill");
-                System.Windows.Automation.AutomationProperties.SetHelpText(item.Value,active?"Current voice settings page":"Open "+item.Key);
+                System.Windows.Automation.AutomationProperties.SetHelpText(item.Value,active?Localization.Text("Current voice settings page"):Localization.Format("Open {0}",Localization.Text(item.Key)));
             }
         }
         selectVoicePage=Select;
@@ -46,10 +46,10 @@ internal sealed partial class AssistantProviderSettings
             }
             body.Children.Add(element);return body;
         }
-        Add("Setup","Voice setup","mic",LocalVoiceSettings);
-        Add("Wake","Wake word","mic",()=>Direct("Wake Naby with your voice","Choose a phrase and turn hands-free listening on or off.",WakeWordSettings()));
-        Add("Models","Models","nav-launch",()=>Direct("Models on this PC","See installed voices and remove models you no longer use.",InstalledSpeechSettings()));
-        Add("Audio","Check audio","settings",()=>Direct("Check your audio","Check listening and speaking separately using your saved setup.",SpeechChecks()));
+        Add("Setup",Localization.Text("Voice setup"),"mic",LocalVoiceSettings);
+        Add("Wake",Localization.Text("Wake word"),"mic",()=>Direct(Localization.Text("Wake Naby with your voice"),Localization.Text("Choose a phrase and turn hands-free listening on or off."),WakeWordSettings()));
+        Add("Models","Models","nav-launch",()=>Direct(Localization.Text("Models on this PC"),Localization.Text("See installed voices and remove models you no longer use."),InstalledSpeechSettings()));
+        Add("Audio",Localization.Text("Check audio"),"settings",()=>Direct(Localization.Text("Check your audio"),Localization.Text("Check listening and speaking separately using your saved setup."),SpeechChecks()));
         Select("Setup");
     }
 }

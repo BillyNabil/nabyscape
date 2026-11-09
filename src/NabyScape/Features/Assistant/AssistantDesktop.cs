@@ -42,12 +42,12 @@ internal sealed class AssistantDesktop : IDisposable
     }
     internal async Task<AssistantScreenFrame> Capture(CancellationToken token)
     {
-        var target=selected??throw new InvalidOperationException("Choose a window or display to share.");int generation=epoch;
+        var target=selected??throw new InvalidOperationException(Localization.Text("Choose a window or display to share."));int generation=epoch;
         await captureLock.WaitAsync(token);
         try
         {
             token.ThrowIfCancellationRequested();if(generation!=epoch)throw new OperationCanceledException(token);
-            var frame=capture!=null?await capture.Capture(target,token):fixture!=null?await Task.Run(()=>fixture.Capture(target),token):throw new InvalidOperationException("The sharing source closed. Choose it again.");
+            var frame=capture!=null?await capture.Capture(target,token):fixture!=null?await Task.Run(()=>fixture.Capture(target),token):throw new InvalidOperationException(Localization.Text("The sharing source closed. Choose it again."));
             token.ThrowIfCancellationRequested();if(generation!=epoch)throw new OperationCanceledException(token);Frame=frame;return frame;
         }
         finally{captureLock.Release();}
@@ -58,7 +58,7 @@ internal sealed class AssistantDesktop : IDisposable
     internal IReadOnlyList<AssistantScreenTarget> Targets()=>fixture?.Targets()??Array.Empty<AssistantScreenTarget>();
     internal void Start(string id,IntPtr owner)
     {
-        if(fixture==null)throw new NotSupportedException("Use the Windows sharing picker.");
+        if(fixture==null)throw new NotSupportedException(Localization.Text("Use the Windows sharing picker."));
         Stop();selected=fixture.Targets().Single(t=>t.Id==id);try{fixture.Begin(owner);}catch{Stop();throw;}
     }
 }

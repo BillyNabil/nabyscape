@@ -17,7 +17,7 @@ internal sealed partial class AssistantSpeechInstall
         if(tts)
         {
             var model=SpeechCatalog.TtsById(id);
-            if(model.Id=="windows" || model.SourcePath.Length>0)throw new InvalidOperationException("Windows voices and imported model files cannot be uninstalled here.");
+            if(model.Id=="windows" || model.SourcePath.Length>0)throw new InvalidOperationException(Localization.Text("Windows voices and imported model files cannot be uninstalled here."));
             if(model.Package!=null)
             {
                 string folder=VoiceRoot(model);targets=new[]{folder,Path.Combine(root,"downloads",Path.GetFileName(folder)+(model.Package.Url.EndsWith(".tar.bz2",StringComparison.OrdinalIgnoreCase)?".tar.bz2":".zip"))};
@@ -27,7 +27,7 @@ internal sealed partial class AssistantSpeechInstall
         else
         {
             var model=SpeechCatalog.AsrById(id);
-            if(model.SourcePath.Length>0)throw new InvalidOperationException("Imported model files cannot be uninstalled here.");
+            if(model.SourcePath.Length>0)throw new InvalidOperationException(Localization.Text("Imported model files cannot be uninstalled here."));
             targets=!model.Native?new[]{AsrPath(model)}:new[]{Path.Combine(root,"models",model.Id),Path.Combine(root,"downloads",model.Id)+(model.Files==null?(model.Asset.Url.EndsWith(".tar.bz2",StringComparison.OrdinalIgnoreCase)?".tar.bz2":".zip"):"")};
         }
         return targets.SelectMany(p=>new[]{p,p+".partial"}).Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
@@ -50,7 +50,7 @@ internal sealed partial class AssistantSpeechInstall
         }
         return bytes;
     }
-    internal static string StorageSize(long bytes)=>bytes<1024?bytes+" B":bytes<1024L*1024?(bytes/1024d).ToString("0.0")+" KB":bytes<1024L*1024*1024?(bytes/(1024d*1024)).ToString("0.0")+" MB":(bytes/(1024d*1024*1024)).ToString("0.00")+" GB";
+    internal static string StorageSize(long bytes)=>bytes<1024?bytes+Localization.Text(" B"):bytes<1024L*1024?(bytes/1024d).ToString("0.0")+Localization.Text(" KB"):bytes<1024L*1024*1024?(bytes/(1024d*1024)).ToString("0.0")+Localization.Text(" MB"):(bytes/(1024d*1024*1024)).ToString("0.00")+Localization.Text(" GB");
     internal bool ModelInUse(AssistantLocalVoiceOptions options,string id,bool tts)
     {
         if(!options.Enabled || !options.Managed || tts && options.OwnModels && options.OwnTtsEngine=="Windows voice")return false;
@@ -68,7 +68,7 @@ internal sealed partial class AssistantSpeechInstall
     private void ValidateRemoval(string path)
     {
         string boundary=Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar),target=Path.GetFullPath(path);
-        if(!new[]{"models","voices","downloads"}.Any(area=>target.StartsWith(Path.Combine(boundary,area)+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase)))throw new IOException("The model path is outside managed speech storage.");
+        if(!new[]{"models","voices","downloads"}.Any(area=>target.StartsWith(Path.Combine(boundary,area)+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase)))throw new IOException(Localization.Text("The model path is outside managed speech storage."));
         // Check ancestors and every descendant before any recursive deletion. A
         // directory junction must never turn model removal into external deletion.
         for(string? current=target;current!=null;current=Path.GetDirectoryName(current))
@@ -81,7 +81,7 @@ internal sealed partial class AssistantSpeechInstall
     }
     private static void CheckLink(string path)
     {
-        try{if((File.GetAttributes(path)&FileAttributes.ReparsePoint)!=0)throw new IOException("A link was found in this model's storage. Remove the link manually before uninstalling.");}
+        try{if((File.GetAttributes(path)&FileAttributes.ReparsePoint)!=0)throw new IOException(Localization.Text("A link was found in this model's storage. Remove the link manually before uninstalling."));}
         catch(FileNotFoundException){}catch(DirectoryNotFoundException){}
     }
     internal async Task<bool> UninstallModel(string id,bool tts,Func<Task>? releaseVoice=null)
@@ -91,7 +91,7 @@ internal sealed partial class AssistantSpeechInstall
         installation=new();removing=true;
         try
         {
-            Report("Uninstalling "+name+"…");
+            Report(Localization.Text("Uninstalling ")+name+"…");
             // Preflight before stopping voice or modifying preferences.
             await Task.Run(()=>{foreach(string path in paths)ValidateRemoval(path);});
             if(releaseVoice!=null)await releaseVoice();
@@ -100,9 +100,9 @@ internal sealed partial class AssistantSpeechInstall
                 foreach(string path in paths)ValidateRemoval(path);
                 foreach(string path in paths){if(Directory.Exists(path))Directory.Delete(path,true);else if(File.Exists(path))File.Delete(path);}
             });
-            Report(name+" uninstalled. You can install it again at any time.",100);return true;
+            Report(name+Localization.Text(" uninstalled. You can install it again at any time."),100);return true;
         }
-        catch(Exception ex){Report("Could not finish uninstalling "+name+". "+ex.Message+" Check the installed models list and retry.");return false;}
+        catch(Exception ex){Report(Localization.Text("Could not finish uninstalling ")+name+". "+ex.Message+Localization.Text(" Check the installed models list and retry."));return false;}
         finally{removing=false;installation.Dispose();installation=null;if(!disposed)Changed?.Invoke();}
     }
 }

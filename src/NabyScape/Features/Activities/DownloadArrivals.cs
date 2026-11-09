@@ -32,7 +32,7 @@ internal sealed class DownloadArrivals : IDisposable
     internal static string KnownFolder()
     {
         var id=new Guid("374DE290-123F-4565-9164-39C4925E467B");IntPtr path=IntPtr.Zero;
-        try{Marshal.ThrowExceptionForHR(SHGetKnownFolderPath(ref id,0,IntPtr.Zero,out path));return Marshal.PtrToStringUni(path)??throw new IOException("Downloads folder unavailable.");}
+        try{Marshal.ThrowExceptionForHR(SHGetKnownFolderPath(ref id,0,IntPtr.Zero,out path));return Marshal.PtrToStringUni(path)??throw new IOException(Localization.Text("Downloads folder unavailable."));}
         finally{if(path!=IntPtr.Zero)Marshal.FreeCoTaskMem(path);}
     }
     [DllImport("shell32.dll")] private static extern int SHGetKnownFolderPath(ref Guid id,uint flags,IntPtr token,out IntPtr path);
@@ -44,7 +44,7 @@ internal sealed class DownloadArrivals : IDisposable
         {
             Folder=Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
             // Bound metadata too; overflow fails closed rather than announcing an untracked baseline.
-            lock(gate){foreach(var file in Directory.EnumerateFiles(Folder).Take(10001)){if(known.Count==10000)throw new IOException("This folder has too many files to monitor safely (limit 10,000).");var info=new FileInfo(file);known[file]=(info.Length,info.LastWriteTimeUtc);}}
+            lock(gate){foreach(var file in Directory.EnumerateFiles(Folder).Take(10001)){if(known.Count==10000)throw new IOException(Localization.Text("This folder has too many files to monitor safely (limit 10,000)."));var info=new FileInfo(file);known[file]=(info.Length,info.LastWriteTimeUtc);}}
             watcher=new(Folder){IncludeSubdirectories=false,NotifyFilter=NotifyFilters.FileName|NotifyFilters.Size|NotifyFilters.LastWrite,InternalBufferSize=16384};
             watcher.Created+=Changed;watcher.Changed+=Changed;watcher.Deleted+=Deleted;watcher.Renamed+=Renamed;watcher.Error+=Overflow;
             stop=new();watcher.EnableRaisingEvents=true;worker=Task.Run(()=>Work(stop.Token));
@@ -84,7 +84,7 @@ internal sealed class DownloadArrivals : IDisposable
                 bool scan;lock(gate){scan=reconcile;reconcile=false;}
                 if(scan)
                 {
-                    var files=Directory.EnumerateFiles(Folder).Take(10001).ToArray();if(files.Length>10000)throw new IOException("Download folder exceeds the 10,000-file monitoring limit.");
+                    var files=Directory.EnumerateFiles(Folder).Take(10001).ToArray();if(files.Length>10000)throw new IOException(Localization.Text("Download folder exceeds the 10,000-file monitoring limit."));
                     var present=files.ToHashSet(StringComparer.OrdinalIgnoreCase);
                     lock(gate){foreach(var gone in known.Keys.Where(p=>!present.Contains(p)).ToArray())known.Remove(gone);}
                     foreach(var path in files)Candidate(path);
@@ -113,7 +113,7 @@ internal sealed class DownloadArrivals : IDisposable
                     }
                 }
                 token.ThrowIfCancellationRequested();if(batch.Count>0)ready(batch.OrderBy(p=>p,StringComparer.OrdinalIgnoreCase).ToArray());
-                if(!Directory.Exists(Folder))throw new DirectoryNotFoundException("Download folder disconnected. Toggle monitoring off and on to restart.");
+                if(!Directory.Exists(Folder))throw new DirectoryNotFoundException(Localization.Text("Download folder disconnected. Toggle monitoring off and on to restart."));
             }
         }
         catch(OperationCanceledException){}

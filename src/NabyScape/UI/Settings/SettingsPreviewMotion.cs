@@ -27,7 +27,7 @@ public sealed partial class SettingsWindow
     private string livePreviewKey="";
     private void InitializePreviewMotion(StackPanel column)
     {
-        var replay=UI.Button("Replay transition",async()=>
+        var replay=UI.CaptionButton("Replay transition",async()=>
         {
             if(previewReplaying)return;previewReplaying=true;string previous=previewMode;
             try{foreach(string mode in new[]{"Closed","Hover","Panel"}){if(previewClosed)return;previewMode=mode;RefreshPreview();await System.Threading.Tasks.Task.Delay(Math.Max(500,(int)app.Settings.AnimationMs+180));}}
@@ -90,7 +90,7 @@ public sealed partial class SettingsWindow
     }
     private void ConfigurePreviewForSetting(string name)
     {
-        previewFocus.Text=name;
+        previewFocus.Text=Localization.Text(name);
         if(name=="Show ambience on closed dock"){previewMode="Closed";previewContent="Music";}
         else if(name.EndsWith(" tool")){previewMode="Hover";previewContent=name[..^5] switch{"File shelf"=>"Shelf","Notes"=>"Note","Clipboard"=>"Smart clipboard","Tasks"=>"Tasks","Calendar"=>"Calendar",_=>"Tools"};}
         else if(current=="Ambience"){previewMode="Panel";previewContent="Music";}
@@ -119,7 +119,7 @@ public sealed partial class SettingsWindow
         else if(current=="System"){previewMode="Panel";previewContent="System";}
         else if(current=="Audio"){previewMode="Panel";previewContent="Music";}
     }
-    private readonly TextBlock previewFocus=UI.Text("Point to a setting to explore it",11,UI.Muted);
+    private readonly TextBlock previewFocus=UI.Caption("Point to a setting to explore it",11,UI.Muted);
     private ActivityVisual? audioSignalWave;
     private TextBlock? audioSignalState;
     private void UpdateAudioSignal(double seconds)
@@ -129,6 +129,6 @@ public sealed partial class SettingsWindow
         bool animate=app.Media.Playing && !app.Audio.MediaMeterMuted && app.Settings.LiveActivity && !app.Settings.ReduceMotion;
         bool fresh=animate && signalSequence!=app.Audio.MediaLevel.Sequence;signalSequence=app.Audio.MediaLevel.Sequence;
         audioSignalWave.Sample(peak,previewDt,0,false,false,animate,seconds,fresh,app.Settings.WaveformIdleMotion,app.Audio.MediaSpectrum,app.Settings.WaveformSensitivity);
-        audioSignalState.Text=!app.Settings.LiveActivity?"Live activity is off · enable it in Audio":app.Settings.ReduceMotion?"Reduce Motion is on · the waveform stays still":!app.Media.Playing?"Playback paused · quiet baseline":app.Audio.MediaMeterMuted?"Selected app or output is muted":app.Audio.MediaMeterSessions==0?"No matching audio meter · optional gentle fallback":$"Live meter · {app.Audio.MediaAudibleSessions} audible session · {peak*100:0}% peak";
+        audioSignalState.Text=!app.Settings.LiveActivity?Localization.Text("Live activity is off · enable it in Audio"):app.Settings.ReduceMotion?Localization.Text("Reduce Motion is on · the waveform stays still"):!app.Media.Playing?Localization.Text("Playback paused · quiet baseline"):app.Audio.MediaMeterMuted?Localization.Text("Selected app or output is muted"):app.Audio.MediaMeterSessions==0?Localization.Text("No matching audio meter · optional gentle fallback"):Localization.Format("Live meter · {0} audible session · {1:0}% peak",app.Audio.MediaAudibleSessions,peak*100);
     }
 }

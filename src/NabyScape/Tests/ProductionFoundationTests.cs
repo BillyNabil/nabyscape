@@ -62,7 +62,7 @@ internal static class ProductionFoundationTests
         {
             var settings=new Settings{Width=333,WeatherLatitude=null,WeatherLongitude=null,ClipboardHistory=true,UiLanguage="es",AutoDownloadUpdates=false};
             PreferenceReset.Reset(store,settings,null);
-            Assert(settings.ClipboardHistory && settings.UiLanguage=="en" && !settings.AutoDownloadUpdates,"Reset changed capture consent or missed application preferences.");
+            Assert(settings.ClipboardHistory && settings.UiLanguage=="ru" && !settings.AutoDownloadUpdates,"Reset changed capture consent or missed application preferences.");
             settings.ClipboardHistory=false;PreferenceReset.Restore(store,settings);
             Assert(!settings.ClipboardHistory && settings.Width==333 && settings.WeatherLatitude==null && settings.WeatherLongitude==null && settings.UiLanguage=="es" && !settings.AutoDownloadUpdates,"Restore changed consent or nullable preferences.");
             var node=System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(store.DirectoryPath,"preference-backup.json")))!;

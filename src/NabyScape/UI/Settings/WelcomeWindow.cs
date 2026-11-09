@@ -12,8 +12,8 @@ internal sealed class WelcomeWindow : Window
 {
     private readonly App app;
     private readonly StackPanel body=new(){Margin=new(28,20,28,20)};
-    private readonly TextBlock progress=UI.Text("",12,UI.Muted);
-    private readonly TextBlock error=UI.Text("",12,UI.Muted);
+    private readonly TextBlock progress=UI.Caption("",12,UI.Muted);
+    private readonly TextBlock error=UI.Caption("",12,UI.Muted);
     private readonly Button back,next;
     private readonly Dictionary<string,bool> widgets;
     private readonly HashSet<string> changedWidgets=new();
@@ -26,7 +26,7 @@ internal sealed class WelcomeWindow : Window
     {
         this.app=app;edge=app.Settings.DockEdge;
         widgets=app.Settings.Widgets.ToDictionary(w=>w.Id,w=>w.Enabled);
-        Title="Welcome to NabyScape";Width=580;Height=620;MinWidth=420;MinHeight=360;
+        Title=Localization.Text("Welcome to NabyScape");Width=580;Height=620;MinWidth=420;MinHeight=360;
         MaxHeight=SystemParameters.WorkArea.Height;MaxWidth=SystemParameters.WorkArea.Width;
         WindowStartupLocation=WindowStartupLocation.CenterScreen;
         Background=Accessibility.HighContrast?SystemColors.WindowBrush:UI.Brush("#111214");
@@ -43,43 +43,43 @@ internal sealed class WelcomeWindow : Window
 
     private void Render()
     {
-        body.Children.Clear();progress.Text=$"GET STARTED  /  {step+1} OF 3";body.Children.Add(progress);
+        body.Children.Clear();progress.Text=Localization.Format("GET STARTED  /  {0} OF 3",step+1);body.Children.Add(progress);
         back.Visibility=step==0?Visibility.Collapsed:Visibility.Visible;
-        next.Content=step==2?(purpose=="AI"?"Continue to AI setup":"Finish setup"):"Next";
-        body.Children.Add(UI.Text(step==0?"What brings you here?":step==1?"Make it yours.":"Your dock is ready.",28));
+        next.Content=Localization.Text(step==2?(purpose=="AI"?"Continue to AI setup":"Finish setup"):"Next");
+        body.Children.Add(UI.Caption(step==0?"What brings you here?":step==1?"Make it yours.":"Your dock is ready.",28));
         if(step==0)
         {
-            body.Children.Add(UI.Text("Choose a starting point. You can change every choice later.",13,UI.Muted));
+            body.Children.Add(UI.Caption("Choose a starting point. You can change every choice later.",13,UI.Muted));
             foreach(var choice in new[]{("Music","Playback, volume, clock and weather"),("Productivity","Focus, timer, notes, tasks and calendar"),("AI","Naby voice, clock and notes · connect your provider next"),("Custom","Recommended NabyScape setup · keep the complete default experience")})
             {
-                var content=new StackPanel();content.Children.Add(UI.Text((choice.Item1=="Custom"?"Recommended":choice.Item1)+(purpose==choice.Item1?" · Selected":""),16));var hint=UI.Text(choice.Item2,12,UI.Muted);hint.Margin=new(0,5,0,0);content.Children.Add(hint);
+                var content=new StackPanel();content.Children.Add(UI.Text(Localization.Text(choice.Item1=="Custom"?"Recommended":choice.Item1)+(purpose==choice.Item1?" · "+Localization.Text("Selected"):""),16));var hint=UI.Caption(choice.Item2,12,UI.Muted);hint.Margin=new(0,5,0,0);content.Children.Add(hint);
                 var button=UI.CaptionButton(choice.Item1,()=>{purpose=choice.Item1;ChoosePurpose();Render();});button.Content=content;button.Padding=new(16);button.Margin=new(0,10,0,0);button.HorizontalContentAlignment=HorizontalAlignment.Left;button.Background=UI.Brush(purpose==choice.Item1?app.Settings.SelectionFill:app.Settings.ControlFill);body.Children.Add(button);
             }
-            body.Children.Add(UI.Text("Choose a purpose to change widgets, or keep Recommended to use the complete default setup. Microphone listening starts only when you choose it.",12,UI.Muted));
+            body.Children.Add(UI.Caption("Choose a purpose to change widgets, or keep Recommended to use the complete default setup. Microphone listening starts only when you choose it.",12,UI.Muted));
         }
         else if(step==1)
         {
-            body.Children.Add(UI.Text("Dock position",16));var edges=new WrapPanel();
+            body.Children.Add(UI.Caption("Dock position",16));var edges=new WrapPanel();
             foreach(string side in new[]{"Top","Bottom","Left","Right"})
             {
-                var option=new RadioButton{Content=side,GroupName="Dock position",IsChecked=edge==side,Margin=new(0,10,16,14),Padding=new(6)};
-                UI.Named(option,"Dock position: "+side);option.Checked+=(_,_)=>{edge=side;edgeChanged=true;};edges.Children.Add(option);
+                var option=new RadioButton{Content=Localization.Text(side),GroupName="Dock position",IsChecked=edge==side,Margin=new(0,10,16,14),Padding=new(6)};
+                UI.LocalizedName(option,"Dock position: "+side);option.Checked+=(_,_)=>{edge=side;edgeChanged=true;};edges.Children.Add(option);
             }
-            body.Children.Add(edges);body.Children.Add(UI.Text("Your widgets",16));
+            body.Children.Add(edges);body.Children.Add(UI.Caption("Your widgets",16));
             foreach(var choice in app.Settings.Widgets.Where(w=>purpose=="Custom" || widgets[w.Id]))
             {
-                var id=choice.Id;var toggle=new CheckBox{Content=Settings.Names.GetValueOrDefault(id)??id,IsChecked=widgets[id],Margin=new(0,12,0,3),Padding=new(6)};
-                UI.Named(toggle,"Enable "+id);toggle.Click+=(_,_)=>{widgets[id]=toggle.IsChecked==true;changedWidgets.Add(id);};body.Children.Add(toggle);
+                var id=choice.Id;var toggle=new CheckBox{Content=Localization.Text(Settings.Names.GetValueOrDefault(id)??id),IsChecked=widgets[id],Margin=new(0,12,0,3),Padding=new(6)};
+                UI.LocalizedName(toggle,"Enable "+id);toggle.Click+=(_,_)=>{widgets[id]=toggle.IsChecked==true;changedWidgets.Add(id);};body.Children.Add(toggle);
             }
-            body.Children.Add(UI.Text("All widgets remain available in Settings. Weather asks for a city; AI asks for a connection.",12,UI.Muted));
+            body.Children.Add(UI.Caption("All widgets remain available in Settings. Weather asks for a city; AI asks for a connection.",12,UI.Muted));
         }
         else
         {
-            body.Children.Add(UI.Text("Click the dock to open your widgets. Hover for a quick look. Right-click the tray icon to open Settings.",14,UI.Muted));
-            body.Children.Add(UI.Text(string.Join(" · ",widgets.Where(w=>w.Value).Select(w=>Settings.Names.GetValueOrDefault(w.Key)??w.Key)),13));
-            if(purpose!="AI")body.Children.Add(UI.Card("AI is optional",UI.Text("Connect your own provider or Hermes whenever you're ready. Voice starts only when you choose it.",13,UI.Muted),UI.CaptionButton("Set up AI",()=>Finish(true))));
-            body.Children.Add(UI.Text("Clipboard history: "+(app.Settings.ClipboardHistory?"On":"Off")+" · Download alerts: "+(app.Settings.DownloadsEnabled?"On":"Off")+". Change these in Settings at any time.",12,UI.Muted));
-            body.Children.Add(UI.Text("You can reopen this guide from Settings > General.",12,UI.Muted));
+            body.Children.Add(UI.Caption("Click the dock to open your widgets. Hover for a quick look. Right-click the tray icon to open Settings.",14,UI.Muted));
+            body.Children.Add(UI.Text(string.Join(" · ",widgets.Where(w=>w.Value).Select(w=>Localization.Text(Settings.Names.GetValueOrDefault(w.Key)??w.Key))),13));
+            if(purpose!="AI")body.Children.Add(UI.Card(Localization.Text("AI is optional"),UI.Caption("Connect your own provider or Hermes whenever you're ready. Voice starts only when you choose it.",13,UI.Muted),UI.CaptionButton("Set up AI",()=>Finish(true))));
+            body.Children.Add(UI.Text(Localization.Format("Clipboard history: {0} · Download alerts: {1}. Change these in Settings at any time.",Localization.Text(app.Settings.ClipboardHistory?"On":"Off"),Localization.Text(app.Settings.DownloadsEnabled?"On":"Off")),12,UI.Muted));
+            body.Children.Add(UI.Caption("You can reopen this guide from Settings > General.",12,UI.Muted));
         }
         body.Children.Add(error);
     }
@@ -98,7 +98,7 @@ internal sealed class WelcomeWindow : Window
     private bool MarkComplete()
     {
         try{WelcomeSetup.Complete(app.Store);return true;}
-        catch(Exception ex){app.Store.Log(ex);error.Text="Could not save setup. Check your settings folder and try again.";return false;}
+        catch(Exception ex){app.Store.Log(ex);error.Text=Localization.Text("Could not save setup. Check your settings folder and try again.");return false;}
     }
 
     private void Skip(){if(MarkComplete())Close();}
@@ -117,7 +117,7 @@ internal sealed class WelcomeWindow : Window
         }
         catch(Exception ex)
         {
-            app.Store.Log(ex);error.Text="Could not save your choices. Your previous settings are unchanged.";return;
+            app.Store.Log(ex);error.Text=Localization.Text("Could not save your choices. Your previous settings are unchanged.");return;
         }
         app.Settings.DockEdge=candidate.DockEdge;app.Settings.HoverFollowsWidgets=candidate.HoverFollowsWidgets;
         // Open Settings controls retain these objects; update their saved values in place.

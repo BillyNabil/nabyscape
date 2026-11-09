@@ -13,7 +13,7 @@ public sealed partial class OverlayWindow
     private readonly Grid assistantCharacterHost=new(),assistantPeek=new();
     private readonly Border assistantHeaderSpace=new();
     private readonly AssistantOrb closedAssistant=new(){Width=32,Height=32,TrackPointerLocally=false},peekAssistant=new(){Width=72,Height=72,TrackPointerLocally=false};
-    private readonly TextBlock assistantGreeting=UI.Text("Hey, I'm here.",17),assistantCaption=UI.Text("Chat or talk, right from your island.",11,UI.Muted);
+    private readonly TextBlock assistantGreeting=UI.Text(Localization.Text("Hey, I'm here."),17),assistantCaption=UI.Text(Localization.Text("Chat or talk, right from your island."),11,UI.Muted);
     private readonly DispatcherTimer assistantHover=new();
     private readonly DispatcherTimer assistantReplyDismiss=new(){Interval=TimeSpan.FromMilliseconds(500)};
     private AssistantMessage? assistantLastReply;
@@ -58,7 +58,7 @@ public sealed partial class OverlayWindow
     {
         header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});Grid.SetColumn(assistantHeaderSpace,5);header.Children.Add(assistantHeaderSpace);
         assistantCharacterHost.HorizontalAlignment=HorizontalAlignment.Center;assistantCharacterHost.VerticalAlignment=VerticalAlignment.Top;
-        assistantCharacterButton=AssistantOrb.Launcher("AI character on island",()=>OpenAssistant(),closedAssistant);assistantCharacterButton.MinHeight=24;assistantCharacterButton.Margin=new(0,0,9,0);assistantCharacterButton.HorizontalAlignment=HorizontalAlignment.Right;assistantCharacterButton.VerticalAlignment=VerticalAlignment.Center;assistantCharacterButton.ToolTip="AI companion · hover to meet · click to chat";
+        assistantCharacterButton=AssistantOrb.Launcher(Localization.Text("AI character on island"),()=>OpenAssistant(),closedAssistant);assistantCharacterButton.MinHeight=24;assistantCharacterButton.Margin=new(0,0,9,0);assistantCharacterButton.HorizontalAlignment=HorizontalAlignment.Right;assistantCharacterButton.VerticalAlignment=VerticalAlignment.Center;assistantCharacterButton.ToolTip=Localization.Text("AI companion · hover to meet · click to chat");
         assistantCharacterButton.MouseEnter+=(_,_)=>{hoverDelay.Stop();assistantHover.Interval=TimeSpan.FromMilliseconds(app.Settings.HoverDelayMs);assistantHover.Start();};
         assistantCharacterButton.MouseLeave+=(_,_)=>assistantHover.Stop();
         assistantCharacterButton.PreviewMouseLeftButtonDown+=(_,_)=>assistantHover.Stop();
@@ -71,7 +71,7 @@ public sealed partial class OverlayWindow
         assistantPeek.RowDefinitions.Add(new());assistantPeek.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var hero=new Grid();hero.ColumnDefinitions.Add(new(){Width=GridLength.Auto});hero.ColumnDefinitions.Add(new());hero.Children.Add(peekAssistant);
         assistantGreeting.FontWeight=FontWeights.SemiBold;assistantGreeting.TextWrapping=TextWrapping.NoWrap;assistantGreeting.TextTrimming=TextTrimming.CharacterEllipsis;assistantPeekWords.Children.Add(assistantGreeting);assistantCaption.Margin=new(0,5,0,0);assistantCaption.MaxHeight=46;assistantCaption.TextTrimming=TextTrimming.CharacterEllipsis;assistantPeekWords.Children.Add(assistantCaption);Grid.SetColumn(assistantPeekWords,1);hero.Children.Add(assistantPeekWords);assistantPeek.Children.Add(hero);
-        var chat=AssistantWindow.Pill("Chat here",()=>OpenAssistant(),true);assistantTalk=AssistantWindow.Pill("Talk",()=>{if(app.Assistant.VoiceConnected)_=app.Assistant.EndVoice();else{app.OpenVoice();_=app.Assistant.StartVoice();}});
+        var chat=AssistantWindow.Pill(Localization.Text("Chat here"),()=>OpenAssistant(),true);assistantTalk=AssistantWindow.Pill(Localization.Text("Talk"),()=>{if(app.Assistant.VoiceConnected)_=app.Assistant.EndVoice();else{app.OpenVoice();_=app.Assistant.StartVoice();}});
         assistantPeekActions.Children.Add(chat);assistantPeekActions.Children.Add(assistantTalk);Grid.SetRow(assistantPeekActions,1);assistantPeek.Children.Add(assistantPeekActions);InitializeAssistantReply();visuals.Children.Add(assistantPeek);
         assistantHover.Tick+=(_,_)=>{assistantHover.Stop();if(assistantCharacterButton.IsMouseOver && !expanded && !userHidden)PreviewAssistant();};
         assistantReplyDismiss.Tick+=(_,_)=>AssistantReplyTick();
@@ -90,9 +90,9 @@ public sealed partial class OverlayWindow
     {
         RefreshAssistantCharacter();RefreshAssistantVisuals();UpdateClosedMediaIcon();
         if(!AssistantCharacterAvailable && assistantPeeking)CloseAssistant();
-        assistantGreeting.Text=app.Assistant.State switch{AssistantState.Listening=>"I'm listening.",AssistantState.Thinking=>"Let me think…",AssistantState.Speaking=>"Let's talk.",AssistantState.Approval=>"Your call.",AssistantState.Connecting=>"Connecting…",AssistantState.Error=>"Let's check that.",_=>"Hey, I'm here."};
-        assistantCaption.Text=!app.Assistant.Options.Enabled?"Set up your companion in Settings → AI.":app.Assistant.WakeListening?app.Assistant.WakeStatus:app.Assistant.State==AssistantState.Idle?"Chat or talk, right from your island.":app.Assistant.Status;
-        assistantTalk.Content=app.Assistant.VoiceConnected?"End voice":"Talk";assistantTalk.IsEnabled=!app.Assistant.Busy;
+        assistantGreeting.Text=app.Assistant.State switch{AssistantState.Listening=>Localization.Text("I'm listening."),AssistantState.Thinking=>Localization.Text("Let me think…"),AssistantState.Speaking=>Localization.Text("Let's talk."),AssistantState.Approval=>Localization.Text("Your call."),AssistantState.Connecting=>Localization.Text("Connecting…"),AssistantState.Error=>Localization.Text("Let's check that."),_=>Localization.Text("Hey, I'm here.")};
+        assistantCaption.Text=!app.Assistant.Options.Enabled?Localization.Text("Set up your companion in Settings → AI."):app.Assistant.WakeListening?app.Assistant.WakeStatus:app.Assistant.State==AssistantState.Idle?Localization.Text("Chat or talk, right from your island."):app.Assistant.Status;
+        assistantTalk.Content=app.Assistant.VoiceConnected?Localization.Text("End voice"):Localization.Text("Talk");assistantTalk.IsEnabled=!app.Assistant.Busy;
         var reply=LatestAssistantReply();
         bool fresh=reply!=null && !ReferenceEquals(reply,assistantLastReply);assistantLastReply=reply;
         if(reply!=null && app.Assistant.Options.Enabled && app.Assistant.State is AssistantState.Idle or AssistantState.Listening or AssistantState.Speaking)assistantCaption.Text=reply.Text.Length>180?reply.Text[..180]+"…":reply.Text;
@@ -105,13 +105,13 @@ public sealed partial class OverlayWindow
         Apply(closedAssistant);Apply(peekAssistant);
         if(lastAssistantVisualState==app.Assistant.State)return;lastAssistantVisualState=app.Assistant.State;
         if(assistantReplyShowing){RefreshAssistantReplyText();return;}
-        assistantGreeting.Text=app.Assistant.State switch{AssistantState.Listening=>"I'm listening.",AssistantState.Thinking=>"Let me think…",AssistantState.Speaking=>"Let's talk.",AssistantState.Approval=>"Your call.",AssistantState.Connecting=>"Connecting…",AssistantState.Error=>"Let's check that.",_=>"Hey, I'm here."};
+        assistantGreeting.Text=app.Assistant.State switch{AssistantState.Listening=>Localization.Text("I'm listening."),AssistantState.Thinking=>Localization.Text("Let me think…"),AssistantState.Speaking=>Localization.Text("Let's talk."),AssistantState.Approval=>Localization.Text("Your call."),AssistantState.Connecting=>Localization.Text("Connecting…"),AssistantState.Error=>Localization.Text("Let's check that."),_=>Localization.Text("Hey, I'm here.")};
     }
     private void RefreshAssistantCharacter()
     {
         if(assistantCharacterButton==null)return;
         bool enabled=AssistantCharacterAvailable;
-        assistantCharacterButton.ToolTip=app.Assistant.VoiceConnected?"Microphone on · click for voice controls":app.Assistant.WakeListening?app.Assistant.WakeStatus:app.Assistant.Desktop.Sharing?"Screen sharing on · click for controls":"AI companion · hover to meet · click to chat";
+        assistantCharacterButton.ToolTip=app.Assistant.VoiceConnected?Localization.Text("Microphone on · click for voice controls"):app.Assistant.WakeListening?app.Assistant.WakeStatus:app.Assistant.Desktop.Sharing?Localization.Text("Screen sharing on · click for controls"):Localization.Text("AI companion · hover to meet · click to chat");
         double size=Math.Clamp(app.Settings.Height-4,24,32);assistantCharacterButton.MinHeight=size;assistantCharacterButton.Width=assistantCharacterButton.Height=size;closedAssistant.Width=closedAssistant.Height=size;
         assistantHeaderSpace.Width=size+9;assistantHeaderSpace.Visibility=enabled && !FeedbackVisible?Visibility.Visible:Visibility.Collapsed;
         assistantCharacterHost.Width=ClosedContentWidth;assistantCharacterHost.Height=app.Settings.Height;

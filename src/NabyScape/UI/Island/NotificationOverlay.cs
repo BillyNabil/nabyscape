@@ -29,7 +29,7 @@ public sealed partial class OverlayWindow
     {
         if(!IsLoaded)return;
         RefreshNoticeEdge();
-        if(noticeQueue!=null)noticeQueue.Text=app.Notifications.Count>1?app.Notifications.Count+" queued":"";
+        if(noticeQueue!=null)noticeQueue.Text=app.Notifications.Count>1?app.Notifications.Count+Localization.Text(" queued"):"";
         if(noticeNext!=null)noticeNext.IsEnabled=app.Notifications.Count>1;
         UpdateBellBadges();
         if(centerShowing){RefreshNotificationCenter();app.PublishUpdate(RuntimeChange.Clock);return;}
@@ -53,8 +53,8 @@ public sealed partial class OverlayWindow
         StopHoverTimers();SetTucked(false);peeking=true;noticeShowing=true;RefreshNoticeEdge();peekPanel.Visibility=Visibility.Collapsed;SyncAssistantVisibility();
         var content=new StackPanel();
         var header=new DockPanel{Margin=new(0,0,0,12)};
-        noticeQueue=UI.Text(app.Notifications.Count>1?app.Notifications.Count+" queued":"",10,UI.Muted);DockPanel.SetDock(noticeQueue,Dock.Right);header.Children.Add(noticeQueue);
-        var kind=UI.Text(notice.Kind=="external"?(notice.Source??"App").ToUpperInvariant():notice.Kind switch{"timer"=>"TIMER","focus"=>"FOCUS","downloads"=>"DOWNLOADS","updates"=>"UPDATE",_=>"NABYSCAPE"},10,UI.Muted);
+        noticeQueue=UI.Text(app.Notifications.Count>1?app.Notifications.Count+Localization.Text(" queued"):"",10,UI.Muted);DockPanel.SetDock(noticeQueue,Dock.Right);header.Children.Add(noticeQueue);
+        var kind=UI.Text(notice.Kind=="external"?(notice.Source??Localization.Text("App")).ToUpperInvariant():notice.Kind switch{"timer"=>Localization.Text("TIMER"),"focus"=>Localization.Text("FOCUS"),"downloads"=>Localization.Text("DOWNLOADS"),"updates"=>Localization.Text("UPDATE"),_=>"NABYSCAPE"},10,UI.Muted);
         var icon=NoticeAvatar.Create(notice,30);icon.Margin=new(0,0,10,0);icon.VerticalAlignment=VerticalAlignment.Center;
         header.Children.Add(icon);header.Children.Add(kind);content.Children.Add(header);
         var noticeTitle=UI.Heading(notice.Title,18);noticeTitle.FontWeight=FontWeights.SemiBold;noticeTitle.Margin=new(0,0,0,6);content.Children.Add(noticeTitle);
@@ -66,7 +66,7 @@ public sealed partial class OverlayWindow
         if(paths.Length>0)
         {
             var row=new DockPanel{Margin=new(0,10,0,8)};var image=new Image{Width=32,Height=32,Margin=new(0,0,10,0)};row.Children.Add(image);_=LoadShelfThumbnail(paths[0],image);
-            var drag=UI.Button(Path.GetFileName(paths[0])+(paths.Length>1?$" +{paths.Length-1}":""),()=>{});drag.Content=new TextBlock{Text=Path.GetFileName(paths[0])+(paths.Length>1?$" +{paths.Length-1}":""),TextWrapping=TextWrapping.NoWrap,TextTrimming=TextTrimming.CharacterEllipsis};drag.ToolTip="Drag original files · use Show in folder or Add to shelf with keyboard";row.Children.Add(drag);content.Children.Add(row);
+            var drag=UI.Button(Path.GetFileName(paths[0])+(paths.Length>1?$" +{paths.Length-1}":""),()=>{});drag.Content=new TextBlock{Text=Path.GetFileName(paths[0])+(paths.Length>1?$" +{paths.Length-1}":""),TextWrapping=TextWrapping.NoWrap,TextTrimming=TextTrimming.CharacterEllipsis};drag.ToolTip=Localization.Text("Drag original files · use Show in folder or Add to shelf with keyboard");row.Children.Add(drag);content.Children.Add(row);
             Point? down=null;drag.PreviewMouseLeftButtonDown+=(_,e)=>down=e.GetPosition(drag);
             drag.PreviewMouseMove+=(_,e)=>
             {
@@ -77,19 +77,19 @@ public sealed partial class OverlayWindow
                 finally{fileDragActive=false;down=null;}
             };
             drag.PreviewMouseLeftButtonUp+=(_,e)=>{down=null;e.Handled=true;};
-            content.Children.Add(UI.Row(UI.Button("Show in folder",()=>
+            content.Children.Add(UI.Row(UI.Button(Localization.Text("Show in folder"),()=>
             {
                 try{if(!File.Exists(paths[0]))return;var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=false};info.ArgumentList.Add("/select,");info.ArgumentList.Add(paths[0]);System.Diagnostics.Process.Start(info);}
-                catch(Exception ex){app.Store.Log(ex);app.Notify("Could not show file",ex.Message);}
-            }),UI.Button("Add to shelf",()=>{try{app.Productivity.AddFiles(paths.Where(File.Exists));}catch(Exception ex){app.Store.Log(ex);app.Notify("Could not stage files",ex.Message);}})));
+                catch(Exception ex){app.Store.Log(ex);app.Notify(Localization.Text("Could not show file"),ex.Message);}
+            }),UI.Button(Localization.Text("Add to shelf"),()=>{try{app.Productivity.AddFiles(paths.Where(File.Exists));}catch(Exception ex){app.Store.Log(ex);app.Notify(Localization.Text("Could not stage files"),ex.Message);}})));
         }
-        else if(notice.Kind=="downloads")content.Children.Add(UI.Text("These files are no longer available.",11,UI.Muted));
-        if(notice.Kind=="updates")content.Children.Add(UI.Button("Open Settings",app.ShowSettings));
+        else if(notice.Kind=="downloads")content.Children.Add(UI.Text(Localization.Text("These files are no longer available."),11,UI.Muted));
+        if(notice.Kind=="updates")content.Children.Add(UI.Button(Localization.Text("Open Settings"),app.ShowSettings));
         if(notice.Kind=="external" && !string.IsNullOrEmpty(notice.AppId))content.Children.Add(UI.CaptionButton("Open app",()=>{Collapse();app.Notifications.Dismiss();ExternalAppLauncher.Open(notice.AppId);}));
         var actions=new WrapPanel{Margin=new(0,10,0,0)};
-        var dismiss=UI.Button("Dismiss",()=>{Collapse();app.Notifications.Dismiss();});
-        noticeNext=UI.Button("Next",()=>{Collapse();app.Notifications.Dismiss();OpenNotice(true);});noticeNext.IsEnabled=app.Notifications.Count>1;
-        var clear=UI.Button("Clear all",()=>{Collapse();app.Notifications.Clear();});
+        var dismiss=UI.Button(Localization.Text("Dismiss"),()=>{Collapse();app.Notifications.Dismiss();});
+        noticeNext=UI.Button(Localization.Text("Next"),()=>{Collapse();app.Notifications.Dismiss();OpenNotice(true);});noticeNext.IsEnabled=app.Notifications.Count>1;
+        var clear=UI.Button(Localization.Text("Clear all"),()=>{Collapse();app.Notifications.Clear();});
         var all=UI.CaptionButton("View all",()=>{Collapse();app.Notifications.Clear();OpenNotificationCenter();});
         foreach(var action in new[]{dismiss,noticeNext,clear,all}){action.FontSize=11;action.MinHeight=30;action.Padding=new(9,4,9,4);action.Margin=new(0,0,6,0);actions.Children.Add(action);}content.Children.Add(actions);
         var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);

@@ -11,3 +11,5 @@ test-profile/
 /release-output/
 __pycache__/
 .vercel/
+
+/work/

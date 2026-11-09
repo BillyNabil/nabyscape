@@ -30,34 +30,34 @@ internal sealed partial class AssistantManagedSpeech : IDisposable
     {
         AssistantSpeechPlatform.RequireNativePacks();
         this.assets=assets;this.options=options;job=CreateJobObject(IntPtr.Zero,null);
-        if(job.IsInvalid)throw new IOException("Could not create a managed speech session.");
+        if(job.IsInvalid)throw new IOException(Localization.Text("Could not create a managed speech session."));
         var limits=new JobLimits();limits.Basic.LimitFlags=0x2000;
-        if(!SetInformationJobObject(job,9,ref limits,(uint)Marshal.SizeOf<JobLimits>())){job.Dispose();throw new IOException("Could not configure speech-process cleanup.");}
+        if(!SetInformationJobObject(job,9,ref limits,(uint)Marshal.SizeOf<JobLimits>())){job.Dispose();throw new IOException(Localization.Text("Could not configure speech-process cleanup."));}
     }
     internal async Task Start(Action<string> status,CancellationToken token)
     {
         var model=AssistantOwnSpeech.Asr(options);var tts=AssistantOwnSpeech.Tts(options);
-        if(!assets.Installed(model,tts))throw new IOException("Prepare your voice setup first: Voice mode → Choose ASR & TTS. Check model paths if you use your own files.");
-        status("Checking available memory for local speech…");var hardware=await assets.Scan(token);
-        if(!hardware.FitsPack(model,tts))throw new IOException("There is not enough available memory for this speech pack. Close other apps or install a smaller model/voice.");
+        if(!assets.Installed(model,tts))throw new IOException(Localization.Text("Prepare your voice setup first: Voice mode → Choose ASR & TTS. Check model paths if you use your own files."));
+        status(Localization.Text("Checking available memory for local speech…"));var hardware=await assets.Scan(token);
+        if(!hardware.FitsPack(model,tts))throw new IOException(Localization.Text("There is not enough available memory for this speech pack. Close other apps or install a smaller model/voice."));
         await StartListeningModel(status,model,hardware,token);
         await StartSpeakingModel(status,tts,token);
     }
     // Independent checks never load the other half of a speech pack.
     internal async Task StartCheck(bool listening,Action<string> status,CancellationToken token)
     {
-        if(!AssistantSpeechInstall.CppRuntimePresent())throw new IOException("Prepare speech engines in Voice setup first.");
+        if(!AssistantSpeechInstall.CppRuntimePresent())throw new IOException(Localization.Text("Prepare speech engines in Voice setup first."));
         var hardware=await assets.Scan(token);
         if(listening)
         {
             var model=AssistantOwnSpeech.Asr(options);
-            if(!assets.HasAsrWeights(model) || !hardware.Fits(model))throw new IOException("Install or locate the listening model and check available memory.");
+            if(!assets.HasAsrWeights(model) || !hardware.Fits(model))throw new IOException(Localization.Text("Install or locate the listening model and check available memory."));
             await StartListeningModel(status,model,hardware,token);
         }
         else
         {
             var model=AssistantOwnSpeech.Tts(options);
-            if(!assets.HasTtsWeights(model) || hardware.FreeGb<model.FreeGb)throw new IOException("Install or locate the speaking model and check available memory.");
+            if(!assets.HasTtsWeights(model) || hardware.FreeGb<model.FreeGb)throw new IOException(Localization.Text("Install or locate the speaking model and check available memory."));
             await StartSpeakingModel(status,model,token);
         }
     }
@@ -65,22 +65,22 @@ internal sealed partial class AssistantManagedSpeech : IDisposable
     {
         if(tts.Package!=null)
         {
-            status("Loading "+tts.Name+" · stays ready during this voice session…");ttsWorker=new();
+            status(Localization.Text("Loading ")+tts.Name+Localization.Text(" · stays ready during this voice session…"));ttsWorker=new();
             string library=Path.Combine(assets.SherpaRoot,SpeechCatalog.SherpaFolder,"lib","sherpa-onnx-c-api.dll");
             await ttsWorker.Start(new(library,assets.VoiceDirectory(tts),tts.Engine,options.SpeechLanguage,tts.Speaker,options.SpeechPreference=="Quality"?12:options.SpeechPreference=="Light"?4:8),Launch,token);
         }
     }
     private async Task StartListeningModel(Action<string> status,SpeechAsrModel model,SpeechHardware hardware,CancellationToken token)
     {
-        if(model.Native){status(model.Name+" selected · the native model loads when you speak.");return;}
+        if(model.Native){status(model.Name+Localization.Text(" selected · the native model loads when you speak."));return;}
         bool gpu=options.ManagedGpu && hardware.UseGpu(model) && File.Exists(assets.WhisperExe(true));
         if(gpu)
         {
-            try{status("Loading the local listening model on NVIDIA GPU…");await StartServer(true,model,token);return;}
+            try{status(Localization.Text("Loading the local listening model on NVIDIA GPU…"));await StartServer(true,model,token);return;}
             catch(OperationCanceledException){throw;}
-            catch(Exception){StopServer();status("GPU runtime unavailable. Loading the CPU fallback…");}
+            catch(Exception){StopServer();status(Localization.Text("GPU runtime unavailable. Loading the CPU fallback…"));}
         }
-        else status("Loading the local listening model on CPU…");
+        else status(Localization.Text("Loading the local listening model on CPU…"));
         await StartServer(false,model,token);
     }
     private async Task StartServer(bool gpu,SpeechAsrModel model,CancellationToken token)
@@ -95,18 +95,18 @@ internal sealed partial class AssistantManagedSpeech : IDisposable
         {
             while(true)
             {
-                linked.Token.ThrowIfCancellationRequested();if(server.HasExited)throw new IOException("Local speech engine stopped ("+server.ExitCode+"). "+(lastError.Length>0?lastError:"Reinstall the speech pack; the Microsoft Visual C++ x64 runtime may be required."));
+                linked.Token.ThrowIfCancellationRequested();if(server.HasExited)throw new IOException(Localization.Text("Local speech engine stopped (")+server.ExitCode+"). "+(lastError.Length>0?lastError:Localization.Text("Reinstall the speech pack; the Microsoft Visual C++ x64 runtime may be required.")));
                 try{using var health=await http.GetAsync(new Uri(url,"health"),linked.Token);if(health.IsSuccessStatusCode){AsrUrl=url;return;}}
                 catch(HttpRequestException){}catch(OperationCanceledException){linked.Token.ThrowIfCancellationRequested();}
                 await Task.Delay(250,linked.Token);
             }
         }
-        catch(OperationCanceledException) when(!token.IsCancellationRequested && !lifetime.IsCancellationRequested){throw new IOException("The local listening model took too long to load. Choose a smaller model or check the speech pack.");}
+        catch(OperationCanceledException) when(!token.IsCancellationRequested && !lifetime.IsCancellationRequested){throw new IOException(Localization.Text("The local listening model took too long to load. Choose a smaller model or check the speech pack."));}
     }
     internal async Task<byte[]> Speak(string text,CancellationToken token)
     {
-        var model=AssistantOwnSpeech.Tts(options);if(model.Id=="windows")throw new InvalidOperationException("Windows speech is handled by the built-in voice engine.");
-        if(model.Package!=null)return await (ttsWorker??throw new IOException("The voice worker is not ready. End voice and start it again.")).Speak(text,token);
+        var model=AssistantOwnSpeech.Tts(options);if(model.Id=="windows")throw new InvalidOperationException(Localization.Text("Windows speech is handled by the built-in voice engine."));
+        if(model.Package!=null)return await (ttsWorker??throw new IOException(Localization.Text("The voice worker is not ready. End voice and start it again."))).Speak(text,token);
         using var linked=CancellationTokenSource.CreateLinkedTokenSource(token,lifetime.Token);linked.CancelAfter(TimeSpan.FromMinutes(2));
         var info=NativeInfo(assets.PiperExe);info.RedirectStandardInput=true;info.StandardInputEncoding=new UTF8Encoding(false);info.ArgumentList.Add("--model");info.ArgumentList.Add(assets.TtsPath(model));info.ArgumentList.Add("--output-raw");if(model.SourcePath.Length>0 && model.Speaker>0){info.ArgumentList.Add("--speaker");info.ArgumentList.Add(model.Speaker.ToString());}
         using var process=Launch(info);using var cancellation=linked.Token.Register(()=>{try{process.Kill(true);}catch{}});
@@ -123,23 +123,23 @@ internal sealed partial class AssistantManagedSpeech : IDisposable
             try{if(!process.HasExited)process.Kill(true);}catch{}
             try{await Task.WhenAll(output,errors);}catch{} // Observe both readers even when writing/cancellation fails.
         }
-        if(process.ExitCode!=0 || pcm.Length==0)throw new IOException("The installed Piper voice could not synthesize speech. Reinstall the selected voice or choose Windows voice.");
+        if(process.ExitCode!=0 || pcm.Length==0)throw new IOException(Localization.Text("The installed Piper voice could not synthesize speech. Reinstall the selected voice or choose Windows voice."));
         using var config=JsonDocument.Parse(await File.ReadAllTextAsync(assets.TtsPath(model)+".json",linked.Token));int sampleRate=config.RootElement.GetProperty("audio").GetProperty("sample_rate").GetInt32();
-        if(sampleRate<8000 || sampleRate>48000)throw new IOException("The installed voice has an unsupported audio format.");
+        if(sampleRate<8000 || sampleRate>48000)throw new IOException(Localization.Text("The installed voice has an unsupported audio format."));
         using var wav=new MemoryStream();using(var writer=new WaveFileWriter(new KeepOpenStream(wav),new WaveFormat(sampleRate,16,1)))writer.Write(pcm,0,pcm.Length);return wav.ToArray();
     }
     private static async Task<byte[]> ReadAudio(Stream stream,CancellationToken token)
     {
         using var output=new MemoryStream();byte[] buffer=new byte[16384];int count;
-        while((count=await stream.ReadAsync(buffer,token))>0){if(output.Length+count>48000*2*120)throw new IOException("The spoken reply exceeds two minutes.");output.Write(buffer,0,count);}return output.ToArray();
+        while((count=await stream.ReadAsync(buffer,token))>0){if(output.Length+count>48000*2*120)throw new IOException(Localization.Text("The spoken reply exceeds two minutes."));output.Write(buffer,0,count);}return output.ToArray();
     }
     private static async Task DrainErrors(StreamReader reader,CancellationToken token)
     {char[] buffer=new char[1024];while(await reader.ReadAsync(buffer,token)>0){}}
     private static ProcessStartInfo NativeInfo(string executable)=>new(executable){WorkingDirectory=Path.GetDirectoryName(executable)!,UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=new UTF8Encoding(false),StandardErrorEncoding=new UTF8Encoding(false)};
     private Process Launch(ProcessStartInfo info)
     {
-        lifetime.Token.ThrowIfCancellationRequested();var process=Process.Start(info)??throw new IOException("Could not start the installed speech engine.");
-        if(!AssignProcessToJobObject(job,process.Handle)){try{process.Kill(true);}catch{}process.Dispose();throw new IOException("Could not attach speech engine cleanup.");}return process;
+        lifetime.Token.ThrowIfCancellationRequested();var process=Process.Start(info)??throw new IOException(Localization.Text("Could not start the installed speech engine."));
+        if(!AssignProcessToJobObject(job,process.Handle)){try{process.Kill(true);}catch{}process.Dispose();throw new IOException(Localization.Text("Could not attach speech engine cleanup."));}return process;
     }
     private void StopServer(){var child=server;server=null;AsrUrl=null;if(child==null)return;try{if(!child.HasExited)child.Kill(true);}catch{}child.Dispose();lastError="";}
     public void Dispose(){if(disposed)return;disposed=true;lifetime.Cancel();ttsWorker?.Dispose();ttsWorker=null;job.Dispose();StopServer();lifetime.Dispose();}

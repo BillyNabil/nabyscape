@@ -51,8 +51,8 @@ public sealed class MediaService : IDisposable
         try {return Windows.ApplicationModel.AppInfo.GetFromAppUserModelId(session.SourceAppUserModelId).DisplayInfo.DisplayName;}
         catch {var id=session.SourceAppUserModelId;if(id.Contains("Chrome",StringComparison.OrdinalIgnoreCase))return "Google Chrome";return Path.GetFileNameWithoutExtension(id);}
     }
-    public string Title { get; private set; }="Nothing playing";
-    public string Artist { get; private set; }="Play something in your favorite app";
+    public string Title { get; private set; }=Localization.Text("Nothing playing");
+    public string Artist { get; private set; }=Localization.Text("Play something in your favorite app");
     public ImageSource? Artwork { get; private set; }
     public bool Playing { get; private set; }
     internal bool DiagnosticFixture {get;set;}
@@ -85,7 +85,7 @@ public sealed class MediaService : IDisposable
             manager.SessionsChanged+=SessionsChanged; manager.CurrentSessionChanged+=CurrentChanged;
             Reload();
         }
-        catch(Exception ex) { if(!disposed && enabled && version==managerGeneration){log(ex);Artist="Media controls unavailable";Changed?.Invoke();} }
+        catch(Exception ex) { if(!disposed && enabled && version==managerGeneration){log(ex);Artist=Localization.Text("Media controls unavailable");Changed?.Invoke();} }
         finally{managerInitializing=false;if(!disposed && enabled && version!=managerGeneration && manager==null)_=Initialize();}
     }
     private void SessionsChanged(GlobalSystemMediaTransportControlsSessionManager sender,SessionsChangedEventArgs args)=>dispatcher.BeginInvoke(Reload);
@@ -133,7 +133,7 @@ public sealed class MediaService : IDisposable
         var version=++generation; var session=selected;
         try
         {
-            if(session==null) { artworkKey="";timelineStamp=0;timelineSample=(0,0);Title="Nothing playing";Artist=SourceDisabled?"Media source is set to None":"Play something in your favorite app";Playing=false;Artwork=null;CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke();return; }
+            if(session==null) { artworkKey="";timelineStamp=0;timelineSample=(0,0);Title=Localization.Text("Nothing playing");Artist=SourceDisabled?Localization.Text("Media source is set to None"):Localization.Text("Play something in your favorite app");Playing=false;Artwork=null;CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke();return; }
             var p=await session.TryGetMediaPropertiesAsync();
             if(disposed || version!=generation)return;
             if(p==null){Playing=false;CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke();return;}
@@ -154,12 +154,12 @@ public sealed class MediaService : IDisposable
                 catch(Exception ex) when(ex is System.Runtime.InteropServices.COMException or IOException or NotSupportedException or ArgumentException) { /* Artwork is optional; playback metadata and commands remain usable. */ }
             }
             if(disposed || version!=generation) return;
-            Title=string.IsNullOrWhiteSpace(p.Title) ? "Untitled media" : p.Title;
+            Title=string.IsNullOrWhiteSpace(p.Title) ? Localization.Text("Untitled media") : p.Title;
             Artist=string.IsNullOrWhiteSpace(p.Artist) ? session.SourceAppUserModelId : p.Artist;
             ReadPlayback(session);
             artworkKey=key;Artwork=artwork;Changed?.Invoke();
         }
-        catch(Exception ex) { if(disposed || version!=generation)return;log(ex);Artist="Media session unavailable";CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke(); }
+        catch(Exception ex) { if(disposed || version!=generation)return;log(ex);Artist=Localization.Text("Media session unavailable");CanToggle=CanNext=CanPrevious=CanSeek=false;Changed?.Invoke(); }
     }
     public async Task Command(string command)
     {
@@ -167,10 +167,10 @@ public sealed class MediaService : IDisposable
         {
             if(selected==null) return;
             bool ok=command switch { "next" when CanNext=>await selected.TrySkipNextAsync(), "previous" when CanPrevious=>await selected.TrySkipPreviousAsync(), "toggle" when CanToggle=>await selected.TryTogglePlayPauseAsync(), _=>false };
-            if(!ok) Artist="This media app does not support this control";
+            if(!ok) Artist=Localization.Text("This media app does not support this control");
             Changed?.Invoke();
         }
-        catch(Exception ex) { log(ex); Artist="Media control failed; try selecting the session again";Changed?.Invoke(); }
+        catch(Exception ex) { log(ex); Artist=Localization.Text("Media control failed; try selecting the session again");Changed?.Invoke(); }
     }
     public (double elapsed,double duration) Timeline()
     {
@@ -202,7 +202,7 @@ public sealed class MediaService : IDisposable
             if(selected==null || !CanSeek)return;
             var timeline=selected.GetTimelineProperties();if(timeline==null)return;var span=timeline.EndTime-timeline.StartTime;if(span<=TimeSpan.Zero)return;
             long ticks=timeline.StartTime.Ticks+(long)(span.Ticks*Math.Clamp(fraction,0,1));
-            timelineStamp=0;bool changed=await selected.TryChangePlaybackPositionAsync(ticks);timelineStamp=0;if(!changed){Artist="This app does not support seeking";Changed?.Invoke();}
+            timelineStamp=0;bool changed=await selected.TryChangePlaybackPositionAsync(ticks);timelineStamp=0;if(!changed){Artist=Localization.Text("This app does not support seeking");Changed?.Invoke();}
         }
         catch(Exception ex){log(ex);}
     }
@@ -230,16 +230,16 @@ public sealed partial class AudioService : IDisposable
     internal void AudioError(Exception error,AudioOperation operation=AudioOperation.ReadOutput)
     {
         LastError=error is ObjectDisposedException
-            ? "The audio service has closed. Reopen BillyNabila Island to use audio controls."
+            ? Localization.Text("The audio service has closed. Reopen BillyNabila Island to use audio controls.")
             : operation switch
             {
-                AudioOperation.ListOutputs=>"Could not read audio outputs. Reconnect your device, then open Windows Sound Settings.",
-                AudioOperation.SetOutput=>"Could not switch audio output. Choose an active device or change the output in Windows Sound Settings.",
-                AudioOperation.SetVolume=>"Could not change volume. Reconnect your output device or adjust volume in Windows Sound Settings.",
-                AudioOperation.ToggleMute=>"Could not mute the output. Choose an active device and try again in Windows Sound Settings.",
-                AudioOperation.ReadMicrophone=>"Could not read the microphone. Reconnect it and choose an input in Windows Sound Settings.",
-                AudioOperation.ToggleMicrophoneMute=>"Could not mute the microphone. Reconnect it or choose an input in Windows Sound Settings.",
-                _=>"Could not read the audio device. Reconnect it and choose an output in Windows Sound Settings."
+                AudioOperation.ListOutputs=>Localization.Text("Could not read audio outputs. Reconnect your device, then open Windows Sound Settings."),
+                AudioOperation.SetOutput=>Localization.Text("Could not switch audio output. Choose an active device or change the output in Windows Sound Settings."),
+                AudioOperation.SetVolume=>Localization.Text("Could not change volume. Reconnect your output device or adjust volume in Windows Sound Settings."),
+                AudioOperation.ToggleMute=>Localization.Text("Could not mute the output. Choose an active device and try again in Windows Sound Settings."),
+                AudioOperation.ReadMicrophone=>Localization.Text("Could not read the microphone. Reconnect it and choose an input in Windows Sound Settings."),
+                AudioOperation.ToggleMicrophoneMute=>Localization.Text("Could not mute the microphone. Reconnect it or choose an input in Windows Sound Settings."),
+                _=>Localization.Text("Could not read the audio device. Reconnect it and choose an output in Windows Sound Settings.")
             };
         if(lastLoggedError==error.Message)return;
         lastLoggedError=error.Message;
@@ -248,7 +248,7 @@ public sealed partial class AudioService : IDisposable
     private bool CheckAudioActive(AudioOperation operation=AudioOperation.ReadOutput)
     {
         if(!disposed)return true;
-        AudioError(new ObjectDisposedException(nameof(AudioService),"The audio service has closed."),operation);return false;
+        AudioError(new ObjectDisposedException(nameof(AudioService),Localization.Text("The audio service has closed.")),operation);return false;
     }
     public event Action? Changed;
     private void ReleaseMeter()
@@ -278,7 +278,7 @@ public sealed partial class AudioService : IDisposable
     public bool Available { get; private set; }
     public float Volume { get; private set; }
     public bool Muted { get; private set; }
-    public string Device { get; private set; }="No audio device";
+    public string Device { get; private set; }=Localization.Text("No audio device");
     // Acquire the current default endpoint every time: unplugging or changing devices cannot leave a stale COM endpoint.
     public void Read()
     {
@@ -296,7 +296,7 @@ public sealed partial class AudioService : IDisposable
             Volume=meterDevice!.AudioEndpointVolume.MasterVolumeLevelScalar;Muted=meterDevice.AudioEndpointVolume.Mute;
             Device=meterDevice.FriendlyName;DefaultOutputId=meterDevice.ID;Available=true;
         }
-        catch(Exception ex){AudioError(ex);ReleaseMeter();Available=false;Volume=0;Muted=false;DefaultOutputId="";Device="No audio device";}
+        catch(Exception ex){AudioError(ex);ReleaseMeter();Available=false;Volume=0;Muted=false;DefaultOutputId="";Device=Localization.Text("No audio device");}
         finally{try{current?.Dispose();}catch(Exception ex){AudioError(ex);}}
         ReadMicrophone();nextAudioAudit=Environment.TickCount64+(notifications!=null && Available?60000:2000);
     }
@@ -346,7 +346,7 @@ public static class ShortcutService
 {
     internal static ProcessStartInfo InstalledAppStartInfo(string appId)
     {
-        if(!WindowsAppCatalog.ValidAppId(appId))throw new ArgumentException("This installed app shortcut is invalid. Remove it and add the app again in Settings.");
+        if(!WindowsAppCatalog.ValidAppId(appId))throw new ArgumentException(Localization.Text("This installed app shortcut is invalid. Remove it and add the app again in Settings."));
         var info=new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),"explorer.exe")){UseShellExecute=false};
         info.ArgumentList.Add("shell:AppsFolder\\"+appId);return info;
     }
@@ -357,7 +357,7 @@ public static class ShortcutService
         {
             shell=Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application")!);folder=((dynamic)shell!).NameSpace("shell:AppsFolder");
             item=folder==null?null:((dynamic)folder).ParseName(appId);
-            if(item==null)throw new FileNotFoundException("This app is no longer installed. Remove the shortcut and choose an installed app in Settings.");
+            if(item==null)throw new FileNotFoundException(Localization.Text("This app is no longer installed. Remove the shortcut and choose an installed app in Settings."));
         }
         finally{ShellWorker.Release(item);ShellWorker.Release(folder);ShellWorker.Release(shell);}
         Process.Start(info);
@@ -367,14 +367,14 @@ public static class ShortcutService
     {
         if(shortcut.AppId!=null){OpenInstalledApp(shortcut.AppId);return;}
         var target=Environment.ExpandEnvironmentVariables(shortcut.Target.Trim());
-        if(string.IsNullOrWhiteSpace(target)) throw new ArgumentException("The shortcut destination is empty.");
+        if(string.IsNullOrWhiteSpace(target)) throw new ArgumentException(Localization.Text("The shortcut destination is empty."));
         if(Uri.TryCreate(target,UriKind.Absolute,out var uri) && !uri.IsFile)
         {
             if(uri.Scheme is not ("http" or "https" or "ms-settings" or "spotify" or "mailto"))
-                throw new ArgumentException("Use a file, folder, application, or http/https URL.");
+                throw new ArgumentException(Localization.Text("Use a file, folder, application, or http/https URL."));
         }
         else if((Path.IsPathRooted(target) || target.Contains('\\')) && !File.Exists(target) && !Directory.Exists(target))
-            throw new FileNotFoundException("The shortcut file or folder could not be found.");
+            throw new FileNotFoundException(Localization.Text("The shortcut file or folder could not be found."));
         Process.Start(new ProcessStartInfo(target){UseShellExecute=true});
     }
 }

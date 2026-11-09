@@ -119,8 +119,8 @@ internal static class UpdateRecovery
     }
     internal static string Description()
     {
-        try{string? id=PreviousId();if(id==null)return "No previous version has been saved by the updater yet.";var s=Read(id,false);return "Previous version: "+s.Version+" · saved "+s.Created.ToLocalTime().ToString("g");}
-        catch(Exception){return "The saved recovery copy is unavailable or could not be verified.";}
+        try{string? id=PreviousId();if(id==null)return Localization.Text("No previous version has been saved by the updater yet.");var s=Read(id,false);return Localization.Text("Previous version: ")+s.Version+" · saved "+s.Created.ToLocalTime().ToString("g",Localization.Culture);}
+        catch(Exception){return Localization.Text("The saved recovery copy is unavailable or could not be verified.");}
     }
     internal static void Restore(string id,string installed)
     {

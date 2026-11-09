@@ -57,7 +57,7 @@ internal sealed partial class AssistantRuntime
             if(args.ValueKind!=JsonValueKind.Object)throw new JsonException();
             if(call.Name=="naby_list_widget_pages" && !args.EnumerateObject().Any())return JsonSerializer.Serialize(new{ok=true,current=app.AssistantCurrentPage,pages=app.AssistantWidgetPages()});
             if(call.Name!="naby_navigate_widget" || args.EnumerateObject().Count()!=1 || !args.TryGetProperty("page",out var page) || page.ValueKind!=JsonValueKind.String || page.GetString() is not {Length:>0 and <=64} target)throw new JsonException();
-            token.ThrowIfCancellationRequested();string result=app.NavigateAssistantWidget(target);Status="Widget navigation · "+target;Notify();return result;
+            token.ThrowIfCancellationRequested();string result=app.NavigateAssistantWidget(target);Status=Localization.Text("Widget navigation · ")+target;Notify();return result;
         }
         catch(JsonException){return JsonSerializer.Serialize(new{ok=false,error="Use an offered widget tool with the documented arguments."});}
     }
@@ -65,6 +65,6 @@ internal sealed partial class AssistantRuntime
     {
         try{if(!ReferenceEquals(voice,session))return;var token=session.CallToken(call.Id);string result=await ExecuteWidgetTool(call,token);if(!ReferenceEquals(voice,session))return;await session.SendToolResult(call,result,token);}
         catch(OperationCanceledException){}
-        catch(Exception){if(ReferenceEquals(voice,session)){Status="Widget navigation could not return its result. Check the visible page before retrying.";Notify();}}
+        catch(Exception){if(ReferenceEquals(voice,session)){Status=Localization.Text("Widget navigation could not return its result. Check the visible page before retrying.");Notify();}}
     }
 }

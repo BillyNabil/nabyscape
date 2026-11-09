@@ -30,7 +30,7 @@ internal sealed class WeatherSky : FrameworkElement
 internal sealed class WeatherTrend : FrameworkElement
 {
     internal IReadOnlyList<WeatherHour> Hours {get;set;}=Array.Empty<WeatherHour>();
-    internal WeatherTrend(){Height=26;IsHitTestVisible=false;ToolTip="Temperature trend for the next hours";}
+    internal WeatherTrend(){Height=26;IsHitTestVisible=false;ToolTip=Localization.Text("Temperature trend for the next hours");}
     protected override void OnRender(DrawingContext dc)
     {
         if(Hours.Count<2 || ActualWidth<8)return;double min=double.MaxValue,max=double.MinValue;foreach(var hour in Hours){min=Math.Min(min,hour.Temperature);max=Math.Max(max,hour.Temperature);}double range=Math.Max(6,max-min);

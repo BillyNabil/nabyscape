@@ -15,13 +15,13 @@ internal static class CustomizationProfile
     }
     internal static void Import(string source,Settings target)
     {
-        if(source.Length>262144)throw new InvalidDataException("Layout file is too large.");
+        if(source.Length>262144)throw new InvalidDataException(Localization.Text("Layout file is too large."));
         using var document=JsonDocument.Parse(source);
         var root=document.RootElement;
-        if(root.ValueKind!=JsonValueKind.Object || !root.TryGetProperty("format",out var format) || format.GetString()!="luma.layout.v1" || !root.TryGetProperty("values",out var values) || values.ValueKind!=JsonValueKind.Object)throw new InvalidDataException("Choose a NabyScape layout file.");
+        if(root.ValueKind!=JsonValueKind.Object || !root.TryGetProperty("format",out var format) || format.GetString()!="luma.layout.v1" || !root.TryGetProperty("values",out var values) || values.ValueKind!=JsonValueKind.Object)throw new InvalidDataException(Localization.Text("Choose a NabyScape layout file."));
         var allKeys=CustomizationKeys.Concat(new[]{"DropReveal","DetachablePreviews","CoverGestures","ControlFill","ControlBorder","SelectionFill","PanelSwipe","Tools"}).ToArray();
-        var keys=allKeys.Where(key=>values.TryGetProperty(key,out _)).ToArray();if(keys.Length==0)throw new InvalidDataException("The layout has no customization values.");
-        var incoming=JsonSerializer.Deserialize<Settings>(values.GetRawText())??throw new InvalidDataException("Layout is empty.");
+        var keys=allKeys.Where(key=>values.TryGetProperty(key,out _)).ToArray();if(keys.Length==0)throw new InvalidDataException(Localization.Text("The layout has no customization values."));
+        var incoming=JsonSerializer.Deserialize<Settings>(values.GetRawText())??throw new InvalidDataException(Localization.Text("Layout is empty."));
         var candidate=JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(target))!;
         foreach(string key in keys){var property=typeof(Settings).GetProperty(key)!;property.SetValue(candidate,property.GetValue(incoming));}
         if(values.TryGetProperty("Monitor",out _) && !values.TryGetProperty("DisplayMode",out _))candidate.DisplayMode=string.IsNullOrEmpty(incoming.Monitor)?"Primary":"Selected";

@@ -44,7 +44,7 @@ internal sealed partial class AssistantView
                 {
                     using var copy=new MemoryStream();byte[] buffer=new byte[16384];int count;
                     if(stream.CanSeek)stream.Position=0;
-                    while((count=stream.Read(buffer,0,buffer.Length))>0){if(copy.Length+count>AssistantAttachments.MaximumFileBytes)throw new IOException("The clipboard image exceeds 16 MB.");copy.Write(buffer,0,count);}
+                    while((count=stream.Read(buffer,0,buffer.Length))>0){if(copy.Length+count>AssistantAttachments.MaximumFileBytes)throw new IOException(Localization.Text("The clipboard image exceeds 16 MB."));copy.Write(buffer,0,count);}
                     await ai.AttachEncodedImage(copy.ToArray());return;
                 }
             }
@@ -53,7 +53,7 @@ internal sealed partial class AssistantView
             string? text=data.GetData(DataFormats.UnicodeText) as string??data.GetData(DataFormats.Text) as string;
             if(text!=null){int start=input.SelectionStart;input.SelectedText=text;input.CaretIndex=start+text.Length;}
         }
-        catch(Exception ex){status.Text=ex is ExternalException?"The clipboard is busy. Try pasting again.":"Could not paste: "+ex.Message;status.Visibility=Visibility.Visible;}
+        catch(Exception ex){status.Text=ex is ExternalException?Localization.Text("The clipboard is busy. Try pasting again."):Localization.Text("Could not paste: ")+ex.Message;status.Visibility=Visibility.Visible;}
         finally{pasting=false;}
     }
 }

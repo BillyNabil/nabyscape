@@ -31,10 +31,10 @@ internal static class MinimalWidgets
         {
             var menu=new ContextMenu{PlacementTarget=button};
             menu.Opened+=(_,_)=>openMenus.Add(menu);menu.Closed+=(_,_)=>openMenus.Remove(menu);
-            foreach(var action in actions){var item=new MenuItem{Header=action.Label};UI.Named(item,action.Label);item.Click+=(_,_)=>action.Run();menu.Items.Add(item);}
+            foreach(var action in actions){var item=new MenuItem{Header=Localization.Text(action.Label)};UI.Named(item,Localization.Text(action.Label));item.Click+=(_,_)=>action.Run();menu.Items.Add(item);}
             button!.ContextMenu=menu;menu.IsOpen=true;
         });
-        button.Content=UI.Text("⋯",21);button.MinHeight=30;button.Width=30;button.Padding=new(0);button.Margin=new(8,0,0,0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.ToolTip=name;
+        button.Content=UI.Text("⋯",21);button.MinHeight=30;button.Width=30;button.Padding=new(0);button.Margin=new(8,0,0,0);button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.ToolTip=Localization.Text(name);
         button.Unloaded+=(_,_)=>{if(button.ContextMenu is {} menu){menu.IsOpen=false;openMenus.Remove(menu);}};
         return button;
     }

@@ -34,13 +34,13 @@ internal sealed record SpeechHardware(string Cpu,int Threads,double RamGb,double
     internal static double PackFreeGb(SpeechAsrModel asr,SpeechTtsModel tts)=>asr.Native?Math.Max(asr.FreeGb,tts.FreeGb):asr.FreeGb+tts.FreeGb;
     internal SpeechAsrModel Recommended=>SpeechCatalog.RecommendPack(this,"en","Balanced").Asr;
     internal SpeechAsrModel Recommend(string preference)=>SpeechCatalog.RecommendPack(this,"en",preference).Asr;
-    internal string Tier=>Cuda && VramGb>=1.5?"NVIDIA "+(VramGb>=7.5?"8+":VramGb>=5.5?"6":VramGb>=3.5?"4":"2")+" GB VRAM":"CPU · "+(RamGb>=31.5?"32+":RamGb>=15.5?"16":RamGb>=7.5?"8":"under 8")+" GB RAM";
-    internal string Summary=>$"{Cpu} · {Threads} threads\nRAM {RamGb:0.#} GB · {FreeGb:0.#} GB available\n{Gpu}"+(VramGb>0?$" · VRAM {VramGb:0.#} GB ({FreeVramGb:0.#} GB free)":" · dedicated VRAM not confirmed");
+    internal string Tier=>Cuda && VramGb>=1.5?"NVIDIA "+(VramGb>=7.5?"8+":VramGb>=5.5?"6":VramGb>=3.5?"4":"2")+Localization.Text(" GB VRAM"):Localization.Text("CPU · ")+(RamGb>=31.5?"32+":RamGb>=15.5?"16":RamGb>=7.5?"8":Localization.Text("under 8"))+Localization.Text(" GB RAM");
+    internal string Summary=>Localization.Format("{0} · {1} threads\nRAM {2} GB · {3} GB available\n{4}",Cpu,Threads,RamGb.ToString("0.#"),FreeGb.ToString("0.#"),Gpu)+(VramGb>0?Localization.Format(" · VRAM {0} GB ({1} GB free)",VramGb.ToString("0.#"),FreeVramGb.ToString("0.#")):Localization.Text(" · dedicated VRAM not confirmed"));
     internal static async Task<SpeechHardware> Scan(CancellationToken token)
     {
         return await Task.Run(async()=>
         {
-            var memory=SystemMonitor.Capture(false,false,false,false,false);string cpu="CPU",gpu="GPU unavailable";
+            var memory=SystemMonitor.Capture(false,false,false,false,false);string cpu="CPU",gpu=Localization.Text("GPU unavailable");
             try
             {
                 using var query=new ManagementObjectSearcher(new ManagementScope("root\\cimv2"),new ObjectQuery("SELECT Name FROM Win32_Processor"),new System.Management.EnumerationOptions{Timeout=TimeSpan.FromSeconds(2)});
@@ -91,20 +91,20 @@ internal static partial class SpeechCatalog
     internal static readonly SpeechAsset Kokoro=new("https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_1.tar.bz2",147031220,"a1e94694776049035c4f2c6529f003aaece993c76aae9a78995831c3c4dcafc6");
     private static SpeechAsset Whisper(string id,long bytes,string hash)=>new($"https://huggingface.co/ggerganov/whisper.cpp/resolve/{WhisperRevision}/ggml-{id}.bin",bytes,hash);
     private static readonly SpeechAsrModel[] LegacyAsr={
-        new("tiny","Whisper tiny · light",4,.8,1,Whisper("tiny",77691713,"be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21")),
-        new("base","Whisper base · everyday",6,1.3,1.5,Whisper("base",147951465,"60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe")),
-        new("small","Whisper small · clearer recognition",8,2.5,3,Whisper("small",487601967,"1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b")),
-        new("large-v3-turbo","Whisper large-v3-turbo · GPU quality",16,4,6,Whisper("large-v3-turbo",1624555275,"1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69")),
-        new("qwen3-asr-0.6b-int8","Qwen3-ASR 0.6B INT8 · 2026 CPU",8,3.5,double.PositiveInfinity,new("https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",878702423,"393f8a14e2f5fb96746aaab342997a40641001fbd5bf9592a080a8329178ee96"),"qwen","sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25")};
+        new("tiny",Localization.Text("Whisper tiny · light"),4,.8,1,Whisper("tiny",77691713,"be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21")),
+        new("base",Localization.Text("Whisper base · everyday"),6,1.3,1.5,Whisper("base",147951465,"60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe")),
+        new("small",Localization.Text("Whisper small · clearer recognition"),8,2.5,3,Whisper("small",487601967,"1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b")),
+        new("large-v3-turbo",Localization.Text("Whisper large-v3-turbo · GPU quality"),16,4,6,Whisper("large-v3-turbo",1624555275,"1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69")),
+        new("qwen3-asr-0.6b-int8",Localization.Text("Qwen3-ASR 0.6B INT8 · 2026 CPU"),8,3.5,double.PositiveInfinity,new("https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25.tar.bz2",878702423,"393f8a14e2f5fb96746aaab342997a40641001fbd5bf9592a080a8329178ee96"),"qwen","sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25")};
     private static readonly SpeechTtsModel[] LegacyTts={
-        new("windows","Windows voice · already on this PC","",0,"","","",FreeGb:.1),
-        new("kokoro-v1.1-int8-en","Kokoro 82M v1.1 INT8 · English","",147031220,"","","",Kokoro,"en",0,1.2,"kokoro","", "English voice · native CPU · loads only while speaking"),
-        new("id_ID-news_tts-medium","Piper · Indonesian","id/id_ID/news_tts/medium",62950044,"ed8f02aa593f7af6b19acbdb8142e0da0dd72f46194eb33d38e0eb10a52597e8","1ef677072668a5e172e0759b1d3871f129009d1167f093325a17607f7add5ad7","cc134d8c8fce95d2486a0e5ae60b40c17451a876cf7d36df0f4110589fc40538"),
-        new("en_US-ljspeech-high","Piper · English (US)","en/en_US/ljspeech/high",114199011,"5d4f08ba6a2a48c44592eed3ce56bf85e9de3dd4e20df90541ae68a8310c029a","7e1f4634af596d83cca997fb7a931ba80b70f8a316a2655ee69c55365e0ace14","289f7421072d689a3d91f6c632f486af46f9b8b04417536104a4ea667b8a394b"),
-        new("es_ES-sharvard-medium","Piper · Spanish","es/es_ES/sharvard/medium",76733615,"40febfb1679c69a4505ff311dc136e121e3419a13a290ef264fdf43ddedd0fb1","7438c9b699c72b0c3388dae1b68d3f364dc66a2150fe554a1c11f03372957b2c","37655314d08fe8a0900abc628d3bcbee48ffbdd8fad9306b89525a0ada20fefc")};
+        new("windows",Localization.Text("Windows voice · already on this PC"),"",0,"","","",FreeGb:.1),
+        new("kokoro-v1.1-int8-en",Localization.Text("Kokoro 82M v1.1 INT8 · English"),"",147031220,"","","",Kokoro,"en",0,1.2,"kokoro","", Localization.Text("English voice · native CPU · loads only while speaking")),
+        new("id_ID-news_tts-medium",Localization.Text("Piper · Indonesian"),"id/id_ID/news_tts/medium",62950044,"ed8f02aa593f7af6b19acbdb8142e0da0dd72f46194eb33d38e0eb10a52597e8","1ef677072668a5e172e0759b1d3871f129009d1167f093325a17607f7add5ad7","cc134d8c8fce95d2486a0e5ae60b40c17451a876cf7d36df0f4110589fc40538"),
+        new("en_US-ljspeech-high",Localization.Text("Piper · English (US)"),"en/en_US/ljspeech/high",114199011,"5d4f08ba6a2a48c44592eed3ce56bf85e9de3dd4e20df90541ae68a8310c029a","7e1f4634af596d83cca997fb7a931ba80b70f8a316a2655ee69c55365e0ace14","289f7421072d689a3d91f6c632f486af46f9b8b04417536104a4ea667b8a394b"),
+        new("es_ES-sharvard-medium",Localization.Text("Piper · Spanish"),"es/es_ES/sharvard/medium",76733615,"40febfb1679c69a4505ff311dc136e121e3419a13a290ef264fdf43ddedd0fb1","7438c9b699c72b0c3388dae1b68d3f364dc66a2150fe554a1c11f03372957b2c","37655314d08fe8a0900abc628d3bcbee48ffbdd8fad9306b89525a0ada20fefc")};
     internal static readonly SpeechAsrModel[] Asr=LegacyAsr.Concat(AdditionalAsr()).ToArray();
     internal static readonly SpeechTtsModel[] Tts=LegacyTts.Concat(AdditionalTts()).ToArray();
-    internal static SpeechAsrModel AsrById(string id)=>Asr.FirstOrDefault(m=>m.Id==id)??throw new InvalidOperationException("Choose a supported listening model.");
-    internal static SpeechTtsModel TtsById(string id)=>Tts.FirstOrDefault(m=>m.Id==id)??throw new InvalidOperationException("Choose a supported speaking voice.");
+    internal static SpeechAsrModel AsrById(string id)=>Asr.FirstOrDefault(m=>m.Id==id)??throw new InvalidOperationException(Localization.Text("Choose a supported listening model."));
+    internal static SpeechTtsModel TtsById(string id)=>Tts.FirstOrDefault(m=>m.Id==id)??throw new InvalidOperationException(Localization.Text("Choose a supported speaking voice."));
     internal static string VoiceUrl(SpeechTtsModel model,string suffix)=>$"https://huggingface.co/rhasspy/piper-voices/resolve/{PiperRevision}/{model.Path}/"+(suffix=="MODEL_CARD"?suffix:model.Id+suffix);
 }

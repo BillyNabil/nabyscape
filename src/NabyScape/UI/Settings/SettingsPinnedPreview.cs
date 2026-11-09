@@ -13,8 +13,8 @@ public sealed partial class SettingsWindow
     {
         pinnedAmbientScene=new SettingsScene("Ambient light",app.Settings){Width=420,Height=126};
         pinnedAmbientView=new Viewbox{Child=pinnedAmbientScene,Stretch=System.Windows.Media.Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Height=112};
-        pinnedAmbientHost=new Border{Child=pinnedAmbientView,Visibility=Visibility.Collapsed,Background=UI.Brush("#191C20"),BorderBrush=UI.Brush("#30343B"),BorderThickness=new(.7),CornerRadius=new(10),Padding=new(6),MaxWidth=660,ToolTip="Ambient preview stays visible while you adjust this section."};
-        UI.Named(pinnedAmbientHost,"Pinned ambient preview");form.Children.Add(pinnedAmbientHost);Grid.SetRow(pinnedAmbientHost,0);
+        pinnedAmbientHost=new Border{Child=pinnedAmbientView,Visibility=Visibility.Collapsed,Background=UI.Brush("#191C20"),BorderBrush=UI.Brush("#30343B"),BorderThickness=new(.7),CornerRadius=new(10),Padding=new(6),MaxWidth=660,ToolTip=Localization.Text("Ambient preview stays visible while you adjust this section.")};
+        UI.LocalizedName(pinnedAmbientHost,"Pinned ambient preview");form.Children.Add(pinnedAmbientHost);Grid.SetRow(pinnedAmbientHost,0);
         scroll.ScrollChanged+=(_,e)=>{if(ReferenceEquals(e.Source,scroll))UpdatePinnedAmbientPreview(form);};
         form.SizeChanged+=(_,_)=>UpdatePinnedAmbientPreview(form);
         page.SizeChanged+=(_,_)=>UpdatePinnedAmbientPreview(form);

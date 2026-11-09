@@ -17,7 +17,7 @@ internal sealed record StoreHealth(int ObservedDocuments, int LegacyDocuments, i
 internal sealed class StoreDocumentException : IOException
 {
     internal DiagnosticCode Code { get; }
-    internal StoreDocumentException(DiagnosticCode code) : base("The stored document requires recovery before it can be changed.") => Code=code;
+    internal StoreDocumentException(DiagnosticCode code) : base(Localization.Text("The stored document requires recovery before it can be changed.")) => Code=code;
 }
 
 public sealed partial class Store
@@ -157,7 +157,7 @@ public sealed partial class Store
                     // Loading never rewrites data. Migration is committed by the next explicit normal Save.
                     return value;
                 }
-                throw new IOException("The stored document is busy.");
+                throw new IOException(Localization.Text("The stored document is busy."));
             }
             catch(Exception ex) when(IsDocumentFailure(ex))
             {
@@ -219,7 +219,7 @@ public sealed partial class Store
                 try{AtomicWrite(schema,committedMetadata);}
                 catch(Exception ex) when(IsDocumentFailure(ex))
                 {
-                    Warning="The document was saved. Schema metadata finalization is pending and will be retried on a later save.";
+                    Warning=Localization.Text("The document was saved. Schema metadata finalization is pending and will be retried on a later save.");
                     PrivateDiagnostics.Record(DiagnosticStage.StoreSave,DiagnosticCode.SchemaFinalizationPending);
                 }
             }
@@ -322,8 +322,8 @@ public sealed partial class Store
         var code=PrivateDiagnostics.Classify(ex);
         documentStates[name]=code==DiagnosticCode.UnsupportedSchema?StoreDocumentState.FutureSchema:StoreDocumentState.RecoveryRequired;
         Warning=code==DiagnosticCode.UnsupportedSchema?
-            "A newer settings schema was found. This document is read-only. Use a compatible NabyScape version or recover a preserved backup.":
-            "A stored document could not be read or saved safely. Defaults may be in use; the original file is preserved. Review recovery guidance before changing files.";
+            Localization.Text("A newer settings schema was found. This document is read-only. Use a compatible NabyScape version or recover a preserved backup."):
+            Localization.Text("A stored document could not be read or saved safely. Defaults may be in use; the original file is preserved. Review recovery guidance before changing files.");
         PrivateDiagnostics.Record(stage,code);
     }
 }

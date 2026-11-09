@@ -32,7 +32,7 @@ internal sealed class LyricsView : Grid
         highlight.IsHitTestVisible=false;highlight.Clip=sweep;line.Children.Add(current);line.Children.Add(highlight);
         Children.Add(previous);SetRow(line,1);var lineScroll=new ScrollViewer{Content=line,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};SetRow(lineScroll,1);Children.Add(lineScroll);SetRow(next,2);Children.Add(next);
         var footer=new StackPanel();
-        retry=UI.Button("Retry lyrics",()=>{app.Lyrics.Retry();Refresh();});
+        retry=UI.Button(Localization.Text("Retry lyrics"),()=>{app.Lyrics.Retry();Refresh();});
         var sources=new LyricsSourcesControl(app,()=>{app.Lyrics.Retry();Refresh();},()=>{credit.Text=LyricsFiles.Import(app,Window.GetWindow(this));});
         credit.FontSize=11;credit.TextWrapping=TextWrapping.Wrap;credit.Margin=new(0,7,0,0);footer.Children.Add(sources);footer.Children.Add(credit);SetRow(footer,3);Children.Add(footer);
         Loaded+=(_,_)=>Attach();Unloaded+=(_,_)=>Detach();IsVisibleChanged+=(_,_)=>{if(IsVisible)Attach();else Detach();};
@@ -59,10 +59,10 @@ internal sealed class LyricsView : Grid
     {
         if(!attached || !ElementVisibility.InViewport(this)){tick.Stop();return;}var result=fixture?.Result??app.Lyrics.Result;var lines=result.Lines;var position=app.Media.Timeline();double at=(fixture?.At??position.elapsed)+app.Settings.LyricsOffset;
         int now=LyricTiming.Index(lines,at);bool change=now!=index || !ReferenceEquals(last,result) || style!=app.Settings.LyricsAnimation;index=now;last=result;style=app.Settings.LyricsAnimation;
-        credit.Text=result.Status;retry.Visibility=lines.Length==0 && !result.Status.StartsWith("Finding")?Visibility.Visible:Visibility.Collapsed;
+        credit.Text=result.Status;retry.Visibility=lines.Length==0 && !result.Status.StartsWith(Localization.Text("Finding"))?Visibility.Visible:Visibility.Collapsed;
         if(change)
         {
-            previous.Text=now>0?lines[now-1].Text:"";current.MaxHeight=lines.Length==0 && result.Plain.Length>0?double.PositiveInfinity:52;current.Text=highlight.Text=result.Plain.Length>0?result.Plain:now>=0?lines[now].Text:lines.Length>0?"♪":"No lyrics yet";next.Text=now+1<lines.Length?lines[now+1].Text:"";
+            previous.Text=now>0?lines[now-1].Text:"";current.MaxHeight=lines.Length==0 && result.Plain.Length>0?double.PositiveInfinity:52;current.Text=highlight.Text=result.Plain.Length>0?result.Plain:now>=0?lines[now].Text:lines.Length>0?"♪":Localization.Text("No lyrics yet");next.Text=now+1<lines.Length?lines[now+1].Text:"";
             current.Foreground=style=="Karaoke"?UI.Muted:Brushes.White;highlight.Visibility=style=="Karaoke" && now>=0?Visibility.Visible:Visibility.Collapsed;
             if(Motion.Enabled && !app.Settings.ReduceMotion)
             {
@@ -90,14 +90,14 @@ internal static class LyricsFiles
 {
     internal static string Import(App app,Window? owner)
     {
-        if(!LyricTiming.CanUse(app.Media))return "Select a music session with track details and a playback timeline first.";
-        var dialog=new Microsoft.Win32.OpenFileDialog{Title="Timed lyrics for the current track",Filter="Timed lyrics (*.lrc)|*.lrc"};if(dialog.ShowDialog(owner)!=true)return "No file chosen.";
+        if(!LyricTiming.CanUse(app.Media))return Localization.Text("Select a music session with track details and a playback timeline first.");
+        var dialog=new Microsoft.Win32.OpenFileDialog{Title=Localization.Text("Timed lyrics for the current track"),Filter=Localization.Text("Timed lyrics (*.lrc)|*.lrc")};if(dialog.ShowDialog(owner)!=true)return Localization.Text("No file chosen.");
         try
         {
-            if(new System.IO.FileInfo(dialog.FileName).Length>512*1024)return "Choose an LRC file under 512 KB.";
-            app.Lyrics.Import(app.Media.Title,app.Media.Artist,app.Media.Timeline().duration,System.IO.File.ReadAllText(dialog.FileName));app.Settings.LyricsEnabled=true;app.ChangeSettings();return "Local timed lyrics loaded for this session.";
+            if(new System.IO.FileInfo(dialog.FileName).Length>512*1024)return Localization.Text("Choose an LRC file under 512 KB.");
+            app.Lyrics.Import(app.Media.Title,app.Media.Artist,app.Media.Timeline().duration,System.IO.File.ReadAllText(dialog.FileName));app.Settings.LyricsEnabled=true;app.ChangeSettings();return Localization.Text("Local timed lyrics loaded for this session.");
         }
-        catch(Exception ex) when(ex is System.IO.IOException or UnauthorizedAccessException or System.Text.RegularExpressions.RegexMatchTimeoutException){return "Could not load this timed lyric file.";}
+        catch(Exception ex) when(ex is System.IO.IOException or UnauthorizedAccessException or System.Text.RegularExpressions.RegexMatchTimeoutException){return Localization.Text("Could not load this timed lyric file.");}
     }
 }
 
@@ -111,7 +111,7 @@ public sealed partial class OverlayWindow
         bool compatible=LyricTiming.CanUse(app.Media);
         bool changed=false;
         if(mediaLyrics!=null){var visible=app.Settings.LyricsEnabled && compatible?Visibility.Visible:Visibility.Collapsed;changed=mediaLyrics.Visibility!=visible;mediaLyrics.Visibility=visible;}
-        if(lyricsButton!=null){lyricsButton.Visibility=compatible?Visibility.Visible:Visibility.Collapsed;lyricsButton.Background=app.Settings.LyricsEnabled?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;lyricsButton.ToolTip=app.Settings.LyricsEnabled?"Hide lyrics":"Show synced lyrics · looks up track details with LRCLIB";System.Windows.Automation.AutomationProperties.SetItemStatus(lyricsButton,app.Settings.LyricsEnabled?"On":"Off");}
+        if(lyricsButton!=null){lyricsButton.Visibility=compatible?Visibility.Visible:Visibility.Collapsed;lyricsButton.Background=app.Settings.LyricsEnabled?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;lyricsButton.ToolTip=app.Settings.LyricsEnabled?Localization.Text("Hide lyrics"):Localization.Text("Show synced lyrics · looks up track details with LRCLIB");System.Windows.Automation.AutomationProperties.SetItemStatus(lyricsButton,app.Settings.LyricsEnabled?Localization.Text("On"):Localization.Text("Off"));}
         if(changed && mediaLyricsLayout?.IsLoaded==true)ResizeToolPanel();
     }
 }

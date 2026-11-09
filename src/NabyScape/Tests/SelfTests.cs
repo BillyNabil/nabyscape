@@ -10,6 +10,8 @@ internal static class SelfTests
 {
     public static void Run(string[] args)
     {
+        // Original service assertions use English; localization has its own language-specific tests.
+        Localization.Configure(new Settings{UiLanguage="en"});
         var checks=new List<string>();int failed=0;
         int reportAt=Array.IndexOf(args,"--report");string? progressPath=reportAt>=0 && reportAt+1<args.Length?args[reportAt+1]+".progress":null;
         int filterAt=Array.IndexOf(args,"--test-filter");string? filter=filterAt>=0 && filterAt+1<args.Length?args[filterAt+1]:null;
@@ -69,6 +71,7 @@ internal static class SelfTests
         InteractionHotfixTests.Run(Test);
         PersistenceTests.Run(Test);
         ProductionFoundationTests.Run(Test);
+        LocalizationTests.Run(Test);
         UpdateTests.Run(Test);
         InstallationInputTests.Run(Test);
         NotificationDownloadTests.Run(Test);

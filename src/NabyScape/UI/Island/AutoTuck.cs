@@ -22,7 +22,7 @@ public sealed partial class OverlayWindow
     private bool TuckRequested=>manualTuck || app.Settings.AlwaysTucked || environmentHidden;
     internal bool ManualTuck=>manualTuck;
     internal void FlushPreferenceEditors()
-    {noteSave.Stop();utilityMutating=true;try{if(!app.Productivity.Save())throw new System.IO.IOException("Pending editor changes could not be saved.");}finally{utilityMutating=false;}}
+    {noteSave.Stop();utilityMutating=true;try{if(!app.Productivity.Save())throw new System.IO.IOException(Localization.Text("Pending editor changes could not be saved."));}finally{utilityMutating=false;}}
     public void ToggleTuck()
     {
         manualTuck=!manualTuck;

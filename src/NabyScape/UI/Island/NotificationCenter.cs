@@ -16,9 +16,9 @@ internal static class NotificationCenterText
         if(age<TimeSpan.FromMinutes(1))return Localization.Text("Just now");
         if(age<TimeSpan.FromHours(1))return Localization.Format("{0} min ago",(int)age.TotalMinutes);
         if(age<TimeSpan.FromDays(1))return Localization.Format("{0} h ago",(int)age.TotalHours);
-        return at.ToLocalTime().ToString("dd MMM HH:mm",System.Globalization.CultureInfo.CurrentCulture);
+        return at.ToLocalTime().ToString("dd MMM HH:mm",Localization.Culture);
     }
-    internal static string Kind(InternalNotice notice)=>notice.Kind=="external"?notice.Source??"App":Localization.Text(notice.Kind switch{"timer"=>"Timer","focus"=>"Focus","downloads"=>"Downloads","updates"=>"Update",_=>"NabyScape"});
+    internal static string Kind(InternalNotice notice)=>notice.Kind=="external"?notice.Source??Localization.Text("App"):Localization.Text(notice.Kind switch{"timer"=>Localization.Text("Timer"),"focus"=>Localization.Text("Focus"),"downloads"=>Localization.Text("Downloads"),"updates"=>Localization.Text("Update"),_=>"NabyScape"});
     internal static string Icon(string kind)=>kind switch{"timer"=>"timer","focus"=>"focus","downloads"=>"folder","updates"=>"settings",_=>"bell"};
 }
 
@@ -53,7 +53,7 @@ public sealed partial class OverlayWindow
         centerSummary=UI.Text("",11,UI.Muted);centerSummary.Margin=new(40,0,0,12);Grid.SetRow(centerSummary,1);content.Children.Add(centerSummary);
         centerList=new StackPanel();
         var footer=new WrapPanel{Margin=new(0,8,0,0)};
-        foreach(var action in new[]{UI.CaptionButton("Send test",()=>{Collapse();app.SendTestNotification();}),UI.CaptionButton("Notification settings",()=>{Collapse();app.ShowSettings("Notifications");}),UI.CaptionButton("Close",Collapse)})
+        foreach(var action in new[]{UI.CaptionButton("Send test",()=>{Collapse();app.SendTestNotification();}),UI.CaptionButton("Notification settings",()=>{Collapse();app.ShowSettings(Localization.Text("Notifications"));}),UI.CaptionButton("Close",Collapse)})
         {action.FontSize=11;action.MinHeight=30;action.Padding=new(10,4,10,4);action.Margin=new(0,0,6,0);footer.Children.Add(action);}
         Grid.SetRow(footer,3);content.Children.Add(footer);
         var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);
@@ -87,14 +87,14 @@ public sealed partial class OverlayWindow
         if(centerList==null)return;
         var history=app.Notifications.History;centerList.Children.Clear();
         int fresh=history.Count(e=>centerUnseen.Contains(e));
-        if(centerSummary!=null)centerSummary.Text=history.Count==0?"":fresh>0?Localization.Format(fresh==1?"{0} new notification":"{0} new notifications",fresh):Localization.Text("You're all caught up");
+        if(centerSummary!=null)centerSummary.Text=history.Count==0?"":fresh>0?Localization.Format(fresh==1?Localization.Text("{0} new notification"):Localization.Text("{0} new notifications"),fresh):Localization.Text("You're all caught up");
         if(centerClear!=null)centerClear.Visibility=history.Count>0?Visibility.Visible:Visibility.Collapsed;
         if(history.Count==0)
         {
             var empty=new StackPanel{Margin=new(0,18,0,22),HorizontalAlignment=HorizontalAlignment.Center};
             var glyph=Icons.Create("bell",26,UI.Muted);glyph.HorizontalAlignment=HorizontalAlignment.Center;glyph.Margin=new(0,0,0,10);empty.Children.Add(glyph);
             var title=UI.Text(Localization.Text("No notifications yet"),14);title.HorizontalAlignment=HorizontalAlignment.Center;title.TextAlignment=TextAlignment.Center;empty.Children.Add(title);
-            var hint=UI.Text(Localization.Text(app.Settings.ExternalNotifications?"Alerts from NabyScape and your other apps will show up here.":"Timer, focus, download and update alerts will show up here."),11,UI.Muted);hint.TextAlignment=TextAlignment.Center;hint.Margin=new(0,5,0,0);empty.Children.Add(hint);
+            var hint=UI.Text(Localization.Text(app.Settings.ExternalNotifications?Localization.Text("Alerts from NabyScape and your other apps will show up here."):Localization.Text("Timer, focus, download and update alerts will show up here.")),11,UI.Muted);hint.TextAlignment=TextAlignment.Center;hint.Margin=new(0,5,0,0);empty.Children.Add(hint);
             centerList.Children.Add(empty);return;
         }
         var now=DateTimeOffset.UtcNow;
@@ -117,12 +117,12 @@ public sealed partial class OverlayWindow
         var title=UI.Text(notice.Title,13);title.FontWeight=FontWeights.SemiBold;title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;title.Margin=new(0,3,0,0);text.Children.Add(title);
         if(notice.Detail.Length>0){var detail=UI.Text(notice.Detail,12,UI.Muted);detail.MaxHeight=34;detail.LineHeight=17;detail.LineStackingStrategy=LineStackingStrategy.BlockLineHeight;detail.TextTrimming=TextTrimming.CharacterEllipsis;detail.Margin=new(0,2,0,0);detail.ToolTip=notice.Detail;text.Children.Add(detail);}
         grid.Children.Add(text);
-        var remove=Icons.Button("x","Remove notification",()=>app.Notifications.Remove(entry),false,24);remove.Background=Brushes.Transparent;remove.Margin=new(6,-2,-2,0);remove.VerticalAlignment=VerticalAlignment.Top;remove.Opacity=0;Grid.SetColumn(remove,2);grid.Children.Add(remove);
+        var remove=Icons.Button("x",Localization.Text("Remove notification"),()=>app.Notifications.Remove(entry),false,24);remove.Background=Brushes.Transparent;remove.Margin=new(6,-2,-2,0);remove.VerticalAlignment=VerticalAlignment.Top;remove.Opacity=0;Grid.SetColumn(remove,2);grid.Children.Add(remove);
         string[] files=(notice.Files??Array.Empty<string>()).Where(File.Exists).ToArray();
         Action? open=null;string hint="";
-        if(notice.Kind=="external" && !string.IsNullOrEmpty(notice.AppId)){open=()=>{Collapse();ExternalAppLauncher.Open(notice.AppId);};hint="Click to open the app";}
-        else if(files.Length>0){open=()=>{try{var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=false};info.ArgumentList.Add("/select,");info.ArgumentList.Add(files[0]);System.Diagnostics.Process.Start(info);}catch(Exception ex){app.Store.Log(ex);}};hint="Click to show in folder";}
-        else if(notice.Kind=="updates"){open=()=>{Collapse();app.ShowSettings("Application");};hint="Click to open updates";}
+        if(notice.Kind=="external" && !string.IsNullOrEmpty(notice.AppId)){open=()=>{Collapse();ExternalAppLauncher.Open(notice.AppId);};hint=Localization.Text("Click to open the app");}
+        else if(files.Length>0){open=()=>{try{var info=new System.Diagnostics.ProcessStartInfo("explorer.exe"){UseShellExecute=false};info.ArgumentList.Add("/select,");info.ArgumentList.Add(files[0]);System.Diagnostics.Process.Start(info);}catch(Exception ex){app.Store.Log(ex);}};hint=Localization.Text("Click to show in folder");}
+        else if(notice.Kind=="updates"){open=()=>{Collapse();app.ShowSettings("Application");};hint=Localization.Text("Click to open updates");}
         var idle=UI.Brush(fresh?"#17FFFFFF":"#0DFFFFFF");var hover=UI.Brush("#24FFFFFF");
         var row=new Border{Child=grid,Background=idle,CornerRadius=new(14),Padding=new(12,11,8,11),Margin=new(0,0,0,6)};
         row.MouseEnter+=(_,_)=>{row.Background=hover;remove.Opacity=.8;};row.MouseLeave+=(_,_)=>{row.Background=idle;remove.Opacity=0;};
@@ -132,7 +132,7 @@ public sealed partial class OverlayWindow
             row.Cursor=System.Windows.Input.Cursors.Hand;row.ToolTip=Localization.Text(hint);
             row.MouseLeftButtonUp+=(_,e)=>{if(e.OriginalSource is DependencyObject source && IsInside(source,remove))return;e.Handled=true;open();};
             // Keyboard: the row's action is also reachable as a button for screen readers.
-            var action=UI.CaptionButton(notice.Kind=="external"?"Open app":files.Length>0?"Show in folder":"Open updates",open);action.Width=1;action.Height=1;action.MinHeight=1;action.Padding=new(0);action.Margin=new(0);action.Opacity=0;action.HorizontalAlignment=HorizontalAlignment.Left;action.VerticalAlignment=VerticalAlignment.Top;Grid.SetColumn(action,1);grid.Children.Add(action);
+            var action=UI.CaptionButton(notice.Kind=="external"?Localization.Text("Open app"):files.Length>0?Localization.Text("Show in folder"):Localization.Text("Open updates"),open);action.Width=1;action.Height=1;action.MinHeight=1;action.Padding=new(0);action.Margin=new(0);action.Opacity=0;action.HorizontalAlignment=HorizontalAlignment.Left;action.VerticalAlignment=VerticalAlignment.Top;Grid.SetColumn(action,1);grid.Children.Add(action);
         }
         System.Windows.Automation.AutomationProperties.SetName(row,notice.Title);
         return row;
@@ -141,7 +141,7 @@ public sealed partial class OverlayWindow
     private FrameworkElement NotificationBell(double size)
     {
         var host=new Grid{Width=size,Height=size};
-        var bell=Icons.Button("bell","Notifications",OpenNotificationCenter,false,size);bell.Margin=new(0);bell.Background=Brushes.Transparent;host.Children.Add(bell);
+        var bell=Icons.Button("bell",Localization.Text("Notifications"),OpenNotificationCenter,false,size);bell.Margin=new(0);bell.Background=Brushes.Transparent;host.Children.Add(bell);
         var dot=new Border{Width=7,Height=7,CornerRadius=new(3.5),Background=UI.Brush(app.Settings.Accent),HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Margin=new(0,3,3,0),IsHitTestVisible=false};
         host.Children.Add(dot);bellBadges.Add(new(dot));UpdateBellBadges();
         return host;

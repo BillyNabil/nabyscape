@@ -18,7 +18,7 @@ internal sealed class AssistantVoiceAudio(string microphoneId="") : IAssistantVo
         lock (gate)
         {
             ObjectDisposedException.ThrowIf(disposed, this);
-            if (input != null) throw new InvalidOperationException("Audio already started.");
+            if (input != null) throw new InvalidOperationException(Localization.Text("Audio already started."));
             pcm = new MeteredPcm(value => level(value, true));
             output = new WaveOutEvent { DeviceNumber = -1, DesiredLatency = 100, NumberOfBuffers = 2 };
             output.PlaybackStopped += (_, e) => { if (e.Exception != null && !Volatile.Read(ref disposed)) ThreadPool.QueueUserWorkItem(_ => failure()); };

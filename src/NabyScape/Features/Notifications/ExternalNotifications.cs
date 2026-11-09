@@ -35,7 +35,7 @@ internal sealed class ExternalNotificationWatcher : IDisposable
     private readonly Action<Exception> log;
     private HashSet<uint>? seen;
     private bool polling;
-    internal string Status { get; private set; }="Off";
+    internal string Status { get; private set; }=Localization.Text("Off");
     internal event Action<ExternalToast>? Arrived;
     internal event Action? StatusChanged;
     internal ExternalNotificationWatcher(Action<Exception> log){this.log=log;timer.Tick+=async(_,_)=>await Poll();}
@@ -45,7 +45,7 @@ internal sealed class ExternalNotificationWatcher : IDisposable
         if(enabled==timer.IsEnabled)return;
         seen=null;
         if(enabled){timer.Start();_=Poll();}
-        else{timer.Stop();SetStatus("Off");}
+        else{timer.Stop();SetStatus(Localization.Text("Off"));}
     }
     private void SetStatus(string value){if(Status==value)return;Status=value;StatusChanged?.Invoke();}
     internal static async Task<UserNotificationListenerAccessStatus> AccessAsync()
@@ -59,11 +59,11 @@ internal sealed class ExternalNotificationWatcher : IDisposable
         if(polling || !timer.IsEnabled)return;polling=true;
         try
         {
-            if(await AccessAsync()!=UserNotificationListenerAccessStatus.Allowed){SetStatus("Blocked by Windows");seen=null;return;}
+            if(await AccessAsync()!=UserNotificationListenerAccessStatus.Allowed){SetStatus(Localization.Text("Blocked by Windows"));seen=null;return;}
             var list=await UserNotificationListener.Current.GetNotificationsAsync(NotificationKinds.Toast);
             if(!timer.IsEnabled)return;
             var fresh=ExternalNotificationPolicy.Fresh(list.Select(n=>n.Id),seen).ToHashSet();
-            seen=list.Select(n=>n.Id).ToHashSet();SetStatus("On");
+            seen=list.Select(n=>n.Id).ToHashSet();SetStatus(Localization.Text("On"));
             foreach(var item in list.Where(n=>fresh.Contains(n.Id)).OrderBy(n=>n.CreationTime))
             {
                 var toast=Read(item);if(toast==null || ExternalNotificationPolicy.IsOwn(toast.App,toast.AppId))continue;
@@ -71,15 +71,15 @@ internal sealed class ExternalNotificationWatcher : IDisposable
                 Arrived?.Invoke(toast);
             }
         }
-        catch(Exception ex){SetStatus("Unavailable");log(ex);}
+        catch(Exception ex){SetStatus(Localization.Text("Unavailable"));log(ex);}
         finally{polling=false;}
     }
     internal static ExternalToast? Read(UserNotification item)
     {
         try
         {
-            string app="App",appId="";
-            try{app=item.AppInfo?.DisplayInfo?.DisplayName is {Length:>0} name?name:"App";appId=item.AppInfo?.AppUserModelId??"";}catch{/* Some senders expose no app information. */}
+            string app=Localization.Text("App"),appId="";
+            try{app=item.AppInfo?.DisplayInfo?.DisplayName is {Length:>0} name?name:Localization.Text("App");appId=item.AppInfo?.AppUserModelId??"";}catch{/* Some senders expose no app information. */}
             var binding=item.Notification?.Visual?.GetBinding(KnownNotificationBindings.ToastGeneric);
             var lines=binding?.GetTextElements().Select(t=>t.Text??"").ToArray()??Array.Empty<string>();
             var (title,body)=ExternalNotificationPolicy.Split(app,lines);

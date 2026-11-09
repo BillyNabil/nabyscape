@@ -10,8 +10,8 @@ public sealed partial class SettingsWindow
     {
         var settings = app.Settings;
         settings.NormalizeLanguageAccessibility();
-        var codes = new[] { "en", "es", "id" };
-        var language = new ComboBox { ItemsSource = new[] { "English", "Español", "Bahasa Indonesia" },
+        var codes = new[] { "en", "es", "id", "ru" };
+        var language = new ComboBox { ItemsSource = new[] { "English", "Español", "Bahasa Indonesia", "Русский" },
             SelectedIndex = Array.IndexOf(codes, settings.UiLanguage) };
         UI.LocalizedName(language, "Interface language");
         var scale = new ComboBox { ItemsSource = new[] { "100%", "110%", "125%", "150%" } };

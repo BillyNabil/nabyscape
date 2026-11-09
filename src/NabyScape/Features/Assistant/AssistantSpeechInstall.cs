@@ -23,7 +23,7 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
     internal bool Testing {get;set;}
     internal bool Busy=>installation!=null || Testing;
     internal bool CanCancel=>installation!=null && !installingPrerequisite && !removing;
-    internal string Status {get;private set;}="Scan your PC to find a suitable listening model.";
+    internal string Status {get;private set;}=Localization.Text("Scan your PC to find a suitable listening model.");
     internal double Progress {get;private set;}
     internal SpeechHardware? Hardware {get;private set;}
     internal event Action? Changed;
@@ -67,42 +67,42 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
         try
         {
             AssistantSpeechPlatform.RequireNativePacks();
-            Report("Checking available memory and disk space…");var hardware=await Scan(token);
+            Report(Localization.Text("Checking available memory and disk space…"));var hardware=await Scan(token);
             if(!hardware.Supported)throw new IOException(AssistantSpeechPlatform.NativePackUnavailable);
-            if(!hardware.FitsPack(asr,tts))throw new IOException($"This pack needs a budget of {asr.RamGb:0.#} GB total RAM and {SpeechHardware.PackFreeGb(asr,tts):0.#} GB available. Close other apps or choose a smaller model/voice.");
+            if(!hardware.FitsPack(asr,tts))throw new IOException(Localization.Format("This pack needs a budget of {0} GB total RAM and {1} GB available. Close other apps or choose a smaller model/voice.",asr.RamGb.ToString("0.#"),SpeechHardware.PackFreeGb(asr,tts).ToString("0.#")));
             bool gpu=preferGpu && hardware.UseGpu(asr);
             long need=asr.DownloadBytes*(asr.Files!=null?2:asr.Native?4:1)+SpeechCatalog.Cpu.Bytes*3+(gpu?SpeechCatalog.Gpu.Bytes*4:0)+(tts.Package!=null?tts.Bytes*4+SpeechCatalog.Sherpa.Bytes*5:tts.Id!="windows"?tts.Bytes+SpeechCatalog.Piper.Bytes*4:0)+(asr.Native?SpeechCatalog.Sherpa.Bytes*5:0)+SpeechCatalog.VisualCpp.Bytes+512L*1024*1024;
-            Directory.CreateDirectory(root);var drive=new DriveInfo(Path.GetPathRoot(root)!);if(drive.AvailableFreeSpace<need)throw new IOException($"Free at least {need/1024d/1024/1024:0.0} GB on {drive.Name} for this pack and installation space.");
+            Directory.CreateDirectory(root);var drive=new DriveInfo(Path.GetPathRoot(root)!);if(drive.AvailableFreeSpace<need)throw new IOException(Localization.Format("Free at least {0} GB on {1} for this pack and installation space.",(need/1024d/1024/1024).ToString("0.0"),drive.Name));
             await EnsureCppRuntime(token);
             if(asr.Native)
             {
-                await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(false),"Sherpa native speech engine",token);
+                await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(false),Localization.Text("Sherpa native speech engine"),token);
                 if(asr.Files!=null)await ModelFiles(asr,token);
                 else await Runtime(asr.Asset,Path.Combine(root,"models",asr.Id),AsrMarker(asr),asr.Name,token);
             }
             else
             {
-                await Runtime(SpeechCatalog.Cpu,EngineFolder(false),WhisperExe(false),"Whisper CPU engine",token);
-                if(gpu)await Runtime(SpeechCatalog.Gpu,EngineFolder(true),WhisperExe(true),"Whisper GPU engine",token);
+                await Runtime(SpeechCatalog.Cpu,EngineFolder(false),WhisperExe(false),Localization.Text("Whisper CPU engine"),token);
+                if(gpu)await Runtime(SpeechCatalog.Gpu,EngineFolder(true),WhisperExe(true),Localization.Text("Whisper GPU engine"),token);
                 await Download(asr.Asset,AsrPath(asr),asr.Name,token);
             }
             if(tts.Package!=null)
             {
-                await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(true),"Sherpa native speech engine",token);
+                await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(true),Localization.Text("Sherpa native speech engine"),token);
                 await Runtime(tts.Package,VoiceRoot(tts),"",tts.Name,token);
             }
             else if(tts.Id!="windows")
             {
-                await Runtime(SpeechCatalog.Piper,PiperFolder,PiperExe,"Piper speech engine",token);
+                await Runtime(SpeechCatalog.Piper,PiperFolder,PiperExe,Localization.Text("Piper speech engine"),token);
                 await Download(new(SpeechCatalog.VoiceUrl(tts,".onnx"),tts.Bytes,tts.Hash),TtsPath(tts),tts.Name,token);
-                await Download(new(SpeechCatalog.VoiceUrl(tts,".onnx.json"),0,tts.ConfigHash),TtsPath(tts)+".json","Voice configuration",token);
-                await Download(new(SpeechCatalog.VoiceUrl(tts,"MODEL_CARD"),0,tts.CardHash),TtsPath(tts)+".MODEL_CARD","Voice attribution and model card",token);
+                await Download(new(SpeechCatalog.VoiceUrl(tts,".onnx.json"),0,tts.ConfigHash),TtsPath(tts)+".json",Localization.Text("Voice configuration"),token);
+                await Download(new(SpeechCatalog.VoiceUrl(tts,"MODEL_CARD"),0,tts.CardHash),TtsPath(tts)+".MODEL_CARD",Localization.Text("Voice attribution and model card"),token);
             }
             await WriteSources(token);
-            Report("Installed and verified. Choose Use installed pack to enable it.",100);return true;
+            Report(Localization.Text("Installed and verified. Choose Use installed pack to enable it."),100);return true;
         }
-        catch(OperationCanceledException){Report("Installation cancelled. Completed verified downloads are kept; choose Install & use to retry.");return false;}
-        catch(Exception ex){Report("Installation failed: "+(ex is HttpRequestException?"Check your internet connection and retry. "+ex.Message:ex.Message));return false;}
+        catch(OperationCanceledException){Report(Localization.Text("Installation cancelled. Completed verified downloads are kept; choose Install & use to retry."));return false;}
+        catch(Exception ex){Report(Localization.Text("Installation failed: ")+(ex is HttpRequestException?Localization.Text("Check your internet connection and retry. ")+ex.Message:ex.Message));return false;}
         finally{installation.Dispose();installation=null;if(!disposed)Changed?.Invoke();}
     }
     private Task WriteSources(CancellationToken token)=>File.WriteAllTextAsync(Path.Combine(root,"SOURCES.txt"),"Optional speech components downloaded by NabyScape:\nWhisper.cpp v1.8.7 (MIT): https://github.com/ggml-org/whisper.cpp/tree/v1.8.7\nWhisper weights (MIT): https://huggingface.co/ggerganov/whisper.cpp\nPiper native engine 2023.11.14-2 (MIT): https://github.com/rhasspy/piper/tree/2023.11.14-2\nPiper uses eSpeak NG (GPL): https://github.com/espeak-ng/espeak-ng and ONNX Runtime (MIT): https://github.com/microsoft/onnxruntime\nPiper voice terms and dataset attribution: see each .MODEL_CARD beside the voice file.\nSherpa-ONNX v1.13.8 (Apache-2.0): https://github.com/k2-fsa/sherpa-onnx/tree/v1.13.8\nQwen3-ASR (Apache-2.0): https://github.com/QwenLM/Qwen3-ASR\nKokoro v1.1 (Apache-2.0): https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh\nMoonshine v2: https://huggingface.co/UsefulSensors (see bundled LICENSE)\nQwen3-ASR 1.7B community ONNX conversion: https://huggingface.co/thieunv-asilla/sherpa-onnx-qwen3-asr-1.7B-int8\nKittenTTS nano v0.8 (Apache-2.0): https://huggingface.co/KittenML/kitten-tts-nano-0.8-int8\nSupertonic 3 (OpenRAIL-M model): https://huggingface.co/Supertone/supertonic-3/blob/main/LICENSE\nSherpa packages include ONNX Runtime and eSpeak NG components; see their bundled license notices.\nNVIDIA CUDA runtime terms: https://docs.nvidia.com/cuda/eula/index.html\nMicrosoft Visual C++ runtime terms: https://aka.ms/VisualStudioRedistribution\n",token);
@@ -115,26 +115,26 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
             var asr=AssistantOwnSpeech.Asr(options);var tts=AssistantOwnSpeech.Tts(options);
             string managedEngines=Path.GetFullPath(Path.Combine(root,"engines"))+Path.DirectorySeparatorChar;
             foreach(string source in new[]{asr.SourcePath,tts.SourcePath})
-                if(source.Length>0 && (source.StartsWith(managedEngines,StringComparison.OrdinalIgnoreCase) || string.Equals(source,managedEngines.TrimEnd(Path.DirectorySeparatorChar),StringComparison.OrdinalIgnoreCase)))throw new IOException("Keep your model files outside Naby's managed engines folder. Move them to a separate models folder and select them again.");
-            if(!HasAsrWeights(asr))throw new IOException("The selected listening pack is not installed. Install it in Automatic setup, or choose your own model file/folder.");
-            if(!HasTtsWeights(tts))throw new IOException("The selected speaking pack is not installed. Install it first, or choose your own speaking model.");
-            Report("Checking hardware for your model setup…");var hardware=await Scan(token);if(!hardware.Supported)throw new IOException(AssistantSpeechPlatform.NativePackUnavailable);
+                if(source.Length>0 && (source.StartsWith(managedEngines,StringComparison.OrdinalIgnoreCase) || string.Equals(source,managedEngines.TrimEnd(Path.DirectorySeparatorChar),StringComparison.OrdinalIgnoreCase)))throw new IOException(Localization.Text("Keep your model files outside Naby's managed engines folder. Move them to a separate models folder and select them again."));
+            if(!HasAsrWeights(asr))throw new IOException(Localization.Text("The selected listening pack is not installed. Install it in Automatic setup, or choose your own model file/folder."));
+            if(!HasTtsWeights(tts))throw new IOException(Localization.Text("The selected speaking pack is not installed. Install it first, or choose your own speaking model."));
+            Report(Localization.Text("Checking hardware for your model setup…"));var hardware=await Scan(token);if(!hardware.Supported)throw new IOException(AssistantSpeechPlatform.NativePackUnavailable);
             bool gpu=options.ManagedGpu && hardware.UseGpu(asr);
-            if(Installed(asr,tts,gpu)){Report("Your files and required engines are ready. No downloads needed.",100);return true;}
-            Directory.CreateDirectory(root);if(new DriveInfo(Path.GetPathRoot(root)!).AvailableFreeSpace<1024L*1024*1024)throw new IOException("Keep at least 1 GB free for engine installation and temporary audio.");
+            if(Installed(asr,tts,gpu)){Report(Localization.Text("Your files and required engines are ready. No downloads needed."),100);return true;}
+            Directory.CreateDirectory(root);if(new DriveInfo(Path.GetPathRoot(root)!).AvailableFreeSpace<1024L*1024*1024)throw new IOException(Localization.Text("Keep at least 1 GB free for engine installation and temporary audio."));
             await EnsureCppRuntime(token);
-            if(asr.Native)await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(false),"Native ASR engine",token);
+            if(asr.Native)await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(false),Localization.Text("Native ASR engine"),token);
             else
             {
-                await Runtime(SpeechCatalog.Cpu,EngineFolder(false),WhisperExe(false),"Whisper CPU engine",token);
-                if(gpu)await Runtime(SpeechCatalog.Gpu,EngineFolder(true),WhisperExe(true),"Whisper GPU engine",token);
+                await Runtime(SpeechCatalog.Cpu,EngineFolder(false),WhisperExe(false),Localization.Text("Whisper CPU engine"),token);
+                if(gpu)await Runtime(SpeechCatalog.Gpu,EngineFolder(true),WhisperExe(true),Localization.Text("Whisper GPU engine"),token);
             }
-            if(tts.Package!=null)await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(true),"Native TTS engine",token);
-            else if(tts.Id!="windows")await Runtime(SpeechCatalog.Piper,PiperFolder,PiperExe,"Piper engine",token);
-            await WriteSources(token);token.ThrowIfCancellationRequested();Report("Engines ready. Your model files remain in their original location.",100);return true;
+            if(tts.Package!=null)await Runtime(SpeechCatalog.Sherpa,SherpaRoot,SherpaExe(true),Localization.Text("Native TTS engine"),token);
+            else if(tts.Id!="windows")await Runtime(SpeechCatalog.Piper,PiperFolder,PiperExe,Localization.Text("Piper engine"),token);
+            await WriteSources(token);token.ThrowIfCancellationRequested();Report(Localization.Text("Engines ready. Your model files remain in their original location."),100);return true;
         }
-        catch(OperationCanceledException){Report("Setup cancelled. Your model files were not changed.");return false;}
-        catch(Exception ex){Report("Model setup failed: "+ex.Message);return false;}
+        catch(OperationCanceledException){Report(Localization.Text("Setup cancelled. Your model files were not changed."));return false;}
+        catch(Exception ex){Report(Localization.Text("Model setup failed: ")+ex.Message);return false;}
         finally{installation.Dispose();installation=null;if(!disposed)Changed?.Invoke();}
     }
     internal static bool CppRuntimePresent()
@@ -149,19 +149,19 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
     private async Task EnsureCppRuntime(CancellationToken token)
     {
         if(CppRuntimePresent())return;
-        string setup=Path.Combine(root,"downloads","VC_redist.x64.exe");await Download(SpeechCatalog.VisualCpp,setup,"Microsoft Visual C++ runtime",token);token.ThrowIfCancellationRequested();
+        string setup=Path.Combine(root,"downloads","VC_redist.x64.exe");await Download(SpeechCatalog.VisualCpp,setup,Localization.Text("Microsoft Visual C++ runtime"),token);token.ThrowIfCancellationRequested();
         await Task.Run(()=>UpdateSignature.VerifyIfPresent(setup),token);
-        installingPrerequisite=true;Report("Installing Microsoft Visual C++ runtime. Complete the Windows administrator prompt. Cancellation is available again when this component finishes.");
+        installingPrerequisite=true;Report(Localization.Text("Installing Microsoft Visual C++ runtime. Complete the Windows administrator prompt. Cancellation is available again when this component finishes."));
         try
         {
-            using var installer=Process.Start(new ProcessStartInfo(setup){UseShellExecute=true,Verb="runas",WindowStyle=ProcessWindowStyle.Hidden,Arguments="/install /quiet /norestart"})??throw new IOException("Could not start Microsoft runtime setup.");
+            using var installer=Process.Start(new ProcessStartInfo(setup){UseShellExecute=true,Verb="runas",WindowStyle=ProcessWindowStyle.Hidden,Arguments="/install /quiet /norestart"})??throw new IOException(Localization.Text("Could not start Microsoft runtime setup."));
             // Do not kill Windows Installer halfway through a shared runtime update.
             await installer.WaitForExitAsync();
-            if(installer.ExitCode==3010)throw new IOException("Microsoft runtime installed. Restart Windows, then choose Install & use again.");
-            if(installer.ExitCode!=0 || !CppRuntimePresent())throw new IOException("Microsoft runtime setup did not finish successfully. Complete its Windows administrator prompt, then retry.");
+            if(installer.ExitCode==3010)throw new IOException(Localization.Text("Microsoft runtime installed. Restart Windows, then choose Install & use again."));
+            if(installer.ExitCode!=0 || !CppRuntimePresent())throw new IOException(Localization.Text("Microsoft runtime setup did not finish successfully. Complete its Windows administrator prompt, then retry."));
             token.ThrowIfCancellationRequested();
         }
-        catch(System.ComponentModel.Win32Exception ex) when(ex.NativeErrorCode==1223){throw new IOException("Windows runtime installation was cancelled. Choose Install & use when you are ready to approve it.");}
+        catch(System.ComponentModel.Win32Exception ex) when(ex.NativeErrorCode==1223){throw new IOException(Localization.Text("Windows runtime installation was cancelled. Choose Install & use when you are ready to approve it."));}
         finally{installingPrerequisite=false;}
     }
     private async Task Download(SpeechAsset asset,string target,string title,CancellationToken token)
@@ -169,15 +169,15 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(target)!);
         if(HasFile(target,asset.Bytes))
         {
-            Report("Verifying "+title+"…");await using var existing=File.OpenRead(target);var hash=await SHA256.HashDataAsync(existing,token);if(Convert.ToHexString(hash).Equals(asset.Sha256,StringComparison.OrdinalIgnoreCase))return;
+            Report(Localization.Text("Verifying ")+title+"…");await using var existing=File.OpenRead(target);var hash=await SHA256.HashDataAsync(existing,token);if(Convert.ToHexString(hash).Equals(asset.Sha256,StringComparison.OrdinalIgnoreCase))return;
         }
         string partial=target+".partial";
         try
         {
             using var deadline=CancellationTokenSource.CreateLinkedTokenSource(token);deadline.CancelAfter(TimeSpan.FromHours(2));
             using var response=await http.GetAsync(asset.Url,HttpCompletionOption.ResponseHeadersRead,deadline.Token);response.EnsureSuccessStatusCode();
-            if(response.RequestMessage?.RequestUri?.Scheme!="https")throw new IOException("The download redirected outside HTTPS.");
-            if(asset.Bytes>0 && response.Content.Headers.ContentLength is long declared && declared!=asset.Bytes)throw new IOException("Download size differs from the pinned model catalog.");
+            if(response.RequestMessage?.RequestUri?.Scheme!="https")throw new IOException(Localization.Text("The download redirected outside HTTPS."));
+            if(asset.Bytes>0 && response.Content.Headers.ContentLength is long declared && declared!=asset.Bytes)throw new IOException(Localization.Text("Download size differs from the pinned model catalog."));
             long cap=asset.Bytes>0?asset.Bytes:128*1024,total=0;byte[] buffer=new byte[128*1024];
             await using(var source=await response.Content.ReadAsStreamAsync(deadline.Token))
             await using(var output=new FileStream(partial,FileMode.Create,FileAccess.Write,FileShare.None,buffer.Length,true))
@@ -185,10 +185,10 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
             {
                 int count;while((count=await source.ReadAsync(buffer,deadline.Token))>0)
                 {
-                    total+=count;if(total>cap)throw new IOException("Download exceeds its expected size.");await output.WriteAsync(buffer.AsMemory(0,count),deadline.Token);checksum.AppendData(buffer,0,count);
-                    long now=Environment.TickCount64;if(now-lastProgress>150){lastProgress=now;Report($"Downloading {title} · {total/1024d/1024:0.0}"+(asset.Bytes>0?$" / {asset.Bytes/1024d/1024:0.0} MB":" MB"),asset.Bytes>0?total*100d/asset.Bytes:0);}
+                    total+=count;if(total>cap)throw new IOException(Localization.Text("Download exceeds its expected size."));await output.WriteAsync(buffer.AsMemory(0,count),deadline.Token);checksum.AppendData(buffer,0,count);
+                    long now=Environment.TickCount64;if(now-lastProgress>150){lastProgress=now;Report(Localization.Format("Downloading {0} · {1}",title,(total/1024d/1024).ToString("0.0"))+(asset.Bytes>0?Localization.Format(" / {0} MB",(asset.Bytes/1024d/1024).ToString("0.0")):Localization.Text(" MB")),asset.Bytes>0?total*100d/asset.Bytes:0);}
                 }
-                if(asset.Bytes>0 && total!=asset.Bytes || !Convert.ToHexString(checksum.GetHashAndReset()).Equals(asset.Sha256,StringComparison.OrdinalIgnoreCase))throw new IOException("Checksum verification failed. Retry the download.");
+                if(asset.Bytes>0 && total!=asset.Bytes || !Convert.ToHexString(checksum.GetHashAndReset()).Equals(asset.Sha256,StringComparison.OrdinalIgnoreCase))throw new IOException(Localization.Text("Checksum verification failed. Retry the download."));
             }
             File.Move(partial,target,true);
         }
@@ -219,7 +219,7 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
         if(Ready(folder,executable))return;
         bool tar=asset.Url.EndsWith(".tar.bz2",StringComparison.OrdinalIgnoreCase);
         string archive=Path.Combine(root,"downloads",Path.GetFileName(folder)+(tar?".tar.bz2":".zip"));await Download(asset,archive,title,token);
-        Report("Installing "+title+"…");string staging=folder+".staging-"+Guid.NewGuid().ToString("N");
+        Report(Localization.Text("Installing ")+title+"…");string staging=folder+".staging-"+Guid.NewGuid().ToString("N");
         try
         {
             await Task.Run(()=>
@@ -229,15 +229,15 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
                 if(tar)ExtractTar(archive,staging,token).GetAwaiter().GetResult();
                 else
                 {
-                    using var zip=ZipFile.OpenRead(archive);if(zip.Entries.Count>10000)throw new IOException("Runtime archive has too many entries.");
+                    using var zip=ZipFile.OpenRead(archive);if(zip.Entries.Count>10000)throw new IOException(Localization.Text("Runtime archive has too many entries."));
                     foreach(var entry in zip.Entries)
                     {
-                        token.ThrowIfCancellationRequested();if(entry.Length>3L*1024*1024*1024-expanded)throw new IOException("Runtime archive is too large.");expanded+=entry.Length;
-                        string path=Path.GetFullPath(Path.Combine(staging,entry.FullName));if(!path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase) || ((entry.ExternalAttributes>>16)&0xF000)==0xA000)throw new IOException("Unsafe runtime archive path.");
+                        token.ThrowIfCancellationRequested();if(entry.Length>3L*1024*1024*1024-expanded)throw new IOException(Localization.Text("Runtime archive is too large."));expanded+=entry.Length;
+                        string path=Path.GetFullPath(Path.Combine(staging,entry.FullName));if(!path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase) || ((entry.ExternalAttributes>>16)&0xF000)==0xA000)throw new IOException(Localization.Text("Unsafe runtime archive path."));
                         if(entry.Name.Length==0){Directory.CreateDirectory(path);continue;}Directory.CreateDirectory(Path.GetDirectoryName(path)!);entry.ExtractToFile(path);
                     }
                 }
-                if(executable.Length>0 && !File.Exists(Path.Combine(staging,Path.GetRelativePath(folder,executable))))throw new IOException("The package does not contain its expected model/engine file.");
+                if(executable.Length>0 && !File.Exists(Path.Combine(staging,Path.GetRelativePath(folder,executable))))throw new IOException(Localization.Text("The package does not contain its expected model/engine file."));
                 File.WriteAllLines(Path.Combine(staging,"installed.txt"),Directory.EnumerateFiles(staging,"*",SearchOption.AllDirectories).Select(path=>Path.GetRelativePath(staging,path)));
                 if(Directory.Exists(folder))Directory.Delete(folder,true);Directory.Move(staging,folder);
             },token);
@@ -246,24 +246,24 @@ internal sealed partial class AssistantSpeechInstall : IDisposable
     }
     private static async Task ExtractTar(string archive,string staging,CancellationToken token)
     {
-        string tar=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"tar.exe");if(!File.Exists(tar))throw new IOException("These new model packs require the tar component included with current Windows. Update Windows, or use a Whisper/Piper pack.");
+        string tar=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System),"tar.exe");if(!File.Exists(tar))throw new IOException(Localization.Text("These new model packs require the tar component included with current Windows. Update Windows, or use a Whisper/Piper pack."));
         async Task<string> Run(params string[] arguments)
         {
             var info=new ProcessStartInfo(tar){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true};foreach(string arg in arguments)info.ArgumentList.Add(arg);
-            using var p=Process.Start(info)??throw new IOException("Could not unpack the speech model.");using var registration=token.Register(()=>{try{p.Kill(true);}catch{}});
+            using var p=Process.Start(info)??throw new IOException(Localization.Text("Could not unpack the speech model."));using var registration=token.Register(()=>{try{p.Kill(true);}catch{}});
             async Task<string> Read(StreamReader reader)
             {
                 var text=new System.Text.StringBuilder();char[] chunk=new char[4096];int count;
-                while((count=await reader.ReadAsync(chunk,token))>0){if(text.Length+count>2*1024*1024){try{p.Kill(true);}catch{}throw new IOException("The package listing is too large.");}text.Append(chunk,0,count);}return text.ToString();
+                while((count=await reader.ReadAsync(chunk,token))>0){if(text.Length+count>2*1024*1024){try{p.Kill(true);}catch{}throw new IOException(Localization.Text("The package listing is too large."));}text.Append(chunk,0,count);}return text.ToString();
             }
-            var output=Read(p.StandardOutput);var errors=Read(p.StandardError);try{await p.WaitForExitAsync(token);await Task.WhenAll(output,errors);if(p.ExitCode!=0)throw new IOException("Windows could not unpack the verified model. Check available disk space and retry.");return await output;}
+            var output=Read(p.StandardOutput);var errors=Read(p.StandardError);try{await p.WaitForExitAsync(token);await Task.WhenAll(output,errors);if(p.ExitCode!=0)throw new IOException(Localization.Text("Windows could not unpack the verified model. Check available disk space and retry."));return await output;}
             finally{try{if(!p.HasExited)p.Kill(true);}catch{}try{await Task.WhenAll(output,errors);}catch{}}
         }
-        string prefix=Path.GetFullPath(staging)+Path.DirectorySeparatorChar;string listing=await Run("-tf",archive);var names=listing.Split('\n',StringSplitOptions.RemoveEmptyEntries);if(names.Length>20000)throw new IOException("Too many files in the model package.");
-        foreach(string value in names){string name=value.TrimEnd('\r');if(name.Contains(':') || !Path.GetFullPath(Path.Combine(staging,name)).StartsWith(prefix,StringComparison.OrdinalIgnoreCase))throw new IOException("Unsafe speech-package path.");}
-        string details=await Run("-tvf",archive);if(details.Split('\n',StringSplitOptions.RemoveEmptyEntries).Any(line=>line[0]!='-' && line[0]!='d'))throw new IOException("Model packages containing links or devices are not accepted.");
+        string prefix=Path.GetFullPath(staging)+Path.DirectorySeparatorChar;string listing=await Run("-tf",archive);var names=listing.Split('\n',StringSplitOptions.RemoveEmptyEntries);if(names.Length>20000)throw new IOException(Localization.Text("Too many files in the model package."));
+        foreach(string value in names){string name=value.TrimEnd('\r');if(name.Contains(':') || !Path.GetFullPath(Path.Combine(staging,name)).StartsWith(prefix,StringComparison.OrdinalIgnoreCase))throw new IOException(Localization.Text("Unsafe speech-package path."));}
+        string details=await Run("-tvf",archive);if(details.Split('\n',StringSplitOptions.RemoveEmptyEntries).Any(line=>line[0]!='-' && line[0]!='d'))throw new IOException(Localization.Text("Model packages containing links or devices are not accepted."));
         await Run("-xf",archive,"-C",staging);
-        long size=0;foreach(string file in Directory.EnumerateFiles(staging,"*",SearchOption.AllDirectories)){token.ThrowIfCancellationRequested();if((File.GetAttributes(file)&FileAttributes.ReparsePoint)!=0)throw new IOException("Unsafe link in speech package.");size+=new FileInfo(file).Length;if(size>3L*1024*1024*1024)throw new IOException("The unpacked model is too large.");}
+        long size=0;foreach(string file in Directory.EnumerateFiles(staging,"*",SearchOption.AllDirectories)){token.ThrowIfCancellationRequested();if((File.GetAttributes(file)&FileAttributes.ReparsePoint)!=0)throw new IOException(Localization.Text("Unsafe link in speech package."));size+=new FileInfo(file).Length;if(size>3L*1024*1024*1024)throw new IOException(Localization.Text("The unpacked model is too large."));}
     }
     internal void OpenFolder(){Directory.CreateDirectory(root);Process.Start(new ProcessStartInfo(root){UseShellExecute=true});}
     public void Dispose(){disposed=true;installation?.Cancel();http.Dispose();}

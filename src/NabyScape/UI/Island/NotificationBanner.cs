@@ -43,12 +43,12 @@ public sealed partial class OverlayWindow
         string line=hideText?Localization.Text("New notification"):notice.Detail;
         if(line.Length>0){var body=UI.Text(line,12,UI.Muted);body.TextWrapping=TextWrapping.NoWrap;body.TextTrimming=TextTrimming.CharacterEllipsis;body.Margin=new(0,1,0,0);text.Children.Add(body);}
         grid.Children.Add(text);
-        var more=Icons.Button("chevron-right","View all notifications",()=>{CloseBanner(false);OpenNotificationCenter();},false,26);more.Background=Brushes.Transparent;more.Margin=new(8,0,0,0);more.Opacity=.6;more.VerticalAlignment=VerticalAlignment.Center;Grid.SetColumn(more,2);grid.Children.Add(more);
+        var more=Icons.Button("chevron-right",Localization.Text("View all notifications"),()=>{CloseBanner(false);OpenNotificationCenter();},false,26);more.Background=Brushes.Transparent;more.Margin=new(8,0,0,0);more.Opacity=.6;more.VerticalAlignment=VerticalAlignment.Center;Grid.SetColumn(more,2);grid.Children.Add(more);
         bannerProgress=new Border{Height=2,CornerRadius=new(1),Background=UI.Brush(app.Settings.Accent),HorizontalAlignment=HorizontalAlignment.Left,Margin=new(52,10,0,0),Opacity=.85,RenderTransformOrigin=new(0,.5),RenderTransform=new ScaleTransform(1,1)};
         var content=new StackPanel();content.Children.Add(grid);content.Children.Add(bannerProgress);
         var hit=new Border{Child=content,Background=Brushes.Transparent,Cursor=Cursors.Hand,Padding=new(2,0,2,0)};
         System.Windows.Automation.AutomationProperties.SetName(hit,NotificationCenterText.Kind(notice)+": "+notice.Title);
-        hit.ToolTip=Localization.Text(notice.Kind=="external"?"Click to open the app":"Click for details");
+        hit.ToolTip=Localization.Text(notice.Kind=="external"?Localization.Text("Click to open the app"):Localization.Text("Click for details"));
         hit.MouseLeftButtonUp+=(_,e)=>{if(e.OriginalSource is DependencyObject source && IsInside(source,more))return;e.Handled=true;ActivateBanner(notice);};
         hit.MouseEnter+=(_,_)=>PauseBanner(true);hit.MouseLeave+=(_,_)=>PauseBanner(false);
         var screen=Native.ChooseScreen(app.Settings);double scale=Native.Scale(screen);

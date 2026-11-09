@@ -20,9 +20,9 @@ internal sealed class CountdownAudio : IDisposable
             if(settings.CountdownSound=="Custom")
             {
                 var file=new FileInfo(settings.CountdownSoundFile);
-                if(!file.Exists || file.Length>10*1024*1024 || !file.Extension.Equals(".wav",StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Choose a WAV file under 10 MB.");
+                if(!file.Exists || file.Length>10*1024*1024 || !file.Extension.Equals(".wav",StringComparison.OrdinalIgnoreCase))throw new InvalidDataException(Localization.Text("Choose a WAV file under 10 MB."));
                 stream=new WaveFileReader(file.FullName);
-                if(stream.TotalTime.TotalSeconds>15)throw new InvalidDataException("Choose a sound no longer than 15 seconds.");
+                if(stream.TotalTime.TotalSeconds>15)throw new InvalidDataException(Localization.Text("Choose a sound no longer than 15 seconds."));
             }
             else stream=new RawSourceWaveStream(new MemoryStream(Tone(settings.CountdownSound)),new WaveFormat(22050,16,1));
             var output=new WaveOutEvent();player=output;output.Volume=(float)settings.CountdownSoundVolume;
@@ -31,9 +31,9 @@ internal sealed class CountdownAudio : IDisposable
         }
         catch(Exception ex)
         {
-            string error=ex is IOException or UnauthorizedAccessException?ex.Message:"Could not play the completion sound on the current output.";
+            string error=ex is IOException or UnauthorizedAccessException?ex.Message:Localization.Text("Could not play the completion sound on the current output.");
             Dispose();
-            if(settings.CountdownSound=="Custom"){Play(new Settings{CountdownSound="Chime",CountdownSoundVolume=settings.CountdownSoundVolume});LastError=error+" Used the built-in chime instead.";}else LastError=error;
+            if(settings.CountdownSound=="Custom"){Play(new Settings{CountdownSound="Chime",CountdownSoundVolume=settings.CountdownSoundVolume});LastError=error+Localization.Text(" Used the built-in chime instead.");}else LastError=error;
         }
     }
     internal static byte[] Tone(string kind)

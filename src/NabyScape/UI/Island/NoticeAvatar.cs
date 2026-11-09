@@ -31,7 +31,7 @@ internal static class NoticeAvatar
                 RenderOptions.SetBitmapScalingMode(image,BitmapScalingMode.HighQuality);host.Children.Add(image);
                 return host;
             }
-            string name=notice.Source??"App";
+            string name=notice.Source??Localization.Text("App");
             host.Children.Add(new System.Windows.Shapes.Ellipse{Fill=UI.Brush(Color(name))});
             var letter=UI.Text(Initial(name),size*.42);letter.FontWeight=FontWeights.SemiBold;letter.Foreground=Brushes.White;letter.HorizontalAlignment=HorizontalAlignment.Center;letter.VerticalAlignment=VerticalAlignment.Center;letter.TextAlignment=TextAlignment.Center;
             host.Children.Add(letter);return host;

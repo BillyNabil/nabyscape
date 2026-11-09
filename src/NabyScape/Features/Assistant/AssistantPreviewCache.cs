@@ -142,7 +142,7 @@ internal static class AssistantPreviewGeometry
     {
         var frame=BitmapDecoder.Create(stream,BitmapCreateOptions.DelayCreation|BitmapCreateOptions.IgnoreColorProfile,BitmapCacheOption.None).Frames[0];
         int w=frame.PixelWidth,h=frame.PixelHeight;
-        if(w<=0 || h<=0 || (long)w*h>80000000 || Math.Max(w,h)>Math.Min(w,h)*30L)throw new IOException("Image dimensions are too large to preview safely.");
+        if(w<=0 || h<=0 || (long)w*h>80000000 || Math.Max(w,h)>Math.Min(w,h)*30L)throw new IOException(Localization.Text("Image dimensions are too large to preview safely."));
         return new(w,h,frame.DpiX>0?frame.DpiX:96,frame.DpiY>0?frame.DpiY:96);
     }
     private static Dimensions? Read(string source)
@@ -166,7 +166,7 @@ internal static class AssistantPreviewGeometry
         {
             this.source=source;start=source.IndexOf(',')+1;
             int count=source.Length-start;
-            if(start<=0 || start>151 || source.Length>AssistantAttachments.MaximumPayload || count<4 || count%4!=0)throw new IOException("Invalid inline image.");
+            if(start<=0 || start>151 || source.Length>AssistantAttachments.MaximumPayload || count<4 || count%4!=0)throw new IOException(Localization.Text("Invalid inline image."));
             Length=(long)count/4*3-(source[^1]=='='?1:0)-(source[^2]=='='?1:0);
         }
         public override bool CanRead=>true;
@@ -182,7 +182,7 @@ internal static class AssistantPreviewGeometry
             {
                 int skip=(int)(position%3),chars=(int)Math.Min(4096,source.Length-start-position/3*4);
                 chars=Math.Min(chars,((buffer.Length+skip+2)/3)*4);
-                if(!Convert.TryFromBase64Chars(source.AsSpan(start+(int)(position/3*4),chars),decoded,out int written))throw new IOException("Invalid inline image.");
+                if(!Convert.TryFromBase64Chars(source.AsSpan(start+(int)(position/3*4),chars),decoded,out int written))throw new IOException(Localization.Text("Invalid inline image."));
                 int take=Math.Min(buffer.Length,written-skip);decoded.Slice(skip,take).CopyTo(buffer);buffer=buffer[take..];position+=take;total+=take;
             }
             return total;

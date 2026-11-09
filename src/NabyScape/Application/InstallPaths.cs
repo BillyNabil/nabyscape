@@ -28,10 +28,10 @@ internal static class InstallPaths
     {
         if(string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path) || path.StartsWith(@"\\",StringComparison.Ordinal))throw new IOException("Choose a local folder with a full drive path.");
         string full=Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
-        if(!string.Equals(full,Legacy,StringComparison.OrdinalIgnoreCase) && !string.Equals(Path.GetFileName(full),"NabyScape",StringComparison.OrdinalIgnoreCase))throw new IOException("Choose a dedicated NabyScape folder, such as D:\\Apps\\NabyScape.");
+        if(!string.Equals(full,Legacy,StringComparison.OrdinalIgnoreCase) && !string.Equals(Path.GetFileName(full),"NabyScape",StringComparison.OrdinalIgnoreCase))throw new IOException(Localization.Text("Choose a dedicated NabyScape folder, such as D:\\Apps\\NabyScape."));
         for(var directory=new DirectoryInfo(full);directory!=null;directory=directory.Parent)
-            if(directory.Exists && (directory.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException("Choose a folder outside symbolic links or junctions.");
-        if(string.Equals(full,Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"NabyScape"),StringComparison.OrdinalIgnoreCase))throw new IOException("This folder holds your personal data. Choose a different installation folder.");
+            if(directory.Exists && (directory.Attributes&FileAttributes.ReparsePoint)!=0)throw new IOException(Localization.Text("Choose a folder outside symbolic links or junctions."));
+        if(string.Equals(full,Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"NabyScape"),StringComparison.OrdinalIgnoreCase))throw new IOException(Localization.Text("This folder holds your personal data. Choose a different installation folder."));
         return full;
     }
     internal static string FromArguments(string[] args,string fallback)

@@ -22,7 +22,7 @@ internal sealed partial class AssistantView : UserControl,IDisposable
     private readonly TextBlock status=UI.Caption("",11,UI.Muted);
     private readonly StackPanel messages=new();
     private readonly ScrollViewer transcript;
-    private readonly TextBox input=UI.Input("Message AI companion","");
+    private readonly TextBox input=UI.CaptionInput("Message AI companion","");
     private readonly Button send,share,stop,clear,attach;
     private readonly WrapPanel draftFiles=new(){Orientation=Orientation.Horizontal};
     private AssistantAttachment[] shownFiles=Array.Empty<AssistantAttachment>();
@@ -63,7 +63,7 @@ internal sealed partial class AssistantView : UserControl,IDisposable
         status.MaxHeight=48;status.TextTrimming=TextTrimming.CharacterEllipsis;statusHost.SetResourceReference(Border.BackgroundProperty,"ControlFill");var statusBody=new StackPanel();statusBody.Children.Add(status);statusBody.Children.Add(AssistantRecoveryControls.Build(app));statusHost.Child=statusBody;Row(statusHost,1);
         transcript=new ScrollViewer{Content=messages,MinHeight=90,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Padding=new(0,2,0,10)};UI.LocalizedName(transcript,"AI conversation");Row(transcript,2);
         welcomePanel.Children.Add(welcomeTitle);welcomeDescription.Margin=new(0,7,0,14);welcomePanel.Children.Add(welcomeDescription);
-        var welcomeActions=new WrapPanel();welcomeActions.Children.Add(Pill("AI setup",app.ShowAssistantProviders));welcomeActions.Children.Add(Pill("Voice mode",app.OpenVoice));welcomePanel.Children.Add(welcomeActions);
+        var welcomeActions=new WrapPanel();welcomeActions.Children.Add(Pill(Localization.Text("AI setup"),app.ShowAssistantProviders));welcomeActions.Children.Add(Pill(Localization.Text("Voice mode"),app.OpenVoice));welcomePanel.Children.Add(welcomeActions);
         input.AcceptsReturn=true;input.TextWrapping=TextWrapping.Wrap;input.MinHeight=36;input.MaxHeight=76;input.Margin=new(0);input.Padding=new(1,7,1,7);input.FontSize=13;input.VerticalContentAlignment=VerticalAlignment.Top;input.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;input.ToolTip=Localization.Text("Enter to send · Shift+Enter for a new line · Escape to stop");
         input.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Enter && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)){e.Handled=true;_=Send();}};
         ConfigureClipboard();
@@ -151,7 +151,7 @@ internal sealed partial class AssistantView : UserControl,IDisposable
     {string text=input.Text.Trim();if(text.Length==0 && ai.DraftFiles.Count==0 || ai.Busy || ai.ImportingFiles)return;int generation=ai.Conversation.Epoch;input.Clear();bool success=await ai.Send(text);if(!success && generation==ai.Conversation.Epoch && input.Text.Length==0)input.Text=text;}
     private void PickFiles()
     {
-        var dialog=new Microsoft.Win32.OpenFileDialog{Title="Attach files to Naby",Multiselect=true,CheckFileExists=true,Filter="Supported attachments|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff;*.webp;*.pdf;*.mp4;*.webm;*.mov;*.mkv;*.avi;*.mp3;*.wav;*.m4a;*.ogg;*.flac;*.docx;*.pptx;*.xlsx;*.odt;*.txt;*.md;*.csv;*.tsv;*.json;*.xml;*.py;*.cs;*.js;*.ts;*.log|All files|*.*"};
+        var dialog=new Microsoft.Win32.OpenFileDialog{Title=Localization.Text("Attach files to Naby"),Multiselect=true,CheckFileExists=true,Filter=Localization.Text("Supported attachments|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff;*.webp;*.pdf;*.mp4;*.webm;*.mov;*.mkv;*.avi;*.mp3;*.wav;*.m4a;*.ogg;*.flac;*.docx;*.pptx;*.xlsx;*.odt;*.txt;*.md;*.csv;*.tsv;*.json;*.xml;*.py;*.cs;*.js;*.ts;*.log|All files|*.*")};
         if(dialog.ShowDialog(Window.GetWindow(this))==true)_=ai.AttachFiles(dialog.FileNames);
     }
     private void RefreshSendState()
@@ -162,7 +162,7 @@ internal sealed partial class AssistantView : UserControl,IDisposable
         share.IsEnabled=false;
         try
         {
-            var owner=Window.GetWindow(this)??throw new InvalidOperationException("Open Naby before choosing a sharing source.");
+            var owner=Window.GetWindow(this)??throw new InvalidOperationException(Localization.Text("Open Naby before choosing a sharing source."));
             if(await ai.ChooseSharing(new WindowInteropHelper(owner).Handle)){await ai.Desktop.Capture(System.Threading.CancellationToken.None);Refresh();}
         }
         catch(Exception ex){ai.StopSharing();statusHost.Visibility=status.Visibility=Visibility.Visible;Accessibility.Announce(status,ex.Message);}
@@ -182,15 +182,15 @@ internal sealed partial class AssistantView : UserControl,IDisposable
             AssistantControls.RefreshConnection(connection,ai);context.Text=ai.CaptureSummary;context.ToolTip=ai.SetupSummary;
             status.Visibility=!ai.Options.Enabled || ai.Provider==null || ai.State!=AssistantState.Idle || ai.ImportingFiles?Visibility.Visible:Visibility.Collapsed;
             statusHost.Visibility=status.Visibility;status.Foreground=Accessibility.HighContrast?SystemColors.WindowTextBrush:ai.State==AssistantState.Error?UI.Brush("#EAB3AD"):UI.Muted;
-            Accessibility.Announce(status,!ai.Options.Enabled?Localization.Text("Enable your companion in Settings → AI."):Localization.Text(ai.Status.Replace("Configure a realtime endpoint and model in Providers.","Set up voice in Settings → AI.").Replace("in provider settings","in Settings → AI")));
-            welcomeDescription.Text=Localization.Text(!ai.Options.Enabled?"Enable your companion in AI setup to begin.":!ai.Setup.Chat.Configured?"Connect your provider or Hermes to start chatting.":"Ask a question, attach a file, or switch to voice.");
+            Accessibility.Announce(status,!ai.Options.Enabled?Localization.Text("Enable your companion in Settings → AI."):Localization.Text(ai.Status.Replace("Configure a realtime endpoint and model in Providers.",Localization.Text("Set up voice in Settings → AI.")).Replace("in provider settings","in Settings → AI")));
+            welcomeDescription.Text=Localization.Text(!ai.Options.Enabled?Localization.Text("Enable your companion in AI setup to begin."):!ai.Setup.Chat.Configured?Localization.Text("Connect your provider or Hermes to start chatting."):Localization.Text("Ask a question, attach a file, or switch to voice."));
             stop.Visibility=ai.Busy || ai.ImportingFiles || ai.VoiceConnected || ai.WakeArmed || ai.Desktop.Sharing?Visibility.Visible:Visibility.Collapsed;clear.Visibility=ai.Conversation.Messages.Count>0 || ai.DraftFiles.Count>0?Visibility.Visible:Visibility.Collapsed;
             RefreshSendState();share.IsEnabled=ai.Options.Enabled && (!ai.Busy || ai.Desktop.Sharing);
             if(!shownFiles.SequenceEqual(ai.DraftFiles)){draftFiles.Children.Clear();shownFiles=ai.DraftFiles.ToArray();foreach(var file in shownFiles)draftFiles.Children.Add(new AssistantAttachmentView(ai,file,true));}
             draftFiles.IsEnabled=!ai.Busy && !ai.ImportingFiles;
             draftFiles.Visibility=ai.Busy?Visibility.Collapsed:Visibility.Visible;
-            share.ToolTip=ai.Desktop.Sharing?"Stop sharing "+ai.Desktop.SourceName:"Share a window or display";if(ai.Desktop.Sharing){share.SetResourceReference(Control.BackgroundProperty,"SelectionFill");share.SetResourceReference(Control.ForegroundProperty,"SelectionText");}else{share.Background=Brushes.Transparent;share.SetResourceReference(Control.ForegroundProperty,"ControlText");}
-            screenPreview.Header="Sharing · "+ai.Desktop.SourceName;screenPreview.Visibility=ai.Desktop.Sharing?Visibility.Visible:Visibility.Collapsed;
+            share.ToolTip=ai.Desktop.Sharing?Localization.Format("Stop sharing {0}",ai.Desktop.SourceName):Localization.Text("Share a window or display");if(ai.Desktop.Sharing){share.SetResourceReference(Control.BackgroundProperty,"SelectionFill");share.SetResourceReference(Control.ForegroundProperty,"SelectionText");}else{share.Background=Brushes.Transparent;share.SetResourceReference(Control.ForegroundProperty,"ControlText");}
+            screenPreview.Header=Localization.Format("Sharing · {0}",ai.Desktop.SourceName);screenPreview.Visibility=ai.Desktop.Sharing?Visibility.Visible:Visibility.Collapsed;
             bool restoring=restoreScroll,bottom=restoring?followLatest:transcript.ScrollableHeight-transcript.VerticalOffset<30;
             var history=ai.Conversation.Messages;
             if(ReferenceEquals(renderedHistory,history) && !restoring){RefreshOrb();RefreshScreen();return;}
@@ -201,9 +201,9 @@ internal sealed partial class AssistantView : UserControl,IDisposable
             for(int i=rendered;i<history.Count;i++)
             {
                 var message=history[i];if(message.Role is not ("user" or "assistant") || string.IsNullOrWhiteSpace(message.Text) && message.Attachments is not {Count:>0} || message.Text.StartsWith("Updated shared screen after"))continue;
-                var body=new StackPanel();if(!string.IsNullOrWhiteSpace(message.Text))body.Children.Add(message.Role=="assistant"?AssistantMarkdown.Render(message.Text):UI.Text(message.Text,13));
+                var body=new StackPanel();if(!string.IsNullOrWhiteSpace(message.Text))body.Children.Add(message.Role=="assistant"?AssistantMarkdown.Render(message.DisplayText):UI.Text(message.Text,13));
                 if(message.Attachments!=null)foreach(var file in message.Attachments)body.Children.Add(new AssistantAttachmentView(ai,file));FrameworkElement text=body;text.Margin=message.Role=="user"?new Thickness(12,9,12,9):new Thickness(2,10,2,10);
-                var menu=new ContextMenu();var copy=new MenuItem{Header="Copy message"};copy.Click+=(_,_)=>{try{Clipboard.SetText(message.Text);}catch{}};menu.Items.Add(copy);text.ContextMenu=menu;
+                var menu=new ContextMenu();var copy=new MenuItem{Header=Localization.Text("Copy message")};copy.Click+=(_,_)=>{try{Clipboard.SetText(message.DisplayText);}catch{}};menu.Items.Add(copy);text.ContextMenu=menu;
                 var bubble=new Border{Child=text,CornerRadius=new(12),Background=Brushes.Transparent,Margin=new(message.Role=="user"?42:0,3,message.Role=="user"?0:12,5)};if(message.Role=="user")bubble.SetResourceReference(Border.BackgroundProperty,"ControlFill");messages.Children.Add(bubble);
                 if(IsLoaded && !app.Settings.ReduceMotion && !restoring){bubble.Opacity=0;Motion.Fade(bubble,1,180);}
             }

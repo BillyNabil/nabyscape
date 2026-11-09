@@ -23,10 +23,10 @@ internal sealed class AssistantShareCapture : IDisposable
     private readonly object gate=new();
     private int active;
     internal event Action? SourceClosed;
-    internal string Name=>item?.DisplayName??"Shared source";
+    internal string Name=>item?.DisplayName??Localization.Text("Shared source");
     internal async Task<bool> Pick(IntPtr owner)
     {
-        if(!GraphicsCaptureSession.IsSupported())throw new InvalidOperationException("Screen sharing needs a supported Windows graphics device.");
+        if(!GraphicsCaptureSession.IsSupported())throw new InvalidOperationException(Localization.Text("Screen sharing needs a supported Windows graphics device."));
         var picker=new GraphicsCapturePicker();WinRT.Interop.InitializeWithWindow.Initialize(picker,owner);
         item=await picker.PickSingleItemAsync();if(item==null)return false;
         item.Closed+=Closed;device=CreateDevice();return true;
@@ -38,7 +38,7 @@ internal sealed class AssistantShareCapture : IDisposable
         GraphicsCaptureItem source;IDirect3DDevice graphics;CancellationToken shutdown;
         lock(gate)
         {
-            if(disposed || item==null || device==null || lifetime.IsCancellationRequested)throw new InvalidOperationException("The shared window closed. Choose another window or display.");
+            if(disposed || item==null || device==null || lifetime.IsCancellationRequested)throw new InvalidOperationException(Localization.Text("The shared window closed. Choose another window or display."));
             source=item;graphics=device;shutdown=lifetime.Token;active++;
         }
         try{return await CaptureFrame(target,source,graphics,shutdown,token);}
@@ -47,7 +47,7 @@ internal sealed class AssistantShareCapture : IDisposable
     private static async Task<AssistantScreenFrame> CaptureFrame(AssistantScreenTarget target,GraphicsCaptureItem source,IDirect3DDevice graphics,CancellationToken shutdown,CancellationToken token)
     {
         using var timeout=CancellationTokenSource.CreateLinkedTokenSource(token,shutdown);timeout.CancelAfter(TimeSpan.FromSeconds(8));
-        var size=source.Size;if(size.Width<=0 || size.Height<=0)throw new InvalidOperationException("Restore the selected window before sharing it.");
+        var size=source.Size;if(size.Width<=0 || size.Height<=0)throw new InvalidOperationException(Localization.Text("Restore the selected window before sharing it."));
         using var pool=Direct3D11CaptureFramePool.CreateFreeThreaded(graphics,DirectXPixelFormat.B8G8R8A8UIntNormalized,1,size);
         var done=new TaskCompletionSource<SoftwareBitmap>(TaskCreationOptions.RunContinuationsAsynchronously);
         SoftwareBitmap? capturedBitmap=null;
@@ -74,7 +74,7 @@ internal sealed class AssistantShareCapture : IDisposable
         {
             using var registration=timeout.Token.Register(()=>done.TrySetCanceled(timeout.Token));session.StartCapture();var bitmap=await done.Task;return await Encode(target,bitmap,timeout.Token);
         }
-        catch(OperationCanceledException) when(!token.IsCancellationRequested){throw new InvalidOperationException("The shared source is unavailable or minimized. Restore it, or choose another source.");}
+        catch(OperationCanceledException) when(!token.IsCancellationRequested){throw new InvalidOperationException(Localization.Text("The shared source is unavailable or minimized. Restore it, or choose another source."));}
         finally
         {
             Task pending;lock(callbackGate){stopping=true;pending=copying;done.TrySetCanceled();}
@@ -84,7 +84,7 @@ internal sealed class AssistantShareCapture : IDisposable
     internal static async Task<AssistantScreenFrame> Encode(AssistantScreenTarget target,SoftwareBitmap source,CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
-        long bytes=(long)source.PixelWidth*source.PixelHeight*4;if(bytes>128*1024*1024)throw new InvalidOperationException("Choose a smaller display or window to share.");
+        long bytes=(long)source.PixelWidth*source.PixelHeight*4;if(bytes>128*1024*1024)throw new InvalidOperationException(Localization.Text("Choose a smaller display or window to share."));
         double scale=Math.Min(1,1280d/Math.Max(source.PixelWidth,source.PixelHeight));
         int width=Math.Max(1,(int)(source.PixelWidth*scale)),height=Math.Max(1,(int)(source.PixelHeight*scale));
         // Scan/legacy alpha interpolation run off the UI thread. The task owns the lock
@@ -117,7 +117,7 @@ internal sealed class AssistantShareCapture : IDisposable
             long last=(long)plane.StartIndex+(long)(source.PixelHeight-1)*plane.Stride;
             if(source.BitmapPixelFormat!=BitmapPixelFormat.Bgra8 || Math.Min(plane.StartIndex,last)<0 ||
                 Math.Max(plane.StartIndex,last)+(long)source.PixelWidth*4>capacity)
-                throw new InvalidOperationException("The shared source has an unsupported pixel buffer.");
+                throw new InvalidOperationException(Localization.Text("The shared source has an unsupported pixel buffer."));
             bool alpha=false;var scan=ArrayPool<int>.Shared.Rent(4096);
             try
             {

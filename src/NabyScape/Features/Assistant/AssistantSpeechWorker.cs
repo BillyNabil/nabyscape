@@ -27,14 +27,14 @@ internal sealed class AssistantSpeechWorker : IDisposable
         using var timeout=CancellationTokenSource.CreateLinkedTokenSource(token);timeout.CancelAfter(TimeSpan.FromMinutes(2));
         try
         {
-            string executable=Environment.ProcessPath??throw new IOException("The app executable is unavailable.");
+            string executable=Environment.ProcessPath??throw new IOException(Localization.Text("The app executable is unavailable."));
             var info=new ProcessStartInfo(executable){UseShellExecute=false,CreateNoWindow=true,WorkingDirectory=AppContext.BaseDirectory};
             if(Path.GetFileNameWithoutExtension(executable).Equals("dotnet",StringComparison.OrdinalIgnoreCase))info.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory,"NabyScape.dll"));
             info.ArgumentList.Add("--speech-worker");info.ArgumentList.Add(pipeName);timeout.Token.ThrowIfCancellationRequested();process=launch(info);
             await pipe.WaitForConnectionAsync(timeout.Token);await WriteFrame(pipe,JsonSerializer.SerializeToUtf8Bytes(setup),timeout.Token);await ReadReply(timeout.Token);
         }
         catch(OperationCanceledException){Dispose();throw;}
-        catch(Exception ex){Dispose();throw new IOException("Could not load the persistent voice engine. Prepare the selected pack again, or choose Windows voice.",ex);}
+        catch(Exception ex){Dispose();throw new IOException(Localization.Text("Could not load the persistent voice engine. Prepare the selected pack again, or choose Windows voice."),ex);}
     }
     internal async Task<byte[]> Speak(string text,CancellationToken token)
     {
@@ -50,8 +50,8 @@ internal sealed class AssistantSpeechWorker : IDisposable
     private async Task<byte[]> ReadReply(CancellationToken token)
     {
         var response=await ReadFrame(pipe,12*1024*1024+1,token);
-        if(response.Length==0)throw new IOException("The voice worker returned an empty reply.");
-        if(response[0]!=0)throw new IOException("Local voice generation failed. Check your voice pack or choose Windows voice.");
+        if(response.Length==0)throw new IOException(Localization.Text("The voice worker returned an empty reply."));
+        if(response[0]!=0)throw new IOException(Localization.Text("Local voice generation failed. Check your voice pack or choose Windows voice."));
         return response[1..];
     }
     public void Dispose()
@@ -70,13 +70,13 @@ internal sealed class AssistantSpeechWorker : IDisposable
             using(var connect=new CancellationTokenSource(TimeSpan.FromSeconds(15)))await client.ConnectAsync(connect.Token);
             using var initTimeout=new CancellationTokenSource(TimeSpan.FromMinutes(2));
             var bytes=await ReadFrame(client,32768,initTimeout.Token);
-            var setup=JsonSerializer.Deserialize<Setup>(bytes)??throw new IOException("Missing speech configuration.");
+            var setup=JsonSerializer.Deserialize<Setup>(bytes)??throw new IOException(Localization.Text("Missing speech configuration."));
             using var engine=new AssistantSpeechNative(setup);
             await WriteFrame(client,new byte[]{0},initTimeout.Token);
             while(true)
             {
                 var input=await ReadFrame(client,8000,CancellationToken.None);string text=new UTF8Encoding(false,true).GetString(input);
-                var wav=engine.Speak(text);if(wav.Length>12*1024*1024)throw new IOException("Voice segment exceeds its limit.");
+                var wav=engine.Speak(text);if(wav.Length>12*1024*1024)throw new IOException(Localization.Text("Voice segment exceeds its limit."));
                 var response=new byte[wav.Length+1];Buffer.BlockCopy(wav,0,response,1,wav.Length);await WriteFrame(client,response,CancellationToken.None);
             }
         }
@@ -94,7 +94,7 @@ internal sealed class AssistantSpeechWorker : IDisposable
     private static async Task<byte[]> ReadFrame(Stream stream,int maximum,CancellationToken token)
     {
         byte[] size=new byte[4];await stream.ReadExactlyAsync(size,token);int length=BinaryPrimitives.ReadInt32LittleEndian(size);
-        if(length<0 || length>maximum)throw new IOException("Invalid voice-worker frame size.");
+        if(length<0 || length>maximum)throw new IOException(Localization.Text("Invalid voice-worker frame size."));
         byte[] bytes=new byte[length];await stream.ReadExactlyAsync(bytes,token);return bytes;
     }
 }

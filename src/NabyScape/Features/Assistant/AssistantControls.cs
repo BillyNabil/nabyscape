@@ -15,9 +15,9 @@ internal static class AssistantControls
         foreach(var item in new[]{("Chat",false),("Voice",true)})
         {
             bool selected=item.Item2==voice;var button=Action(item.Item1,item.Item2?"mic":"chat",()=>{if(!selected){if(item.Item2)app.OpenVoice();else app.ShowAssistant();}});
-            button.MinWidth=72;if(selected){button.SetResourceReference(Control.BackgroundProperty,"SelectionFill");button.SetResourceReference(Control.ForegroundProperty,"SelectionText");}else button.Foreground=UI.Muted;button.FontWeight=selected?FontWeights.SemiBold:FontWeights.Normal;button.BorderThickness=new(0);button.ToolTip=item.Item2?"Voice conversation · the microphone starts only when you choose Start":"Text conversation";
+            button.MinWidth=72;if(selected){button.SetResourceReference(Control.BackgroundProperty,"SelectionFill");button.SetResourceReference(Control.ForegroundProperty,"SelectionText");}else button.Foreground=UI.Muted;button.FontWeight=selected?FontWeights.SemiBold:FontWeights.Normal;button.BorderThickness=new(0);button.ToolTip=item.Item2?Localization.Text("Voice conversation · the microphone starts only when you choose Start"):Localization.Text("Text conversation");
             if(button.Content is StackPanel content && content.Children[1] is TextBlock label)label.FontWeight=selected?FontWeights.SemiBold:FontWeights.Normal;
-            System.Windows.Automation.AutomationProperties.SetHelpText(button,selected?"Current mode":"Switch conversation mode");row.Children.Add(button);
+            System.Windows.Automation.AutomationProperties.SetHelpText(button,selected?Localization.Text("Current mode"):Localization.Text("Switch conversation mode"));row.Children.Add(button);
         }
         return row;
     }
@@ -52,11 +52,11 @@ internal static class AssistantControls
         description=UI.Caption("",11,UI.Muted);description.MaxWidth=260;
         var menu=new ContextMenu{Placement=System.Windows.Controls.Primitives.PlacementMode.Top,MinWidth=230};
         UI.LocalizedName(menu,"Naby options");menu.Items.Add(new MenuItem{Header=description,IsEnabled=false});menu.Items.Add(new Separator());
-        menu.Items.Add(Option("AI settings","Providers & API keys","settings",app.ShowAssistantProviders));
-        menu.Items.Add(Option("Voice settings","Models & microphone","mic",app.ShowVoiceSettings));
-        menu.Items.Add(Option("Connect Hermes","Connect or manage your own agent","link",app.ShowHermesSettings));
-        var wake=Option("Wake word","Pause or resume local wake listening","mic",()=>{if(app.Assistant.Options.WakeWord.Enabled)app.Assistant.ToggleWakeListening();else app.ShowVoiceSettings();});menu.Items.Add(new Separator());menu.Items.Add(wake);
-        menu.Opened+=(_,_)=>{string label=app.Assistant.Options.WakeWord.Enabled?(app.Assistant.WakeArmed?"Pause wake word":"Resume wake word"):"Set up wake word…";if(wake.Header is StackPanel header && header.Children[1] is TextBlock text)text.Text=Localization.Text(label);UI.LocalizedName(wake,label);wake.ToolTip=app.Assistant.WakeStatus;};
+        menu.Items.Add(Option(Localization.Text("AI settings"),Localization.Text("Providers & API keys"),"settings",app.ShowAssistantProviders));
+        menu.Items.Add(Option(Localization.Text("Voice settings"),Localization.Text("Models & microphone"),"mic",app.ShowVoiceSettings));
+        menu.Items.Add(Option(Localization.Text("Connect Hermes"),Localization.Text("Connect or manage your own agent"),"link",app.ShowHermesSettings));
+        var wake=Option(Localization.Text("Wake word"),Localization.Text("Pause or resume local wake listening"),"mic",()=>{if(app.Assistant.Options.WakeWord.Enabled)app.Assistant.ToggleWakeListening();else app.ShowVoiceSettings();});menu.Items.Add(new Separator());menu.Items.Add(wake);
+        menu.Opened+=(_,_)=>{string label=app.Assistant.Options.WakeWord.Enabled?(app.Assistant.WakeArmed?Localization.Text("Pause wake word"):Localization.Text("Resume wake word")):Localization.Text("Set up wake word…");if(wake.Header is StackPanel header && header.Children[1] is TextBlock text)text.Text=Localization.Text(label);UI.LocalizedName(wake,label);wake.ToolTip=app.Assistant.WakeStatus;};
         var options=Action("Options","settings",()=>menu.IsOpen=true);options.ToolTip=Localization.Text("AI settings, voice setup and Hermes");options.ContextMenu=menu;menu.PlacementTarget=options;Grid.SetColumn(options,2);row.Children.Add(options);
         FrameworkElement footer=row;
         if(voice && row.Children[0] is StackPanel modes)
@@ -79,11 +79,11 @@ internal static class AssistantControls
         string text;
         if(voice && ai.Options.LocalVoice.Enabled)
         {
-            var options=ai.Options.LocalVoice;text=Localization.Text(options.OwnModels?"Your local model files":options.Managed?"Installed local speech": "Local ASR & TTS service");
+            var options=ai.Options.LocalVoice;text=Localization.Text(options.OwnModels?Localization.Text("Your local model files"):options.Managed?Localization.Text("Installed local speech"): Localization.Text("Local ASR & TTS service"));
         }
         else
         {
-            var provider=voice?ai.VoiceProvider:ai.Provider;text=provider==null?"Choose a provider to get started":provider.Name+(provider.Model.Length>0?" · "+provider.Model:"");
+            var provider=voice?ai.VoiceProvider:ai.Provider;text=provider==null?Localization.Text("Choose a provider to get started"):provider.Name+(provider.Model.Length>0?" · "+provider.Model:"");
         }
         bool configured=voice && ai.Options.LocalVoice.Enabled || (voice?ai.VoiceProvider:ai.Provider)!=null;label.Text=configured?Localization.Format("Selected: {0}",text):Localization.Text("Choose a provider to get started");label.ToolTip=text;
     }

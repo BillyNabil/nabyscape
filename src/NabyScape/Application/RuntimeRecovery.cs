@@ -57,17 +57,17 @@ public sealed partial class App
             bool interrupted=(change & (RecoveryChange.Suspend|RecoveryChange.Session|RecoveryChange.Offline|RecoveryChange.Audio))!=0;
             if(interrupted || (change.HasFlag(RecoveryChange.Display) && Assistant.Desktop.Sharing))
             {
-                string reason=change.HasFlag(RecoveryChange.Suspend)?"Windows is suspending":change.HasFlag(RecoveryChange.Session)?"Windows session changed":change.HasFlag(RecoveryChange.Offline)?"Network connection lost":change.HasFlag(RecoveryChange.Audio)?"Audio devices changed":"Display configuration changed";
+                string reason=change.HasFlag(RecoveryChange.Suspend)?Localization.Text("Windows is suspending"):change.HasFlag(RecoveryChange.Session)?Localization.Text("Windows session changed"):change.HasFlag(RecoveryChange.Offline)?Localization.Text("Network connection lost"):change.HasFlag(RecoveryChange.Audio)?Localization.Text("Audio devices changed"):Localization.Text("Display configuration changed");
                 bool active=Assistant.VoiceConnected || Assistant.WakeArmed || Assistant.Busy || Assistant.Desktop.Sharing;
                 // Also invalidate EndVoice's pending wake continuation while its session is already closing.
                 Assistant.PreventRecoveryRestart();
                 if(active)
                 {
                     Assistant.StopForRecovery(reason);
-                    RecoveryStatus=reason+". Start voice, resume wake listening or retry your request when ready.";
+                    RecoveryStatus=reason+Localization.Text(". Start voice, resume wake listening or retry your request when ready.");
                     PrivateDiagnostics.Record(DiagnosticStage.Recovery,DiagnosticCode.Cancelled);
                     PrivateDiagnostics.SetServiceState(DiagnosticService.Recovery,DiagnosticServiceState.Degraded);
-                    Notify("Session paused",RecoveryStatus);
+                    Notify(Localization.Text("Session paused"),RecoveryStatus);
                 }
             }
             if((change & (RecoveryChange.Resume|RecoveryChange.Online|RecoveryChange.Audio|RecoveryChange.Display))!=0)
@@ -86,12 +86,12 @@ public sealed partial class App
                 PublishUpdate(RuntimeChange.All);
             }
         }
-        catch(Exception){PrivateDiagnostics.Record(DiagnosticStage.Recovery,DiagnosticCode.UnknownFailure);PrivateDiagnostics.SetServiceState(DiagnosticService.Recovery,DiagnosticServiceState.Degraded);RecoveryStatus="Some devices are unavailable. Check Windows settings, then explicitly retry.";}
+        catch(Exception){PrivateDiagnostics.Record(DiagnosticStage.Recovery,DiagnosticCode.UnknownFailure);PrivateDiagnostics.SetServiceState(DiagnosticService.Recovery,DiagnosticServiceState.Degraded);RecoveryStatus=Localization.Text("Some devices are unavailable. Check Windows settings, then explicitly retry.");}
     }
     private void RecoverRuntimeStep(Action recover)
     {
         try{recover();}
-        catch(Exception){PrivateDiagnostics.Record(DiagnosticStage.Recovery,DiagnosticCode.UnknownFailure);PrivateDiagnostics.SetServiceState(DiagnosticService.Recovery,DiagnosticServiceState.Degraded);RecoveryStatus="Some devices are unavailable. Check Windows settings, then explicitly retry.";}
+        catch(Exception){PrivateDiagnostics.Record(DiagnosticStage.Recovery,DiagnosticCode.UnknownFailure);PrivateDiagnostics.SetServiceState(DiagnosticService.Recovery,DiagnosticServiceState.Degraded);RecoveryStatus=Localization.Text("Some devices are unavailable. Check Windows settings, then explicitly retry.");}
     }
     private async Task RefreshRuntimeCaches()
     {
@@ -135,8 +135,8 @@ internal sealed partial class AssistantRuntime
     internal void StopForRecovery(string reason)
     {
         StopSession();
-        Status=reason+" · microphones and screen sharing off. Start voice or retry when ready.";
-        WakeStatus=reason+" · wake microphone off. Resume wake listening explicitly when ready.";
+        Status=reason+Localization.Text(" · microphones and screen sharing off. Start voice or retry when ready.");
+        WakeStatus=reason+Localization.Text(" · wake microphone off. Resume wake listening explicitly when ready.");
         Notify();
     }
 }

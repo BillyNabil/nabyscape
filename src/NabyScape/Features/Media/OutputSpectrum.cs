@@ -69,7 +69,7 @@ internal sealed class OutputSpectrum : IDisposable
                 capture=new WasapiLoopbackCapture(device);var format=capture.WaveFormat;
                 bytes=format.BitsPerSample/8;channels=format.Channels;
                 floating=format.Encoding==WaveFormatEncoding.IeeeFloat || format is WaveFormatExtensible ext && ext.SubFormat==new Guid("00000003-0000-0010-8000-00aa00389b71");
-                if(bytes is not (2 or 3 or 4) || channels<1)throw new NotSupportedException("Unsupported output sample format.");
+                if(bytes is not (2 or 3 or 4) || channels<1)throw new NotSupportedException(Localization.Text("Unsupported output sample format."));
                 transform=new(format.SampleRate);capture.DataAvailable+=Receive;capture.RecordingStopped+=Stopped;capture.StartRecording();
             }
             catch{try{capture?.Dispose();}catch{}device.Dispose();throw;}

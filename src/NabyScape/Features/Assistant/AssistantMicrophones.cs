@@ -19,7 +19,7 @@ internal static class AssistantMicrophones
 {
     internal static AssistantMicrophone[] List()
     {
-        var devices=new List<AssistantMicrophone>{new("","Windows default microphone",-1)};
+        var devices=new List<AssistantMicrophone>{new("",Localization.Text("Windows default microphone"),-1)};
         for(int i=0;i<WaveIn.DeviceCount;i++)
         {
             var caps=WaveIn.GetCapabilities(i);
@@ -32,7 +32,7 @@ internal static class AssistantMicrophones
     {
         if(string.IsNullOrEmpty(id))return -1;
         var matches=devices.Where(d=>d.Id==id).ToArray();
-        if(matches.Length!=1)throw new IOException("Your selected microphone is unavailable or has a duplicate name. Reconnect it, or choose another input in Voice settings.");
+        if(matches.Length!=1)throw new IOException(Localization.Text("Your selected microphone is unavailable or has a duplicate name. Reconnect it, or choose another input in Voice settings."));
         return matches[0].Number;
     }
 }
@@ -42,7 +42,7 @@ internal sealed partial class AssistantRuntime
     internal Task WaitForMicrophoneRelease()=>Task.WhenAll(wakeClosing,voiceClosing);
     internal void SaveMicrophone(string id)
     {
-        if(SpeechCheckBusy || VoiceConnected || Busy)throw new InvalidOperationException("End voice or the audio test before changing your microphone.");
+        if(SpeechCheckBusy || VoiceConnected || Busy)throw new InvalidOperationException(Localization.Text("End voice or the audio test before changing your microphone."));
         AssistantMicrophones.Resolve(id);
         string previous=Options.MicrophoneId;Options.MicrophoneId=id;
         try{app.Store.Save("assistant",Options);}catch{Options.MicrophoneId=previous;throw;}
@@ -55,8 +55,8 @@ internal sealed partial class AssistantProviderSettings
     private FrameworkElement MicrophoneSettings()
     {
         var body=new StackPanel{Margin=new(0,0,0,18)};
-        body.Children.Add(UI.Text("Microphone",14));
-        var input=new ComboBox{MinHeight=38,Margin=new(0,8,0,8)};UI.Named(input,"Input microphone");body.Children.Add(input);
+        body.Children.Add(UI.Caption("Microphone",14));
+        var input=new ComboBox{MinHeight=38,Margin=new(0,8,0,8)};UI.LocalizedName(input,"Input microphone");body.Children.Add(input);
         var feedback=UI.Text("",11,UI.Muted);Accessibility.Live(feedback);
         bool loading=false;
         void Refresh()
@@ -65,15 +65,15 @@ internal sealed partial class AssistantProviderSettings
             try
             {
                 input.ItemsSource=AssistantMicrophones.List();input.SelectedItem=input.Items.Cast<AssistantMicrophone>().FirstOrDefault(d=>d.Id==ai.Options.MicrophoneId);
-                feedback.Text=input.SelectedItem==null?"Saved microphone unavailable. Reconnect it or choose an input.":"Selected: "+input.SelectedItem+" · used for voice, wake word and audio tests.";
+                feedback.Text=input.SelectedItem==null?Localization.Text("Saved microphone unavailable. Reconnect it or choose an input."):Localization.Text("Selected: ")+input.SelectedItem+Localization.Text(" · used for voice, wake word and audio tests.");
             }
-            catch(Exception){feedback.Text="Could not list microphones. Check Windows sound settings, then refresh.";}
+            catch(Exception){feedback.Text=Localization.Text("Could not list microphones. Check Windows sound settings, then refresh.");}
             finally{loading=false;}
         }
         input.SelectionChanged+=(_,_)=>
         {
             if(loading || input.SelectedItem is not AssistantMicrophone selected)return;
-            try{ai.SaveMicrophone(selected.Id);feedback.Text="Saved · "+selected.Name;Feedback(feedback.Text);}
+            try{ai.SaveMicrophone(selected.Id);feedback.Text=Localization.Text("Saved · ")+selected.Name;Feedback(feedback.Text);}
             catch(Exception ex){Refresh();feedback.Text=ex.Message;Feedback(feedback.Text,true);}
         };
         var actions=new WrapPanel();actions.Children.Add(AssistantWindow.Pill("Test microphone",()=>{selectVoicePage?.Invoke("Audio");testSelectedMicrophone?.Invoke();}));
@@ -135,7 +135,7 @@ internal sealed class AssistantWakeInput : Stream
     public override long Seek(long offset,SeekOrigin origin)
     {
         long target=origin switch{SeekOrigin.Begin=>offset,SeekOrigin.Current=>checked(Position+offset),_=>throw new NotSupportedException()};
-        if(target!=Position)throw new NotSupportedException("A live microphone cannot rewind.");return target;
+        if(target!=Position)throw new NotSupportedException(Localization.Text("A live microphone cannot rewind."));return target;
     }
     public override void SetLength(long value)=>throw new NotSupportedException();
     public override void Write(byte[] buffer,int offset,int count)=>throw new NotSupportedException();

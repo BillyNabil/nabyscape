@@ -9,11 +9,11 @@ public sealed class BrightnessService : IDisposable
 {
     private bool attempted;
     private ManagementEventWatcher? watcher;
-    public string Status {get;private set;}="Brightness feedback unavailable on this display";
+    public string Status {get;private set;}=Localization.Text("Brightness feedback unavailable on this display");
     public event Action<int>? Changed;
     public void Start(bool enabled=true)
     {
-        if(!enabled){Dispose();attempted=false;Status="Brightness feedback off";return;}
+        if(!enabled){Dispose();attempted=false;Status=Localization.Text("Brightness feedback off");return;}
         if(watcher!=null || attempted)return;attempted=true;
         try
         {
@@ -21,7 +21,7 @@ public sealed class BrightnessService : IDisposable
             using var results=query.Get();
             if(results.Count==0)return;
             watcher=new ManagementEventWatcher(@"root\WMI","SELECT * FROM WmiMonitorBrightnessEvent");
-            watcher.EventArrived+=OnBrightness;watcher.Start();Status="Brightness events active";
+            watcher.EventArrived+=OnBrightness;watcher.Start();Status=Localization.Text("Brightness events active");
         }
         catch(ManagementException){Dispose();}
         catch(System.Runtime.InteropServices.COMException){Dispose();}

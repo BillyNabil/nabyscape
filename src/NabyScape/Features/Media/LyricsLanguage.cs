@@ -9,7 +9,7 @@ internal static class LyricsLanguage
 {
     private static readonly Lazy<RankedLanguageIdentifier> identifier=new(()=>
     {
-        using var resource=typeof(LyricsLanguage).Assembly.GetManifestResourceStream("NabyScape.LyricsLanguages")??throw new InvalidOperationException("Language profile is missing.");
+        using var resource=typeof(LyricsLanguage).Assembly.GetManifestResourceStream("NabyScape.LyricsLanguages")??throw new InvalidOperationException(Localization.Text("Language profile is missing."));
         using var profile=new GZipStream(resource,CompressionMode.Decompress);
         return new RankedLanguageIdentifierFactory().Load(profile);
     });

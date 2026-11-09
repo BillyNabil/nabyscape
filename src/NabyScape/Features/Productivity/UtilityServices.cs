@@ -26,7 +26,7 @@ public sealed class KeepAwakeService : IDisposable
     private void CheckThread()
     {
         if(Environment.CurrentManagedThreadId!=ownerThread)
-            throw new InvalidOperationException("Keep awake must be controlled on its creating UI thread.");
+            throw new InvalidOperationException(Localization.Text("Keep awake must be controlled on its creating UI thread."));
     }
     private void CheckUsable()
     {
@@ -37,10 +37,10 @@ public sealed class KeepAwakeService : IDisposable
     {
         CheckUsable();
         if(duration.HasValue && (duration.Value<=TimeSpan.Zero || duration.Value>TimeSpan.FromHours(24)))
-            throw new ArgumentException("Choose a keep-awake duration greater than zero and at most 24 hours.",nameof(duration));
+            throw new ArgumentException(Localization.Text("Choose a keep-awake duration greater than zero and at most 24 hours."),nameof(duration));
         var until=duration.HasValue ? now.Add(duration.Value) : (DateTimeOffset?)null;
         if(setExecutionState(Continuous|SystemRequired|(keepDisplayOn?DisplayRequired:0))==0)
-            throw new InvalidOperationException("Windows could not enable keep awake. Try again from the island.");
+            throw new InvalidOperationException(Localization.Text("Windows could not enable keep awake. Try again from the island."));
         Active=true; Until=until; KeepDisplayOn=keepDisplayOn; Changed?.Invoke();
     }
     public void Stop()
@@ -48,7 +48,7 @@ public sealed class KeepAwakeService : IDisposable
         CheckUsable();
         if(!Active)return;
         if(setExecutionState(Continuous)==0)
-            throw new InvalidOperationException("Windows could not release keep awake. Try stopping it again before quitting.");
+            throw new InvalidOperationException(Localization.Text("Windows could not release keep awake. Try stopping it again before quitting."));
         Active=false; Until=null; KeepDisplayOn=false; Changed?.Invoke();
     }
     public void Tick(DateTimeOffset now)
@@ -79,7 +79,7 @@ public static class CleanLink
             !Uri.TryCreate(value,UriKind.Absolute,out var uri) ||
             (uri.Scheme!=Uri.UriSchemeHttp && uri.Scheme!=Uri.UriSchemeHttps) ||
             uri.Host.Length==0 || uri.UserInfo.Length!=0 || !uri.IsWellFormedOriginalString())
-            throw new ArgumentException($"Enter a complete HTTP or HTTPS URL without credentials, up to {maximumLength} characters.",parameter);
+            throw new ArgumentException(Localization.Format("Enter a complete HTTP or HTTPS URL without credentials, up to {0} characters.",maximumLength),parameter);
         return value;
     }
     public static string Clean(string input)
@@ -137,9 +137,9 @@ public sealed class CalendarService
     {
         title=title?.Trim() ?? "";
         if(title.Length is <1 or >120)
-            throw new ArgumentException("Enter an event title between 1 and 120 characters.",nameof(title));
+            throw new ArgumentException(Localization.Text("Enter an event title between 1 and 120 characters."),nameof(title));
         if(end<=start || end-start>TimeSpan.FromDays(31))
-            throw new ArgumentException("Choose an end after the start, within 31 days.",nameof(end));
+            throw new ArgumentException(Localization.Text("Choose an end after the start, within 31 days."),nameof(end));
         meetingUrl=meetingUrl?.Trim() ?? "";
         if(meetingUrl.Length>0)meetingUrl=CleanLink.ValidateUrl(meetingUrl,2048,nameof(meetingUrl));
         return new CalendarEvent { Id=string.IsNullOrWhiteSpace(id)?Guid.NewGuid().ToString("N"):id,
@@ -147,7 +147,7 @@ public sealed class CalendarService
     }
     public CalendarEvent Add(string title,DateTimeOffset start,DateTimeOffset end,string meetingUrl)
     {
-        if(events.Count>=200)throw new InvalidOperationException("The calendar is full. Remove an event before adding another (200 maximum).");
+        if(events.Count>=200)throw new InvalidOperationException(Localization.Text("The calendar is full. Remove an event before adding another (200 maximum)."));
         var entry=Create(title,start,end,meetingUrl);
         var next=new List<CalendarEvent>(events) { entry };
         store.Save("calendar",next);

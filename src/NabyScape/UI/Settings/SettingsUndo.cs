@@ -18,7 +18,7 @@ public sealed partial class SettingsWindow
         // Window placement and other unrelated saves must not erase the last visual Undo.
         if(changes.Count==0)return;
         undoValues.Clear();foreach(var item in changes)undoValues[item.Key]=item.Value;
-        undoSettings.Visibility=Visibility.Visible;undoSettings.ToolTip="Undo the last saved appearance, layout or widget change. Saved content, connections and background permissions are preserved.";
+        undoSettings.Visibility=Visibility.Visible;undoSettings.ToolTip=Localization.Text("Undo the last saved appearance, layout or widget change. Saved content, connections and background permissions are preserved.");
     }
     private void UndoSettings()
     {

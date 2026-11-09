@@ -11,9 +11,9 @@ namespace NabyScape;
 
 internal sealed record AssistantVoiceTiming(long Turn,long AsrMs,long FirstTextMs,long FirstTtsMs,long AudioReadyMs,long TotalMs,bool Streamed)
 {
-    private static string Time(long ms)=>ms<0?"—":$"{ms/1000d:0.0}s";
-    internal string Summary=>$"ASR {Time(AsrMs)} · Reply {Time(FirstTextMs)} · TTS {Time(FirstTtsMs)}";
-    internal string Detail=>$"Speech recognition: {Time(AsrMs)}\nReply preparation to first accepted text: {Time(FirstTextMs)}\nFirst voice segment synthesis: {Time(FirstTtsMs)}\nRecognition start to first queued audio: {Time(AudioReadyMs)}\nTurn including playback: {Time(TotalMs)}\nReply includes shared-context preparation and tool work when used. Excludes the silence-detection pause and hardware output latency. Timings stay in memory; speech content is not logged.";
+    private static string Time(long ms)=>ms<0?"—":Localization.Format("{0}s",(ms/1000d).ToString("0.0"));
+    internal string Summary=>Localization.Format("ASR {0} · Reply {1} · TTS {2}",Time(AsrMs),Time(FirstTextMs),Time(FirstTtsMs));
+    internal string Detail=>Localization.Format("Speech recognition: {0}\nReply preparation to first accepted text: {1}\nFirst voice segment synthesis: {2}\nRecognition start to first queued audio: {3}\nTurn including playback: {4}\nReply includes shared-context preparation and tool work when used. Excludes the silence-detection pause and hardware output latency. Timings stay in memory; speech content is not logged.",Time(AsrMs),Time(FirstTextMs),Time(FirstTtsMs),Time(AudioReadyMs),Time(TotalMs));
 }
 
 internal sealed partial class LocalAssistantVoice
@@ -27,7 +27,7 @@ internal sealed partial class LocalAssistantVoice
         TurnStarted?.Invoke();long turn=Interlocked.Increment(ref turnSerial);var clock=Stopwatch.StartNew();
         long firstText=-1,firstTts=-1,audioReady=-1;bool streamed=false;int playing=0;
         void Report(long total=-1)=>Timing?.Invoke(new(turn,asrMs,Volatile.Read(ref firstText),Volatile.Read(ref firstTts),Volatile.Read(ref audioReady),total,streamed));
-        Report();Phase?.Invoke(AssistantState.Thinking);Status?.Invoke("Waiting for a reply…");
+        Report();Phase?.Invoke(AssistantState.Thinking);Status?.Invoke(Localization.Text("Waiting for a reply…"));
         using var lifetimeTurn=CancellationTokenSource.CreateLinkedTokenSource(token);var ct=lifetimeTurn.Token;Exception? failure=null;
         var sentences=Channel.CreateBounded<string>(new BoundedChannelOptions(2){SingleReader=true,SingleWriter=true,FullMode=BoundedChannelFullMode.Wait});
         var voices=Channel.CreateBounded<VoiceChunk>(new BoundedChannelOptions(2){SingleReader=true,SingleWriter=true,FullMode=BoundedChannelFullMode.Wait});
@@ -62,10 +62,10 @@ internal sealed partial class LocalAssistantVoice
                 long bytes=0;
                 await foreach(string sentence in sentences.Reader.ReadAllAsync(ct))
                 {
-                    if(Volatile.Read(ref playing)==0)Status?.Invoke("Preparing voice…");
+                    if(Volatile.Read(ref playing)==0)Status?.Invoke(Localization.Text("Preparing voice…"));
                     var synthesis=Stopwatch.StartNew();byte[] pcm=await Synthesize(sentence,ct);ct.ThrowIfCancellationRequested();
                     if(Interlocked.CompareExchange(ref firstTts,synthesis.ElapsedMilliseconds,-1)==-1)Report();
-                    bytes+=pcm.Length;if(bytes>24000L*2*120)throw new IOException("The spoken reply exceeds two minutes. Read the full answer in chat.");
+                    bytes+=pcm.Length;if(bytes>24000L*2*120)throw new IOException(Localization.Text("The spoken reply exceeds two minutes. Read the full answer in chat."));
                     await voices.Writer.WriteAsync(new(sentence,pcm),ct);
                 }
             }
@@ -81,7 +81,7 @@ internal sealed partial class LocalAssistantVoice
                 {
                     ct.ThrowIfCancellationRequested();int current=engine.PlayedMilliseconds;
                     if(current!=played){played=current;advanced=Environment.TickCount64;}
-                    else if(Environment.TickCount64-advanced>10000)throw new IOException("Voice playback stopped advancing. Check the Windows output device and start voice again.");
+                    else if(Environment.TickCount64-advanced>10000)throw new IOException(Localization.Text("Voice playback stopped advancing. Check the Windows output device and start voice again."));
                     await Task.Delay(25,ct);
                 }
             }
@@ -91,9 +91,9 @@ internal sealed partial class LocalAssistantVoice
                 // PCM and synthesized segments cannot grow with an unbounded response.
                 await WaitForPlayback(()=>queuedMs-engine.PlayedMilliseconds>1100);
                 captions.Enqueue((queuedMs,chunk.Text));
-                if(!engine.Append(chunk.Pcm))throw new IOException("The voice playback queue is full.");
+                if(!engine.Append(chunk.Pcm))throw new IOException(Localization.Text("The voice playback queue is full."));
                 queuedMs+=chunk.Pcm.Length/48;
-                if(Interlocked.Exchange(ref playing,1)==0){audioReady=asrMs+clock.ElapsedMilliseconds;Phase?.Invoke(AssistantState.Speaking);Status?.Invoke("Speaking · microphone waits until the reply finishes");Report();}
+                if(Interlocked.Exchange(ref playing,1)==0){audioReady=asrMs+clock.ElapsedMilliseconds;Phase?.Invoke(AssistantState.Speaking);Status?.Invoke(Localization.Text("Speaking · microphone waits until the reply finishes"));Report();}
             }
             // PlayedMilliseconds conservatively subtracts the native 100ms buffer.
             await WaitForPlayback(()=>queuedMs>0 && engine.PlayedMilliseconds+100<queuedMs);
@@ -117,12 +117,12 @@ internal sealed partial class LocalAssistantVoice
         try
         {
             await Task.WhenAll(Guard(Produce),Guard(SynthesizeAll),Guard(PlayAll));token.ThrowIfCancellationRequested();
-            Report(asrMs+clock.ElapsedMilliseconds);Status?.Invoke(splitter.Truncated?"Listening · the full long reply is available in chat.":"Listening locally…");
+            Report(asrMs+clock.ElapsedMilliseconds);Status?.Invoke(splitter.Truncated?Localization.Text("Listening · the full long reply is available in chat."):Localization.Text("Listening locally…"));
         }
         catch(Exception ex)
         {
             engine.Clear();var cause=failure??ex;
-            if(!token.IsCancellationRequested && cause is not OperationCanceledException && connected)Fail("Voice stopped. "+cause.Message);
+            if(!token.IsCancellationRequested && cause is not OperationCanceledException && connected)Fail(Localization.Text("Voice stopped. ")+cause.Message);
             if(failure!=null && !token.IsCancellationRequested)System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();throw;
         }
         finally{captionLifetime.Cancel();await captionTask;}

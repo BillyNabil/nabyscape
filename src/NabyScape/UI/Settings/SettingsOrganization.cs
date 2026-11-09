@@ -21,8 +21,8 @@ public sealed partial class SettingsWindow
         sectionIndexHost.Child=null;sectionIndexHost.Visibility=Visibility.Collapsed;
         foreach(var box in SettingTree(page).OfType<ComboBox>())
         {
-            string name=UI.Identity(box);if(name.Length==0)continue;
-            WireSettingPreview(box,name);string help=SettingDescription(name);if(help.Length>0)box.ToolTip=help;
+            if(current is not ("AI" or "Weather"))UI.LocalizeOptions(box);string name=UI.Identity(box);if(name.Length==0)continue;
+            WireSettingPreview(box,name);string help=SettingDescription(name);if(help.Length>0)box.ToolTip=Localization.Text(help);
         }
         foreach(var section in sections)
         {
@@ -71,7 +71,7 @@ public sealed partial class SettingsWindow
         var slide=new TranslateTransform(0,tuck?-offset:0);var island=new Border{Width=110,Height=23,CornerRadius=new(0,0,9,9),VerticalAlignment=VerticalAlignment.Top,HorizontalAlignment=HorizontalAlignment.Center,Background=Brushes.Black,RenderTransform=slide};
         var time=UI.Text(DateTime.Now.ToString("HH:mm"),10);time.FontWeight=FontWeights.Bold;time.HorizontalAlignment=HorizontalAlignment.Center;island.Child=time;scene.Children.Add(island);
         scene.MouseEnter+=(_,_)=>{slide.BeginAnimation(TranslateTransform.YProperty,null);slide.Y=0;};scene.MouseLeave+=(_,_)=>slide.Y=tuck?-offset:0;
-        panel.Children.Add(scene);panel.Children.Add(UI.Text(tuck?"Hover to reveal · "+app.Settings.TuckEdge.ToString("0")+" DIP tucked edge. Manual hide removes it entirely.":"Auto-tuck is off. The island stays visible.",12));
-        panel.Children.Add(UI.Text("Fullscreen: "+(app.Settings.HideFullscreen?"tuck":"visible")+" · Maximized: "+(app.Settings.HideMaximized?"tuck":"visible"),11,UI.Muted));return panel;
+        panel.Children.Add(scene);panel.Children.Add(UI.Text(tuck?Localization.Format("Hover to reveal · {0} DIP tucked edge. Manual hide removes it entirely.",app.Settings.TuckEdge.ToString("0")):Localization.Text("Auto-tuck is off. The island stays visible."),12));
+        panel.Children.Add(UI.Text(Localization.Format("Fullscreen: {0} · Maximized: {1}",Localization.Text(app.Settings.HideFullscreen?"tuck":"visible"),Localization.Text(app.Settings.HideMaximized?"tuck":"visible")),11,UI.Muted));return panel;
     }
 }

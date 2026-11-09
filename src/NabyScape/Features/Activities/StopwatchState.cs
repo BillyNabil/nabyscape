@@ -39,13 +39,13 @@ internal sealed class StopwatchView : StackPanel
     private readonly Button toggle;
     internal StopwatchView(App app)
     {
-        this.app=app;Children.Add(UI.Heading("Stopwatch",13));digits.Margin=new(0,10,0,8);Typography.SetNumeralAlignment(digits,FontNumeralAlignment.Tabular);Children.Add(digits);
-        toggle=UI.Button("Start",()=>{app.Session.Stopwatch.Toggle();app.SaveSession();});UI.Named(toggle,"Start, pause or resume stopwatch");
-        var reset=UI.Button("Reset",()=>{app.Session.Stopwatch.Reset();app.SaveSession();});UI.Named(reset,"Reset stopwatch");
-        foreach(var button in new[]{toggle,reset}){button.FontSize=11;button.Padding=new(9,4,9,4);button.MinHeight=30;button.ToolTip="Tab to select; Space or Enter to activate";}
+        this.app=app;Children.Add(UI.Heading(Localization.Text("Stopwatch"),13));digits.Margin=new(0,10,0,8);Typography.SetNumeralAlignment(digits,FontNumeralAlignment.Tabular);Children.Add(digits);
+        toggle=UI.Button(Localization.Text("Start"),()=>{app.Session.Stopwatch.Toggle();app.SaveSession();});UI.Named(toggle,Localization.Text("Start, pause or resume stopwatch"));
+        var reset=UI.Button(Localization.Text("Reset"),()=>{app.Session.Stopwatch.Reset();app.SaveSession();});UI.Named(reset,Localization.Text("Reset stopwatch"));
+        foreach(var button in new[]{toggle,reset}){button.FontSize=11;button.Padding=new(9,4,9,4);button.MinHeight=30;button.ToolTip=Localization.Text("Tab to select; Space or Enter to activate");}
         Children.Add(UI.Row(toggle,reset));
         IsVisibleChanged+=(_,_)=>{app.Updated-=Refresh;if(IsVisible){app.Updated+=Refresh;Refresh();}};
         Refresh();
     }
-    private void Refresh(){if(Window.GetWindow(this)?.WindowState==WindowState.Minimized)return;Refreshes++;digits.Text=app.Session.Stopwatch.Display;toggle.Content=app.Session.Stopwatch.Running?"Pause":app.Session.Stopwatch.Elapsed>0?"Resume":"Start";}
+    private void Refresh(){if(Window.GetWindow(this)?.WindowState==WindowState.Minimized)return;Refreshes++;digits.Text=app.Session.Stopwatch.Display;toggle.Content=app.Session.Stopwatch.Running?Localization.Text("Pause"):app.Session.Stopwatch.Elapsed>0?Localization.Text("Resume"):Localization.Text("Start");}
 }

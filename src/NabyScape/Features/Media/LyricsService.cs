@@ -19,7 +19,7 @@ internal static class LyricTiming
     private static readonly Regex stamps=new(@"\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));
     internal static LyricLine[] Parse(string source)
     {
-        if(source.Length>512*1024)throw new InvalidDataException("Lyrics are too large.");
+        if(source.Length>512*1024)throw new InvalidDataException(Localization.Text("Lyrics are too large."));
         var result=new List<LyricLine>();double offset=0;
         var match=Regex.Match(source,@"\[offset:([+-]?\d{1,6})\]",RegexOptions.IgnoreCase,TimeSpan.FromMilliseconds(100));
         if(match.Success)offset=int.Parse(match.Groups[1].Value,CultureInfo.InvariantCulture)/1000d;
@@ -75,9 +75,9 @@ internal sealed partial class LyricsService : IDisposable
     internal void Release(object owner)
     {
         if(!consumers.Remove(owner) || consumers.Count>0)return;
-        Cancel();key="";Set(new(Array.Empty<LyricLine>(),"Lyrics are off."));
+        Cancel();key="";Set(new(Array.Empty<LyricLine>(),Localization.Text("Lyrics are off.")));
     }
-    internal LyricResult Result {get;private set;}=new(Array.Empty<LyricLine>(),"Lyrics are off.");
+    internal LyricResult Result {get;private set;}=new(Array.Empty<LyricLine>(),Localization.Text("Lyrics are off."));
     internal event Action? Changed;
     private static string TrackKey(string title,string artist,double duration)=>title+"\n"+artist+"\n"+Math.Round(duration);
     internal LyricsService(HttpMessageHandler? handler=null,IAssistantKeys? providerKeys=null)
@@ -85,57 +85,57 @@ internal sealed partial class LyricsService : IDisposable
     internal async Task Load(string title,string artist,double duration,bool enabled,bool compatible,string? mediaSource=null)
     {
         if(disposed)return;
-        if(!enabled || !compatible){Cancel();key="";Set(new(Array.Empty<LyricLine>(),enabled?"Choose a music session with a title, artist and playback timeline.":"Lyrics are off."));return;}
+        if(!enabled || !compatible){Cancel();key="";Set(new(Array.Empty<LyricLine>(),enabled?Localization.Text("Choose a music session with a title, artist and playback timeline."):Localization.Text("Lyrics are off.")));return;}
         string selectedSource=SelectedSource;string next=selectedSource+"\n"+TrackKey(title,artist,duration);if(next==key)return;Cancel();key=next;
         if(cache.TryGetValue(next,out var found)){Set(found);return;}
-        var request=new CancellationTokenSource();pending=request;Set(new(Array.Empty<LyricLine>(),"Finding synced lyrics…"));
+        var request=new CancellationTokenSource();pending=request;Set(new(Array.Empty<LyricLine>(),Localization.Text("Finding synced lyrics…")));
         try
         {
             if(selectedSource=="Automatic")
             {
                 var match=await FindAutomatic(title,artist==mediaSource?"":artist,duration,request.Token);
                 if(request.IsCancellationRequested || disposed || key!=next)return;
-                var automatic=match==null?new LyricResult(Array.Empty<LyricLine>(),"No matching English, Japanese or Korean lyrics. Try another source or LRC."):new LyricResult(LyricTiming.Parse(match.Value.Choice.Lrc),"Synced lyrics · "+match.Value.Source+" · Automatic");
+                var automatic=match==null?new LyricResult(Array.Empty<LyricLine>(),Localization.Text("No matching English, Japanese or Korean lyrics. Try another source or LRC.")):new LyricResult(LyricTiming.Parse(match.Value.Choice.Lrc),Localization.Text("Synced lyrics · ")+match.Value.Source+Localization.Text(" · Automatic"));
                 if(automatic.Lines.Length>0){if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=automatic;}
                 Set(automatic);return;
             }
-            if(string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist))throw new InvalidDataException("Track details are unavailable.");
+            if(string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(artist))throw new InvalidDataException(Localization.Text("Track details are unavailable."));
             if(selectedSource!="LRCLIB")
             {
                 var choices=await FetchProvider(selectedSource,title,artist,duration,request.Token);
                 if(request.IsCancellationRequested || disposed || key!=next)return;
                 var chosen=choices.FirstOrDefault();
-                var providerResult=chosen==null?new LyricResult(Array.Empty<LyricLine>(),"No synced lyrics · "+selectedSource):new LyricResult(LyricTiming.Parse(chosen.Lrc),(chosen.Plain.Length>0?"Plain lyrics · ":"Synced lyrics · ")+selectedSource,chosen.Plain);
+                var providerResult=chosen==null?new LyricResult(Array.Empty<LyricLine>(),Localization.Text("No synced lyrics · ")+selectedSource):new LyricResult(LyricTiming.Parse(chosen.Lrc),(chosen.Plain.Length>0?Localization.Text("Plain lyrics · "):Localization.Text("Synced lyrics · "))+selectedSource,chosen.Plain);
                 if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=providerResult;Set(providerResult);return;
             }
             string query="https://lrclib.net/api/get?track_name="+Uri.EscapeDataString(title)+"&artist_name="+Uri.EscapeDataString(artist);
             if(duration>=1 && duration<=3600)query+="&duration="+Math.Round(duration).ToString(CultureInfo.InvariantCulture);
             using var response=await client.GetAsync(query,HttpCompletionOption.ResponseHeadersRead,request.Token);
             LyricResult result;
-            if(response.StatusCode==HttpStatusCode.NotFound)result=new(Array.Empty<LyricLine>(),"No synced lyrics for this track.");
+            if(response.StatusCode==HttpStatusCode.NotFound)result=new(Array.Empty<LyricLine>(),Localization.Text("No synced lyrics for this track."));
             else
             {
-                response.EnsureSuccessStatusCode();if(response.Content.Headers.ContentLength>1024*1024)throw new InvalidDataException("Lyrics response is too large.");
+                response.EnsureSuccessStatusCode();if(response.Content.Headers.ContentLength>1024*1024)throw new InvalidDataException(Localization.Text("Lyrics response is too large."));
                 await using var body=await response.Content.ReadAsStreamAsync(request.Token);using var buffer=new MemoryStream();var chunk=new byte[8192];int count;
-                while((count=await body.ReadAsync(chunk,request.Token))>0){if(buffer.Length+count>1024*1024)throw new InvalidDataException("Lyrics response is too large.");buffer.Write(chunk,0,count);}
+                while((count=await body.ReadAsync(chunk,request.Token))>0){if(buffer.Length+count>1024*1024)throw new InvalidDataException(Localization.Text("Lyrics response is too large."));buffer.Write(chunk,0,count);}
                 using var json=JsonDocument.Parse(buffer.ToArray());var data=json.RootElement;
                 bool instrumental=data.TryGetProperty("instrumental",out var ins) && ins.ValueKind==JsonValueKind.True;
                 string? lrc=data.TryGetProperty("syncedLyrics",out var value) && value.ValueKind==JsonValueKind.String?value.GetString():null;
                 var lines=lrc==null?Array.Empty<LyricLine>():LyricTiming.Parse(lrc);
-                result=new(lines,lines.Length>0?"Synced lyrics · LRCLIB":instrumental?"Instrumental track":"No synced lyrics for this track.");
+                result=new(lines,lines.Length>0?Localization.Text("Synced lyrics · LRCLIB"):instrumental?Localization.Text("Instrumental track"):Localization.Text("No synced lyrics for this track."));
             }
             if(request.IsCancellationRequested || disposed || key!=next)return;
             if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=result;Set(result);
         }
-        catch(OperationCanceledException){if(!request.IsCancellationRequested && !disposed && key==next)Set(new(Array.Empty<LyricLine>(),"Lyrics request timed out. Tap Retry."));}
+        catch(OperationCanceledException){if(!request.IsCancellationRequested && !disposed && key==next)Set(new(Array.Empty<LyricLine>(),Localization.Text("Lyrics request timed out. Tap Retry.")));}
         catch(Exception ex) when(ex is HttpRequestException or IOException or InvalidDataException or JsonException or RegexMatchTimeoutException or System.Xml.XmlException or FormatException)
-        {if(!request.IsCancellationRequested && !disposed && key==next)Set(new(Array.Empty<LyricLine>(),"Lyrics unavailable. Tap Retry."));}
+        {if(!request.IsCancellationRequested && !disposed && key==next)Set(new(Array.Empty<LyricLine>(),Localization.Text("Lyrics unavailable. Tap Retry.")));}
         finally{if(ReferenceEquals(pending,request))pending=null;request.Dispose();}
     }
     internal async Task<LyricChoice[]> Search(string title,string artist,CancellationToken token,Uri? endpoint=null)
     {
         var baseUri=endpoint??new Uri("https://lrclib.net/");
-        if(!baseUri.IsAbsoluteUri || !(baseUri.Scheme=="https" || baseUri.Scheme=="http" && baseUri.IsLoopback) || baseUri.UserInfo.Length>0 || baseUri.Query.Length>0 || baseUri.Fragment.Length>0)throw new InvalidDataException("Use an HTTPS API base URL, or a local HTTP server.");
+        if(!baseUri.IsAbsoluteUri || !(baseUri.Scheme=="https" || baseUri.Scheme=="http" && baseUri.IsLoopback) || baseUri.UserInfo.Length>0 || baseUri.Query.Length>0 || baseUri.Fragment.Length>0)throw new InvalidDataException(Localization.Text("Use an HTTPS API base URL, or a local HTTP server."));
         var url=new Uri(baseUri.AbsoluteUri.TrimEnd('/')+"/api/search?track_name="+Uri.EscapeDataString(title)+"&artist_name="+Uri.EscapeDataString(artist));
         string json=await client.GetStringAsync(url,token);
         using var document=JsonDocument.Parse(json);var result=new List<LyricChoice>();
@@ -172,30 +172,30 @@ internal sealed partial class LyricsService : IDisposable
         using var budget=CancellationTokenSource.CreateLinkedTokenSource(token);budget.CancelAfter(TimeSpan.FromSeconds(8));token=budget.Token;
         for(int redirects=0;redirects<=3;redirects++)
         {
-            if(url.Scheme!="https" || !url.IsDefaultPort || url.UserInfo.Length>0 || url.Host is not ("lyrics-api.binimum.org" or "lrc.red"))throw new InvalidDataException("Lyrics redirect is outside the trusted provider hosts.");
+            if(url.Scheme!="https" || !url.IsDefaultPort || url.UserInfo.Length>0 || url.Host is not ("lyrics-api.binimum.org" or "lrc.red"))throw new InvalidDataException(Localization.Text("Lyrics redirect is outside the trusted provider hosts."));
             using var request=new HttpRequestMessage(HttpMethod.Get,url);
             using var response=await client.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,token);
             if((int)response.StatusCode is 301 or 302 or 303 or 307 or 308)
             {
-                if(response.Headers.Location==null)throw new InvalidDataException("Lyrics redirect has no destination.");
+                if(response.Headers.Location==null)throw new InvalidDataException(Localization.Text("Lyrics redirect has no destination."));
                 url=new Uri(url,response.Headers.Location);continue;
             }
             response.EnsureSuccessStatusCode();
             await using var stream=await response.Content.ReadAsStreamAsync(token);using var buffer=new MemoryStream();var chunk=new byte[8192];int count;
-            while((count=await stream.ReadAsync(chunk,token))>0){if(buffer.Length+count>2*1024*1024)throw new InvalidDataException("Lyrics response is too large.");buffer.Write(chunk,0,count);}
+            while((count=await stream.ReadAsync(chunk,token))>0){if(buffer.Length+count>2*1024*1024)throw new InvalidDataException(Localization.Text("Lyrics response is too large."));buffer.Write(chunk,0,count);}
             return System.Text.Encoding.UTF8.GetString(buffer.ToArray());
         }
-        throw new InvalidDataException("Too many lyrics redirects.");
+        throw new InvalidDataException(Localization.Text("Too many lyrics redirects."));
     }
     private void Set(LyricResult result){if(ReferenceEquals(originalResult,result))return;originalResult=result;Present(result);}
     internal void Import(string title,string artist,double duration,string lrc,string origin="Local LRC · this session")
     {
-        var lines=LyricTiming.Parse(lrc);if(lines.Length==0)throw new InvalidDataException("Choose an LRC file with [mm:ss] line timestamps.");
-        Cancel();key=SelectedSource+"\n"+TrackKey(title,artist,duration);var result=new LyricResult(lines,origin);if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[key]=result;Set(result);
+        var lines=LyricTiming.Parse(lrc);if(lines.Length==0)throw new InvalidDataException(Localization.Text("Choose an LRC file with [mm:ss] line timestamps."));
+        Cancel();key=SelectedSource+"\n"+TrackKey(title,artist,duration);var result=new LyricResult(lines,origin=="Local LRC · this session"?Localization.Text("Local LRC · this session"):origin);if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[key]=result;Set(result);
     }
     internal void ImportPlain(string title,string artist,double duration,string text,string origin)
     {
-        if(string.IsNullOrWhiteSpace(text) || text.Length>100000)throw new InvalidDataException("Plain lyrics are empty or too large.");
+        if(string.IsNullOrWhiteSpace(text) || text.Length>100000)throw new InvalidDataException(Localization.Text("Plain lyrics are empty or too large."));
         Cancel();key=SelectedSource+"\n"+TrackKey(title,artist,duration);var result=new LyricResult(Array.Empty<LyricLine>(),origin,text);if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[key]=result;Set(result);
     }
     internal void Retry(){cache.Remove(key);key="";}

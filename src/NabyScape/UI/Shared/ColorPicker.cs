@@ -26,28 +26,28 @@ internal sealed class ColorPicker : StackPanel
     {
         chosen.SetResourceReference(TextBlock.ForegroundProperty,"ControlText");this.presets=presets;this.changed=changed;this.committed=committed;color=(Color)ColorConverter.ConvertFromString(initial);
         var top=new DockPanel();
-        hex=UI.Input(name+" hex",initial,"Enter a six-digit color such as #182028");hex.Margin=new(0);hex.MaxLength=7;top.Children.Add(hex);
+        hex=UI.Input(name+" hex",initial,Localization.Text("Enter a six-digit color such as #182028"));hex.Margin=new(0);hex.MaxLength=7;top.Children.Add(hex);
         hex.TextChanged+=(_,_)=>{if(updating)return;if(Settings.ValidColor(hex.Text)){Set((Color)ColorConverter.ConvertFromString(hex.Text));hex.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");}else hex.BorderBrush=UI.Brush("#F08C85");};
         hex.LostKeyboardFocus+=(_,_)=>Commit();
-        var numeric=new Expander{Header="Color values · HEX / RGB",Margin=new(0,8,0,10),Foreground=UI.Muted};
-        var detail=new StackPanel{Margin=new(0,0,0,0)};field.Height=136;UI.Named(field,name+" saturation and brightness");field.ToolTip="Drag to choose saturation and brightness. Arrow keys adjust; Shift makes larger changes.";detail.Children.Add(field);
+        var numeric=new Expander{Header=Localization.Text("Color values · HEX / RGB"),Margin=new(0,8,0,10),Foreground=UI.Muted};
+        var detail=new StackPanel{Margin=new(0,0,0,0)};field.Height=136;UI.Named(field,Localization.Format("{0} saturation and brightness",Localization.Text(name)));field.ToolTip=Localization.Text("Drag to choose saturation and brightness. Arrow keys adjust; Shift makes larger changes.");detail.Children.Add(field);
         var gradient=new LinearGradientBrush();foreach(var stop in new[]{(0d,Colors.Red),(.167,Colors.Yellow),(.333,Colors.Lime),(.5,Colors.Cyan),(.667,Colors.Blue),(.833,Colors.Magenta),(1d,Colors.Red)})gradient.GradientStops.Add(new(stop.Item2,stop.Item1));hue.Background=gradient;
         hue.Template=(ControlTemplate)System.Windows.Markup.XamlReader.Parse("""
         <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="Slider"><Grid Height="24"><Border Height="12" CornerRadius="6" Background="{TemplateBinding Background}"/><Track x:Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value}"><Track.DecreaseRepeatButton><RepeatButton Command="Slider.DecreaseLarge" Focusable="False" Opacity="0"/></Track.DecreaseRepeatButton><Track.Thumb><Thumb Width="12" Height="20"><Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="#1B1D22" BorderBrush="White" BorderThickness="2" CornerRadius="6"/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb><Track.IncreaseRepeatButton><RepeatButton Command="Slider.IncreaseLarge" Focusable="False" Opacity="0"/></Track.IncreaseRepeatButton></Track></Grid></ControlTemplate>
-        """);UI.Named(hue,name+" hue");detail.Children.Add(hue);
+        """);UI.Named(hue,Localization.Format("{0} hue",Localization.Text(name)));detail.Children.Add(hue);
         hue.ValueChanged+=(_,_)=>{if(!updating){field.Hue=hue.Value;Set(FromHsv(field.Hue,field.Saturation,field.Value),false);}};
         hue.PreviewMouseLeftButtonUp+=(_,_)=>Commit();hue.LostKeyboardFocus+=(_,_)=>Commit();
         field.Changed+=()=>Set(FromHsv(field.Hue,field.Saturation,field.Value),false);field.Committed+=Commit;
         var channels=new Grid();for(int i=0;i<3;i++)channels.ColumnDefinitions.Add(new());
         for(int i=0;i<3;i++)
         {
-            int channel=i;var group=new StackPanel{Margin=new(i==0?0:6,0,0,0)};group.Children.Add(UI.Text(new[]{"Red","Green","Blue"}[i],10,UI.Muted));var input=rgb[i]=UI.Input(name+" "+new[]{"red","green","blue"}[i],"");input.Margin=new(0,4,0,0);input.Padding=new(8,6,8,6);group.Children.Add(input);Grid.SetColumn(group,i);channels.Children.Add(group);
+            int channel=i;var group=new StackPanel{Margin=new(i==0?0:6,0,0,0)};group.Children.Add(UI.Text(Localization.Text(new[]{"Red","Green","Blue"}[i]),10,UI.Muted));var input=rgb[i]=UI.Input(name+" "+new[]{"red","green","blue"}[i],"");input.Margin=new(0,4,0,0);input.Padding=new(8,6,8,6);group.Children.Add(input);Grid.SetColumn(group,i);channels.Children.Add(group);
             void Apply(){if(updating)return;if(byte.TryParse(input.Text,out byte value)){Set(Color.FromRgb(channel==0?value:color.R,channel==1?value:color.G,channel==2?value:color.B));Commit();}else Sync();}
             input.LostKeyboardFocus+=(_,_)=>Apply();input.KeyDown+=(_,e)=>{if(e.Key==Key.Enter){Apply();e.Handled=true;}};
         }
         var editor=new StackPanel{Visibility=Visibility.Collapsed};editor.Children.Add(detail);
         var header=new DockPanel();header.Children.Add(sample);var arrow=Icons.Create("chevron",9,UI.Muted);arrow.Margin=new(10,0,0,0);DockPanel.SetDock(arrow,Dock.Right);header.Children.Add(arrow);header.Children.Add(chosen);
-        var choose=UI.Button(name+" color picker",()=>{editor.Visibility=editor.Visibility==Visibility.Visible?Visibility.Collapsed:Visibility.Visible;});choose.Content=header;choose.HorizontalContentAlignment=HorizontalAlignment.Stretch;choose.Padding=new(10,8,10,8);choose.Margin=new(0,0,0,8);choose.ToolTip="Choose "+name.ToLowerInvariant()+" · color field, hue and optional HEX/RGB";Children.Add(choose);Children.Add(editor);
+        var choose=UI.Button(Localization.Format("{0} color picker",Localization.Text(name)),()=>{editor.Visibility=editor.Visibility==Visibility.Visible?Visibility.Collapsed:Visibility.Visible;});choose.Content=header;choose.HorizontalContentAlignment=HorizontalAlignment.Stretch;choose.Padding=new(10,8,10,8);choose.Margin=new(0,0,0,8);choose.ToolTip=Localization.Format("Choose {0} · color field, hue and optional HEX/RGB",Localization.Text(name));Children.Add(choose);Children.Add(editor);
         var values=new StackPanel{Margin=new(0,10,0,0)};values.Children.Add(top);channels.Margin=new(0,10,0,0);values.Children.Add(channels);numeric.Content=values;editor.Children.Add(numeric);
         var palette=new WrapPanel();foreach(string value in presets)palette.Children.Add(Swatch(name,value));Children.Add(palette);
         recent.Margin=new(0,5,0,0);Children.Add(recent);SetRecent(name,colors);var initialHsv=ToHsv(color);field.Hue=initialHsv.hue;field.Saturation=initialHsv.saturation;field.Value=initialHsv.value;Sync();
@@ -65,7 +65,7 @@ internal sealed class ColorPicker : StackPanel
     }
     private void Sync()
     {
-        updating=true;try{sample.Background=new SolidColorBrush(color);chosen.Text="Choose color · "+Value;if(!hex.IsKeyboardFocusWithin)hex.Text=Value;hue.Value=field.Hue;rgb[0].Text=color.R.ToString();rgb[1].Text=color.G.ToString();rgb[2].Text=color.B.ToString();field.InvalidateVisual();}finally{updating=false;}
+        updating=true;try{sample.Background=new SolidColorBrush(color);chosen.Text=Localization.Text("Choose color · ")+Value;if(!hex.IsKeyboardFocusWithin)hex.Text=Value;hue.Value=field.Hue;rgb[0].Text=color.R.ToString();rgb[1].Text=color.G.ToString();rgb[2].Text=color.B.ToString();field.InvalidateVisual();}finally{updating=false;}
     }
     private void Commit(){if(!Settings.ValidColor(hex.Text)){hex.Text=Value;hex.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");}committed(Value);}
     internal static string Format(Color c)=>$"#{c.R:X2}{c.G:X2}{c.B:X2}";

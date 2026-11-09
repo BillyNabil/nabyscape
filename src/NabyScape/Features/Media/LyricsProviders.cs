@@ -36,12 +36,12 @@ internal sealed partial class LyricsService
             {var match=System.Text.RegularExpressions.Regex.Match(uri.Query,@"(?:[?&])v=([A-Za-z0-9_-]{11})(?:&|$)",System.Text.RegularExpressions.RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));id=match.Success?match.Groups[1].Value:"";}
             else id="";
         }
-        if(!System.Text.RegularExpressions.Regex.IsMatch(id,@"\A[A-Za-z0-9_-]{11}\z",System.Text.RegularExpressions.RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100)))throw new InvalidDataException("Paste a YouTube watch link or an 11-character video ID.");
+        if(!System.Text.RegularExpressions.Regex.IsMatch(id,@"\A[A-Za-z0-9_-]{11}\z",System.Text.RegularExpressions.RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100)))throw new InvalidDataException(Localization.Text("Paste a YouTube watch link or an 11-character video ID."));
         videoTrack=title+"\n"+artist;videoId=id;
     }
     internal void ConfigureConnector(string source,Uri endpoint)
     {
-        if(endpoint.Scheme!="https" || endpoint.UserInfo.Length>0 || endpoint.Query.Length>0 || endpoint.Fragment.Length>0)throw new InvalidDataException("Enter an HTTPS connector base URL without a key in the URL.");
+        if(endpoint.Scheme!="https" || endpoint.UserInfo.Length>0 || endpoint.Query.Length>0 || endpoint.Fragment.Length>0)throw new InvalidDataException(Localization.Text("Enter an HTTPS connector base URL without a key in the URL."));
         connectors[source]=endpoint;
     }
     internal bool HasConnector(string source)=>connectors.ContainsKey(source);
@@ -52,23 +52,23 @@ internal sealed partial class LyricsService
         if(source=="BiniLyrics")return await SearchBini(title,artist,token);
         if(LyricsProviders.NeedsVideo(source))
         {
-            if(!HasVideo(title,artist))throw new InvalidDataException("Add the YouTube video link for this track first.");
+            if(!HasVideo(title,artist))throw new InvalidDataException(Localization.Text("Add the YouTube video link for this track first."));
             return await FetchYouTube(source,videoId,title,artist,duration,token);
         }
         if(source=="Musixmatch")
         {
             string? apiKey=lyricKeys.Read(LyricsProviders.MusixmatchKey);
-            if(string.IsNullOrWhiteSpace(apiKey))throw new InvalidDataException("Add your Musixmatch developer API key first.");
+            if(string.IsNullOrWhiteSpace(apiKey))throw new InvalidDataException(Localization.Text("Add your Musixmatch developer API key first."));
             string json=await client.GetStringAsync("https://api.musixmatch.com/ws/1.1/matcher.lyrics.get?q_track="+Uri.EscapeDataString(title)+"&q_artist="+Uri.EscapeDataString(artist)+"&apikey="+Uri.EscapeDataString(apiKey),token);
             using var mxm=JsonDocument.Parse(json);
             var message=mxm.RootElement.GetProperty("message");int code=message.GetProperty("header").GetProperty("status_code").GetInt32();
-            if(code!=200)throw new InvalidDataException("Musixmatch returned status "+code+". Check your API key and account access.");
+            if(code!=200)throw new InvalidDataException(Localization.Text("Musixmatch returned status ")+code+Localization.Text(". Check your API key and account access."));
             if(!message.GetProperty("body").TryGetProperty("lyrics",out var lyrics))return Array.Empty<LyricChoice>();
             string plain=Text(lyrics,"lyrics_body");return plain.Length==0?Array.Empty<LyricChoice>():new[]{new LyricChoice(title,artist,Text(lyrics,"lyrics_copyright"),duration,"",plain)};
         }
         if(LyricsProviders.NeedsConnector(source))
         {
-            if(!connectors.TryGetValue(source,out var endpoint))throw new InvalidDataException("Connect an authorized LRCLIB-compatible lyrics server for "+source+" first.");
+            if(!connectors.TryGetValue(source,out var endpoint))throw new InvalidDataException(Localization.Text("Connect an authorized LRCLIB-compatible lyrics server for ")+source+Localization.Text(" first."));
             return await Search(title,artist,token,endpoint);
         }
         string E(string s)=>Uri.EscapeDataString(s);
@@ -78,14 +78,14 @@ internal sealed partial class LyricsService
             if(authenticated)
             {
                 string? key=lyricKeys.Read(LyricsProviders.PaxKey);
-                if(string.IsNullOrWhiteSpace(key))throw new InvalidDataException("Add your PaxSenix API key first.");
+                if(string.IsNullOrWhiteSpace(key))throw new InvalidDataException(Localization.Text("Add your PaxSenix API key first."));
                 request.Headers.Authorization=new AuthenticationHeaderValue("Bearer",key);
             }
             using var response=await client.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,token);
-            if((int)response.StatusCode==401 || (int)response.StatusCode==403)throw new InvalidDataException("This provider requires a valid connection or API key.");
+            if((int)response.StatusCode==401 || (int)response.StatusCode==403)throw new InvalidDataException(Localization.Text("This provider requires a valid connection or API key."));
             response.EnsureSuccessStatusCode();
             await using var stream=await response.Content.ReadAsStreamAsync(token);using var buffer=new MemoryStream();var chunk=new byte[8192];int count;
-            while((count=await stream.ReadAsync(chunk,token))>0){if(buffer.Length+count>2*1024*1024)throw new InvalidDataException("Provider response is too large.");buffer.Write(chunk,0,count);}
+            while((count=await stream.ReadAsync(chunk,token))>0){if(buffer.Length+count>2*1024*1024)throw new InvalidDataException(Localization.Text("Provider response is too large."));buffer.Write(chunk,0,count);}
             return Encoding.UTF8.GetString(buffer.ToArray());
         }
         LyricChoice[] One(string body)
@@ -150,12 +150,12 @@ internal sealed partial class LyricsService
             }
             string? track=FindId(doc.RootElement);return track==null?Array.Empty<LyricChoice>():One(await Get("https://api.paxsenix.org/lyrics/spotify?id="+E(track),true));
         }
-        throw new InvalidDataException("Unknown lyrics provider.");
+        throw new InvalidDataException(Localization.Text("Unknown lyrics provider."));
     }
     private static string Text(JsonElement element,string key)=>element.ValueKind==JsonValueKind.Object && element.TryGetProperty(key,out var value) && value.ValueKind is JsonValueKind.String or JsonValueKind.Number?value.ToString():"";
     internal static string ProviderDocument(string body)
     {
-        if(body.Length>2*1024*1024)throw new InvalidDataException("Lyrics response is too large.");
+        if(body.Length>2*1024*1024)throw new InvalidDataException(Localization.Text("Lyrics response is too large."));
         if(body.TrimStart().StartsWith("<",StringComparison.Ordinal) || body.TrimStart().StartsWith("[0",StringComparison.Ordinal))return TimedLyricsDocument.ToLrc(body);
         using var doc=JsonDocument.Parse(body);
         string Find(JsonElement node,int depth)

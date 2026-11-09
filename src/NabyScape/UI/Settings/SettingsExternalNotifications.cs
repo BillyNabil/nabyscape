@@ -10,7 +10,7 @@ public sealed partial class SettingsWindow
     {
         var s=app.Settings;
         // Live state, not help text: a distinct brush keeps it visible in the essentials view.
-        var status=UI.Text("",11,SettingsTheme.Quiet);
+        var status=UI.Caption("",11,SettingsTheme.Quiet);
         var apps=new StackPanel{Margin=new(0,4,0,0)};
         var appsLabel=UI.Caption("Apps",12,UI.Muted);appsLabel.Margin=new(0,10,0,2);
         var privacy=UI.CaptionButton("Open Windows notification access",()=>ShortcutService.Open(new(){Target="ms-settings:privacy-notifications"}));
@@ -49,7 +49,7 @@ public sealed partial class SettingsWindow
         options.Children.Add(Check("Show during quiet hours",s.ExternalNotificationQuietHours,v=>s.ExternalNotificationQuietHours=v));
         options.Children.Add(appsLabel);options.Children.Add(apps);
         page.Children.Add(Section("Other apps",enable,status,privacy,options,
-            UI.Text("NabyScape reads the alerts Windows already shows from apps such as Claude, ChatGPT or Telegram, checks for new ones every 1.5 seconds while this is on, and keeps them only for this session. Reply buttons from the original notification stay in Windows; use Open app to answer.",11,UI.Muted)));
+            UI.Caption("NabyScape reads the alerts Windows already shows from apps such as Claude, ChatGPT or Telegram, checks for new ones every 1.5 seconds while this is on, and keeps them only for this session. Reply buttons from the original notification stay in Windows; use Open app to answer.",11,UI.Muted)));
         void Changed()=>Dispatcher.BeginInvoke(Refresh);
         // Follow the watcher only while this section is on screen.
         if(app.ExternalNotifications is {} watcher){watcher.StatusChanged+=Changed;status.Unloaded+=(_,_)=>watcher.StatusChanged-=Changed;}

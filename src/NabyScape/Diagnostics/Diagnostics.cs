@@ -122,6 +122,7 @@ internal static class Diagnostics
         {
 
             overlay.DiagnosticRun=true;app.Settings.SmartActivities=false;
+            if(Environment.GetCommandLineArgs().Contains("--russian-ui-only")){await RussianUiDiagnostics.Run(app,overlay,directory,Check);return;}
             if(Environment.GetCommandLineArgs().Contains("--lyrics-language-live-only")){await LyricsPopoverDiagnostics.RunLanguageLive(app,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--lyrics-automatic-live-only")){await LyricsPopoverDiagnostics.RunAutomaticLive(app,directory);return;}
             if(Environment.GetCommandLineArgs().Contains("--lyrics-provider-live-only")){await LyricsPopoverDiagnostics.RunLive(app,directory);return;}

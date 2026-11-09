@@ -10,11 +10,11 @@ internal sealed class AssistantWindow : Window
 {
     internal AssistantWindow(App app)
     {
-        Title="NabyScape · Companion";
+        Title=Localization.Text("NabyScape · Companion");
         AssistantWindowChrome.Place(this,app.Settings,720,740);
         var view=new AssistantView(app);
         var outer=new ScrollViewer{Content=view,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled};
-        Content=AssistantWindowChrome.Frame(this,"NabyScape · AI companion",outer);
+        Content=AssistantWindowChrome.Frame(this,Localization.Text("NabyScape · AI companion"),outer);
         AddHandler(Keyboard.KeyDownEvent,new KeyEventHandler((_,e)=>
         {if(e.Key==Key.Escape){app.Assistant.StopSession();e.Handled=true;}}),true);
         StateChanged+=(_,_)=>{if(WindowState==WindowState.Minimized)app.Assistant.StopSession();};
