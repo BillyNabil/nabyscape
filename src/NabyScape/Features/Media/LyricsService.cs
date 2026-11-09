@@ -95,7 +95,7 @@ internal sealed partial class LyricsService : IDisposable
             {
                 var match=await FindAutomatic(title,artist==mediaSource?"":artist,duration,request.Token);
                 if(request.IsCancellationRequested || disposed || key!=next)return;
-                var automatic=match==null?new LyricResult(Array.Empty<LyricLine>(),Localization.Text("No matching English, Japanese or Korean lyrics. Try another source or LRC.")):new LyricResult(LyricTiming.Parse(match.Value.Choice.Lrc),Localization.Text("Synced lyrics · ")+match.Value.Source+Localization.Text(" · Automatic"));
+                var automatic=match==null?new LyricResult(Array.Empty<LyricLine>(),Localization.Text("No matching synced lyrics. Try another source or LRC.")):new LyricResult(LyricTiming.Parse(match.Value.Choice.Lrc),Localization.Text("Synced lyrics · ")+match.Value.Source+Localization.Text(" · Automatic"));
                 if(automatic.Lines.Length>0){if(cache.Count>=20)cache.Remove(cache.Keys.First());cache[next]=automatic;}
                 Set(automatic);return;
             }
