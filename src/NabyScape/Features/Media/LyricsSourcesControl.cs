@@ -45,7 +45,7 @@ internal sealed class LyricsSourcesControl : StackPanel
         pending?.Cancel();menu.Children.Clear();Heading(Localization.Text("Lyrics source"));AutomationPropertiesStatus(true);
         Row(Localization.Text("Lyric text"),app.Settings.LyricsTextMode=="Romaji"?Localization.Text("Japanese Romaji"):Localization.Text("Original script"),ShowTextChoices);
         menu.Children.Add(new Separator{Margin=new(0,6,0,6)});
-        Row(Localization.Text("Automatic"),Localization.Text("English · Japanese · Korean"),()=>{popup.IsOpen=false;app.Lyrics.SelectedSource="Automatic";retry();},app.Lyrics.SelectedSource=="Automatic");
+        Row(Localization.Text("Automatic"),Localization.Text("All languages"),()=>{popup.IsOpen=false;app.Lyrics.SelectedSource="Automatic";retry();},app.Lyrics.SelectedSource=="Automatic");
         menu.Children.Add(new Separator{Margin=new(0,6,0,6)});
         foreach(string source in LyricsProviders.Names)
         {
