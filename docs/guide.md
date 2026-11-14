@@ -310,3 +310,15 @@ In the music lyrics panel, open the compact **Lyrics** source menu. Retry and Lo
 Enable **Power plan** in **Settings → Widgets & tools**. The widget lists the plans Windows exposes, marks the active plan and changes it only after **Apply power plan**. Refresh re-reads Windows state. Some PCs expose just one plan; manufacturer/Windows power modes are separate from legacy power plans. Errors are shown in the widget. There is no background polling while the widget is closed.
 
 The preview volume slider no longer re-enumerates output and microphone devices on every value change. Volume writes reuse the endpoint maintained by the device-change monitor, and identical notifications no longer trigger redundant global UI updates. Real drag smoothness still depends on audio drivers and should be checked on the installed build.
+
+## Theme, colors, languages and voice (2.27)
+
+**Look & colors → Theme** chooses **Dark** (the default), **Light** or **Follow Windows**, which switches with the Windows app mode. Light gives the dock and Settings light surfaces with dark text; colors you picked yourself stay as chosen. In **Color & material**, turn off **Use same color for both states** to give the closed and tucked dock its own **Collapsed island color** and **Collapsed island opacity**; hover and the open panel use the **Expanded island color**.
+
+**General → Language & accessibility** now includes Русский, Українська and 한국어 alongside English, Español and Bahasa Indonesia. Anything not yet translated shows in English. See [translating.md](translating.md) to improve a translation.
+
+Live voice pauses the microphone while Naby speaks, so open speakers can't make it interrupt itself. With headphones, turn on **Let me interrupt Naby while it speaks (use headphones)** in the AI microphone settings to talk over it.
+
+**Music & sound → Audio behavior** has **Switch to the app that starts playing** (Auto source follows playback; a hand-picked source stays pinned) and **Exclude browser media sessions**. Players that share no position with Windows, such as Telegram Desktop, show a note instead of a progress bar; the hover preview's progress bar can be clicked or dragged to seek.
+
+NabyScape is free. **General → About NabyScape**, the card at the end of **Start here** and **Support NabyScape** in the tray menu link to Saweria and Ko-fi if you'd like to support development. See [security.md](security.md) for antivirus reports and the network connections each feature makes.

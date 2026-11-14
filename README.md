@@ -4,7 +4,7 @@
 
 NabyScape brings music controls, everyday tools and an optional AI companion into one configurable island for Windows.
 
-**Current release: [2.26.1](https://github.com/BillyNabil/nabyscape/releases/tag/v2.26.1).** Windows 10/11 packages are available for x64 and ARM64. Explore the [live website](https://nabyscape.vercel.app/), [release notes](docs/releases/v2.26.1.md) or [website source](website/).
+**Current release: [2.27.0](https://github.com/BillyNabil/nabyscape/releases/tag/v2.27.0).** Windows 10/11 packages are available for x64 and ARM64. Explore the [live website](https://nabyscape.vercel.app/), [release notes](docs/releases/v2.27.0.md) or [website source](website/).
 
 ## Your music, within reach
 
@@ -56,14 +56,14 @@ The dock runs in one WPF application process, with lazy preview construction and
 
 | Your PC | Installer for Windows 10 / 11 | Portable |
 | --- | --- | --- |
-| Intel or AMD 64-bit | [Download x64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.26.1/NabyScape-win-x64-Setup.exe) | [x64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.26.1/NabyScape-win-x64-Portable.zip) |
-| Windows on ARM | [Download ARM64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.26.1/NabyScape-win-arm64-Setup.exe) | [ARM64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.26.1/NabyScape-win-arm64-Portable.zip) |
+| Intel or AMD 64-bit | [Download x64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.27.0/NabyScape-win-x64-Setup.exe) | [x64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.27.0/NabyScape-win-x64-Portable.zip) |
+| Windows on ARM | [Download ARM64 Setup](https://github.com/BillyNabil/nabyscape/releases/download/v2.27.0/NabyScape-win-arm64-Setup.exe) | [ARM64 ZIP](https://github.com/BillyNabil/nabyscape/releases/download/v2.27.0/NabyScape-win-arm64-Portable.zip) |
 
 The same architecture-specific package targets Windows 10 build 19041 or later and Windows 11; no separate Windows 10 installer is needed. Windows 10 22H2 is recommended over older Windows 10 builds. OS/.NET support follows Microsoft's lifecycle. Windows 11 x64 is locally exercised; physical Windows 10 and native ARM64 execution have not been validated. Native local speech compatibility is separate: managed speech packs require an x64 process with AVX2/FMA; ARM64 can use compatible external speech servers or providers.
 
-New in 2.26.1: alerts appear on the dock as a compact banner with the sender's round icon, a test-notification button, and a notification center that follows your panel size. 2.26 brought a redesigned Settings window that opens with the essentials (Show all settings reveals everything), plain-language tasks on Start here, a notification center behind a bell in the island panel, optional alerts from other apps such as Claude or Telegram, and fixes for drop-downs that hang outside the panel and for tucking above maximized apps. 2.25 added 14 lyrics providers, offline Japanese Romaji, language filtering and a Power plan widget.
+New in 2.27.0: a **Light** theme (or **Follow Windows**), a separate color and opacity for the closed island, Russian, Ukrainian and Korean, Naby voice that no longer interrupts itself on speakers, a centered clock option for the closed dock, weather that keeps itself current, and clearer media controls for players such as Telegram that share no position. 2.26 brought a redesigned Settings window, a notification center and alerts on the dock. [Release notes](docs/releases/v2.27.0.md).
 
-The .NET runtime is bundled. Installers are unsigned and install for the current Windows user. [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.26.1/SHA256SUMS) · [Dependency notices](https://github.com/BillyNabil/nabyscape/releases/download/v2.26.1/NabyScape-Notices.zip).
+The .NET runtime is bundled. Installers are unsigned and install for the current Windows user. [SHA-256 checksums](https://github.com/BillyNabil/nabyscape/releases/download/v2.27.0/SHA256SUMS) · [Dependency notices](https://github.com/BillyNabil/nabyscape/releases/download/v2.27.0/NabyScape-Notices.zip).
 
 New installs use the Daily Notch appearance. Upgrades preserve preferences and content. The recommended setup follows the selected daily preferences, including live lyrics, clipboard history, download alerts, startup and Naby. Automatic update checks are on; update downloads follow the snapshot and are off by default. Installation/restart remains explicit. Each feature has its own control. Quit from the tray to exit.
 
