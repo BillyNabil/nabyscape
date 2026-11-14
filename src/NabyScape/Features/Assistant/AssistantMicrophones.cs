@@ -77,7 +77,7 @@ internal sealed partial class AssistantProviderSettings
             catch(Exception ex){Refresh();feedback.Text=ex.Message;Feedback(feedback.Text,true);}
         };
         var actions=new WrapPanel();actions.Children.Add(AssistantWindow.Pill("Test microphone",()=>{selectVoicePage?.Invoke("Audio");testSelectedMicrophone?.Invoke();}));
-        actions.Children.Add(AssistantWindow.Pill("Refresh inputs",Refresh));body.Children.Add(actions);body.Children.Add(feedback);Refresh();
+        actions.Children.Add(AssistantWindow.Pill("Refresh inputs",Refresh));body.Children.Add(actions);body.Children.Add(feedback);body.Children.Add(BargeInSettings());Refresh();
         body.IsVisibleChanged+=(_,_)=>{if(body.IsVisible)Refresh();};return body;
     }
 }

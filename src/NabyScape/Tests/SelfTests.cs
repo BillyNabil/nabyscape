@@ -103,6 +103,7 @@ internal static class SelfTests
         Test("Performance profiles adapt to battery, load and interaction",()=>{Assert(OverlayWindow.FrameLimitFor("Auto",180,true,false,20)==180);Assert(OverlayWindow.FrameLimitFor("Auto",180,false,false,20)==60);Assert(OverlayWindow.FrameLimitFor("Auto",180,true,true,20)==60);Assert(OverlayWindow.FrameLimitFor("Auto",180,true,false,90)==60);Assert(OverlayWindow.FrameLimitFor("Hemat",180,false,false,20)==30);Assert(OverlayWindow.FrameLimitFor("Maksimal",180,true,true,90)==180);});
         Test("Frame pacing preserves 60 Hz cadence on a 180 Hz callback stream",()=>{var p=new FramePacer();int accepted=0;for(int i=0;i<=180;i++)if(p.Accept(TimeSpan.FromSeconds(i/180d),60))accepted++;Assert(accepted is >=60 and <=62,$"Accepted {accepted}");});
         MediaExperienceTests.Run(Test);
+        MediaPlaybackTests.Run(Test);
         AutoTuckTests.Run((name,result)=>Test("Auto tuck: "+name,()=>Assert(result)));
         NotificationCenterTests.Run((name,result)=>Test("Notification center: "+name,()=>Assert(result)));
         OwnedPopupTests.Run((name,result)=>Test("Island popups: "+name,()=>Assert(result)));

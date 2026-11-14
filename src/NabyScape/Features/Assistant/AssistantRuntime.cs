@@ -182,7 +182,7 @@ internal sealed partial class AssistantRuntime : IDisposable
         if(provider==null || !Options.LocalVoice.Enabled && (string.IsNullOrWhiteSpace(provider.RealtimeUrl) || string.IsNullOrWhiteSpace(provider.RealtimeModel))){state=AssistantState.Error;Status=Options.LocalVoice.Enabled?"Choose a chat provider in Settings → AI before starting local voice.":"Configure a realtime endpoint and model in Providers.";Notify();return;}
         if(Options.LocalVoice.Enabled && string.IsNullOrWhiteSpace(provider.Model)){state=AssistantState.Error;Status="Choose and save a chat model in Chat & provider settings before starting voice.";Notify();return;}
         var startToken=lifetime.Token;connecting=true;SuspendWake("Wake listening paused during the voice conversation.");state=AssistantState.Connecting;Status="Connecting voice…";Notify();
-        VoiceTiming=null;VoiceCaption="";voiceActivity.Reset();IAssistantVoice session=Options.LocalVoice.Enabled?new LocalAssistantVoice(Options.LocalVoice,(text,delta,progress,ct)=>app.Dispatcher.InvokeAsync(()=>LocalReply(text,delta,progress,ct)).Task.Unwrap(),Speech,Options.MicrophoneId):new AssistantVoiceSession(Options.MicrophoneId);voice=session;
+        VoiceTiming=null;VoiceCaption="";voiceActivity.Reset();IAssistantVoice session=Options.LocalVoice.Enabled?new LocalAssistantVoice(Options.LocalVoice,(text,delta,progress,ct)=>app.Dispatcher.InvokeAsync(()=>LocalReply(text,delta,progress,ct)).Task.Unwrap(),Speech,Options.MicrophoneId):new AssistantVoiceSession(Options.MicrophoneId,!Options.VoiceBargeIn);voice=session;
         if(session is LocalAssistantVoice local)
         {
             local.Phase+=phase=>Dispatch(()=>{if(ReferenceEquals(voice,session)){state=phase;Notify();}});

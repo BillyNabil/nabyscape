@@ -60,21 +60,25 @@ internal sealed class OutputSpectrum : IDisposable
         private readonly int bytes,channels;
         private readonly bool floating;
         private long updated;
-        internal bool Failed {get;private set;}
+        private readonly long created=Environment.TickCount64;
+        internal Exception? Failure {get;private set;}
         internal Stream(string id)
         {
+            // Shared-mode loopback of the endpoint's own mix format; no exclusive access is requested.
             using var enumerator=new MMDeviceEnumerator();device=enumerator.GetDevice(id);
             try
             {
                 capture=new WasapiLoopbackCapture(device);var format=capture.WaveFormat;
                 bytes=format.BitsPerSample/8;channels=format.Channels;
                 floating=format.Encoding==WaveFormatEncoding.IeeeFloat || format is WaveFormatExtensible ext && ext.SubFormat==new Guid("00000003-0000-0010-8000-00aa00389b71");
-                if(bytes is not (2 or 3 or 4) || channels<1)throw new NotSupportedException("Unsupported output sample format.");
+                if(!AudioCaptureDiagnostics.SupportedFormat(format.BitsPerSample,channels,floating))throw new NotSupportedException("Unsupported output sample format.");
                 transform=new(format.SampleRate);capture.DataAvailable+=Receive;capture.RecordingStopped+=Stopped;capture.StartRecording();
             }
             catch{try{capture?.Dispose();}catch{}device.Dispose();throw;}
         }
-        private void Stopped(object? sender,StoppedEventArgs e){if(e.Exception!=null)Failed=true;}
+        private void Stopped(object? sender,StoppedEventArgs e){if(e.Exception!=null)Failure=e.Exception;}
+        // A capture that silently stops delivering (seen after device or format changes) is replaced.
+        internal bool Quiet(long now){lock(sync)return now-Math.Max(created,updated)>AudioCaptureDiagnostics.StallMs;}
         private void Receive(object? sender,WaveInEventArgs e)
         {
             lock(sync)
@@ -98,24 +102,43 @@ internal sealed class OutputSpectrum : IDisposable
         public void Dispose(){capture.DataAvailable-=Receive;capture.RecordingStopped-=Stopped;try{capture.StopRecording();}catch{}capture.Dispose();device.Dispose();}
     }
     private readonly Dictionary<string,Stream> streams=new(StringComparer.Ordinal);
+    private readonly Dictionary<string,(int Failures,long Retry)> backoff=new(StringComparer.Ordinal);
     private readonly DispatcherTimer expiry=new(){Interval=TimeSpan.FromMilliseconds(400)};
-    private long lastDemand,lastDiscovery,retry;
+    private readonly Action<string,Exception?>? report;
+    private long lastDemand,lastDiscovery;
     private string source="";
+    private string? reported;
     internal int Count=>streams.Count;
-    internal OutputSpectrum(){expiry.Tick+=(_,_)=>{if(Environment.TickCount64-lastDemand>650)Stop();};}
-    internal bool Read(string media,IEnumerable<string> outputs,float[] target)
+    // Last capture problem in plain words; cleared once bands arrive again.
+    internal string? Status {get;private set;}
+    internal OutputSpectrum(Action<string,Exception?>? report=null){this.report=report;expiry.Tick+=(_,_)=>{if(Environment.TickCount64-lastDemand>650)Stop();};}
+    internal bool Read(string media,IEnumerable<string> outputs,float[] target,bool audible=false)
     {
         long now=Environment.TickCount64;lastDemand=now;
-        if(source!=media){Stop();source=media;lastDiscovery=0;retry=0;}
-        if(now>=retry && (streams.Count==0 || now-lastDiscovery>2000 || streams.Values.Any(stream=>stream.Failed)))
+        if(source!=media){Stop();source=media;lastDiscovery=0;}
+        foreach(var failed in streams.Where(pair=>pair.Value.Failure!=null).ToArray()){Fail(failed.Key,failed.Value.Failure!,now);failed.Value.Dispose();streams.Remove(failed.Key);}
+        // Loopback delivers nothing for an idle output, so only all-quiet captures during audible playback count as stalled.
+        if(audible && streams.Count>0 && streams.Values.All(stream=>stream.Quiet(now)))
+            foreach(var quiet in streams.ToArray()){Fail(quiet.Key,new TimeoutException("Loopback capture delivered no samples."),now);quiet.Value.Dispose();streams.Remove(quiet.Key);}
+        if(streams.Count==0 || now-lastDiscovery>2000)
         {
             lastDiscovery=now;var wanted=outputs.Take(4).ToHashSet(StringComparer.Ordinal);
-            foreach(string id in streams.Keys.Where(id=>!wanted.Contains(id) || streams[id].Failed).ToArray()){streams[id].Dispose();streams.Remove(id);}
-            foreach(string id in wanted.Where(id=>!streams.ContainsKey(id)))try{streams.Add(id,new Stream(id));}catch{retry=now+5000;}
+            foreach(string id in streams.Keys.Where(id=>!wanted.Contains(id)).ToArray()){streams[id].Dispose();streams.Remove(id);}
+            foreach(string id in wanted.Where(id=>!streams.ContainsKey(id) && !(backoff.TryGetValue(id,out var wait) && now<wait.Retry)))
+                try{streams.Add(id,new Stream(id));}catch(Exception ex){Fail(id,ex,now);}
         }
         if(!expiry.IsEnabled)expiry.Start();Array.Clear(target);bool ready=false;
-        foreach(var stream in streams.Values)ready|=stream.Merge(target,now);
+        foreach(var stream in streams){if(stream.Value.Merge(target,now)){ready=true;backoff.Remove(stream.Key);}}
+        if(ready)Status=reported=null;
         return ready;
+    }
+    private void Fail(string id,Exception error,long now)
+    {
+        int failures=(backoff.TryGetValue(id,out var previous)?previous.Failures:0)+1;
+        backoff[id]=(failures,now+AudioCaptureDiagnostics.RetryDelay(failures));
+        Status=AudioCaptureDiagnostics.Describe(error);
+        if(Status==reported)return;reported=Status;
+        try{report?.Invoke(Status,error);}catch { /* A diagnostic sink must not stop the waveform fallback. */ }
     }
     internal void Stop(){expiry.Stop();foreach(var stream in streams.Values)stream.Dispose();streams.Clear();}
     public void Dispose()=>Stop();
@@ -135,6 +158,6 @@ public sealed partial class AudioService
     {
         if(!spectrumEnabled || DiagnosticPeak!=null || MediaMeterMuted || string.IsNullOrEmpty(source) || mediaOutputs.Count==0)
         {outputSpectrum?.Stop();MediaSpectrum=null;return;}
-        outputSpectrum??=new();MediaSpectrum=outputSpectrum.Read(source,mediaOutputs,spectrumBands)?spectrumBands:null;
+        outputSpectrum??=new(ReportSpectrumFailure);MediaSpectrum=outputSpectrum.Read(source,mediaOutputs,spectrumBands,CurrentMediaPeak>.02f)?spectrumBands:null;
     }
 }
