@@ -26,6 +26,8 @@ internal interface IAssistantVoiceAudio : IDisposable
     void Start(int inputRate, Action<byte[]> capture, Action<float, bool> level, Action failure);
     bool Append(byte[] pcm);
     int PlayedMilliseconds { get; }
+    // Assistant PCM queued but not yet handed to the output device.
+    int QueuedMilliseconds { get; }
     void Clear();
 }
 
@@ -42,11 +44,13 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     private readonly object gate = new();
     private readonly Func<IAssistantVoiceSocket> socketFactory;
     private readonly Func<IAssistantVoiceAudio> audioFactory;
+    private readonly bool halfDuplex;
     private Session? current;
     private bool disposed;
-    private sealed class Session(IAssistantVoiceSocket socket, bool gemini, bool vision, IReadOnlyList<AssistantTool> tools)
+    private sealed class Session(IAssistantVoiceSocket socket, bool gemini, bool vision, IReadOnlyList<AssistantTool> tools, bool halfDuplex)
     {
         internal readonly IAssistantVoiceSocket Socket = socket;
+        internal readonly VoiceEchoGate Gate = new(halfDuplex);
         internal readonly bool Gemini = gemini, Vision = vision;
         internal readonly CancellationTokenSource Cancel = new();
         internal readonly SemaphoreSlim SendLock = new(1, 1);
@@ -70,9 +74,11 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         internal int StopThread;
         internal long LastImage;
     }
-    internal AssistantVoiceSession(string microphoneId="") : this(() => new AssistantVoiceSocket(), () => new AssistantVoiceAudio(microphoneId)) { }
-    internal AssistantVoiceSession(Func<IAssistantVoiceSocket> socketFactory, Func<IAssistantVoiceAudio> audioFactory)
-    { this.socketFactory = socketFactory; this.audioFactory = audioFactory; }
+    // halfDuplex: no microphone upload while Naby's reply plays, so open speakers cannot barge in.
+    internal AssistantVoiceSession(string microphoneId="", bool halfDuplex=false) : this(() => new AssistantVoiceSocket(), () => new AssistantVoiceAudio(microphoneId), halfDuplex) { }
+    internal AssistantVoiceSession(Func<IAssistantVoiceSocket> socketFactory, Func<IAssistantVoiceAudio> audioFactory, bool halfDuplex=false)
+    { this.socketFactory = socketFactory; this.audioFactory = audioFactory; this.halfDuplex = halfDuplex; }
+    internal bool HalfDuplex => halfDuplex;
     public bool Connected { get { lock (gate) return current?.Connected == true; } }
     public event Action<string, string>? Transcript;
     public event Action<string>? Status;
@@ -101,7 +107,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             if (current != null) throw new InvalidOperationException("Stop the current voice session first.");
-            s = new Session(socketFactory(), gemini, provider.Vision, enabledTools); current = s;
+            s = new Session(socketFactory(), gemini, provider.Vision, enabledTools, halfDuplex); current = s;
         }
         s.Registration = cancellationToken.Register(() => End(s));
         try
@@ -110,7 +116,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             using var connect = CancellationTokenSource.CreateLinkedTokenSource(s.Cancel.Token);
             connect.CancelAfter(TimeSpan.FromSeconds(20));
             await s.Socket.Connect(endpoint, apiKey, gemini, connect.Token).ConfigureAwait(false);
-            await SendBatch(s, new[] { Setup(provider, instructions, enabledTools) }, s.Cancel.Token).ConfigureAwait(false);
+            await SendBatch(s, new[] { Setup(provider, instructions, enabledTools, halfDuplex) }, s.Cancel.Token).ConfigureAwait(false);
             s.Reader = ReceiveLoop(s);
             await s.Ready.Task.WaitAsync(TimeSpan.FromSeconds(20), s.Cancel.Token).ConfigureAwait(false);
             // Seed only bounded text history. Images are sent exclusively by explicit SendImage calls.
@@ -311,12 +317,16 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     { if (text == null || text.Length > 128 * 1024) throw new InvalidOperationException("Voice text is too large."); }
     private void Captured(Session s, byte[] bytes)
     {
+        bool echo;
         lock (gate)
         {
             if (!Active(s)) return;
             if (bytes.Length == 0 || bytes.Length > 9600 || (bytes.Length & 1) != 0) return;
-            if (s.Input.Writer.TryWrite(bytes)) return;
+            // Half-duplex: drop frames while Naby is audible; nothing is buffered for later upload.
+            echo = !s.Gate.AllowMicrophone(Environment.TickCount64, s.Audio?.QueuedMilliseconds ?? 0);
+            if (!echo && s.Input.Writer.TryWrite(bytes)) return;
         }
+        if (echo) { Emit(s, () => Level?.Invoke(0, false)); return; }
         ThreadPool.QueueUserWorkItem(_ => Fail(s, "Voice upload is too slow. Start voice again after checking the connection."));
     }
     private async Task CaptureLoop(Session s)
@@ -388,7 +398,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
         {
             if (!Active(s) || s.IgnoreAudio || s.Audio == null) return;
             if (item != "" && s.AudioItem != item) { s.AudioItem = item; s.AudioIndex = index; s.AudioStart = s.OutputBytes / 48; }
-            if (s.Audio.Append(pcm)) { s.OutputBytes = checked(s.OutputBytes + pcm.Length); return; }
+            if (s.Audio.Append(pcm)) { s.OutputBytes = checked(s.OutputBytes + pcm.Length); s.Gate.Speaking(Environment.TickCount64); return; }
         }
         // An exceptionally long/fast reply may exhaust the bounded playback queue.
         // Interrupt only that reply; the microphone and session remain usable.
@@ -435,7 +445,7 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
             int played = Math.Max(0, (s.Audio?.PlayedMilliseconds ?? 0) - s.AudioStart);
             if (!s.Gemini && s.ResponseActive) events.Add("{\"type\":\"response.cancel\"}");
             if (!s.Gemini && s.AudioItem != "") events.Add(JsonSerializer.Serialize(new { type = "conversation.item.truncate", item_id = s.AudioItem, content_index = s.AudioIndex, audio_end_ms = played }));
-            s.Audio?.Clear(); s.AudioItem = ""; s.AudioStart = 0; s.OutputBytes = 0; s.IgnoreAudio = !s.Gemini;
+            s.Audio?.Clear(); s.Gate.Cleared(); s.AudioItem = ""; s.AudioStart = 0; s.OutputBytes = 0; s.IgnoreAudio = !s.Gemini;
             s.AssistantText.Clear(); s.ReadyCalls.Clear(); s.ResponseActive = false;
         }
         CancelPending(s);
@@ -532,13 +542,14 @@ internal sealed class AssistantVoiceSession : IAssistantVoice
     }
     private static string TextItem(string role, string text) => JsonSerializer.Serialize(new { type = "conversation.item.create", item = new { type = "message", role,
         content = new[] { new { type = role == "assistant" ? "output_text" : "input_text", text } } } });
-    private static string Setup(AssistantProvider provider, string instructions, IReadOnlyList<AssistantTool> tools)
+    // Half-duplex Gemini also keeps a reply running when stray sound is detected as activity.
+    internal static string Setup(AssistantProvider provider, string instructions, IReadOnlyList<AssistantTool> tools, bool halfDuplex = false)
     {
         if (provider.RealtimeProtocol == "GeminiLive")
             return JsonSerializer.Serialize(new { setup = new { model = provider.RealtimeModel.StartsWith("models/", StringComparison.Ordinal) ? provider.RealtimeModel : "models/" + provider.RealtimeModel,
                 generationConfig = new { responseModalities = new[] { "AUDIO" }, speechConfig = new { voiceConfig = new { prebuiltVoiceConfig = new { voiceName = provider.Voice } } } },
                 systemInstruction = new { parts = new[] { new { text = instructions } } }, inputAudioTranscription = new { }, outputAudioTranscription = new { },
-                realtimeInputConfig = new { automaticActivityDetection = new { disabled = false }, activityHandling = "START_OF_ACTIVITY_INTERRUPTS" },
+                realtimeInputConfig = new { automaticActivityDetection = new { disabled = false }, activityHandling = halfDuplex ? "NO_INTERRUPTION" : "START_OF_ACTIVITY_INTERRUPTS" },
                 tools = tools.Count == 0 ? Array.Empty<object>() : new object[] { new { functionDeclarations = tools.Select(t => new { name = t.Name, description = t.Description, parametersJsonSchema = t.Parameters }) } } } });
         return JsonSerializer.Serialize(new { type = "session.update", session = new { type = "realtime", model = provider.RealtimeModel, instructions,
             output_modalities = new[] { "audio" }, audio = new { input = new { format = new { type = "audio/pcm", rate = 24000 },

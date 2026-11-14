@@ -17,6 +17,8 @@
   "AccessibilityTextScale": 1,
   "AccessibilityHighContrast": false,
   "BrowserMediaPreviews": true,
+  "MediaFollowsPlayback": true,
+  "ExcludeBrowserMedia": false,
   "DockUnlocked": false,
   "PanelAutoHeight": true,
   "WaveformSource": "Spectrum",

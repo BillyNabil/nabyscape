@@ -179,7 +179,7 @@ public sealed partial class OverlayWindow
             double follow=1-Math.Exp(-dt/ .14);reflectionX+=(x-reflectionX)*follow;reflectionY+=(y-reflectionY)*follow;
             surface.Light(reflectionX,reflectionY);peekArtSlide.X=(reflectionX-.5)*2.5;peekArtSlide.Y=(reflectionY-.5)*1.5;
         }
-        if(peeking && !assistantPeeking && timelineDuration>0 && app.Media.Playing)peekProgress.Value=Math.Clamp((timelineElapsed+(now-timelineAt).TotalSeconds)/timelineDuration,0,1);
+        if(peeking && !assistantPeeking && timelineDuration>0 && app.Media.Playing && !peekSeeking)peekProgress.Value=Math.Clamp((timelineElapsed+(now-timelineAt).TotalSeconds)/timelineDuration,0,1);
         else if(peeking && !assistantPeeking && session!=null)peekProgress.Value=session.Progress(now);
         if(expanded && activePage=="media" && timelineDuration>0 && app.Media.Playing && !seekSlider.IsMouseCaptureWithin && !seekSlider.IsKeyboardFocusWithin && !seekDelay.IsEnabled)
         {

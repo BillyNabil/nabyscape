@@ -5,7 +5,7 @@ internal static class MediaPreviewPolicy
     internal static bool IsBrowser(string? source)
     {
         string value=(source??"").ToLowerInvariant();
-        foreach(string name in new[]{"chrome","msedge","firefox","brave","opera","vivaldi","arc","browser"})
+        foreach(string name in new[]{"chrome","msedge","microsoftedge","microsoft edge","firefox","brave","opera","vivaldi","arc","browser","aside","zen","floorp","thorium"})
             if(value.Contains(name,StringComparison.Ordinal))return true;
         return false;
     }
@@ -17,4 +17,7 @@ internal static class MediaPreviewPolicy
         return true;
     }
     internal static bool AllowAutomatic(Settings settings,string? source)=>settings.BrowserMediaPreviews || !(IsBrowser(source) || OpaqueIdentity(source));
+    // Optional exclusion: browsers and unidentifiable (hashed) session identities never become media sources.
+    internal static bool AllowSession(bool excludeBrowsers,string? source,string? displayName=null)
+        =>!excludeBrowsers || !(IsBrowser(source) || IsBrowser(displayName) || OpaqueIdentity(source));
 }

@@ -13,6 +13,7 @@ internal sealed class AssistantVoiceAudio(string microphoneId="") : IAssistantVo
     private MeteredPcm? pcm;
     private bool disposed;
     public int PlayedMilliseconds => pcm?.PlayedMilliseconds ?? 0;
+    public int QueuedMilliseconds => pcm?.QueuedMilliseconds ?? 0;
     public void Start(int inputRate, Action<byte[]> capture, Action<float, bool> level, Action failure)
     {
         lock (gate)
@@ -84,6 +85,7 @@ internal sealed class AssistantVoiceAudio(string microphoneId="") : IAssistantVo
         public WaveFormat WaveFormat {get;}=new(24000,16,1);
         // WaveOut can have 100ms pending in native buffers. Report only conservatively heard audio.
         public int PlayedMilliseconds => Math.Max(0, (int)(Interlocked.Read(ref consumed) / 48) - 100);
+        public int QueuedMilliseconds { get { lock (sync) return buffered / 48; } }
         public bool Append(byte[] bytes)
         {
             lock (sync)

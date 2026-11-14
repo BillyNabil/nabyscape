@@ -109,6 +109,7 @@ public sealed partial class OverlayWindow
         };
         seekSlider.ValueChanged+=(_,_)=>{if(!updating && (seekSlider.IsMouseCaptureWithin || seekSlider.IsKeyboardFocusWithin)){seekDelay.Stop();seekDelay.Start();}};
         seekDelay.Tick+=async(_,_)=>{seekDelay.Stop();await app.Media.Seek(seekSlider.Value);};
+        InitializeMediaTimeline();
     }
     private void StopHoverTimers(){hoverDelay.Stop();leaveDelay.Stop();detailDelay.Stop();assistantHover.Stop();}
     internal void PreviewActivity()
@@ -139,10 +140,11 @@ public sealed partial class OverlayWindow
         var position=media?app.Media.Timeline():(ActiveCountdown() is Countdown c?(c.DurationSeconds-c.Remaining(now),c.DurationSeconds):(0d,0d));
         peekProgress.Visibility=position.Item2>0?Visibility.Visible:Visibility.Collapsed;
         peekElapsed.Visibility=peekDuration.Visibility=Visibility.Visible;
-        peekProgress.Value=position.Item2>0?Math.Clamp(position.Item1/position.Item2,0,1):0;
+        if(!peekSeeking)peekProgress.Value=position.Item2>0?Math.Clamp(position.Item1/position.Item2,0,1):0;
         var format=position.Item2>=3600?@"h\:mm\:ss":@"m\:ss";
         peekElapsed.Text=TimeSpan.FromSeconds(Math.Max(0,position.Item1)).ToString(format);peekDuration.Text=TimeSpan.FromSeconds(Math.Max(0,position.Item2)).ToString(format);
-        if(position.Item2<=0){peekElapsed.Text=media?"Windows media controls":"No active session";peekDuration.Text=media?"":"Open →";}
+        if(position.Item2<=0){peekElapsed.Text=media?Localization.Text("This player doesn't share its position"):"No active session";peekDuration.Text=media?"":"Open →";}
+        ApplyPeekSeek(media,position.Item2);
         if(media){timelineAt=DateTimeOffset.UtcNow;timelineElapsed=position.Item1;timelineDuration=position.Item2;}
         peekWave.Visibility=peekId=="media" && media && app.Settings.LiveActivity?Visibility.Visible:Visibility.Collapsed;
         UpdateClosedLyricsDemand();ApplyPeekGeometry();
@@ -262,7 +264,7 @@ public sealed partial class OverlayWindow
         if(!app.Settings.CompactLayout || !WidgetOn("media"))return;
         var position=app.Media.Timeline();elapsed.Text=TimeSpan.FromSeconds(position.elapsed).ToString(position.duration>=3600?@"h\:mm\:ss":@"m\:ss");duration.Text=TimeSpan.FromSeconds(position.duration).ToString(position.duration>=3600?@"h\:mm\:ss":@"m\:ss");
         timelineAt=DateTimeOffset.UtcNow;timelineElapsed=position.elapsed;timelineDuration=position.duration;
-        seekSlider.IsEnabled=position.duration>0 && app.Media.CanSeek;
+        ApplyTimelineState(app.Media.Available?MediaTimelinePolicy.State(position.duration,app.Media.CanSeek):MediaTimelineState.None,app.Media.Available);
         if(!seekSlider.IsMouseCaptureWithin && !seekSlider.IsKeyboardFocusWithin && !seekDelay.IsEnabled)seekSlider.Value=position.duration>0?position.elapsed/position.duration:0;
     }
     private bool mediaLayoutPending;

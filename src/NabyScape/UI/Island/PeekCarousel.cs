@@ -40,7 +40,7 @@ public sealed partial class OverlayWindow
     private string? peekFilePath;
     private string? peekShelfArtPath;
     private readonly Image peekShelfArt=new(){Width=44,Height=44,Stretch=Stretch.Uniform,Margin=new(0,0,12,0),Visibility=Visibility.Collapsed};
-    private bool PeekInteractionActive=>OwnedPopupOpen || dockEditing || peekDragging || peekTouching || peekNote?.IsKeyboardFocusWithin==true;
+    private bool PeekInteractionActive=>OwnedPopupOpen || dockEditing || peekDragging || peekTouching || peekSeeking || peekNote?.IsKeyboardFocusWithin==true;
     internal string PeekPage=>peekId;
     internal string[] HoverDeckIds=>PeekPages();
     internal bool PeekTabSafe=>peekViews.Where(pair=>pair.Key!=peekId).All(pair=>KeyboardNavigation.GetTabNavigation(pair.Value)==KeyboardNavigationMode.None);
@@ -98,7 +98,7 @@ public sealed partial class OverlayWindow
     }
     internal static bool PeekGestureBlocked(DependencyObject? source)
     {
-        for(var node=source;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))if(node is ButtonBase or TextBoxBase or Slider)return true;return false;
+        for(var node=source;node!=null;node=node is Visual?VisualTreeHelper.GetParent(node):LogicalTreeHelper.GetParent(node))if(node is ButtonBase or TextBoxBase or Slider or PeekSeekStrip)return true;return false;
     }
     private Button PlainPeekButton(string name,Action action)
     {var button=UI.Button(name,action);button.Template=(ControlTemplate)FindResource("ToolRowTemplate");button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.Padding=new(3);button.Margin=new(0);button.MinHeight=22;button.HorizontalContentAlignment=HorizontalAlignment.Center;button.MouseEnter+=(_,_)=>PeekButtonLight(button,.075);button.MouseLeave+=(_,_)=>PeekButtonLight(button,button.IsKeyboardFocusWithin?.075:0);button.GotKeyboardFocus+=(_,_)=>PeekButtonLight(button,.075);button.LostKeyboardFocus+=(_,_)=>PeekButtonLight(button,button.IsMouseOver?.075:0);return button;}

@@ -40,7 +40,13 @@ public sealed class MediaService : IDisposable
     private string artworkKey="";
     private long timelineStamp;
     private (double elapsed,double duration) timelineSample;
+    private readonly MediaTimelineClock timelineClock=new();
     private readonly MediaSourceSelection sourceSelection=new();
+    private bool excludeBrowserMedia,followPlayback=true,browserPreviews=true;
+    private readonly HashSet<string> playingSessions=new(StringComparer.Ordinal);
+    private List<GlobalSystemMediaTransportControlsSession> watched=new();
+    internal bool BrowserMediaExcluded=>excludeBrowserMedia;
+    internal bool FollowsPlayback=>followPlayback;
     internal string SourceSelectionId=>sourceSelection.Id;
     internal bool SourceDisabled=>sourceSelection.IsNone;
     public event Action? Changed;
@@ -64,6 +70,15 @@ public sealed class MediaService : IDisposable
     public bool CanSeek { get; private set; }
     public MediaService(Action<Exception> log)
     { dispatcher=System.Windows.Threading.Dispatcher.CurrentDispatcher; this.log=log; }
+    internal void Configure(Settings settings)
+    {
+        followPlayback=settings.MediaFollowsPlayback;browserPreviews=settings.BrowserMediaPreviews;
+        if(excludeBrowserMedia==settings.ExcludeBrowserMedia)return;
+        excludeBrowserMedia=settings.ExcludeBrowserMedia;
+        if(!DiagnosticFixture)Reload();
+    }
+    private bool SessionAllowed(GlobalSystemMediaTransportControlsSession session)
+        =>MediaPreviewPolicy.AllowSession(excludeBrowserMedia,session.SourceAppUserModelId,excludeBrowserMedia?SessionName(session):null);
     internal void SetEnabled(bool value)
     {
         // Deterministic diagnostic playback must not be overwritten by the user's
@@ -73,7 +88,29 @@ public sealed class MediaService : IDisposable
         if(value){if(manager==null)_=Initialize();return;}
         managerGeneration++;
         if(manager!=null){manager.SessionsChanged-=SessionsChanged;manager.CurrentSessionChanged-=CurrentChanged;manager=null;}
-        Sessions.Clear();Select(null,false);
+        Watch(new());Select(null,false);
+    }
+    // Every listed session reports playback changes so Auto can follow the app that starts playing.
+    private void Watch(List<GlobalSystemMediaTransportControlsSession> sessions)
+    {
+        foreach(var session in watched)try{session.PlaybackInfoChanged-=AnyPlaybackChanged;}catch(Exception ex){log(ex);}
+        watched=sessions;Sessions=sessions;
+        foreach(var session in watched)try{session.PlaybackInfoChanged+=AnyPlaybackChanged;}catch(Exception ex){log(ex);}
+        playingSessions.IntersectWith(sessions.Select(s=>s.SourceAppUserModelId));
+    }
+    private void AnyPlaybackChanged(GlobalSystemMediaTransportControlsSession sender,PlaybackInfoChangedEventArgs args)=>dispatcher.BeginInvoke(()=>
+    {
+        if(disposed || !enabled || manager==null)return;
+        var started=ObservePlaying();if(started.Length>0 && followPlayback && sourceSelection.Id==MediaSourceSelection.AutoId)ApplySelection(selected?.SourceAppUserModelId,started);
+    });
+    private string[] ObservePlaying()
+    {
+        var now=new List<string>();
+        foreach(var session in Sessions)
+            try{if(session.GetPlaybackInfo()?.PlaybackStatus==GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)now.Add(session.SourceAppUserModelId);}
+            catch { /* An expiring session simply stops counting as playing. */ }
+        var started=MediaFollowPolicy.Started(playingSessions,now);
+        playingSessions.Clear();playingSessions.UnionWith(now);return started;
     }
     public async Task Initialize()
     {
@@ -93,13 +130,16 @@ public sealed class MediaService : IDisposable
     private void Reload()
     {
         if(disposed || !enabled || manager==null) return;
-        Sessions=manager.GetSessions().ToList();
-        ApplySelection(selected?.SourceAppUserModelId);
+        Watch(manager.GetSessions().Where(SessionAllowed).ToList());
+        ApplySelection(selected?.SourceAppUserModelId,ObservePlaying());
     }
-    private void ApplySelection(string? previous=null)
+    private void ApplySelection(string? previous=null,IReadOnlyList<string>? started=null)
     {
         if(disposed || !enabled)return;
-        string? id=sourceSelection.Resolve(Sessions.Select(s=>s.SourceAppUserModelId).ToArray(),manager?.GetCurrentSession()?.SourceAppUserModelId,previous);
+        string? current=manager?.GetCurrentSession()?.SourceAppUserModelId;
+        string? id=sourceSelection.Resolve(Sessions.Select(s=>s.SourceAppUserModelId).ToArray(),current,previous);
+        if(started!=null && sourceSelection.Id==MediaSourceSelection.AutoId)
+            id=MediaFollowPolicy.Follow(followPlayback,true,id,id!=null && playingSessions.Contains(id),started,current,browserPreviews)??id;
         Select(Sessions.FirstOrDefault(s=>s.SourceAppUserModelId==id),false);
     }
     public void SelectNone()=>Select(null);
@@ -110,10 +150,12 @@ public sealed class MediaService : IDisposable
     public void Select(GlobalSystemMediaTransportControlsSession? session,bool manual=true)
     {
         if(disposed) return;
+        // An excluded browser cannot be chosen, even from a menu rendered before the exclusion.
+        if(session!=null && !SessionAllowed(session)){session=Sessions.FirstOrDefault(SessionAllowed);manual=false;}
         if(manual)sourceSelection.Select(session?.SourceAppUserModelId);
         if(ReferenceEquals(selected,session)){if(session==null)_=Refresh();else Changed?.Invoke();return;}
         if(selected!=null) { selected.MediaPropertiesChanged-=PropertiesChanged; selected.PlaybackInfoChanged-=PlaybackChanged;selected.TimelinePropertiesChanged-=TimelineChanged; }
-        selected=session;timelineStamp=0;
+        selected=session;timelineStamp=0;timelineClock.Reset();
         if(selected!=null) { selected.MediaPropertiesChanged+=PropertiesChanged; selected.PlaybackInfoChanged+=PlaybackChanged;selected.TimelinePropertiesChanged+=TimelineChanged; }
         _=Refresh();
     }
@@ -186,15 +228,13 @@ public sealed class MediaService : IDisposable
         try
         {
             if(selected==null)return(0,0);var timeline=selected.GetTimelineProperties();
-            double duration=(timeline.EndTime-timeline.StartTime).TotalSeconds;
-            if(duration<=0)return(0,0);
-            double position=(timeline.Position-timeline.StartTime).TotalSeconds;
-            double age=(DateTimeOffset.UtcNow-timeline.LastUpdatedTime).TotalSeconds;
-            if(Playing && age>=0 && age<86400)position+=age;
-            return(Math.Clamp(position,0,duration),duration);
+            if(timeline==null)return(0,0);
+            return timelineClock.Sample(timeline.StartTime,timeline.EndTime,timeline.Position,timeline.LastUpdatedTime,Playing,DateTimeOffset.UtcNow);
         }
         catch{return(0,0);}
     }
+    // None hides the position, ReadOnly shows progress without seeking, Seekable allows both.
+    internal MediaTimelineState TimelineState=>Available?MediaTimelinePolicy.State(Timeline().duration,CanSeek):MediaTimelineState.None;
     public async Task Seek(double fraction)
     {
         try
@@ -211,6 +251,8 @@ public sealed class MediaService : IDisposable
         disposed=true;generation++;managerGeneration++;
         if(manager!=null) { manager.SessionsChanged-=SessionsChanged;manager.CurrentSessionChanged-=CurrentChanged; }
         if(selected!=null) { selected.MediaPropertiesChanged-=PropertiesChanged;selected.PlaybackInfoChanged-=PlaybackChanged;selected.TimelinePropertiesChanged-=TimelineChanged; }
+        foreach(var session in watched)try{session.PlaybackInfoChanged-=AnyPlaybackChanged;}catch { /* Closing never blocks on an expired session. */ }
+        watched=new();
     }
 }
 

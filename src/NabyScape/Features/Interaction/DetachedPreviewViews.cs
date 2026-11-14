@@ -192,7 +192,8 @@ internal sealed class DetachedPreviewView : IDisposable
                 sessions!.SelectedIndex=media.Sessions.FindIndex(s=>s.SourceAppUserModelId==media.Selected?.SourceAppUserModelId);
                 previous!.IsEnabled=media.CanPrevious;next!.IsEnabled=media.CanNext;toggle!.IsEnabled=media.CanToggle;toggle.Content=media.Playing?"Pause":"Play";
                 volume!.IsEnabled=app.Audio.Available;if(!volume.IsMouseCaptureWithin && !volume.IsKeyboardFocusWithin)volume.Value=app.Audio.Volume*100;
-                var timeline=media.Timeline();seek!.IsEnabled=media.CanSeek && timeline.duration>0;if(!seek.IsMouseCaptureWithin && !seek.IsKeyboardFocusWithin)seek.Value=timeline.duration>0?timeline.elapsed/timeline.duration:0;
+                var timeline=media.Timeline();var timelineState=media.Available?MediaTimelinePolicy.State(timeline.duration,media.CanSeek):MediaTimelineState.None;
+                seek!.Visibility=timelineState==MediaTimelineState.None?Visibility.Collapsed:Visibility.Visible;seek.IsEnabled=timelineState==MediaTimelineState.Seekable;seek.ToolTip=timelineState==MediaTimelineState.ReadOnly?Localization.Text("This player doesn't allow seeking"):null;ToolTipService.SetShowOnDisabled(seek,true);if(!seek.IsMouseCaptureWithin && !seek.IsKeyboardFocusWithin)seek.Value=timeline.duration>0?timeline.elapsed/timeline.duration:0;
             }
             else if(kind is "timer" or "focus")
             {

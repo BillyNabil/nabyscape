@@ -34,6 +34,8 @@ internal sealed class AssistantOptions
     public string MicrophoneId {get;set;}="";
     public AssistantWakeOptions WakeWord {get;set;}=new();
     public bool WidgetNavigation {get;set;}=true;
+    // Live voice barge-in. Off by default: the microphone pauses while Naby speaks (safe with speakers).
+    public bool VoiceBargeIn {get;set;}
     public bool Enabled {get;set;}=true;
     public bool IslandCharacter {get;set;}=true;
     public string SelectedProvider {get;set;}="";

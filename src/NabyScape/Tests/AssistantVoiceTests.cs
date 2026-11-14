@@ -51,9 +51,11 @@ internal static class AssistantVoiceTests
     {
         internal bool Started, Disposed, Overflow;
         internal int Rate, Cleared, Added;
+        internal volatile int Queued;
         internal Action<byte[]>? Capture;
         internal Action<float, bool>? Meter;
         public int PlayedMilliseconds => 240;
+        public int QueuedMilliseconds => Queued;
         public void Start(int inputRate, Action<byte[]> capture, Action<float, bool> level, Action failure)
         { if (Disposed) throw new ObjectDisposedException(nameof(Audio)); Rate = inputRate; Capture = capture; Meter = level; Started = true; }
         public bool Append(byte[] pcm) { Added += pcm.Length; return !Overflow; }
@@ -429,6 +431,70 @@ internal static class AssistantVoiceTests
                 Assert(deliveries == (failure is "old-session" or "clear" ? 0 : 1));
                 await voice.Stop();
             });
+        test("Voice echo gate mutes during queued playback holds a short tail and resumes", () =>
+        {
+            var gate = new VoiceEchoGate(true);
+            Assert(gate.AllowMicrophone(0, 0) && !gate.Muted);
+            gate.Speaking(1000); Assert(!gate.AllowMicrophone(1000, 500) && gate.Muted);
+            for (long t = 1050; t <= 1500; t += 50) Assert(!gate.AllowMicrophone(t, (int)Math.Max(0, 1500 - t)));
+            // The queue drained at 1500; the last audible frame was at 1450, plus 100 ms output latency and a 300 ms tail.
+            Assert(!gate.AllowMicrophone(1849, 0) && gate.AllowMicrophone(1850, 0) && !gate.Muted);
+            gate.Speaking(2000); Assert(!gate.AllowMicrophone(2100, 0)); gate.Cleared(); Assert(gate.AllowMicrophone(2100, 0));
+            var stalled = new VoiceEchoGate(true); stalled.Speaking(0); long reopened = -1;
+            for (long t = 0; t <= 8000 && reopened < 0; t += 50) if (stalled.AllowMicrophone(t, 800)) reopened = t;
+            Assert(reopened >= VoiceEchoGate.StallMs && reopened <= VoiceEchoGate.StallMs + VoiceEchoGate.PlaybackLatencyMs + VoiceEchoGate.TailMs);
+            var duplex = new VoiceEchoGate(false); duplex.Speaking(0); Assert(duplex.AllowMicrophone(0, 5000) && !duplex.Muted);
+        });
+        test("Voice Gemini setup keeps replies running in half-duplex and allows barge-in only when chosen", () =>
+        {
+            string Handling(string setup) { using var json = JsonDocument.Parse(setup); var config = json.RootElement.GetProperty("setup").GetProperty("realtimeInputConfig"); Assert(!config.GetProperty("automaticActivityDetection").GetProperty("disabled").GetBoolean()); return config.GetProperty("activityHandling").GetString()!; }
+            Assert(Handling(AssistantVoiceSession.Setup(Provider("GeminiLive"), "x", Array.Empty<AssistantTool>(), true)) == "NO_INTERRUPTION");
+            Assert(Handling(AssistantVoiceSession.Setup(Provider("GeminiLive"), "x", Array.Empty<AssistantTool>(), false)) == "START_OF_ACTIVITY_INTERRUPTS");
+            Assert(AssistantVoiceSession.Setup(Provider(), "x", Array.Empty<AssistantTool>(), true).Contains("\"interrupt_response\":false"));
+            Assert(!new AssistantOptions().VoiceBargeIn && new AssistantVoiceSession("", true).HalfDuplex && !new AssistantVoiceSession().HalfDuplex);
+            var options = JsonSerializer.Deserialize<AssistantOptions>(JsonSerializer.Serialize(new AssistantOptions { VoiceBargeIn = true }))!; Assert(options.VoiceBargeIn);
+        });
+        foreach (string protocol in AssistantVoiceSession.Protocols)
+            RunAsync("Voice " + protocol + " half-duplex pauses microphone upload while Naby speaks and resumes after the tail", async () =>
+            {
+                var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio, halfDuplex: true);
+                await Start(voice, Provider(protocol)); Assert(socket.Payloads()[0].Contains(protocol == "GeminiLive" ? "NO_INTERRUPTION" : "\"interrupt_response\":false"));
+                string mic = protocol == "GeminiLive" ? "audio/pcm;rate=16000" : "input_audio_buffer.append";
+                string reply = protocol == "GeminiLive" ? "{\"serverContent\":{\"modelTurn\":{\"parts\":[{\"inlineData\":{\"mimeType\":\"audio/pcm;rate=24000\",\"data\":\"AAAAAA==\"}}]}}}" : "{\"type\":\"response.output_audio.delta\",\"item_id\":\"audio-1\",\"delta\":\"AAAAAA==\"}";
+                int Uploaded() => socket.Payloads().Count(p => p.Contains(mic));
+                float lastMic = -1; voice.Level += (value, output) => { if (!output) lastMic = value; };
+                audio.Capture!(new byte[1600]); await Until(() => Uploaded() == 1);
+                if (protocol == "OpenAIRealtime") socket.Push("{\"type\":\"response.created\"}");
+                audio.Queued = 2000; socket.Push(reply); await Until(() => audio.Added == 4);
+                for (int i = 0; i < 6; i++) { audio.Capture!(new byte[1600]); await Task.Delay(20); }
+                await Task.Delay(80); Assert(Uploaded() == 1 && voice.Connected && lastMic == 0);
+                audio.Queued = 0; audio.Capture!(new byte[1600]); await Task.Delay(60); Assert(Uploaded() == 1);
+                await Task.Delay(VoiceEchoGate.PlaybackLatencyMs + VoiceEchoGate.TailMs + 50);
+                audio.Capture!(new byte[1600]); await Until(() => Uploaded() == 2);
+                Assert(audio.Cleared == 0 && !socket.Payloads().Any(p => p.Contains("response.cancel")));
+                // Typed input clears playback and reopens the microphone at once.
+                audio.Queued = 2000; socket.Push(reply); await Until(() => audio.Added == 8);
+                audio.Capture!(new byte[1600]); await Task.Delay(60); Assert(Uploaded() == 2);
+                await voice.SendText("typed instead", default); audio.Queued = 0;
+                audio.Capture!(new byte[1600]); await Until(() => Uploaded() == 3);
+                Assert(audio.Cleared == 1 && voice.Connected); await voice.Stop();
+            });
+        RunAsync("Voice full-duplex barge-in keeps uploading while Naby speaks", async () =>
+        {
+            var socket = new Socket(); var audio = new Audio(); await using var voice = new AssistantVoiceSession(() => socket, () => audio);
+            await Start(voice, Provider("GeminiLive")); Assert(socket.Payloads()[0].Contains("START_OF_ACTIVITY_INTERRUPTS"));
+            audio.Queued = 2000; socket.Push("{\"serverContent\":{\"modelTurn\":{\"parts\":[{\"inlineData\":{\"mimeType\":\"audio/pcm;rate=24000\",\"data\":\"AAAAAA==\"}}]}}}");
+            await Until(() => audio.Added == 4); audio.Capture!(new byte[1600]);
+            await Until(() => socket.Payloads().Any(p => p.Contains("audio/pcm;rate=16000")));
+            socket.Push("{\"serverContent\":{\"interrupted\":true}}"); await Until(() => audio.Cleared == 1); await voice.Stop();
+        });
+        test("Voice playback buffer reports queued milliseconds and clears them", () =>
+        {
+            var pcm = new AssistantVoiceAudio.MeteredPcm(_ => { }); Assert(pcm.QueuedMilliseconds == 0);
+            Assert(pcm.Append(new byte[48000])); Assert(pcm.QueuedMilliseconds == 1000);
+            var output = new byte[24000]; pcm.Read(output, 0, output.Length); Assert(pcm.QueuedMilliseconds == 500);
+            pcm.Clear(); Assert(pcm.QueuedMilliseconds == 0);
+        });
         test("Voice local evidence bounds history and text without adding protocol tool records", () =>
         {
             using var conversation = new AssistantConversation(new NoTransport());

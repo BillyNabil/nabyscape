@@ -59,6 +59,9 @@ public sealed partial class SettingsWindow
         Add("Lyrics","Audio","Lyrics","","lyrics lirik spotify karaoke lagu");
         Add("Audio waveform","Audio","Visualizer","","waveform visualizer spectrum gelombang audio reaktif");
         Add("Speaker & volume","Audio","Volume mixer","","speaker volume suara mixer microphone output device spotify");
+        Add("Follow the app that starts playing","Audio","Audio behavior","Switch to the app that starts playing","media source auto follow switch playing session telegram spotify sumber otomatis");
+        Add("Exclude browser media","Audio","Audio behavior","Exclude browser media sessions","browser chrome edge firefox youtube ignore exclude media session source abaikan");
+        Add("Interrupt Naby while it speaks","AI","AI companion","Let me interrupt Naby while it speaks (use headphones)","barge in interrupt echo feedback loop speakers headphones microphone voice gemini live sela");
         Add("Clipboard capture","Clipboard","Clipboard history","Save text & image history locally","clipboard history salin copy paste riwayat gambar capture");
         Add("Weather city","Weather","","Weather city search","cuaca kota city location lokasi weather");
         Add("Weather temperature units","Weather","","Weather temperature units","suhu temperature celsius fahrenheit derajat");

@@ -47,7 +47,7 @@ public sealed partial class AudioService
         if(lastMediaDemand==0 || Stopwatch.GetElapsedTime(lastMediaDemand).TotalSeconds<2)return;
         lastMediaDemand=0;mediaPeaks?.Dispose();mediaPeaks=null;mediaPeakSource="";mediaSampleGate.Reset();
         outputSpectrum?.Stop();MediaSpectrum=null;mediaOutputs.Clear();Array.Clear(spectrumBands);
-        CurrentMediaPeak=0;MediaMeterMuted=false;meterSessions=meterAudible=0;MediaLevel=default;spectrumSequence=0;
+        CurrentMediaPeak=0;MediaMeterMuted=MediaMeterFallback=false;meterSessions=meterAudible=0;MediaLevel=default;spectrumSequence=0;
     }
     internal float MediaPeak(string? source,bool includeSpectrum=true)
     {
@@ -65,6 +65,7 @@ public sealed partial class AudioService
     private float ReadMediaPeak(string? source)
     {
         DiagnosticMeterReads++;mediaOutputs.Clear();
+        MediaMeterFallback=false;
         if(DiagnosticPeak!=null){meterSessions=meterAudible=1;MediaMeterMuted=false;return CurrentMediaPeak=DiagnosticPeak();}
         if(disposed || string.IsNullOrWhiteSpace(source)){MediaMeterMuted=false;meterSessions=meterAudible=0;return CurrentMediaPeak=0;}
         if(mediaPeaks==null || mediaPeakSource!=source)
@@ -75,6 +76,10 @@ public sealed partial class AudioService
         meterSessions=meterAudible=0;
         float peak=mediaPeaks.Read(DateTimeOffset.UtcNow);
         MediaMeterMuted=meterSessions>0 && meterAudible==0;
+        // Some players cannot be matched to an audio session (hashed browser identities, packaged
+        // or legacy players). Follow the default output rather than leaving a dead waveform.
+        MediaMeterFallback=meterSessions==0 && DefaultOutputId.Length>0;
+        if(MediaMeterFallback){peak=DefaultOutputPeak();mediaOutputs.Add(DefaultOutputId);}
         return CurrentMediaPeak=peak;
     }
     private IEnumerable<MediaEndpoint> DiscoverMediaSessions(string source)
@@ -93,8 +98,8 @@ public sealed partial class AudioService
                         var session=sessions[i];bool keep=false;
                         try
                         {
-                            using var process=Process.GetProcessById((int)session.GetProcessID);
-                            keep=MediaProcessMatches(source,process.ProcessName);
+                            int processId=(int)session.GetProcessID;using var process=Process.GetProcessById(processId);
+                            keep=MediaProcessMatches(source,process.ProcessName) || source.Contains('!') && MediaPackageMatches(source,PackageIdentity.FamilyName(processId));
                             if(keep)matches.Add(session);
                         }
                         catch { /* Expired/system sessions have no readable process. */ }
