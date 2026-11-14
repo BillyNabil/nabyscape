@@ -18,7 +18,7 @@ public sealed partial class OverlayWindow
     {
         if(noticeEdge==null){noticeEdge=new(){Width=18,Height=2,CornerRadius=new(1),Background=Brushes.White,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Top,IsHitTestVisible=false};visuals.Children.Add(noticeEdge);}
         // A short accent line under the closed dock means unread alerts are waiting in the center.
-        noticeEdge.Width=20;noticeEdge.Height=3;noticeEdge.CornerRadius=new(1.5);noticeEdge.Background=UI.Brush(app.Settings.Accent);
+        noticeEdge.Width=20;noticeEdge.Height=3;noticeEdge.CornerRadius=new(1.5);noticeEdge.Background=ClosedAccent();
         noticeEdge.Margin=new(0,app.Settings.Height-4,0,0);
         bool waiting=app.Notifications.Current!=null || app.Notifications.Unread>0;
         noticeEdge.Visibility=waiting && !expanded && !peeking?Visibility.Visible:Visibility.Collapsed;

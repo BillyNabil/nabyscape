@@ -22,7 +22,7 @@ public sealed partial class SettingsWindow
         "Content"=>new[]{"Feature usage","Enabled widgets & order","Individual tools","Hover pages","Focus sessions","Stopwatch"},
         "Controls"=>new[]{"Hover & swipe","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Notch gestures","Global hotkey"},
         "Audio"=>new[]{"Visualizer","Lyrics","Closed media display","Volume mixer","Waveform source","Live signal","Live feedback","Audio behavior","Header wheel"},
-        "System"=>new[]{"Clock","Monitor details"},"Launch"=>new[]{"Launch display","Shortcuts"},"AI"=>new[]{"AI companion"},
+        "System"=>new[]{"Clock","Monitor details"},"Launch"=>new[]{"Launch display","Shortcuts"},"AI"=>new[]{"AI companion","Naby in the dock"},
         "Application"=>new[]{"Language & accessibility","Updates","Behavior","Local storage","Private diagnostics","Reset preferences","About NabyScape"},_=>Array.Empty<string>()
     });
     private static SettingsSearchItem[] BuildSettingsSearchIndex()
@@ -35,6 +35,10 @@ public sealed partial class SettingsWindow
         }
         void Add(string title,string category,string section,string control,string terms)=>items.Add(new(title,category,section,control,terms));
         Add("Live lyrics on closed dock","Audio","Closed media display","Closed media content","lyrics lirik youtube apple song title none waveform");
+        Add("Light or dark theme","Appearance","Theme","Theme","theme light dark white black mode windows follow system clair sombre blanc noir tema terang gelap");
+        Add("Collapsed island color","Appearance","Color & material","Use same color for both states","closed collapsed compact island dock color background black visible wallpaper tertutup warna");
+        Add("Naby panel size in the dock","AI","Naby in the dock","Content size","naby ai chat voice panel size width height mode dock island companion");
+        Add("Collapsed island opacity","Appearance","Color & material","Collapsed island opacity","closed collapsed transparency transparent opacity see-through tertutup");
         Add("Feature usage","Content","Feature usage","Connect to music apps","resource ram essentials background disable features music download");
         Add("Light on the closed dock","Ambience","Ambient light","Show ambience on closed dock","closed compact dock ambience tertutup hitam tuck glow");
         Add("Ambient brightness","Ambience","Ambient light","Ambient intensity","intensity brightness terang cahaya warna");

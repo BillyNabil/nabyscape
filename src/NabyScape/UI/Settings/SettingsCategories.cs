@@ -12,7 +12,7 @@ public sealed partial class SettingsWindow
     private static readonly SettingsCategory[] SettingsCategories=
     {
         new("Home","Start here","Settings","Make NabyScape work the way you want.","home start setup help beginner"),
-        new("Appearance","Look & colors","Personalize","Choose the dock's shape, colors and text style.","appearance theme warna tampilan font shape glass",new[]{"Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation"}),
+        new("Appearance","Look & colors","Personalize","Choose the dock's shape, colors and text style.","appearance theme warna tampilan font shape glass light dark terang gelap mode",new[]{"Theme","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation"}),
         new("Ambience","Ambience","Personalize","Choose where the light appears and how it follows your music.","ambient ambience cahaya warna glow spread softness light reach closed dock tertutup",new[]{"Ambient light"}),
         new("Motion","Motion & speed","Personalize","Adjust animation and choose a balance between smoothness and power.","animation animasi motion fps speed performance ram cpu hemat reduce",new[]{"Motion","Animation performance"}),
         new("Layout","Position & size","Dock","Place the dock on a screen edge or move it freely.","position posisi pindah atas bawah kanan kiri monitor size resize ukuran"),

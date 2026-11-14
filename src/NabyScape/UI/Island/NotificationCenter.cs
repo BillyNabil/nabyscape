@@ -111,7 +111,7 @@ public sealed partial class OverlayWindow
         var text=new StackPanel();Grid.SetColumn(text,1);
         var top=new DockPanel();
         var when=UI.Text(NotificationCenterText.Ago(now,entry.At),10,UI.Muted);when.Opacity=.85;when.VerticalAlignment=VerticalAlignment.Center;when.Margin=new(8,0,0,0);DockPanel.SetDock(when,Dock.Right);top.Children.Add(when);
-        if(fresh){var dot=new Border{Width=6,Height=6,CornerRadius=new(3),Background=UI.Brush(app.Settings.Accent),Margin=new(0,0,6,0),VerticalAlignment=VerticalAlignment.Center};top.Children.Add(dot);}
+        if(fresh){var dot=new Border{Width=6,Height=6,CornerRadius=new(3),Background=UI.Brush(IslandPalette.Accent(app.Settings)),Margin=new(0,0,6,0),VerticalAlignment=VerticalAlignment.Center};top.Children.Add(dot);}
         var sender=UI.Text(NotificationCenterText.Kind(notice),11,UI.Muted);sender.FontWeight=FontWeights.SemiBold;sender.TextWrapping=TextWrapping.NoWrap;sender.TextTrimming=TextTrimming.CharacterEllipsis;sender.VerticalAlignment=VerticalAlignment.Center;top.Children.Add(sender);
         text.Children.Add(top);
         var title=UI.Text(notice.Title,13);title.FontWeight=FontWeights.SemiBold;title.TextWrapping=TextWrapping.NoWrap;title.TextTrimming=TextTrimming.CharacterEllipsis;title.Margin=new(0,3,0,0);text.Children.Add(title);
@@ -142,7 +142,7 @@ public sealed partial class OverlayWindow
     {
         var host=new Grid{Width=size,Height=size};
         var bell=Icons.Button("bell","Notifications",OpenNotificationCenter,false,size);bell.Margin=new(0);bell.Background=Brushes.Transparent;host.Children.Add(bell);
-        var dot=new Border{Width=7,Height=7,CornerRadius=new(3.5),Background=UI.Brush(app.Settings.Accent),HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Margin=new(0,3,3,0),IsHitTestVisible=false};
+        var dot=new Border{Width=7,Height=7,CornerRadius=new(3.5),Background=UI.Brush(IslandPalette.Accent(app.Settings)),HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Top,Margin=new(0,3,3,0),IsHitTestVisible=false};
         host.Children.Add(dot);bellBadges.Add(new(dot));UpdateBellBadges();
         return host;
     }

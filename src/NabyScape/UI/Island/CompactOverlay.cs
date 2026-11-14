@@ -190,7 +190,7 @@ public sealed partial class OverlayWindow
         scroll.VerticalScrollBarVisibility=ScrollBarVisibility.Hidden;
         foreach(var entry in compactPages){entry.Value.Visibility=entry.Key==page?Visibility.Visible:Visibility.Collapsed;}
         UpdateSystemMonitor();
-        foreach(var entry in compactTabs){entry.Value.Background=entry.Key==(page=="mixer"?"media":page)?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;entry.Value.Foreground=entry.Key==(page=="mixer"?"media":page)?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;StyleCategory(entry.Value,entry.Key,entry.Key==(page=="mixer"?"media":page));}
+        foreach(var entry in compactTabs){entry.Value.Background=entry.Key==(page=="mixer"?"media":page)?UI.Brush(IslandPalette.SelectionFill(app.Settings)):Brushes.Transparent;entry.Value.Foreground=entry.Key==(page=="mixer"?"media":page)?UI.ContrastText(IslandPalette.SelectionFill(app.Settings)):UI.Muted;StyleCategory(entry.Value,entry.Key,entry.Key==(page=="mixer"?"media":page));}
         if(compactTabs.TryGetValue(page,out var selectedTab))selectedTab.BringIntoView();
         if(animate)Motion.Enter(compactPages[page],4);
         Dimensions();
@@ -228,7 +228,7 @@ public sealed partial class OverlayWindow
             foreach(var widget in PanelWidgets.Where(w=>PageFor(w.Id)=="focus"))
             {
                 var contents=new CountdownView(app,widget.Id=="focus");
-                var module=new Border{BorderBrush=UI.Brush(app.Settings.ControlBorder),BorderThickness=new Thickness(0),Padding=stacked?new Thickness(0,4,0,4):new Thickness(column==0?0:14,4,column==0?14:0,4),Margin=stacked?new Thickness(0,column==0?0:16,0,0):new Thickness(column==0?0:8,0,0,0),Child=contents};if(stacked)Grid.SetRow(module,column++);else Grid.SetColumn(module,column++);row.Children.Add(module);module.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");
+                var module=new Border{BorderBrush=UI.Brush(IslandPalette.ControlBorder(app.Settings)),BorderThickness=new Thickness(0),Padding=stacked?new Thickness(0,4,0,4):new Thickness(column==0?0:14,4,column==0?14:0,4),Margin=stacked?new Thickness(0,column==0?0:16,0,0):new Thickness(column==0?0:8,0,0,0),Child=contents};if(stacked)Grid.SetRow(module,column++);else Grid.SetColumn(module,column++);row.Children.Add(module);module.SetResourceReference(Border.BorderBrushProperty,"ControlBorder");
             }
             bodyReflow.Add(()=>
             {

@@ -48,7 +48,7 @@ public sealed partial class SettingsWindow
         previewStage.VerticalAlignment=VerticalAlignment.Top;screen.Children.Add(previewStage);
         grid.Children.Add(screen);
         var side=new Border{BorderBrush=SettingsTheme.LineSoft,BorderThickness=new(1,0,0,0),Child=controls,Tag=StageControlsTag};Grid.SetColumn(side,1);grid.Children.Add(side);
-        var frame=new Border{Background=Brush("#0A0E0B"),BorderBrush=SettingsTheme.Line,BorderThickness=new(.8),CornerRadius=new(16),Child=grid};
+        var frame=new Border{Background=SettingsTheme.Stage,BorderBrush=SettingsTheme.Line,BorderThickness=new(.8),CornerRadius=new(16),Child=grid};
         grid.SizeChanged+=(_,_)=>grid.Clip=new RectangleGeometry(new Rect(grid.RenderSize),15,15);
         return frame;
     }

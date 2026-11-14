@@ -136,7 +136,7 @@ public sealed partial class OverlayWindow
             peeking?Includes(peekId):Includes("closed"));
         allowed &= (expanded || peeking || s.ClosedAmbient && !IdleContent) && !IsTucked && !userHidden;
         bool quiet=IsTucked || !expanded && !peeking;
-        surface.Fill=quiet?Brushes.Black:UI.Brush(s.Background);surface.GlassStyle=!quiet && s.GlassStyle;
+        ApplySurfaceFill(quiet);surface.GlassStyle=!quiet && s.GlassStyle;
         if(quiet)surface.AlbumTint=Colors.Transparent;
         bool moving=app.Media.Playing && s.LiveActivity && !IsTucked && !userHidden && IsVisible && WindowState!=WindowState.Minimized;
         surface.SetAmbient(AmbientPolicy.ColorsFor(s,app.AmbientAudio.CoverColors),allowed?s.AmbientStrength:0,s.AmbientSpread,s.AmbientMotion,moving,AmbientLook.From(s));

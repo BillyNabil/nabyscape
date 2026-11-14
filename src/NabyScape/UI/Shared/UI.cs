@@ -19,7 +19,19 @@ internal static class UI
     public static Brush ContrastText(string color)
     {var c=Brush(color).Color;return c.R*.2126+c.G*.7152+c.B*.0722>150?Brush("#111317"):Brushes.White;}
     public static void ApplyControlTheme(Settings settings)
-    {if(Application.Current==null)return;if(Accessibility.HighContrast){ResourceBrush("ControlFill",SystemColors.WindowBrush);ResourceBrush("ControlBorder",SystemColors.WindowTextBrush);ResourceBrush("ControlText",SystemColors.WindowTextBrush);ResourceBrush("SelectionFill",SystemColors.HighlightBrush);ResourceBrush("SelectionText",SystemColors.HighlightTextBrush);ResourceBrush("Accent",SystemColors.HighlightBrush);ResourceBrush("AccentText",SystemColors.HighlightTextBrush);ResourceBrush("CheckedFill",SystemColors.HighlightBrush);ResourceBrush("CheckedText",SystemColors.HighlightTextBrush);ResourceBrush("SwitchKnob",SystemColors.WindowTextBrush);ResourceBrush("TrackFill",SystemColors.WindowTextBrush);ResourceBrush("ProgressFill",SystemColors.HighlightBrush);ResourceBrush("ProgressTrack",SystemColors.WindowBrush);return;}foreach(var entry in new[]{("ControlFill",settings.ControlFill),("ControlBorder",settings.ControlBorder),("SelectionFill",settings.SelectionFill)})ResourceBrush(entry.Item1,Brush(entry.Item2));ResourceBrush("ControlText",ContrastText(settings.ControlFill));ResourceBrush("SelectionText",ContrastText(settings.SelectionFill));ResourceBrush("CheckedText",Brush(settings.ControlFill)); }
+    {if(Application.Current==null)return;if(Accessibility.HighContrast){ResourceBrush("ControlFill",SystemColors.WindowBrush);ResourceBrush("ControlBorder",SystemColors.WindowTextBrush);ResourceBrush("ControlText",SystemColors.WindowTextBrush);ResourceBrush("SelectionFill",SystemColors.HighlightBrush);ResourceBrush("SelectionText",SystemColors.HighlightTextBrush);ResourceBrush("Accent",SystemColors.HighlightBrush);ResourceBrush("AccentText",SystemColors.HighlightTextBrush);ResourceBrush("CheckedFill",SystemColors.HighlightBrush);ResourceBrush("CheckedText",SystemColors.HighlightTextBrush);ResourceBrush("SwitchKnob",SystemColors.WindowTextBrush);ResourceBrush("TrackFill",SystemColors.WindowTextBrush);ResourceBrush("ProgressFill",SystemColors.HighlightBrush);ResourceBrush("ProgressTrack",SystemColors.WindowBrush);return;}
+     bool light=ThemeInk.IsLight;string fill=IslandPalette.ControlFill(settings,light),selection=IslandPalette.SelectionFill(settings,light),accent=IslandPalette.Accent(settings,light);
+     foreach(var entry in new[]{("ControlFill",fill),("ControlBorder",IslandPalette.ControlBorder(settings,light)),("SelectionFill",selection),("Accent",accent)})ResourceBrush(entry.Item1,Brush(entry.Item2));ResourceBrush("ControlText",ContrastText(fill));ResourceBrush("SelectionText",ContrastText(selection));ResourceBrush("CheckedText",Brush(fill));ResourceBrush("AccentText",ContrastText(accent));
+     foreach(var (key,dark,lightValue) in ThemeTokens)ResourceBrush(key,Brush(light?lightValue:dark)); }
+    // Theme.xaml template details: (resource, dark value as shipped, light value).
+    internal static readonly (string Key,string Dark,string Light)[] ThemeTokens=
+    {
+        ("CheckedFill","#ECEDEF","#1D1D1F"),("SwitchKnob","#E6E7EB","#8A8F98"),("TrackFill","#48484A","#C9CCD3"),("ProgressFill","#FFFFFF","#1D1D1F"),("ProgressTrack","#3A3A3C","#D5D8DE"),
+        ("HoverWash","#12FFFFFF","#0F000000"),("InputHoverBorder","#515660","#A3A8B1"),("InputFocusBorder","#858C98","#5E6470"),("ToggleText","#ECEEF3","#1D1F24"),("SwitchText","#F2F3F6","#1D1F24"),
+        ("ThumbEdge","#36FFFFFF","#33000000"),("ScrollGrip","#CDD0D9","#8A8F98"),("ScrollGripActive","#FFFFFF","#3C414A"),("SeparatorFill","#35383F","#D5D8DE"),("RowLight","#FFFFFF","#000000")
+    };
+    // True once Theme.xaml is loaded (the running app); self-tests build controls without it.
+    internal static bool ThemeResources=>Application.Current?.TryFindResource("AccentText")!=null;
     public static readonly Brush Muted=Brush("#A6ABB4");
     public static TextBlock Text(string text,double size=13,Brush? color=null)
     {
@@ -46,7 +58,7 @@ internal static class UI
     public static Button Button(string text,Action action,bool primary=false)
     {
         var b=new Button{Content=text,Tag=new CornerRadius(8)};AutomationProperties.SetName(b,text);
-        if(primary) { b.SetResourceReference(Control.BackgroundProperty,"Accent");b.Foreground=Accessibility.HighContrast?SystemColors.HighlightTextBrush:Brushes.Black;b.FontWeight=FontWeights.SemiBold;b.BorderThickness=new(0); }
+        if(primary) { b.SetResourceReference(Control.BackgroundProperty,"Accent");if(!Accessibility.HighContrast && ThemeResources)b.SetResourceReference(Control.ForegroundProperty,"AccentText");else b.Foreground=Accessibility.HighContrast?SystemColors.HighlightTextBrush:Brushes.Black;b.FontWeight=FontWeights.SemiBold;b.BorderThickness=new(0); }
         Motion.Button(b);b.Click+=(_,_)=>action();return b;
     }
     public static StackPanel Row(params UIElement[] elements)

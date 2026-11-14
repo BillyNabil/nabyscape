@@ -9,7 +9,7 @@ namespace NabyScape;
 // Static, local examples of the controls in this section. Repaint values without rebuilding editors.
 internal sealed class SettingsScene : FrameworkElement
 {
-    internal static readonly string[] Sections={"Other apps","Feature usage","Your setup","Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","Language & accessibility","Private diagnostics","About NabyScape"};
+    internal static readonly string[] Sections={"Other apps","Feature usage","Your setup","Ambient light","Notification presentation","Visualizer","Lyrics","Move & resize","Completion sound","AI companion","Naby in the dock","Theme","Shape","Settings material","Color & material","Surface","Controls & outlines","Typography","Text and navigation","Motion","Animation performance","Dock placement","Display","Closed island","Open panel","Hover preview","Hover & swipe","Enabled widgets & order","Individual tools","Hover pages","Clipboard history","Focus sessions","Stopwatch","Automatic tucking","Manual tuck shortcut","Panel navigation","Drag to Island","Detachable previews","Closed cover gestures","Automatic activity","Notch gestures","Global hotkey","Hide or show the island","Closed media display","Waveform source","Live signal","Live feedback","Volume mixer","Audio behavior","Header wheel","Clock","Monitor details","Launch display","Shortcuts","Layout profile","Notifications","Downloads","Updates","Reset preferences","Behavior","Local storage","Language & accessibility","Private diagnostics","About NabyScape"};
     private readonly string kind;
     internal string Section=>kind;
     private readonly Settings s;
@@ -72,6 +72,13 @@ internal sealed class SettingsScene : FrameworkElement
                 Text("Your next step",24,18,18,true);Text("Music · AI · Voice · Lyrics · Weather",24,51,12);Note("Saved settings and verified connections have distinct statuses");break;
             case "AI companion":
                 dc.DrawEllipse(UI.Brush("#23262D"),new Pen(UI.Brush("#777D88"),1),new Point(53,51),24,24);dc.DrawRoundedRectangle(white,null,new Rect(42,37,7,16),3.5,3.5);dc.DrawRoundedRectangle(white,null,new Rect(57,37,7,16),3.5,3.5);Text("Connect your AI",94,24,15,true);Text("Provider → model → chat / voice",94,51,12);Keys("Local key",298,23,95);Note("Optional · keys in Windows Credential Manager · session capture controls");break;
+            case "Naby in the dock":
+                Box(22,16,220,82,UI.Brush("#101114"));dc.DrawEllipse(UI.Brush("#23262D"),new Pen(UI.Brush("#777D88"),1),new Point(54,44),16,16);Text("Ask Naby",80,30,13,true);Text("Own size · your colors",80,52,11,false,muted);
+                Text("Content size "+(s.PanelScale*100).ToString("0")+"%",262,30,11);Text("Inset "+s.PanelPadding.ToString("0")+" px",262,52,11);Note("Only the dock settings that reach Naby");break;
+            case "Theme":
+                Box(22,19,170,62,UI.Brush("#0B0C0E"));Text("Dark",36,31,13,true);Text("Classic black dock",36,54,11,false,muted);
+                Box(214,19,170,62,UI.Brush("#F5F5F7"));Text("Light",228,31,13,true,UI.Brush("#1B1D22"));Text("Dark text on light",228,54,11,false,UI.Brush("#5B616B"));
+                Note("Current: "+AppearanceTheme.Label(s.ColorTheme));break;
             case "Shape":
                 Silhouette(28,22,160,36,true);Silhouette(228,22,160,36,false);Text("Notch · attached to edge",30,69,11);Text("Pill · floating",230,69,11);Note("Current: "+(s.Preset=="Mac"?"Notch":"Pill"));break;
             case "Settings material":

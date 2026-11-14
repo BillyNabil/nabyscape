@@ -52,7 +52,7 @@ internal static class MinimalWidgets
 }
 
 // A measured progress instrument. No timer and no perpetual rendering subscription.
-internal sealed class ProgressRing : ProgressBar
+internal sealed class ProgressRing : ProgressBar,IInkAware
 {
     private static readonly DependencyProperty VisualValueProperty=DependencyProperty.Register("VisualValue",typeof(double),typeof(ProgressRing),new FrameworkPropertyMetadata(0d,FrameworkPropertyMetadataOptions.AffectsRender));
     private static readonly Pen track=new(UI.Brush("#343840"),2.3);
@@ -73,6 +73,7 @@ internal sealed class ProgressRing : ProgressBar
     protected override void OnRender(DrawingContext dc)
     {
         double radius=Math.Max(0,Math.Min(ActualWidth,ActualHeight)/2-3);if(radius<2)return;
+        bool light=ThemeInk.LightAt(this);var track=light?new Pen(ThemeInk.Remap(ProgressRing.track.Brush,ThemeInk.Role.Surface),2.3):ProgressRing.track;var active=light?new Pen(ThemeInk.Remap(this.active.Brush,ThemeInk.Role.Ink),2.3){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round}:this.active;
         var center=new Point(ActualWidth/2,ActualHeight/2);dc.DrawEllipse(null,track,center,radius,radius);
         double fraction=Math.Clamp((double)GetValue(VisualValueProperty),0,1);if(fraction<.0001)return;
         if(fraction>.9999){dc.DrawEllipse(null,active,center,radius,radius);return;}

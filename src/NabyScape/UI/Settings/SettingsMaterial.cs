@@ -11,7 +11,7 @@ public sealed partial class SettingsWindow
 {
     private readonly TextBlock materialStatus=UI.Text("",11,UI.Muted);
     private readonly DispatcherTimer materialTimer=new(){Interval=TimeSpan.FromSeconds(3)};
-    private (string,SettingsBackdrop.Conditions)? materialKey;
+    private (string,SettingsBackdrop.Conditions,bool)? materialKey;
     internal SettingsBackdrop.Result MaterialResult {get;private set;}
     private void InitializeMaterial()
     {
@@ -22,15 +22,21 @@ public sealed partial class SettingsWindow
     {
         var hwnd=new WindowInteropHelper(this).Handle;if(hwnd==IntPtr.Zero)return;
         string requested=SettingsBackdrop.Requested(app.Settings);var conditions=SettingsBackdrop.ReadConditions() with{HighContrast=Accessibility.HighContrast};
-        if(materialKey is {} key && key==(requested,conditions))return;materialKey=(requested,conditions);
+        bool light=ThemeInk.IsLight;
+        if(materialKey is {} key && key==(requested,conditions,light))return;materialKey=(requested,conditions,light);
+        // Native materials take their dark or light tint from the window's DWM color mode.
+        SettingsBackdrop.ApplyColorMode(hwnd,!light);
         MaterialResult=SettingsBackdrop.Resolve(requested,conditions,type=>SettingsBackdrop.Apply(hwnd,type));
         if(!MaterialResult.Native)SettingsBackdrop.Apply(hwnd,1);
         // Apply only the final frame state. Cycling through full glass for a solid
         // surface needlessly discards retained WPF client resources.
         var chrome=WindowChrome.GetWindowChrome(this);chrome.GlassFrameThickness=MaterialResult.Native?new Thickness(-1):new Thickness(0);
-        var source=HwndSource.FromHwnd(hwnd);if(source?.CompositionTarget!=null)source.CompositionTarget.BackgroundColor=MaterialResult.Native?Colors.Transparent:Color.FromRgb(17,18,20);
-        // Retain native blur beneath a dark client tint so secondary text stays readable.
-        Background=Accessibility.HighContrast?SystemColors.WindowBrush:MaterialResult.Native?UI.Brush("#B0111214"):MaterialResult.Actual=="Simulated glass"?IslandSurface.Material("#111214"):UI.Brush("#111214");
+        var source=HwndSource.FromHwnd(hwnd);if(source?.CompositionTarget!=null)source.CompositionTarget.BackgroundColor=MaterialResult.Native?Colors.Transparent:light?Color.FromRgb(0xF3,0xF5,0xF0):Color.FromRgb(17,18,20);
+        // See-through materials need see-through layers: sidebar, cards, stage and footer become
+        // tinted glass over the backdrop instead of opaque panels hiding it.
+        bool glass=MaterialResult.Actual=="Simulated glass";SettingsTheme.Apply(light,MaterialResult.Native || glass);
+        // Retain native blur beneath a tint so secondary text stays readable.
+        Background=Accessibility.HighContrast?SystemColors.WindowBrush:MaterialResult.Native?SettingsTheme.WindowFill:glass?IslandSurface.Material(light?"#E6EAE2":"#111214"):UI.Brush(light?"#F3F5F0":"#111214");
         materialStatus.Text=MaterialResult.Status+" Native materials apply to Settings only. The island preview keeps its existing material.";
         // Repaint retained examples once after the HWND composition change settles;
         // do not rebuild controls or attach a continuous rendering callback.
