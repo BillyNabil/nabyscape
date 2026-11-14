@@ -20,7 +20,7 @@ internal static class ProductionUiDiagnostics
         string language=s.UiLanguage;double textScale=s.AccessibilityTextScale;bool contrast=s.AccessibilityHighContrast;
         try
         {
-            foreach(string code in new[]{"en","es","id"})foreach(double scale in new[]{1d,1.5})
+            foreach(string code in LocalizationCatalog.Languages.Select(l=>l.Code))foreach(double scale in new[]{1d,1.5})
             {
                 s.UiLanguage=code;s.AccessibilityTextScale=scale;s.AccessibilityHighContrast=scale==1.5;Localization.Configure(s);UI.ApplyControlTheme(s);
                 var window=new SettingsWindow(app){ShowActivated=false,Width=600,Height=650};
@@ -46,8 +46,44 @@ internal static class ProductionUiDiagnostics
                 }
                 finally{window.Close();}
             }
+            // Long Russian/Ukrainian captions and Hangul fallback: every sidebar label and visible button must show its full text.
+            bool showAll=s.SettingsShowAll;s.SettingsShowAll=true;
+            try
+            {
+                foreach(string code in LocalizationCatalog.Languages.Select(l=>l.Code))foreach(double scale in new[]{1d,1.5})
+                {
+                    s.UiLanguage=code;s.AccessibilityTextScale=scale;s.AccessibilityHighContrast=false;Localization.Configure(s);UI.ApplyControlTheme(s);
+                    var window=new SettingsWindow(app){ShowActivated=false,Width=1100,Height=760};
+                    try
+                    {
+                        window.Show();
+                        foreach(string page in new[]{"Home","Application"})
+                        {
+                            Diagnostics.NavigateSettings(window,page);await Task.Delay(120);window.UpdateLayout();
+                            var nav=(System.Collections.Generic.Dictionary<string,Button>)typeof(SettingsWindow).GetField("navigationButtons",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(window)!;
+                            var labels=nav.Values.Where(b=>b.IsVisible).SelectMany(b=>Diagnostics.Descendants(b).OfType<TextBlock>()).Where(t=>Clipped(t,t.Text,0)).Select(t=>t.Text).ToArray();
+                            check($"Production UI Settings navigation labels fit {code}/{scale}/{page} (clipped: {string.Join(" | ",labels)})",labels.Length==0 && nav.Values.Count(b=>b.IsVisible)>=14);
+                            var buttons=Diagnostics.Descendants(window).OfType<Button>().Where(b=>b.IsVisible && b.Content is string && !nav.ContainsValue(b) && Clipped(b,(string)b.Content,b.Padding.Left+b.Padding.Right+b.BorderThickness.Left+b.BorderThickness.Right)).Select(b=>(string)b.Content).Distinct().ToArray();
+                            check($"Production UI Settings buttons show their full captions {code}/{scale}/{page} (clipped: {string.Join(" | ",buttons)})",buttons.Length==0);
+                            Capture(window,$"production-settings-wide-{code}-{scale:0.0}-{page.ToLowerInvariant()}");
+                        }
+                    }
+                    finally{window.Close();}
+                }
+            }
+            finally{s.SettingsShowAll=showAll;}
         }
         finally{s.UiLanguage=language;s.AccessibilityTextScale=textScale;s.AccessibilityHighContrast=contrast;Localization.Configure(s);UI.ApplyControlTheme(s);}
+        // Text wider than its element or layout slot (or, when wrapping, a single word wider than a line) is trimmed or cut off.
+        static bool Clipped(FrameworkElement element,string text,double chrome)
+        {
+            if(text.Length==0 || !element.IsVisible || element.ActualWidth<=0)return false;
+            var measured=new FormattedText(text,System.Globalization.CultureInfo.CurrentUICulture,element.FlowDirection,new Typeface(System.Windows.Documents.TextElement.GetFontFamily(element),System.Windows.Documents.TextElement.GetFontStyle(element),System.Windows.Documents.TextElement.GetFontWeight(element),System.Windows.Documents.TextElement.GetFontStretch(element)),System.Windows.Documents.TextElement.GetFontSize(element),Brushes.White,VisualTreeHelper.GetDpi(element).PixelsPerDip);
+            double slot=System.Windows.Controls.Primitives.LayoutInformation.GetLayoutClip(element) is {Bounds:{IsEmpty:false} bounds}?bounds.Width:double.PositiveInfinity;
+            double width=Math.Min(element.ActualWidth,slot)-chrome;
+            if(element is TextBlock{TextWrapping:not TextWrapping.NoWrap})return measured.MinWidth>width+.5;
+            return measured.WidthIncludingTrailingWhitespace>width+.5;
+        }
 
         s.ReduceMotion=false;s.PanelScale=1;s.PanelPadding=26;s.PanelMaxHeight=417;s.HideFullscreen=s.HideMaximized=s.AlwaysTucked=false;s.SmartActivities=false;
         s.WeatherCity="Synthetic forecast";s.WeatherLatitude=0;s.WeatherLongitude=0;s.Widgets.Single(w=>w.Id=="weather").Enabled=true;

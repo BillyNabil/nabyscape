@@ -10,8 +10,8 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1] / "src" / "NabyScape"
 literal = r'"(?:[^"\\]|\\.)*"'
-catalog = (root / "UI" / "Shared" / "LocalizationCatalog.cs").read_text(encoding="utf-8")
-keys = set(re.findall(r'\[(' + literal + r')\]\s*=', catalog))
+catalog = "".join(path.read_text(encoding="utf-8") for path in (root / "UI" / "Shared").glob("LocalizationCatalog.*.cs"))
+keys = set(re.findall(r'^\s+\[(' + literal + r')\]\s*=', catalog, re.M))
 pattern = re.compile(r'(?:Localization\.(?:Text|Format)|UI\.(?:Caption|CaptionButton))\((' + literal + r')(?=\s*[,\)])')
 missing = {}
 for path in root.rglob("*.cs"):

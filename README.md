@@ -94,7 +94,7 @@ Use the .NET 10 SDK with Windows desktop support:
 node tools/check-website.mjs
 ```
 
-[Build workflow](.github/workflows/windows.yml) · [Source](https://github.com/BillyNabil/nabyscape) · [Report an issue](https://github.com/BillyNabil/nabyscape/issues) · [Third-party notices](licenses/)
+[Build workflow](.github/workflows/windows.yml) · [Source](https://github.com/BillyNabil/nabyscape) · [Report an issue](https://github.com/BillyNabil/nabyscape/issues) · [Help translate](docs/translating.md) · [Third-party notices](licenses/)
 
 
 Uninstall from **Settings → General → Uninstall NabyScape**, the **Uninstall NabyScape** Start menu shortcut, or Windows Installed apps. Full cleanup is selected by default and removes application-managed models, caches, settings, history and saved API keys. Uncheck it to keep data for reinstalling. Imported files outside NabyScape and shared Windows components stay untouched.

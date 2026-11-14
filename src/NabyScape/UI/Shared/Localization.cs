@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace NabyScape;
@@ -8,20 +9,19 @@ namespace NabyScape;
 internal static class Localization
 {
     internal static string Language { get; private set; } = "en";
+    private static IReadOnlyDictionary<string, string> translations = LocalizationCatalog.Translations("en");
     internal static void Configure(Settings settings)
     {
         settings.NormalizeLanguageAccessibility();
         Language = settings.UiLanguage;
+        translations = LocalizationCatalog.Translations(Language);
         Accessibility.Configure(settings);
         // Deliberately preserve CurrentCulture: numeric editors retain their existing parsing.
     }
 
+    // One ordinal lookup in the selected language; a missing or blank translation returns the English key.
     internal static string Text(string english)
-    {
-        if (!LocalizationCatalog.English.TryGetValue(english, out var entry)) return english;
-        return Language switch { "es" when entry.Spanish.Length > 0 => entry.Spanish,
-            "id" when entry.Indonesian.Length > 0 => entry.Indonesian, _ => english };
-    }
+        => translations.TryGetValue(english, out var text) && text.Length > 0 ? text : english;
 
     internal static string Format(string english, params object[] values)
         => string.Format(CultureInfo.CurrentCulture, Text(english), values);

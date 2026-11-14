@@ -10,7 +10,7 @@ public sealed partial class Settings
 
     internal void NormalizeLanguageAccessibility()
     {
-        UiLanguage = UiLanguage is "es" or "id" ? UiLanguage : "en";
+        UiLanguage = LocalizationCatalog.IsSupported(UiLanguage) ? UiLanguage : "en";
         AccessibilityTextScale = double.IsFinite(AccessibilityTextScale)
             ? Math.Clamp(AccessibilityTextScale, 1, 1.5) : 1;
     }
