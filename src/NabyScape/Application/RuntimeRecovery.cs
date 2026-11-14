@@ -106,9 +106,9 @@ public sealed partial class App
                 token.ThrowIfCancellationRequested();
                 if(!Media.DiagnosticFixture)await Media.Refresh();
                 token.ThrowIfCancellationRequested();
-                // Only refresh a previously requested location. Get retains its normal 20-minute cache.
-                var weatherKey=WeatherService.Key(Settings);
-                if(Weather.Cached is {} cached && !string.IsNullOrWhiteSpace(cached.Key) && !string.IsNullOrWhiteSpace(weatherKey) && cached.Key==weatherKey && NetworkInterface.GetIsNetworkAvailable())await Weather.Get(Settings,false,token);
+                // Weather re-checks shortly after resume/network regain, once and without failure backoff,
+                // and only while it is in use (see WeatherRefresh); Wi-Fi often reconnects after Resume.
+                Weather.Nudge(DateTimeOffset.UtcNow);
                 if(!recoveryDisposed){PublishUpdate(RuntimeChange.All);PrivateDiagnostics.Record(DiagnosticStage.Recovery,DiagnosticCode.Completed);}
             }while(recoveryRefreshAgain && !recoveryDisposed);
         }

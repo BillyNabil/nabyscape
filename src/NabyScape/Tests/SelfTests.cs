@@ -72,6 +72,7 @@ internal static class SelfTests
         UpdateTests.Run(Test);
         InstallationInputTests.Run(Test);
         NotificationDownloadTests.Run(Test);
+        WeatherRefreshTests.Run(Test);ClosedDockClockTests.Run(Test);
         Test("Customization profiles round-trip without personal data or startup changes",()=>
         {
             var original=new Settings{PanelWidth=520,PanelScale=1.1,Background="#182028",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Private",Target="https://private.example"}}};original.HoverViews.Reverse();var encoded=CustomizationProfile.Export(original);Assert(!encoded.Contains("Private") && !encoded.Contains("AutoStart") && !encoded.Contains("ClipboardHistory"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.PanelWidth==520 && target.PanelScale==1.1 && target.Background=="#182028" && target.HoverViews[0].Id=="system" && !target.AutoStart && !target.ClipboardHistory && target.Shortcuts.Count==2);
@@ -94,7 +95,7 @@ internal static class SelfTests
         Test("Settings normalize dimensions, colors, widgets, and durations",()=>
         {
             var s=new Settings{Width=900,Height=-4,Opacity=2,Accent="invalid",FocusMinutes=0,Widgets=new(){new(){Id="media"},new(){Id="media"},new(){Id="invalid"}}};s.Normalize();
-            Assert(s.Width==400 && s.Height==28 && s.Opacity==1 && s.Accent=="#FFFFFF" && s.FocusMinutes==1);
+            Assert(s.Width==Settings.ClosedWidthMax && s.Height==28 && s.Opacity==1 && s.Accent=="#FFFFFF" && s.FocusMinutes==1);
             Assert(s.Widgets.Count==Settings.Names.Count-1 && s.Widgets.All(w=>w.Id!="tools") && s.Widgets.Select(w=>w.Id).Distinct().Count()==Settings.Names.Count-1);
         });
         Test("Hex colors reject malformed input",()=> {Assert(Settings.ValidColor("#abcDEF"));Assert(!Settings.ValidColor("red"));Assert(!Settings.ValidColor("#00000000"));Assert(!Settings.ValidColor(null));});

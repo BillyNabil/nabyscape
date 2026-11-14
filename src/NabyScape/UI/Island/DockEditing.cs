@@ -53,7 +53,7 @@ public sealed partial class OverlayWindow
                     double scale=Native.Scale(IslandScreen),dx=delta.X/scale*(left?-2:2),dy=delta.Y/scale;
                     if(expanded){s.PanelWidth=Math.Clamp(original.PanelWidth+dx,300,960);if(Math.Abs(dy)>2){s.PanelAutoHeight=false;s.PanelMaxHeight=Math.Clamp(editingHeight+dy,240,1100);}}
                     else if(peeking){s.HoverWidth=Math.Clamp(original.HoverWidth+dx,300,760);s.HoverHeight=Math.Clamp(original.HoverHeight+dy,184,440);}
-                    else{s.Width=Math.Clamp(original.Width+dx,180,400);s.Height=Math.Clamp(original.Height+dy,28,72);compact.Width=Math.Max(120,s.Width-(surface.Notch?32:12));compact.Height=compact.MinHeight=s.Height;RefreshAssistantCharacter();}
+                    else{s.Width=Math.Clamp(original.Width+dx,Settings.ClosedWidthMin,Settings.ClosedWidthMax);s.Height=Math.Clamp(original.Height+dy,28,72);compact.Width=Math.Max(120,s.Width-(surface.Notch?32:12));compact.Height=compact.MinHeight=s.Height;RefreshAssistantCharacter();}
                 }
                 ReflowDisplay();RefreshDockHandles();
             };

@@ -142,7 +142,7 @@ public sealed partial class Settings
         TuckEdge=Clamp(TuckEdge,0,12,6);
         if(TuckHotkeyKey==null || TuckHotkeyKey.Length!=1 || TuckHotkeyKey[0]<'A' || TuckHotkeyKey[0]>'Z')TuckHotkeyKey="T";
         if(TuckHotkeyModifiers is not ("Ctrl+Alt" or "Ctrl+Shift" or "Alt+Shift"))TuckHotkeyModifiers="Ctrl+Alt";
-        Width=Clamp(Width,180,400,228); Height=Clamp(Height,28,72,32); Radius=Clamp(Radius,0,40,16);
+        Width=ClampClosedWidth(Width); Height=Clamp(Height,28,72,32); Radius=Clamp(Radius,0,40,16);
         Horizontal=Clamp(Horizontal,0,100,50); Top=Clamp(Top,0,3000,0); Opacity=Clamp(Opacity,.65,1,1);
         AnimationMs=Clamp(AnimationMs,0,600,420);
         PanelWidth=Clamp(PanelWidth,300,960,384);PanelMaxHeight=Clamp(PanelMaxHeight,240,1100,408);PanelPadding=Clamp(PanelPadding,16,40,32);PanelScale=Clamp(PanelScale,.85,1.25,1);SectionGap=Clamp(SectionGap,8,28,18);
@@ -180,7 +180,7 @@ public sealed partial class Settings
         // Legacy availability also gates hover pages. Hiding a main-panel widget
         // must not remove an independently enabled hover page.
         foreach(var tool in Tools)tool.Enabled|=Widgets.Any(w=>w.Id==tool.Id && w.Enabled);
-        NormalizeMediaUx();NormalizePremium();NormalizeFlexible();
+        NormalizeMediaUx();NormalizePremium();NormalizeFlexible();NormalizeDockClock();
         Shortcuts=(Shortcuts ?? new()).Where(s=>s!=null && !string.IsNullOrWhiteSpace(s.Name) && !string.IsNullOrWhiteSpace(s.Target)).Take(40).ToList();
         Monitor ??= "";
         if(DisplayMode is not ("Primary" or "Selected" or "Follow"))DisplayMode=Monitor.Length>0?"Selected":"Primary";
