@@ -111,7 +111,7 @@ public sealed partial class OverlayWindow
         bool compatible=LyricTiming.CanUse(app.Media);
         bool changed=false;
         if(mediaLyrics!=null){var visible=app.Settings.LyricsEnabled && compatible?Visibility.Visible:Visibility.Collapsed;changed=mediaLyrics.Visibility!=visible;mediaLyrics.Visibility=visible;}
-        if(lyricsButton!=null){lyricsButton.Visibility=compatible?Visibility.Visible:Visibility.Collapsed;lyricsButton.Background=app.Settings.LyricsEnabled?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;lyricsButton.ToolTip=app.Settings.LyricsEnabled?"Hide lyrics":"Show synced lyrics · looks up track details with LRCLIB";System.Windows.Automation.AutomationProperties.SetItemStatus(lyricsButton,app.Settings.LyricsEnabled?"On":"Off");}
+        if(lyricsButton!=null){lyricsButton.Visibility=compatible?Visibility.Visible:Visibility.Collapsed;lyricsButton.Background=app.Settings.LyricsEnabled?UI.Brush(IslandPalette.SelectionFill(app.Settings)):Brushes.Transparent;lyricsButton.ToolTip=app.Settings.LyricsEnabled?"Hide lyrics":"Show synced lyrics · looks up track details with LRCLIB";System.Windows.Automation.AutomationProperties.SetItemStatus(lyricsButton,app.Settings.LyricsEnabled?"On":"Off");}
         if(changed && mediaLyricsLayout?.IsLoaded==true)ResizeToolPanel();
     }
 }

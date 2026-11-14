@@ -84,11 +84,14 @@ internal static class Icons
             var canvas=new Canvas{Width=24,Height=24};
             var stroke=new Path{Data=IconGeometry(outline),Stroke=color??Brushes.White,StrokeThickness=1.6,StrokeStartLineCap=PenLineCap.Round,StrokeEndLineCap=PenLineCap.Round,StrokeLineJoin=PenLineJoin.Round};
             if(Accessibility.HighContrast)stroke.Loaded+=(_,_)=>Accessibility.FollowContentForeground(stroke,Shape.StrokeProperty);
+            if(ReferenceEquals(color,Brushes.Black) && UI.ThemeResources)stroke.SetResourceReference(Shape.StrokeProperty,"AccentText");
             canvas.Children.Add(stroke);
             return new Viewbox{Width=size,Height=size,Child=canvas,IsHitTestVisible=false};
         }
         var path=new Path{Data=IconGeometry(Paths.TryGetValue(name,out var data)?data:Paths["arrow"]),Fill=color??Brushes.White,Stretch=Stretch.Uniform,Width=size,Height=size};
         if(Accessibility.HighContrast)path.Loaded+=(_,_)=>Accessibility.FollowContentForeground(path,Shape.FillProperty);
+        // Black glyphs sit on the accent fill (primary buttons); follow its contrast ink in every theme.
+        if(ReferenceEquals(color,Brushes.Black) && UI.ThemeResources)path.SetResourceReference(Shape.FillProperty,"AccentText");
         return path;
     }
     public static Button Button(string icon,string name,System.Action action,bool primary=false,double size=42)

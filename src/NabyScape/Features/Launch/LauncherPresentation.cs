@@ -28,7 +28,7 @@ public sealed partial class OverlayWindow
         var row=new StackPanel{Orientation=Orientation.Horizontal};
         ShortcutIcon? icon=null;
         if(LauncherPresentation.ShowIcon(app.Settings.LaunchStyle)){icon=new ShortcutIcon(shortcut){Margin=new(0,0,LauncherPresentation.ShowLabel(app.Settings.LaunchStyle)?7:0,0)};row.Children.Add(icon);}
-        var label=UI.Text(shortcut.Name,11,UI.ContrastText(app.Settings.ControlFill));label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;label.MaxWidth=115;row.Children.Add(label);
+        var label=UI.Text(shortcut.Name,11,UI.ContrastText(IslandPalette.ControlFill(app.Settings)));label.TextWrapping=TextWrapping.NoWrap;label.TextTrimming=TextTrimming.CharacterEllipsis;label.MaxWidth=115;row.Children.Add(label);
         if(icon!=null && !LauncherPresentation.ShowLabel(app.Settings.LaunchStyle))icon.AvailabilityChanged+=available=>label.Visibility=available?Visibility.Collapsed:Visibility.Visible;
         button.Content=row;return button;
     }

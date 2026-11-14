@@ -45,11 +45,11 @@ public sealed partial class OverlayWindow
     private void UpdateMonitorMemory(ulong total,ulong available)
     {
         if(monitorMemoryTrack.ColumnDefinitions.Count==0){monitorMemoryTrack.ColumnDefinitions.Add(new());monitorMemoryTrack.ColumnDefinitions.Add(new());monitorMemoryTrack.Children.Add(new Border());}
-        monitorMemoryTrack.ColumnDefinitions[0].Width=new GridLength(Math.Max(1,total-available),GridUnitType.Star);monitorMemoryTrack.ColumnDefinitions[1].Width=new GridLength(Math.Max(1,available),GridUnitType.Star);((Border)monitorMemoryTrack.Children[0]).Background=UI.Brush(app.Settings.Accent);
+        monitorMemoryTrack.ColumnDefinitions[0].Width=new GridLength(Math.Max(1,total-available),GridUnitType.Star);monitorMemoryTrack.ColumnDefinitions[1].Width=new GridLength(Math.Max(1,available),GridUnitType.Star);((Border)monitorMemoryTrack.Children[0]).Background=UI.Brush(IslandPalette.Accent(app.Settings));
     }
 }
 
-internal sealed class CpuHistoryVisual : FrameworkElement
+internal sealed class CpuHistoryVisual : FrameworkElement,IInkAware
 {
     private readonly double?[] values=new double?[30];
     private int count;
@@ -59,12 +59,12 @@ internal sealed class CpuHistoryVisual : FrameworkElement
     internal void SetValues(IEnumerable<double?> history,Brush accent){count=0;foreach(var value in history)values[count++]=value;color=accent;InvalidateVisual();}
     protected override void OnRender(DrawingContext dc)
     {
-        dc.DrawLine(baseline,new Point(0,41),new Point(ActualWidth,41));var geometry=new StreamGeometry();
+        bool light=ThemeInk.LightAt(this);dc.DrawLine(light?new Pen(ThemeInk.Remap(baseline.Brush,ThemeInk.Role.Surface),1):baseline,new Point(0,41),new Point(ActualWidth,41));var geometry=new StreamGeometry();
         using(var path=geometry.Open())
         {
             bool started=false;
             for(int i=0;i<count;i++){if(values[i] is not double value){started=false;continue;}var point=new Point(ActualWidth*(30-count+i)/29,40-value*.38);if(!started){path.BeginFigure(point,false,false);started=true;}else path.LineTo(point,true,false);}
         }
-        geometry.Freeze();dc.DrawGeometry(null,new Pen(color,1.6),geometry);
+        geometry.Freeze();dc.DrawGeometry(null,new Pen(light?ThemeInk.Remap(color,ThemeInk.Role.Ink):color,1.6),geometry);
     }
 }

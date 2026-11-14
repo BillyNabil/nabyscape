@@ -16,7 +16,7 @@ internal static class PreferenceReset
         ["Weather"]="WeatherCity WeatherLatitude WeatherLongitude WeatherUnits".Split(' '),
         ["Visibility"]="HideFullscreen HideMaximized AlwaysTucked TuckEdge TuckHotkeyEnabled TuckHotkeyKey TuckHotkeyModifiers VisibilityHotkeyEnabled VisibilityHotkeyKey VisibilityHotkeyModifiers SmartActivities BrowserMediaPreviews".Split(' '),
         ["Notifications"]="ExternalNotifications ExternalNotificationPopup ExternalNotificationText ExternalNotificationQuietHours ExternalNotificationMuted CountdownSound CountdownSoundVolume CountdownSoundFile NotificationSeconds NotificationAnimation QuietHours QuietStart QuietEnd NotificationsSnoozedUntil NotificationDelivery NotifyTimer NotifyFocus NotifyDownloads NotifyUpdates NotifyFailures DownloadsEnabled DownloadsFolder".Split(' '),
-        ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings RecentColors".Split(' '),
+        ["Appearance"]="Preset Radius Background Accent Opacity SettingsMaterial GlassStyle GlassStrength AlbumAccent ControlFill ControlBorder SelectionFill CategoryStyle BoldMediaTitle BoldHeadings RecentColors ColorTheme CollapsedSameColor CollapsedBackground CollapsedOpacity".Split(' '),
         ["Layout"]="FollowMonitorAnimation FollowMonitorDuration DockUnlocked PanelAutoHeight Width Height ClosedClockPosition Horizontal DockEdge DockVertical DockInset Top Monitor DisplayMode CompactLayout PanelWidth PanelMaxHeight PanelPadding PanelScale SectionGap".Split(' '),
         ["Content"]="HoverFollowsWidgets Widgets Tools HoverViews FocusMinutes BreakMinutes".Split(' '),
         ["Controls"]="HoverPeek TwoStageHover HoverWidth HoverHeight HoverDelayMs HoverDetailDelayMs SwipeDistance PanelSwipe DropReveal DetachablePreviews CoverGestures WheelAction MiddleAction VolumeStep HotkeyEnabled HotkeyKey HotkeyModifiers".Split(' '),
@@ -66,7 +66,7 @@ internal static class PreferenceReset
         if(json.RootElement.ValueKind!=JsonValueKind.Object || !json.RootElement.TryGetProperty(nameof(Settings.Width),out _))throw new InvalidDataException("The preference backup is invalid.");
         foreach(string key in Keys(null))
         {
-            if(PremiumPreferences.Keys.Contains(key) || key is "DisplayMode" or "SettingsMaterial" || Categories["Application"].Contains(key))continue;
+            if(PremiumPreferences.Keys.Contains(key) || AppearanceTheme.Keys.Contains(key) || key is "DisplayMode" or "SettingsMaterial" || Categories["Application"].Contains(key))continue;
             bool nullable=Nullable.GetUnderlyingType(typeof(Settings).GetProperty(key)!.PropertyType)!=null;
             if(!json.RootElement.TryGetProperty(key,out var value) || value.ValueKind==JsonValueKind.Null && !nullable)
                 throw new InvalidDataException("The preference backup is incomplete: "+key);

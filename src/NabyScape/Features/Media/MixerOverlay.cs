@@ -60,7 +60,7 @@ public sealed partial class OverlayWindow
     }
 
     private void ChooseMixerScope(MixerScope scope){mixerScope=scope;UpdateMixerTabs();mixerReadAt=DateTime.MinValue;UpdateMixer();scroll.ScrollToTop();}
-    private void UpdateMixerTabs(){if(mixerAppsTab==null)return;foreach(var pair in new[]{(mixerAppsTab,MixerScope.Apps),(mixerOutputsTab,MixerScope.Outputs)}){pair.Item1.Background=pair.Item2==mixerScope?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;pair.Item1.Foreground=pair.Item2==mixerScope?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;}}
+    private void UpdateMixerTabs(){if(mixerAppsTab==null)return;foreach(var pair in new[]{(mixerAppsTab,MixerScope.Apps),(mixerOutputsTab,MixerScope.Outputs)}){pair.Item1.Background=pair.Item2==mixerScope?UI.Brush(IslandPalette.SelectionFill(app.Settings)):Brushes.Transparent;pair.Item1.Foreground=pair.Item2==mixerScope?UI.ContrastText(IslandPalette.SelectionFill(app.Settings)):UI.Muted;}}
     internal static bool MixerInteractionActive(bool mouseCaptured,bool sliderFocused,bool volumeKeyDown)=>mouseCaptured || (sliderFocused && volumeKeyDown);
 
     internal static void ReconcileMixerRows(StackPanel panel,IReadOnlyList<FrameworkElement> desired)

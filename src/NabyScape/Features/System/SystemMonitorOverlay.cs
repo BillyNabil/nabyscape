@@ -20,7 +20,7 @@ public sealed partial class OverlayWindow
     internal void SelectMonitorTab(string id)
     {
         if(!monitorTabs.ContainsKey(id))return;if(monitorTab!=id){monitorGeneration++;monitorReadAt=0;monitorPrevious=monitorLatest=null;if(id=="hardware")HardwareMonitor.ResetSampling();}monitorTab=id;RenderSystemMonitor();monitorDetailScroll?.ScrollToTop();
-        foreach(var pair in monitorTabs){pair.Value.Background=pair.Key==id?UI.Brush(app.Settings.SelectionFill):Brushes.Transparent;pair.Value.Foreground=pair.Key==id?UI.ContrastText(app.Settings.SelectionFill):UI.Muted;}
+        foreach(var pair in monitorTabs){pair.Value.Background=pair.Key==id?UI.Brush(IslandPalette.SelectionFill(app.Settings)):Brushes.Transparent;pair.Value.Foreground=pair.Key==id?UI.ContrastText(IslandPalette.SelectionFill(app.Settings)):UI.Muted;}
         UpdateSystemMonitor();
     }
     private readonly Queue<double?> monitorCpuHistory=new();
@@ -107,7 +107,7 @@ public sealed partial class OverlayWindow
         {
         double? cpu=SystemMonitor.Cpu(s,monitorPrevious);
         MonitorRow("CPU",cpu.HasValue?$"{cpu:0.#}%":"Sampling…",true);
-        monitorHistory.SetValues(monitorCpuHistory,UI.Brush(app.Settings.Accent));AddMonitorElement(monitorHistory);
+        monitorHistory.SetValues(monitorCpuHistory,UI.Brush(IslandPalette.Accent(app.Settings)));AddMonitorElement(monitorHistory);
         AddMonitorElement(UI.Text("CPU · 60 second window · 2 second samples",10,UI.Muted));
         if(s.Total is ulong total && s.Available is ulong available)
         {

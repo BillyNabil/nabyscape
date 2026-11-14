@@ -54,7 +54,7 @@ internal sealed class ColorPicker : StackPanel
     }
     private Button Swatch(string name,string value)
     {
-        var button=UI.Button(name+" "+value,()=>{Set((Color)ColorConverter.ConvertFromString(value));Commit();});button.Content=null;button.Width=26;button.Height=26;button.MinHeight=26;button.Margin=new(0,0,7,5);button.Padding=new(0);button.Tag=new CornerRadius(13);button.Background=UI.Brush(value);button.BorderThickness=new(1);button.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");button.ToolTip=value;return button;
+        var button=UI.Button(name+" "+value,()=>{Set((Color)ColorConverter.ConvertFromString(value));Commit();});button.Content=null;button.Width=26;button.Height=26;button.MinHeight=26;button.Margin=new(0,0,7,5);button.Padding=new(0);button.Tag=new CornerRadius(13);button.Background=UI.Brush(value);button.BorderThickness=new(1);button.SetResourceReference(Control.BorderBrushProperty,"ControlBorder");button.ToolTip=value;ThemeInk.SetTone(button,Tone.Fixed);return button;
     }
     internal void SetRecent(string name,System.Collections.Generic.IEnumerable<string> values){recent.Children.Clear();foreach(var value in values.Where(Settings.ValidColor).Where(v=>!presets.Contains(v,StringComparer.OrdinalIgnoreCase)).Distinct(StringComparer.OrdinalIgnoreCase).Take(8))recent.Children.Add(Swatch(name,value));}
     private void Set(Color next,bool updateHsv=true)

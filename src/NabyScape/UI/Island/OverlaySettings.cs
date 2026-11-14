@@ -74,7 +74,7 @@ public sealed partial class OverlayWindow
         if(previous.Content!=next.Content || classicMixerOpen){bodyDirty=true;return false;}
         var s=app.Settings;
         if(previous.Hotkeys!=next.Hotkeys)ConfigureHotkey();
-        Motion.Configure(s);Opacity=Accessibility.HighContrast?1:s.Opacity;surface.Fill=UI.Brush(s.Background);surface.GlassStyle=s.GlassStyle;surface.SetMaterial(s.Background,s.GlassStrength);surface.Notch=s.Preset=="Mac" && s.DockEdge=="Top";surface.Radius=s.Radius;
+        Motion.Configure(s);Opacity=Accessibility.HighContrast?1:s.Opacity;surface.GlassStyle=s.GlassStyle;RefreshIslandAppearance();surface.Notch=s.Preset=="Mac" && s.DockEdge=="Top";surface.Radius=s.Radius;
         hoverDelay.Interval=TimeSpan.FromMilliseconds(s.HoverDelayMs);detailDelay.Interval=TimeSpan.FromMilliseconds(s.HoverDetailDelayMs);
         ApplyHeadingTypography(body);ApplyMediaTypography(title,s.BoldMediaTitle);
         foreach(var tab in compactTabs)StyleCategory(tab.Value,tab.Key,tab.Key==(activePage=="mixer"?"media":activePage));

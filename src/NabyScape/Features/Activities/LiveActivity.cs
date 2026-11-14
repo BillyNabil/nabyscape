@@ -7,7 +7,7 @@ using System.Windows.Threading;
 namespace NabyScape;
 
 // Shared measured frequency bands, with an output-envelope fallback.
-internal sealed class ActivityVisual : FrameworkElement
+internal sealed class ActivityVisual : FrameworkElement,IInkAware
 {
     private readonly double[] history=new double[25];
     private readonly double[] levels=new double[25];
@@ -87,11 +87,12 @@ internal sealed class ActivityVisual : FrameworkElement
         int count=WaveOnly?Math.Min(25,Math.Max(5,(int)(w/3))):5;double gap=WaveOnly?1.5:1.4,bw=Math.Max(.4,(w-gap*(count-1))/count);
         if(Slender){bw=Math.Min(2,Math.Max(.4,(w-(count-1)*2.25)/count));gap=Math.Min(2.25,Math.Max(.8,(w-count*bw)/Math.Max(1,count-1)));}
         double start=Slender?(w-(count*bw+(count-1)*gap))/2:0;
+        var bar=ThemeInk.LightAt(this)?ThemeInk.Remap(Brushes.White,ThemeInk.Role.Ink):Brushes.White;
         for(int i=0;i<count;i++)
         {
             int index=(int)Math.Round(i*24d/Math.Max(1,count-1));
             double height=WaveBarHeight(index,h);
-            dc.DrawRoundedRectangle(Brushes.White,null,new Rect(start+i*(bw+gap),(h-height)/2,bw,height),bw/2,bw/2);
+            dc.DrawRoundedRectangle(bar,null,new Rect(start+i*(bw+gap),(h-height)/2,bw,height),bw/2,bw/2);
         }
     }
 }

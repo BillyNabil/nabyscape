@@ -32,6 +32,9 @@ internal static class SettingsBackdrop
     }
     internal static int Apply(IntPtr hwnd,int type)
     {try{return DwmSetWindowAttribute(hwnd,38,ref type,sizeof(int));}catch(DllNotFoundException){return unchecked((int)0x80004001);}catch(EntryPointNotFoundException){return unchecked((int)0x80004001);}}
+    // DWMWA_USE_IMMERSIVE_DARK_MODE (20): native Mica/Acrylic tint follows this mode.
+    internal static int ApplyColorMode(IntPtr hwnd,bool dark)
+    {int value=dark?1:0;try{return DwmSetWindowAttribute(hwnd,20,ref value,sizeof(int));}catch(DllNotFoundException){return unchecked((int)0x80004001);}catch(EntryPointNotFoundException){return unchecked((int)0x80004001);}}
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(IntPtr hwnd,int attribute,ref int value,int size);
     [DllImport("kernel32.dll")] [return:MarshalAs(UnmanagedType.Bool)] private static extern bool GetSystemPowerStatus(out PowerStatus status);
     [StructLayout(LayoutKind.Sequential)] private struct PowerStatus {public byte ACLineStatus,BatteryFlag,BatteryLifePercent,SystemStatusFlag;public uint BatteryLifeTime,BatteryFullLifeTime;}

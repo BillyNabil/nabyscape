@@ -124,7 +124,7 @@ public sealed partial class App : Application
         Store=new(diagnosticPath==null ? null : Path.Combine(diagnosticPath,"test-profile"));bool existingProfile=File.Exists(Path.Combine(Store.DirectoryPath,"settings.json"));Settings=diagnosticPath==null?Store.Load<Settings>("settings"):new Settings();Settings.Normalize();Localization.Configure(Settings);Settings.AutoStart=StartupService.Enabled();
         if(assistantFixture || isolatedFixture){Settings.HotkeyEnabled=Settings.VisibilityHotkeyEnabled=Settings.TuckHotkeyEnabled=false;Settings.HideFullscreen=Settings.HideMaximized=false;}
         Updates=new(Store,Array.Exists(e.Args,a=>a=="--stage3-only")?new Stage3Diagnostics.Network():null,stagingDirectory:diagnosticPath!=null?Path.Combine(Store.DirectoryPath,"updates"):null);
-        UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);
+        ApplyAppearance();
         Motion.Configure(Settings);
         Session=diagnosticPath==null?Store.Load<SessionState>("session"):new SessionState();Session.Timer??=new();Session.Focus??=new();Session.Stopwatch??=new();Session.Stopwatch.Recover();
         DispatcherUnhandledException+=(_,args)=> { Store.Log(args.Exception);args.Handled=true;Notify("Something went wrong", "The operation failed. Details were saved to errors.log."); };
@@ -234,7 +234,7 @@ public sealed partial class App : Application
     internal bool SettingsSaveSucceeded {get;private set;}
     public void ChangeSettings()
     {
-        Settings.Normalize();Media.Configure(Settings);Media.SetEnabled(MediaFeaturesWanted);Brightness.Start(!diagnosticMode && Settings.ReactiveFeedback && Settings.BrightnessFeedback);Audio.SpectrumEnabled=Settings.WaveformSource=="Spectrum";UI.ResourceBrush("Accent",UI.Brush(Settings.Accent));UI.ApplyControlTheme(Settings);Motion.Configure(Settings);
+        Settings.Normalize();Media.Configure(Settings);Media.SetEnabled(MediaFeaturesWanted);Brightness.Start(!diagnosticMode && Settings.ReactiveFeedback && Settings.BrightnessFeedback);Audio.SpectrumEnabled=Settings.WaveformSource=="Spectrum";ApplyAppearance();Motion.Configure(Settings);
         Productivity?.SetClipboardEnabled(Settings.ClipboardHistory);
         SettingsSaveSucceeded=false;
         try { Store.Save("settings",Settings);SettingsSaveSucceeded=true; } catch(Exception ex) { Store.Log(ex);Notify("Not saved yet","These settings will apply until you close the app."); }

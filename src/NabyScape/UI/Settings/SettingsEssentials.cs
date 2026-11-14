@@ -13,7 +13,7 @@ public sealed partial class SettingsWindow
 {
     private static readonly Dictionary<string,string[]> EssentialSections=new()
     {
-        ["Appearance"]=new[]{"Shape","Color & material"},
+        ["Appearance"]=new[]{"Theme","Shape","Color & material"},
         ["Motion"]=new[]{"Motion"},
         ["Layout"]=new[]{"Display","Dock placement","Move & resize","Closed island"},
         ["Visibility"]=new[]{"Automatic tucking","Hide or show the island"},
