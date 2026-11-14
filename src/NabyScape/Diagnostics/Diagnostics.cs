@@ -167,6 +167,7 @@ internal static class Diagnostics
             if(Environment.GetCommandLineArgs().Contains("--scroll-lyrics-only")){await ScrollLyricsDiagnostics.Run(app,overlay,directory,Check);return;}
 
             if(Environment.GetCommandLineArgs().Contains("--closed-waveform-only")){await ClosedWaveformDiagnostics.Run(app,overlay,directory,Check);return;}
+            if(Environment.GetCommandLineArgs().Contains("--closed-clock-only")){await ClosedClockDiagnostics.Run(app,overlay,directory,Check);return;}
 
             if(Environment.GetCommandLineArgs().Contains("--media-ux-only")){await MediaExperienceDiagnostics.Run(app,overlay,directory,Check);return;}
 

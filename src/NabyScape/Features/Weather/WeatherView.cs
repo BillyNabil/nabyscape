@@ -24,11 +24,12 @@ internal sealed class WeatherView : UserControl
     private readonly TextBox search=UI.Input("Weather city search", "", "Search for your city");
     private readonly Button find,retry;
     private CancellationTokenSource? lifetime,searchRequest;
-    private string shownKey="";
+    private string shownKey="",firstHour="";
     private bool busy;
     private int revision;
     private DateTimeOffset checkedAt;
     private WeatherSnapshot? shown;
+    private void Watch(bool on){app.Weather.SetVisible(this,on);app.Weather.Changed-=ServiceChanged;if(on)app.Weather.Changed+=ServiceChanged;}
     internal WeatherView(App app,bool configure=false)
     {
         this.app=app;
@@ -46,6 +47,7 @@ internal sealed class WeatherView : UserControl
         Content=page;IsVisibleChanged+=(_,_)=>
         {
             if(!IsLoaded)return;
+            Watch(IsVisible);
             if(IsVisible){lifetime??=new();_=Reload();}
             else{lifetime?.Cancel();lifetime?.Dispose();lifetime=null;searchRequest?.Cancel();searchRequest?.Dispose();searchRequest=null;revision++;busy=false;find.IsEnabled=true;}
         };Loaded+=LoadedView;Unloaded+=UnloadedView;location.Visibility=configure || WeatherService.Key(app.Settings).Length==0?Visibility.Visible:Visibility.Collapsed;
@@ -54,11 +56,11 @@ internal sealed class WeatherView : UserControl
     internal void OpenLocationEditor(){location.Visibility=Visibility.Visible;}
     private void LoadedView(object sender,RoutedEventArgs e)
     {
-        lifetime?.Cancel();lifetime?.Dispose();lifetime=IsVisible?new():null;app.Updated+=Heartbeat;app.SettingsChanged+=Preferences;if(IsVisible)_=Reload();
+        lifetime?.Cancel();lifetime?.Dispose();lifetime=IsVisible?new():null;app.Updated-=Heartbeat;app.SettingsChanged-=Preferences;app.Updated+=Heartbeat;app.SettingsChanged+=Preferences;Watch(IsVisible);if(IsVisible)_=Reload();
     }
     private void UnloadedView(object sender,RoutedEventArgs e)
     {
-        app.Updated-=Heartbeat;app.SettingsChanged-=Preferences;lifetime?.Cancel();lifetime?.Dispose();lifetime=null;searchRequest?.Cancel();searchRequest?.Dispose();searchRequest=null;revision++;busy=false;
+        Watch(false);app.Updated-=Heartbeat;app.SettingsChanged-=Preferences;lifetime?.Cancel();lifetime?.Dispose();lifetime=null;searchRequest?.Cancel();searchRequest?.Dispose();searchRequest=null;revision++;busy=false;
     }
     private void Preferences()
     {
@@ -73,7 +75,18 @@ internal sealed class WeatherView : UserControl
     {
         if(!IsVisible || (app.CurrentUpdate&RuntimeChange.Clock)==0 || Window.GetWindow(this)?.WindowState==WindowState.Minimized || DateTimeOffset.UtcNow-checkedAt<TimeSpan.FromMinutes(1))return;
         checkedAt=DateTimeOffset.UtcNow;
-        if(!busy && DateTimeOffset.UtcNow-app.Weather.LastAttempt>TimeSpan.FromMinutes(3) && (shown==null || DateTimeOffset.UtcNow-shown.Updated>TimeSpan.FromMinutes(20)))_=Reload();
+        // Downloads follow the app's weather schedule; the minute tick only keeps age and hours honest.
+        if(shown!=null && (WeatherSchedule.Upcoming(shown,checkedAt,1).FirstOrDefault()?.Stamp??"")!=firstHour)Render(shown);
+        if(!busy)ShowStatus();
+    }
+    private void ShowStatus()=>status.Text=WeatherSchedule.Status(DateTimeOffset.UtcNow,shown?.Updated,app.Weather.UpdatingFor(app.Settings),app.Weather.FailedFor(app.Settings),app.Settings.Clock24Hour);
+    private void ServiceChanged()
+    {
+        if(!Dispatcher.CheckAccess()){Dispatcher.BeginInvoke(ServiceChanged);return;}
+        if(!IsLoaded || !IsVisible || lifetime==null || shownKey!=WeatherService.Key(app.Settings))return;
+        // A background or shared download finished: show it without another request.
+        if(app.Weather.Saved(app.Settings) is {} saved && !ReferenceEquals(saved,shown)){shown=saved;Render(saved);}
+        if(!busy)ShowStatus();
     }
     private async Task Search()
     {
@@ -96,16 +109,19 @@ internal sealed class WeatherView : UserControl
     {
         if(lifetime==null)return;string key=WeatherService.Key(app.Settings);int version=++revision;shownKey=key;city.Text=app.Settings.WeatherCity.Length>0?app.Settings.WeatherCity:"Your daily outlook";
         if(key.Length==0){shown=null;busy=false;Render(null);status.Text="Choose a city to see today's weather.";retry.IsEnabled=false;return;}
-        if(shown?.Key!=key){shown=app.Weather.Cached?.Key==key?app.Weather.Cached:null;Render(shown);}
-        busy=true;retry.IsEnabled=false;status.Text="Updating weather…";
+        // Show the saved outlook at once; a due refresh replaces it when the shared download finishes.
+        var saved=app.Weather.Saved(app.Settings);if(shown?.Key!=key || saved!=null && !ReferenceEquals(saved,shown)){shown=saved;Render(shown);}
+        busy=true;retry.IsEnabled=false;var token=lifetime.Token;
         try
         {
-            var snapshot=await app.Weather.Get(app.Settings,force,lifetime.Token);if(!IsLoaded || version!=revision)return;
-            shown=snapshot;Render(snapshot);status.Text="Updated "+snapshot.Updated.ToLocalTime().ToString("HH:mm");
+            var request=app.Weather.Get(app.Settings,force,token);if(!request.IsCompleted)status.Text=Localization.Text("Updating weather…");
+            var snapshot=await request;if(!IsLoaded || version!=revision)return;
+            if(!ReferenceEquals(snapshot,shown)){shown=snapshot;Render(snapshot);}
         }
-        catch(OperationCanceledException){}
-        catch(Exception){if(IsLoaded && version==revision)status.Text=shown==null?"Weather unavailable. Refresh to try again.":"Saved outlook · connection unavailable";}
-        finally{if(IsLoaded && version==revision){busy=false;retry.IsEnabled=true;}}
+        catch(OperationCanceledException) when(token.IsCancellationRequested){}
+        // Failures, including request timeouts, are recorded by the service and retried with backoff.
+        catch(Exception){}
+        finally{if(IsLoaded && version==revision){busy=false;retry.IsEnabled=true;ShowStatus();}}
     }
     private void Render(WeatherSnapshot? data)
     {
@@ -122,8 +138,10 @@ internal sealed class WeatherView : UserControl
         void Metric(string label,string value){var p=new StackPanel{Orientation=Orientation.Horizontal};p.Children.Add(UI.Text(label+" ",9,UI.Brush("#97ADC2")));p.Children.Add(UI.Text(value,10,UI.Brush("#DFE8EF")));metrics.Children.Add(p);}
         Metric("Rain",$"{data.RainChance:0}%");Metric("Humidity",$"{data.Humidity:0}%");Metric("Wind",$"{data.Wind:0} km/h");panel.Children.Add(metrics);scene.Children.Add(panel);
         content.Children.Add(new Border{CornerRadius=new(16),BorderBrush=UI.Brush(day?"#3C5268":"#354364"),BorderThickness=new(.7),Child=scene});
-        var forecast=new Grid{Margin=new(10,5,10,4)};forecast.RowDefinitions.Add(new());forecast.RowDefinitions.Add(new(){Height=new GridLength(10)});var hourly=new System.Windows.Controls.Primitives.UniformGrid{Columns=Math.Max(1,data.Hours.Count),Rows=1};
-        foreach(var hour in data.Hours)
+        // Hours are filtered at display time against the forecast location's clock, so a saved outlook never shows past hours.
+        var hours=WeatherSchedule.Upcoming(data,DateTimeOffset.UtcNow);firstHour=hours.FirstOrDefault()?.Stamp??"";if(hours.Count==0){ContentSizeChanged?.Invoke();return;}
+        var forecast=new Grid{Margin=new(10,5,10,4)};forecast.RowDefinitions.Add(new());forecast.RowDefinitions.Add(new(){Height=new GridLength(10)});var hourly=new System.Windows.Controls.Primitives.UniformGrid{Columns=Math.Max(1,hours.Count),Rows=1};
+        foreach(var hour in hours)
         {
             var column=new StackPanel{HorizontalAlignment=HorizontalAlignment.Center};column.Children.Add(UI.Text(hour.Time,9,UI.Muted));column.Children.Add(new WeatherArtwork{Code=hour.Code,Day=hour.Day,Width=22,Height=18,Margin=new(0,3,0,1),ReduceMotion=true,DecorativeMotion=false});var value=UI.Text($"{hour.Temperature:0}°",11);value.HorizontalAlignment=HorizontalAlignment.Center;column.Children.Add(value);column.ToolTip=$"{WeatherService.Condition(hour.Code)} · {hour.RainChance:0}% rain";hourly.Children.Add(column);
         }

@@ -52,7 +52,9 @@ public sealed partial class SettingsWindow
         Add("Smooth monitor follow","Layout","Display","Slide smoothly between monitors","monitor screen layar follow cursor kursor smooth animation slide");
         Add("Drag & reorder widgets","Content","Enabled widgets & order","","drag drop urutan widget reorder susun");
         Add("Hover shows active widgets","Content","Hover pages","Show all active widgets in hover","hover semua widget aktif active preview swipe slide");
-        Add("Dock size","Layout","Closed island","Closed width","width height ukuran lebar tinggi compact");
+        Add("Dock size","Layout","Closed island","Closed width","width height ukuran lebar tinggi compact notch bar resize size");
+        Add("Notch width","Layout","Closed island","Closed width","notch bar width resize wider narrower size closed dock lebar ukuran ubah");
+        Add("Clock position on the closed dock","Layout","Closed island","Closed dock clock position","clock time jam waktu center centre tengah left right kiri kanan notch bar position posisi");
         Add("Panel size","Layout","Open panel","Panel width","resize size ukuran besar panel");
         Add("Automatic hide & tuck","Visibility","Automatic tucking","","tuck hide fullscreen fullscreen otomatis sembunyi dock");
         Add("YouTube previews","Visibility","Automatic activity","Automatic browser media previews","youtube browser hover popup preview chrome ganggu");

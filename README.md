@@ -46,7 +46,7 @@ Settings opens with the essentials of each page; **Show all settings** reveals e
 
 <p align="center"><img src="Assets/showcase/settings-home-current.png" width="100%" alt="2.26 Settings: Start here with the welcome card, common tasks and icon navigation, captured from an isolated profile"></p>
 
-**Widgets & tools → Feature usage** offers Essentials or Custom and explicit music-integration/download-watcher switches. Hidden pages reduce work, shared audio resources are released when unused, and weather requests cancel after their last consumer leaves. Animation quality follows your existing motion settings. Resource use still depends on active features, hardware and local AI models; there is no fixed RAM guarantee.
+**Widgets & tools → Feature usage** offers Essentials or Custom and explicit music-integration/download-watcher switches. Hidden pages reduce work, shared audio resources are released when unused, and weather refreshes only while its widget or hover page is enabled (about every 30 minutes, with backoff when offline). Animation quality follows your existing motion settings. Resource use still depends on active features, hardware and local AI models; there is no fixed RAM guarantee.
 
 The dock runs in one WPF application process, with lazy preview construction and a shallower retained character transform tree. Activity Satellite and the Activities routine builder have been removed; regular shortcuts, Timer/Focus and Keep awake remain. [Runtime changes and measured limits](docs/wpf-performance.md).
 

@@ -55,6 +55,7 @@
   "LiveActivity": true,
   "ClosedMediaIcon": "Artwork",
   "ClosedMediaContent": "Waveform",
+  "ClosedClockPosition": "Automatic",
   "ReactiveFeedback": true,
   "SmartActivities": true,
   "AlbumAccent": true,

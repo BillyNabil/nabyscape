@@ -187,6 +187,7 @@ public sealed partial class App : Application
                 overlay.CheckEnvironment();
             }
             if(counter%10==0){Productivity.DisplayThumbnails.TrimIdle();AssistantPreviewCache.TrimIdle(Assistant);}
+            WeatherTick();
             PublishUpdate(changed);
         };
         tick.Start();CheckCountdowns();

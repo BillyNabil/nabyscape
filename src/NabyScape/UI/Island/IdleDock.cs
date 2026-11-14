@@ -19,7 +19,20 @@ public sealed partial class OverlayWindow
         !(WidgetOn("focus") && app.Session.Focus.Remaining(DateTimeOffset.UtcNow)>0) &&
         !(WidgetOn("timer") && app.Session.Timer.Remaining(DateTimeOffset.UtcNow)>0);
     private double ClosedSurfaceWidth=>ClosedLyricsWidth;
-    private double ClosedContentWidth=>Math.Max(120,Math.Min(ClosedSurfaceWidth,expandedWidth)-(surface.Notch?32:12));
+    private double ClosedContentWidth=>ClosedClockLayout.ContentWidth(ClosedSurfaceWidth,expandedWidth,surface.Notch);
+    private ClosedClockSlot? clockSlot;
+    // Applies the Settings > Layout > Closed island clock position (see ClosedClockLayout for the rules).
+    private void PlaceClosedClock()
+    {
+        var slot=ClosedClockLayout.Slot(app.Settings.ClosedClockPosition,idleClosed);
+        if(clockSlot!=slot && compactClock.Parent is Grid header)
+        {
+            clockSlot=slot;Grid.SetColumn(compactClock,ClosedClockLayout.Column(slot));Grid.SetColumnSpan(compactClock,slot==ClosedClockSlot.Center?header.ColumnDefinitions.Count:1);
+            compactClock.Margin=new(ClosedClockLayout.Gap(slot),0,0,0);compactClock.HorizontalAlignment=slot switch{ClosedClockSlot.Leading=>HorizontalAlignment.Left,ClosedClockSlot.Center=>HorizontalAlignment.Center,_=>HorizontalAlignment.Stretch};
+        }
+        double inset=ClosedClockLayout.LeadingInset(slot,idleClosed,compactClock.Visibility==Visibility.Visible,Math.Max(compactClock.ActualWidth,compactClock.DesiredSize.Width));
+        if(Math.Abs(activity.Margin.Left-inset)>.5){activity.Margin=new(inset,0,9,0);closedCover.Margin=new(inset,0,9,0);feedbackIcon.Margin=new(inset,0,0,0);}
+    }
     private string ClosedVoiceLabel=>app.Assistant.State switch
     {
         AssistantState.Listening=>"Listening",AssistantState.Thinking=>"Thinking…",AssistantState.Speaking=>"Speaking",AssistantState.Connecting=>"Connecting…",AssistantState.Error=>"Voice needs attention",_=>app.Assistant.Desktop.Sharing?"Screen sharing":"Naby voice"
@@ -31,17 +44,18 @@ public sealed partial class OverlayWindow
         if(idleLayoutState!=idleClosed)
         {
             idleLayoutState=idleClosed;
-            Grid.SetColumn(compactClock,idleClosed?0:4);compactClock.Margin=idleClosed?new(0):new(12,0,0,0);
             Accessibility.SetFontSize(compactClock,idleClosed?11:12);compactClock.FontWeight=idleClosed?FontWeights.Medium:FontWeights.Bold;
             if(idleClosed){activity.Visibility=closedTitleWave.Visibility=closedCover.Visibility=summary.Visibility=Visibility.Collapsed;}
             else summary.Visibility=closedTitleWave.Visibility==Visibility.Visible?Visibility.Collapsed:Visibility.Visible;
             UpdateAmbientMotion();
         }
+        PlaceClosedClock();
         if(idleClosed)summary.Visibility=Visibility.Collapsed;
-        // Equal side clearance keeps the date on the dock's center, independent of the clock or character.
-        double dateRoom=ClosedContentWidth-compact.Padding.Left-compact.Padding.Right-2*Math.Max(60,compactClock.ActualWidth+10);
-        idleDate.MaxWidth=Math.Max(0,dateRoom);
-        idleDate.Visibility=idleClosed && app.Settings.ShowDate && compactClock.Visibility==Visibility.Visible && dateRoom>=80?Visibility.Visible:Visibility.Collapsed;
+        // Equal side clearance keeps the date on the dock's center, independent of the clock or character;
+        // a centered clock takes the middle, so the date moves to the left edge.
+        var dateRoom=ClosedClockLayout.Date(clockSlot??ClosedClockSlot.Leading,ClosedContentWidth-compact.Padding.Left-compact.Padding.Right,compactClock.ActualWidth);
+        idleDate.MaxWidth=dateRoom.MaxWidth;idleDate.HorizontalAlignment=dateRoom.Leading?HorizontalAlignment.Left:HorizontalAlignment.Center;idleDate.TextAlignment=dateRoom.Leading?TextAlignment.Left:TextAlignment.Center;
+        idleDate.Visibility=idleClosed && app.Settings.ShowDate && compactClock.Visibility==Visibility.Visible && dateRoom.Visible?Visibility.Visible:Visibility.Collapsed;
         if(idleDate.Visibility==Visibility.Visible && idleDateDay!=DateTime.Today)
         {
             idleDateDay=DateTime.Today;var culture=System.Globalization.CultureInfo.GetCultureInfo("en-US");
