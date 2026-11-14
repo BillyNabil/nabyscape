@@ -14,7 +14,7 @@ Portable builds require manual replacement of their files after quitting. Instal
 
 ## Language and accessibility
 
-Settings → General → Language & accessibility offers English, Español and Bahasa Indonesia. English is the default and the explicit fallback for untranslated technical text. Application captions use a central catalog; conversations, filenames, notes, provider identifiers and model names keep their original content. This is partial interface localization, not a claim that every advanced description is translated.
+Settings → General → Language & accessibility offers English, Español, Bahasa Indonesia, Русский, Українська and 한국어 ([how to translate](translating.md)). English is the default and the explicit fallback for untranslated technical text. Application captions use a central catalog; conversations, filenames, notes, provider identifiers and model names keep their original content. This is partial interface localization, not a claim that every advanced description is translated.
 
 Save language, text size (100–150%) and forced high contrast, then quit and reopen the app. Keyboard focus outlines, accessible icon names and selected polite status announcements are available. Windows high contrast and animation preferences are respected by shared controls. In high contrast the dock uses an opaque system surface and preserves separate checked/progress colors. Custom artwork and late visual changes may need additional accessibility work; large text can require scrolling in compact surfaces. Reduced motion also follows the existing Reduce motion preference.
 

@@ -21,8 +21,8 @@ internal static class SettingsTheme
     internal static readonly Brush LimeInk=Frozen("#0B1306");
     internal static readonly Brush LimeWash=Frozen("#1C2716");
     internal static readonly Brush LimeGlow=Frozen("#33C7FF91");
-    internal static readonly FontFamily Display=new(new Uri("pack://application:,,,/"),"./Assets/Fonts/#Manrope, Segoe UI Variable Display, Segoe UI");
-    internal static readonly FontFamily Body=new("Segoe UI Variable Text, Segoe UI");
+    internal static readonly FontFamily Display=new(new Uri("pack://application:,,,/"),"./Assets/Fonts/#Manrope, Segoe UI Variable Display, Segoe UI, Malgun Gothic");
+    internal static readonly FontFamily Body=new("Segoe UI Variable Text, Segoe UI, Malgun Gothic");
     internal static readonly FontFamily Mono=new("Cascadia Mono, Consolas");
     private static Brush Frozen(string hex){var brush=UI.Brush(hex);if(brush.CanFreeze && !brush.IsFrozen)brush=brush.CloneCurrentValue();brush.Freeze();return brush;}
     // Control template resources (see Theme.xaml) re-pointed for Settings only.

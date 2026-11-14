@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -10,8 +11,8 @@ public sealed partial class SettingsWindow
     {
         var settings = app.Settings;
         settings.NormalizeLanguageAccessibility();
-        var codes = new[] { "en", "es", "id" };
-        var language = new ComboBox { ItemsSource = new[] { "English", "Español", "Bahasa Indonesia" },
+        var codes = LocalizationCatalog.Languages.Select(l => l.Code).ToArray();
+        var language = new ComboBox { ItemsSource = LocalizationCatalog.Languages.Select(l => l.Name).ToArray(),
             SelectedIndex = Array.IndexOf(codes, settings.UiLanguage) };
         UI.LocalizedName(language, "Interface language");
         var scale = new ComboBox { ItemsSource = new[] { "100%", "110%", "125%", "150%" } };

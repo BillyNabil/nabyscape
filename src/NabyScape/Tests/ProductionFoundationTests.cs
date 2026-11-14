@@ -85,7 +85,27 @@ internal static class ProductionFoundationTests
         {
             var s=new Settings{UiLanguage="invalid",AccessibilityTextScale=double.NaN,AccessibilityHighContrast=true};s.Normalize();
             Assert(s.UiLanguage=="en" && s.AccessibilityTextScale==1 && s.AccessibilityHighContrast,"Invalid accessibility preferences were not normalized.");
-            foreach(string language in new[]{"es","id","en"}){s.UiLanguage=language;s.AccessibilityTextScale=9;s.Normalize();Assert(s.UiLanguage==language && s.AccessibilityTextScale==1.5,"Valid language or text scale bound changed.");}
+            Assert(LocalizationCatalog.Languages.Select(l=>l.Code).SequenceEqual(new[]{"en","es","id","ru","uk","ko"}),"Supported UI language codes changed.");
+            Assert(LocalizationCatalog.Languages.Select(l=>l.Name).SequenceEqual(new[]{"English","Español","Bahasa Indonesia","Русский","Українська","한국어"}),"Native language names changed.");
+            foreach(string language in new[]{"es","id","ru","uk","ko","en"}){s.UiLanguage=language;s.AccessibilityTextScale=9;s.Normalize();Assert(s.UiLanguage==language && s.AccessibilityTextScale==1.5,"Valid language or text scale bound changed.");}
+            foreach(string invalid in new[]{"RU","ko-KR","ua",""," uk"}){s.UiLanguage=invalid;s.Normalize();Assert(s.UiLanguage=="en","Unsupported language code was kept: "+invalid);}
+            Assert(LocalizationCatalog.Translations("xx").Count==0 && LocalizationCatalog.NativeName("xx")=="English","Unknown languages must fall back to English.");
+        });
+        test("Every UI string is translated in every language with matching placeholders",()=>
+        {
+            var placeholder=new System.Text.RegularExpressions.Regex(@"\{(\d+)(?:[,:][^}]*)?\}");
+            string Slots(string text)=>string.Join(",",placeholder.Matches(text).Select(m=>m.Groups[1].Value).OrderBy(v=>v,StringComparer.Ordinal));
+            var arguments=Enumerable.Range(0,10).Select(i=>(object)i).ToArray();
+            Assert(LocalizationCatalog.Keys.Count>=435,"The English catalog lost entries.");
+            foreach(var (code,_,translations) in LocalizationCatalog.Languages.Skip(1))
+            {
+                var missing=LocalizationCatalog.Keys.Where(key=>!translations.TryGetValue(key,out var text) || string.IsNullOrWhiteSpace(text)).ToArray();
+                Assert(missing.Length==0,$"{code} is missing {missing.Length} translation(s), e.g. \"{missing.FirstOrDefault()}\". Add them to LocalizationCatalog.{code}.cs.");
+                var mismatched=translations.Where(pair=>Slots(pair.Key)!=Slots(pair.Value)).Select(pair=>pair.Key).ToArray();
+                Assert(mismatched.Length==0,$"{code} placeholders differ from English in: {string.Join(" | ",mismatched.Take(3))}");
+                foreach(var pair in translations){try{_=string.Format(System.Globalization.CultureInfo.InvariantCulture,pair.Value,arguments);}catch(FormatException){throw new Exception($"{code} translation is not a valid format string: {pair.Key}");}}
+            }
+            foreach(string code in new[]{"ru","uk","ko"})Assert(LocalizationCatalog.Translations(code).Count==LocalizationCatalog.Keys.Count,$"{code} catalog is incomplete.");
         });
     }
 }

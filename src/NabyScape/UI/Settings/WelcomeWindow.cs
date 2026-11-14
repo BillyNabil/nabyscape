@@ -31,7 +31,7 @@ internal sealed class WelcomeWindow : Window
         WindowStartupLocation=WindowStartupLocation.CenterScreen;
         Background=Accessibility.HighContrast?SystemColors.WindowBrush:UI.Brush("#111214");
         Foreground=Accessibility.HighContrast?SystemColors.WindowTextBrush:UI.Brush("#F3F4F6");
-        FontFamily=new FontFamily("Segoe UI Variable, Segoe UI");FontSize=13;
+        FontFamily=new FontFamily("Segoe UI Variable, Segoe UI, Malgun Gothic");FontSize=13;
         var layout=new Grid();layout.RowDefinitions.Add(new());layout.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var scroll=UI.Scroll(body);layout.Children.Add(scroll);
         var footer=new WrapPanel{Margin=new(24,12,24,20)};

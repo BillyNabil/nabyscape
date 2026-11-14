@@ -49,7 +49,7 @@ public sealed partial class OverlayWindow : Window
     {
         this.app=app;Title="NabyScape";WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.NoResize;
         AllowsTransparency=true;Background=Brushes.Transparent;ShowInTaskbar=false;Topmost=true;ShowActivated=false;
-        FontFamily=new FontFamily("Segoe UI Variable Text, Segoe UI");FontSize=13;UseLayoutRounding=false;SnapsToDevicePixels=false;
+        FontFamily=new FontFamily("Segoe UI Variable Text, Segoe UI, Malgun Gothic");FontSize=13;UseLayoutRounding=false;SnapsToDevicePixels=false;
         TextOptions.SetTextFormattingMode(this,TextFormattingMode.Display);
         var header=new Grid();header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});header.ColumnDefinitions.Add(new());header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
         activity.Margin=new(0,0,9,0);header.Children.Add(activity);closedCover.Child=WrapArtwork(closedCoverImage);header.Children.Add(closedCover);header.Children.Add(feedbackIcon);

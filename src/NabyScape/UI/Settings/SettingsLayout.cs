@@ -58,7 +58,8 @@ public sealed partial class SettingsWindow
         foreach(var shape in shapes)
             BindingOperations.SetBinding(shape,shape.Stroke!=null?Shape.StrokeProperty:Shape.FillProperty,new Binding("Foreground"){RelativeSource=new RelativeSource(RelativeSourceMode.FindAncestor,typeof(Button),1)});
         row.Children.Add(glyph);
-        var text=UI.Text(title,13);text.TextWrapping=TextWrapping.NoWrap;text.TextTrimming=TextTrimming.CharacterEllipsis;text.VerticalAlignment=VerticalAlignment.Center;text.ClearValue(TextBlock.ForegroundProperty);Grid.SetColumn(text,2);row.Children.Add(text);
+        // Long translations or large text wrap to a second line instead of losing their ending.
+        var text=UI.Text(title,13);text.TextWrapping=TextWrapping.Wrap;text.TextTrimming=TextTrimming.CharacterEllipsis;text.VerticalAlignment=VerticalAlignment.Center;text.ClearValue(TextBlock.ForegroundProperty);Grid.SetColumn(text,2);row.Children.Add(text);
         return row;
     }
     private static void AddSectionHint(StackPanel content,string title)
