@@ -149,6 +149,10 @@ public sealed partial class App : Application
         menu.Items.Add(Localization.Text("Tuck / Return to automatic"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleTuck()));
         menu.Items.Add(Localization.Text("Hide / show"),null,(_,_)=>Dispatcher.Invoke(()=>overlay?.ToggleVisibility()));
         menu.Items.Add(new Forms.ToolStripSeparator());
+        var support=new Forms.ToolStripMenuItem(Localization.Text("Support NabyScape"));
+        support.DropDownItems.Add(Localization.Text("Donate with Saweria"),null,(_,_)=>Dispatcher.Invoke(()=>SupportLinks.Open(SupportLinks.Saweria,Store.Log)));
+        support.DropDownItems.Add(Localization.Text("Donate with Ko-fi"),null,(_,_)=>Dispatcher.Invoke(()=>SupportLinks.Open(SupportLinks.KoFi,Store.Log)));
+        menu.Items.Add(support);
         menu.Items.Add(Localization.Text("Quit"),null,(_,_)=>Dispatcher.Invoke(Quit));
         tray.ContextMenuStrip=menu;tray.DoubleClick+=(_,_)=>Dispatcher.Invoke(ShowSettings);
         overlay=new OverlayWindow(this);MainWindow=overlay;StartupTrace.Attach(overlay,e.Args,Store.Log);overlay.Show();Previews=new(this,overlay.OpenFeaturePage);

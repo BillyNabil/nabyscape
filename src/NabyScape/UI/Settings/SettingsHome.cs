@@ -30,6 +30,7 @@ public sealed partial class SettingsWindow
         page.Children.Add(tiles);
         // Readiness of each feature follows the tasks, so newcomers see what to do first.
         HomeFeatureStatuses();
+        page.Children.Add(HomeSupportCard());
         tiles.SizeChanged+=(_,_)=>tiles.Columns=tiles.ActualWidth<480?1:2;
     }
     // The welcome card is the page header for Start here: one sentence, one primary action, Naby.

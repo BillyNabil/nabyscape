@@ -1,6 +1,6 @@
 <p align="center"><a href="https://nabyscape.vercel.app/"><img src="Assets/showcase/readme-web3-cover.jpg" width="100%" alt="NabyScape: a black and chrome Naby companion, lime accents and a compact Windows dock."></a></p>
 
-<p align="center"><a href="https://github.com/BillyNabil/nabyscape/releases/latest"><strong>Download for Windows ↗</strong></a> &nbsp; · &nbsp; <a href="https://nabyscape.vercel.app/">Website</a> &nbsp; · &nbsp; <a href="docs/guide.md">User guide</a> &nbsp; · &nbsp; <a href="LICENSE">MIT licensed</a></p>
+<p align="center"><a href="https://github.com/BillyNabil/nabyscape/releases/latest"><strong>Download for Windows ↗</strong></a> &nbsp; · &nbsp; <a href="https://nabyscape.vercel.app/">Website</a> &nbsp; · &nbsp; <a href="docs/guide.md">User guide</a> &nbsp; · &nbsp; <a href="#support-nabyscape">Support ♥</a> &nbsp; · &nbsp; <a href="LICENSE">MIT licensed</a></p>
 
 NabyScape brings music controls, everyday tools and an optional AI companion into one configurable island for Windows.
 
@@ -71,13 +71,21 @@ New installs use the Daily Notch appearance. Upgrades preserve preferences and c
 
 Notes, tasks, settings and shelf references stay in your Windows profile. Turning clipboard history off clears its stored history. Optional AI, lyrics, weather and update checks contact their configured services. Alerts from other apps are read from Windows only after you turn on **Settings → Notifications → Other apps**, and are kept in memory for the current session. Local speech uses additional RAM/VRAM beyond the dock itself.
 
-[Privacy & compatibility](docs/guide.md#compatibility-and-privacy) · [Production foundations and limits](docs/production-foundations.md)
+[Privacy & compatibility](docs/guide.md#compatibility-and-privacy) · [Security, antivirus reports & network use](docs/security.md) · [Production foundations and limits](docs/production-foundations.md)
 
 ## See it in motion
 
 [Watch the 29-second app tour →](https://github.com/BillyNabil/nabyscape/releases/download/v2.10.0/NabyScape-demo.mp4) · Silent · v2.10 recording
 
 The film and Focus/Notes captures document the actual **v2.10** app. The dock-state scene is a web illustration; the Settings image is a fresh **2.26** capture. The chrome Naby is original brand artwork. [Capture provenance](docs/showcase.md) · [Current verification](docs/releases/v2.26.1-verification.md) · [Visual sources](docs/readme-web3-refresh.md).
+
+## Support NabyScape
+
+NabyScape is free, open source and made by one developer. If it earns a spot on your desktop, a small donation helps fund the next update. Donations are voluntary and unlock nothing; every feature stays free.
+
+<p><a href="https://saweria.co/billynabil"><img src="https://img.shields.io/badge/Saweria-Donate-FAAE2B?style=for-the-badge" alt="Donate with Saweria"></a> &nbsp; <a href="https://ko-fi.com/billynabil"><img src="https://img.shields.io/badge/Ko--fi-Donate-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white" alt="Donate with Ko-fi"></a></p>
+
+**Saweria** accepts QRIS, e-wallets and Indonesian banks. **Ko-fi** accepts cards and PayPal. You can also find both under **Settings → General → About NabyScape** or **Support NabyScape** in the tray menu.
 
 ## Build & verify
 

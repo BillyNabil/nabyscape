@@ -34,6 +34,7 @@ public sealed partial class SettingsWindow
             foreach(string section in CategorySections(category.Id))items.Add(new(FriendlySection(section),category.Id,section,"",section+" "+category.Title));
         }
         void Add(string title,string category,string section,string control,string terms)=>items.Add(new(title,category,section,control,terms));
+        Add("Support NabyScape","Application","About NabyScape","Support NabyScape","donate donation donasi dukung support sponsor saweria kofi ko-fi coffee tip traktir");
         Add("Live lyrics on closed dock","Audio","Closed media display","Closed media content","lyrics lirik youtube apple song title none waveform");
         Add("Feature usage","Content","Feature usage","Connect to music apps","resource ram essentials background disable features music download");
         Add("Light on the closed dock","Ambience","Ambient light","Show ambience on closed dock","closed compact dock ambience tertutup hitam tuck glow");
