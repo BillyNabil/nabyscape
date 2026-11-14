@@ -55,7 +55,7 @@ internal sealed class WeatherGlance : UserControl
     private bool busy;
     internal WeatherGlance(App app)
     {
-        this.app=app;var content=new Grid{Margin=new(14,8,12,8)};content.ColumnDefinitions.Add(new());content.ColumnDefinitions.Add(new(){Width=new GridLength(90)});var info=new StackPanel();info.Children.Add(UI.Text("Weather",10,UI.Muted));info.Children.Add(temperature);info.Children.Add(detail);content.Children.Add(info);Grid.SetColumn(art,1);content.Children.Add(art);scene.Children.Add(content);Content=scene;
+        this.app=app;var content=new Grid{Margin=new(14,8,12,8)};content.ColumnDefinitions.Add(new());content.ColumnDefinitions.Add(new(){Width=new GridLength(90)});var info=new StackPanel();info.Children.Add(UI.Text("Weather",10,UI.Muted));info.Children.Add(temperature);info.Children.Add(detail);content.Children.Add(info);Grid.SetColumn(art,1);content.Children.Add(art);scene.Children.Add(content);ThemeInk.SetTone(scene,Tone.Dark);Content=scene;
         Loaded+=(_,_)=>{lifetime??=new();app.Updated-=Update;app.SettingsChanged-=Changed;app.Updated+=Update;app.SettingsChanged+=Changed;Watch(IsVisible);Changed();};
         Unloaded+=(_,_)=>{Watch(false);app.Updated-=Update;app.SettingsChanged-=Changed;lifetime?.Cancel();lifetime?.Dispose();lifetime=null;};
         IsVisibleChanged+=(_,_)=>{if(!IsLoaded)return;Watch(IsVisible);if(IsVisible)Changed();};

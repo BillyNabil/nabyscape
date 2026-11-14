@@ -102,6 +102,20 @@ internal static class AppearanceThemeTests
             Assert(text.Foreground is SolidColorBrush muted && ThemeInk.Contrast(muted.Color,ThemeInk.LightBase)>=4.5);
             ThemeInk.SetTone(host,Tone.Dark);ThemeInk.Refresh(host);Assert(ReferenceEquals(text.Foreground,UI.Muted));
         });
+        // WPF raises Loaded only in subtrees with instance Loaded handlers; most dock text has none.
+        test("Theme: content attached to a light surface re-maps without Loaded or Refresh",()=>
+        {
+            if(Accessibility.HighContrast)return;
+            var host=new StackPanel();ThemeInk.SetTone(host,Tone.Light);
+            var text=new TextBlock{Foreground=UI.Brush("#F2F3F5")};host.Children.Add(text);
+            Assert(text.Foreground is SolidColorBrush ink && ThemeInk.Contrast(ink.Color,ThemeInk.LightBase)>=4.5,"Attached text is dark on light");
+            var label=new TextBlock{Foreground=Brushes.White};var nested=new Border{Child=label};host.Children.Add(nested);
+            Assert(label.Foreground is SolidColorBrush deep && ThemeInk.Luminance(deep.Color)<.2,"Nested text attached later is dark");
+            var sky=new Border{Child=new TextBlock{Foreground=Brushes.White}};ThemeInk.SetTone(sky,Tone.Dark);host.Children.Add(sky);
+            Assert(ReferenceEquals(((TextBlock)sky.Child).Foreground,Brushes.White),"A dark artwork card keeps light ink inside a light surface");
+            ThemeInk.SetTone(host,Tone.Dark);
+            Assert(ReferenceEquals(label.Foreground,Brushes.White),"Returning to dark restores without Refresh");
+        });
         test("Theme: control tokens ship dark values and light counterparts",()=>
         {
             Assert(UI.ThemeTokens.Select(t=>t.Key).Distinct().Count()==UI.ThemeTokens.Length);

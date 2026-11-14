@@ -137,7 +137,8 @@ internal sealed class WeatherView : UserControl
         var metrics=new System.Windows.Controls.Primitives.UniformGrid{Columns=3,Rows=1,Margin=new(0,7,0,0)};
         void Metric(string label,string value){var p=new StackPanel{Orientation=Orientation.Horizontal};p.Children.Add(UI.Text(label+" ",9,UI.Brush("#97ADC2")));p.Children.Add(UI.Text(value,10,UI.Brush("#DFE8EF")));metrics.Children.Add(p);}
         Metric("Rain",$"{data.RainChance:0}%");Metric("Humidity",$"{data.Humidity:0}%");Metric("Wind",$"{data.Wind:0} km/h");panel.Children.Add(metrics);scene.Children.Add(panel);
-        content.Children.Add(new Border{CornerRadius=new(16),BorderBrush=UI.Brush(day?"#3C5268":"#354364"),BorderThickness=new(.7),Child=scene});
+        // The sky artwork is always dark, so its text keeps the dark-surface ink in every theme.
+        var sky=new Border{CornerRadius=new(16),BorderBrush=UI.Brush(day?"#3C5268":"#354364"),BorderThickness=new(.7),Child=scene};ThemeInk.SetTone(sky,Tone.Dark);content.Children.Add(sky);
         // Hours are filtered at display time against the forecast location's clock, so a saved outlook never shows past hours.
         var hours=WeatherSchedule.Upcoming(data,DateTimeOffset.UtcNow);firstHour=hours.FirstOrDefault()?.Stamp??"";if(hours.Count==0){ContentSizeChanged?.Invoke();return;}
         var forecast=new Grid{Margin=new(10,5,10,4)};forecast.RowDefinitions.Add(new());forecast.RowDefinitions.Add(new(){Height=new GridLength(10)});var hourly=new System.Windows.Controls.Primitives.UniformGrid{Columns=Math.Max(1,hours.Count),Rows=1};
