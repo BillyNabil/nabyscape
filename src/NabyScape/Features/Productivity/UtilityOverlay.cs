@@ -14,6 +14,19 @@ public sealed partial class OverlayWindow
 {
     private readonly StackPanel toolsContent=new();
     private bool weatherLayoutPending;
+    private bool newsLayoutPending;
+    private FrameworkElement BuildNewsPage()
+    {
+        var news=new NewsView(app);news.FitTo(WeatherContentBudget);
+        news.ContentSizeChanged+=()=>
+        {
+            if(newsLayoutPending || !expanded || toolsMode!="news" || !toolsContent.Children.Contains(news))return;
+            newsLayoutPending=true;
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded,()=>
+            {try{if(expanded && toolsMode=="news" && toolsContent.Children.Contains(news))ResizeToolPanel();}finally{newsLayoutPending=false;}});
+        };
+        return news;
+    }
     private double WeatherContentBudget
     {
         get
@@ -25,6 +38,7 @@ public sealed partial class OverlayWindow
     private void SizeWeatherViewport()
     {
         if(toolsMode=="weather")foreach(var weather in toolsContent.Children.OfType<WeatherView>())weather.FitTo(bodyWidth,WeatherContentBudget);
+        if(toolsMode=="news")foreach(var news in toolsContent.Children.OfType<NewsView>())news.FitTo(WeatherContentBudget);
     }
     private FrameworkElement BuildWeatherPage()
     {
@@ -54,7 +68,7 @@ public sealed partial class OverlayWindow
     private string toolsMode="home";
     private string taskDraft="";
     private bool utilityMutating;
-    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("weather","Weather"),("power","Power plan") };
+    private static readonly (string mode,string title)[] toolChoices={ ("files","File shelf"),("notes","Notes"),("tasks","Tasks"),("clips","Clipboard"),("calendar","Calendar"),("awake","Keep awake"),("links","Clean links"),("weather","Weather"),("news","Anyway News"),("power","Power plan") };
     private bool ToolOn(string id)=>app.Settings.ToolEnabled(id) || app.Settings.HoverViews.Any(view=>view.Id==id && view.Enabled && HoverPagePolicy.Available(app.Settings,id));
     private readonly DispatcherTimer noteSave=new(){Interval=TimeSpan.FromMilliseconds(350)};
     private ContextMenu? audioMenu;
@@ -97,7 +111,7 @@ public sealed partial class OverlayWindow
     {
         string data=mode switch{
             "files"=>"M3,7 L9,7 11,9 21,9 21,20 3,20 Z M3,7 L3,4 10,4 12,6 21,6 21,9",
-            "notes" or "tasks"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
+            "news" or "notes" or "tasks"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
             "clips"=>"M9,5 L5,5 5,21 19,21 19,5 15,5 M9,3 L15,3 15,7 9,7 Z",
             "calendar"=>"M3,6 L21,6 21,21 3,21 Z M3,11 L21,11 M8,3 L8,8 M16,3 L16,8 M8,15 L10,15 M14,15 L16,15",
             "power"=>"M12,2 L12,12 M6,5 A9,9 0 1 0 18,5",
@@ -157,6 +171,7 @@ public sealed partial class OverlayWindow
             BuildNotes();
         }
         else if(toolsMode=="power")toolsContent.Children.Add(new PowerPlanView());
+        else if(toolsMode=="news")toolsContent.Children.Add(BuildNewsPage());
         else if(toolsMode=="weather")toolsContent.Children.Add(BuildWeatherPage());
         else if(toolsMode=="calendar")BuildCalendar(toolsContent);
         else if(toolsMode=="awake")BuildAwake(toolsContent);

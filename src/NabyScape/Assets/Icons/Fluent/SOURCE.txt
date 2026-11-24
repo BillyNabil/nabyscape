@@ -1,0 +1,4 @@
+Microsoft Fluent System Icons
+https://github.com/microsoft/fluentui-system-icons
+Revision: a3de63245b4fa49c30e20d9838593a105affe774
+MIT license: licenses/FLUENT-SYSTEM-ICONS-LICENSE.txt

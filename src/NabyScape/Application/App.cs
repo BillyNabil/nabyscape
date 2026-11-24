@@ -21,6 +21,7 @@ public sealed partial class App : Application
     internal InternalNotifications Notifications {get;}=new();
     internal ExternalNotificationWatcher? ExternalNotifications {get;private set;}
     internal LyricsService Lyrics {get;}=new();
+    internal NewsService News {get;set;}=new();
     internal WeatherService Weather {get;private set;}=null!;
     internal CountdownAudio CountdownAudio {get;}=new();
     internal DownloadArrivals? Downloads {get;private set;}
@@ -257,7 +258,7 @@ public sealed partial class App : Application
     {
         DisposeRuntimeRecovery();
         if(Assistant!=null)Assistant.Changed-=RefreshAssistantTray;Assistant?.Dispose();assistantWindow?.Close();
-        welcomeWindow?.Close();tick?.Stop();Weather?.Dispose();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();ExternalNotifications?.Dispose();Updates?.Dispose();
+        welcomeWindow?.Close();tick?.Stop();Weather?.Dispose();News.Dispose();AmbientAudio?.Dispose();Lyrics.Dispose();CountdownAudio.Dispose();Downloads?.Dispose();ExternalNotifications?.Dispose();Updates?.Dispose();
         if(Session!=null) SaveSession();
         Previews?.Dispose();overlay?.Cleanup();try{Awake?.Dispose();}catch(Exception ex){Store?.Log(ex);}Productivity?.Dispose();Media?.Dispose();Audio?.Dispose();Brightness?.Dispose();
         if(tray!=null) { tray.Visible=false;tray.Dispose(); }

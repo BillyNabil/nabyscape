@@ -35,17 +35,17 @@ internal static class SelfTests
             Assert(s.ClosedAmbient && s.AmbientScope=="Music only" && s.AmbientStrength==.2 && s.AmbientMotion=="Breathe" && s.WaveformSource=="Spectrum" && s.WaveformSensitivity==3);
             Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews);
             Assert(HoverPagePolicy.Pages(s).SequenceEqual(s.Widgets.Where(w=>w.Enabled && HoverPagePolicy.Ids.Contains(w.Id)).Select(w=>w.Id)));
-            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice,power" && s.Widgets.All(w=>w.Enabled!=(w.Id is "voice" or "power")));
+            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice,power,news" && s.Widgets.All(w=>w.Enabled!=(w.Id is "voice" or "power" or "news")));
             Assert(s.AutoCheckUpdates && !s.AutoDownloadUpdates);
             Assert(s.ClipboardHistory && s.AutoStart && s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
             Assert(s.LyricsEnabled && s.NotificationDelivery=="Both" && s.QuietHours && s.QuietStart==22 && s.QuietEnd==7 && s.NotificationSeconds==10);
             Assert(s.Shortcuts.Count==2 && s.Shortcuts[0].Target=="explorer.exe" && s.Shortcuts[1].Target=="ms-settings:");
-            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==19);
+            s.HoverViews[0].Enabled=false;s.Widgets.Clear();Assert(FactoryDefaults.Create().HoverViews[0].Enabled && FactoryDefaults.Create().Widgets.Count==20);
         });
         Test("App resources retain installer notices, theme and icon after source relocation",()=>
         {
             var assembly=typeof(App).Assembly;
-            foreach(string name in new[]{"LICENSE","NAudio-LICENSE.txt","LUCIDE-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
+            foreach(string name in new[]{"LICENSE","NAudio-LICENSE.txt","LUCIDE-LICENSE.txt","FLUENT-SYSTEM-ICONS-LICENSE.txt","DOTNET-LICENSE.txt","DOTNET-ThirdPartyNotices.txt"})
             {using var notice=assembly.GetManifestResourceStream("NabyScape."+name);Assert(notice is {Length:>0},"Missing embedded notice: "+name);}
             using var packed=assembly.GetManifestResourceStream("NabyScape.g.resources");Assert(packed!=null,"Missing WPF resource bundle");
             using var reader=new System.Resources.ResourceReader(packed!);
@@ -73,7 +73,7 @@ internal static class SelfTests
         UpdateTests.Run(Test);
         InstallationInputTests.Run(Test);
         NotificationDownloadTests.Run(Test);
-        WeatherRefreshTests.Run(Test);ClosedDockClockTests.Run(Test);
+        NewsTests.Run(Test);WeatherRefreshTests.Run(Test);ClosedDockClockTests.Run(Test);
         Test("Customization profiles round-trip without personal data or startup changes",()=>
         {
             var original=new Settings{PanelWidth=520,PanelScale=1.1,Background="#182028",AutoStart=true,ClipboardHistory=true,Shortcuts=new(){new(){Name="Private",Target="https://private.example"}}};original.HoverViews.Reverse();var encoded=CustomizationProfile.Export(original);Assert(!encoded.Contains("Private") && !encoded.Contains("AutoStart") && !encoded.Contains("ClipboardHistory"));var target=new Settings();CustomizationProfile.Import(encoded,target);Assert(target.PanelWidth==520 && target.PanelScale==1.1 && target.Background=="#182028" && target.HoverViews[0].Id=="system" && !target.AutoStart && !target.ClipboardHistory && target.Shortcuts.Count==2);

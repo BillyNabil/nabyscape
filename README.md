@@ -24,6 +24,8 @@ Timer, work and break sessions, and a separate stopwatch retain their timing thr
 
 Notes, Tasks, File shelf, Clipboard, Calendar, Keep awake and Clean links have their own places. Drag widgets into your order. Shelf keeps references to originals. Notes and tasks stay local; clipboard history has its own on/off control and follows your chosen setup.
 
+The optional [Anyway News summary](docs/anyway-news.md) shows headlines, covers and source avatars. Connect it explicitly; no account or token is needed. Stories and the full news list open in the service's mini app.
+
 Clock, battery and system panels are available where Windows and hardware support them. Drag the dock, type a pixel or percentage position, center it, or follow your cursor smoothly between monitors. Closed, hover and open dimensions remain independent.
 
 ## Meet Naby

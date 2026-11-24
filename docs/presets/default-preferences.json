@@ -151,6 +151,10 @@
     {
       "Id": "voice",
       "Enabled": true
+    },
+    {
+      "Id": "news",
+      "Enabled": false
     }
   ],
   "ClipboardHistory": true,
@@ -186,6 +190,10 @@
     {
       "Id": "weather",
       "Enabled": true
+    },
+    {
+      "Id": "news",
+      "Enabled": false
     }
   ],
   "Performance": "Maksimal",
@@ -304,6 +312,14 @@
     {
       "Id": "voice",
       "Enabled": false
+    },
+    {
+      "Id": "power",
+      "Enabled": false
+    },
+    {
+      "Id": "news",
+      "Enabled": false
     }
   ],
   "CoverAmbient": true,
@@ -349,5 +365,7 @@
   "DownloadsFolder": "",
   "CountdownSoundFile": "",
   "RecentColors": [],
-  "NotificationsSnoozedUntil": null
+  "NotificationsSnoozedUntil": null,
+  "NewsApiBaseUrl": "https://news.anyway-community.ru/api",
+  "NewsConnected": false
 }
