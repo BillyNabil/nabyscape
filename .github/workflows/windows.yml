@@ -27,6 +27,15 @@ jobs:
       - name: Publish and run logic checks
         shell: pwsh
         run: ./build.ps1 -OutputDirectory "$env:RUNNER_TEMP/nabyscape"
+      # WPF fixture uses generated sample stories and an in-memory HTTP handler.
+      - name: Verify the optional news widget without network or credentials
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'nabyscape/NabyScape.exe'
+          $report = Join-Path $env:RUNNER_TEMP 'nabyscape/news-diagnostics'
+          $process = Start-Process -FilePath $exe -ArgumentList @('--diagnostics', ('"' + $report + '"'), '--isolated-diagnostics', '--news-only') -WindowStyle Hidden -PassThru -Wait
+          Get-Content (Join-Path $report 'integration-report.txt')
+          if ($process.ExitCode -ne 0) { throw 'News widget diagnostics failed.' }
       - name: Upload Windows build
         if: success()
         uses: actions/upload-artifact@v7.0.2

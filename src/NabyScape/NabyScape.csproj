@@ -28,6 +28,9 @@
     <PackageReference Include="Lucene.Net.Analysis.Kuromoji" Version="4.8.0-beta00018" />
     <PackageReference Include="NTextCat" Version="0.3.65" />
     <Resource Include="Assets\island.ico" />
+    <Resource Include="Assets\anyway-logo.jpg" />
+    <Resource Include="Assets\Icons\Fluent\*.svg" />
+    <EmbeddedResource Include="..\..\licenses\FLUENT-SYSTEM-ICONS-LICENSE.txt" LogicalName="NabyScape.FLUENT-SYSTEM-ICONS-LICENSE.txt" />
     <Resource Include="Assets\naby-chrome.png" />
     <Resource Include="Assets\Fonts\Manrope-Medium.ttf" />
     <Resource Include="Assets\Fonts\Manrope-SemiBold.ttf" />
