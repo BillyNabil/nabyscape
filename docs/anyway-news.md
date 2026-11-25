@@ -4,6 +4,29 @@ An optional news summary in the NabyScape island. The widget is disabled by
 default and makes no news requests until you connect it. No account, Telegram
 session or bot token is required.
 
+## Service ownership and compatibility
+
+This integration is contributed by the maintainer of Anyway News, [@cyxar4uk](https://github.com/cyxar4uk).
+Anyway News is an independently operated service; NabyScape and its maintainer do
+not operate it, curate its news, or guarantee its availability.
+
+The Anyway News maintainer commits to keeping the documented public `/v2/digest`
+and `/v2/integrations/news/sources` field names and types backward-compatible.
+Additive fields may be introduced; incompatible changes will use new versioned
+endpoints. Planned retirement of the existing endpoints or service will be
+announced at least **30 days in advance** through a public issue or documentation
+update in the [NabyScape repository](https://github.com/BillyNabil/nabyscape),
+including any replacement endpoint.
+This policy does not promise uninterrupted or indefinite service operation.
+
+If the service is unavailable, the widget shows a localized error and retains
+the last summary cached by the current process. A restart clears that cache; an
+offline first launch shows the connection error without stories. Other NabyScape
+features continue working. Users can disconnect, hide the widget, or configure
+another API implementing the documented contract. No account or reading history
+needs to be migrated. Breaking-change versioning and retirement notices are the
+service maintainer's responsibility.
+
 ## Connect
 
 1. Open **Settings → Widgets & tools → Your widgets** and enable **Anyway News**.
@@ -14,11 +37,18 @@ session or bot token is required.
 The leading story has a cover and a full headline, followed by three compact
 stories with circular source avatars. Headlines and source notes remain in the
 language supplied by the service; NabyScape controls follow your selected UI
-language. The footer's **by Anyway News** credit opens the mini app. Clicking a
-story opens that story's card, and **All news** continues reading in the mini app.
-When the panel is narrow, the duplicate All news action is hidden; the credit
-still opens the app. The story list and connection form scroll inside the card,
-with its header and footer outside the scrolling area.
+language. With the standard Anyway endpoint, the footer's **by Anyway News**
+credit opens the mini app, stories open their cards, and **All news** continues
+reading there. When the panel is narrow, the duplicate All news action is hidden;
+the credit still opens the app. The story list and connection form scroll inside
+the card, with its header and footer outside the scrolling area.
+
+The logo and credit are provider identification, not a required attribution for
+compatible APIs. They appear only for the normalized standard address
+`https://news.anyway-community.ru/api` (an optional trailing slash or the default
+HTTPS port is equivalent). A custom address shows its host as non-clickable text,
+with no Anyway logo, credit or mini-app action. Custom stories open only their
+explicit HTTP(S) `url`; a missing or unsafe URL leaves the story non-clickable.
 
 This integration does not provide a separate in-island full news feed or a plugin
 loader. The service and its editorial selection are maintained by Anyway News.
@@ -71,8 +101,10 @@ empty string; failures of this optional method do not prevent the summary.
 ]}
 ```
 
-Numeric `postId` values open `https://t.me/anyway_news_bot/app?startapp=post_ID`.
-Other story IDs may supply an explicit HTTP(S) `url`; credentials and unsafe URL
+For the standard Anyway endpoint, numeric `postId` values open
+`https://t.me/anyway_news_bot/app?startapp=post_ID`. Other IDs may supply an explicit
+HTTP(S) `url`. For a custom endpoint, every clickable story must supply its own
+`url`; numeric IDs never imply a Telegram destination. Credentials and unsafe URL
 schemes are rejected. Content is displayed as plain text, not executable HTML.
 
 ## Verification
@@ -89,9 +121,10 @@ handler, with no external network or credentials. They check cover decoding,
 automatic source metadata, links without launching browsers, containment at narrow
 widths and 125% panel scale, a small connection form, six UI languages, 150% text,
 high contrast and Light theme. Screenshots and `integration-report.txt` are saved under `outputs/news`.
-The Windows workflow runs these checks after the logic tests. A manual live API
-check may add `--news-live`; an optional `NABYSCAPE_NEWS_API` environment variable
-selects a compatible endpoint. Live content is not a reproducible CI fixture.
+The Windows workflow runs these checks after the logic tests, including custom
+provider branding and links in its in-memory fixture. A manual check of the
+standard live service may add `--news-live`. Live content is not a reproducible
+CI fixture.
 
 Icons are Microsoft Fluent System Icons 20 Regular, pinned in
 `src/NabyScape/Assets/Icons/Fluent/SOURCE.txt`. Their MIT notice is embedded in the

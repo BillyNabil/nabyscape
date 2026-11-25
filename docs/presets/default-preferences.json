@@ -314,10 +314,6 @@
       "Enabled": false
     },
     {
-      "Id": "power",
-      "Enabled": false
-    },
-    {
       "Id": "news",
       "Enabled": false
     }

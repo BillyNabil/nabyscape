@@ -505,7 +505,7 @@ internal static partial class LocalizationCatalog
         ["Open all news in the mini app"] = "미니 앱에서 모든 뉴스 열기",
         ["News connection"] = "뉴스 연결",
         ["All news"] = "모든 뉴스",
-        ["Could not open Anyway News."] = "Anyway News를 열 수 없습니다.",
+        ["Could not open the news link."] = "뉴스 링크를 열 수 없습니다.",
         ["API address"] = "API 주소",
         ["News API address"] = "뉴스 API 주소",
         ["Connect to load the public news summary. No account or token is required."] = "공개 뉴스 요약을 불러오려면 연결하세요. 계정이나 토큰이 필요하지 않습니다.",

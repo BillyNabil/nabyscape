@@ -11,7 +11,7 @@ namespace NabyScape;
 
 public sealed partial class Settings
 {
-    public string NewsApiBaseUrl {get;set;}="https://news.anyway-community.ru/api";
+    public string NewsApiBaseUrl {get;set;}=NewsService.DefaultApi;
     public bool NewsConnected {get;set;}
 }
 
@@ -27,6 +27,9 @@ internal sealed record NewsSnapshot(string Title,NewsItem[] Items,DateTimeOffset
 // Public read-only API: never reuse Telegram sessions, bot tokens or dev/admin auth.
 internal sealed class NewsService : IDisposable
 {
+    internal const string DefaultApi="https://news.anyway-community.ru/api";
+    internal static bool IsDefaultEndpoint(string address)
+    {try{return BaseUri(address).AbsoluteUri==BaseUri(DefaultApi).AbsoluteUri;}catch(ArgumentException){return false;}}
     private readonly HttpClient http;
     private readonly TimeProvider clock;
     private readonly SemaphoreSlim gate=new(1,1);
@@ -72,7 +75,7 @@ internal sealed class NewsService : IDisposable
             using var data=new MemoryStream();var buffer=new byte[8192];int count;
             while((count=await stream.ReadAsync(buffer,token))>0)
             {if(data.Length+count>1024*1024)throw new InvalidDataException(Localization.Text("The news response is too large."));await data.WriteAsync(buffer.AsMemory(0,count),token);}
-            var snapshot=Parse(data.ToArray(),clock.GetUtcNow());
+            var snapshot=Parse(data.ToArray(),clock.GetUtcNow(),IsDefaultEndpoint(address));
             snapshot=await LoadSourceDetails(root,snapshot,sourceToken);cache[key]=snapshot;return snapshot;
         }
         finally{gate.Release();}
@@ -133,7 +136,7 @@ internal sealed class NewsService : IDisposable
         {if(bytes.Length+read>2*1024*1024)return null;await bytes.WriteAsync(buffer.AsMemory(0,read),token);}
         var data=bytes.ToArray();if(images.Count>=32)images.Remove(images.Keys.First());images[uri.AbsoluteUri]=data;return data;
     }
-    internal static NewsSnapshot Parse(byte[] json,DateTimeOffset fetchedAt)
+    internal static NewsSnapshot Parse(byte[] json,DateTimeOffset fetchedAt,bool anywayProvider=true)
     {
         using var doc=JsonDocument.Parse(json);var root=doc.RootElement;
         if(root.ValueKind!=JsonValueKind.Object || !root.TryGetProperty("items",out var items) || items.ValueKind!=JsonValueKind.Array)
@@ -150,7 +153,7 @@ internal sealed class NewsService : IDisposable
             string source=Text(item,"source",200);
             int sourceCount=item.TryGetProperty("nsrc",out var ns) && ns.ValueKind==JsonValueKind.Number && ns.TryGetInt32(out int count)?Math.Max(0,count):0;
             var url=SafeLink(Text(item,"url"));
-            if(id.Length>0 && id.All(char.IsAsciiDigit))url=new Uri("https://t.me/anyway_news_bot/app?startapp=post_"+id);
+            if(anywayProvider && id.Length>0 && id.All(char.IsAsciiDigit))url=new Uri("https://t.me/anyway_news_bot/app?startapp=post_"+id);
             var sourceIds=item.TryGetProperty("srcs",out var ids) && ids.ValueKind==JsonValueKind.Array?ids.EnumerateArray().Where(v=>v.ValueKind is JsonValueKind.String or JsonValueKind.Number).Select(v=>v.ToString()).Take(4).ToArray():Array.Empty<string>();
             result.Add(new(id,title,source,sourceCount,url,notes,Text(item,"cover",2000)){SourceIds=sourceIds});
             if(result.Count==5)break;

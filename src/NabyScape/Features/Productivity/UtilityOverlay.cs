@@ -109,9 +109,10 @@ public sealed partial class OverlayWindow
 
     private static FrameworkElement ToolIcon(string mode)
     {
+        if(mode=="news")return Icons.Create("newspaper",20,UI.Brush("#C6C8CE"));
         string data=mode switch{
             "files"=>"M3,7 L9,7 11,9 21,9 21,20 3,20 Z M3,7 L3,4 10,4 12,6 21,6 21,9",
-            "news" or "notes" or "tasks"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
+            "notes" or "tasks"=>"M5,3 L19,3 19,21 5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16",
             "clips"=>"M9,5 L5,5 5,21 19,21 19,5 15,5 M9,3 L15,3 15,7 9,7 Z",
             "calendar"=>"M3,6 L21,6 21,21 3,21 Z M3,11 L21,11 M8,3 L8,8 M16,3 L16,8 M8,15 L10,15 M14,15 L16,15",
             "power"=>"M12,2 L12,12 M6,5 A9,9 0 1 0 18,5",

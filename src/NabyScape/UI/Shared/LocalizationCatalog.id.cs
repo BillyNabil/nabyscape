@@ -505,7 +505,7 @@ internal static partial class LocalizationCatalog
         ["Open all news in the mini app"] = "Buka semua berita di aplikasi mini",
         ["News connection"] = "Koneksi berita",
         ["All news"] = "Semua berita",
-        ["Could not open Anyway News."] = "Tidak dapat membuka Anyway News.",
+        ["Could not open the news link."] = "Tidak dapat membuka tautan berita.",
         ["API address"] = "Alamat API",
         ["News API address"] = "Alamat API berita",
         ["Connect to load the public news summary. No account or token is required."] = "Hubungkan untuk memuat ringkasan berita publik. Tidak memerlukan akun atau token.",

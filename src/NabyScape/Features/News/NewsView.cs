@@ -22,6 +22,7 @@ internal sealed class NewsView : UserControl
     private readonly StackPanel stories=new(),connection=new(),reading=new();
     private readonly TextBlock status=UI.Text("",11,UI.Muted),edition=UI.Caption("News summary",14),updated=UI.Text("",11,UI.Muted);
     private readonly Button refresh,allNewsButton;
+    private readonly ContentControl providerCredit=new(){HorizontalContentAlignment=HorizontalAlignment.Stretch};
     private readonly ScrollViewer storyScroll;
     private readonly DispatcherTimer timer=new(){Interval=TimeSpan.FromMinutes(1)};
     private readonly List<(Image Image,string Path)> avatars=new();
@@ -48,18 +49,16 @@ internal sealed class NewsView : UserControl
         header.Children.Add(edition);updated.Margin=new(0,0,6,0);Grid.SetColumn(updated,1);header.Children.Add(updated);
         refresh=NewsIcons.Action("refresh","Refresh news",()=>_=Reload(true));Grid.SetColumn(refresh,2);header.Children.Add(refresh);root.Children.Add(header);
         status.Margin=new(0,0,0,10);status.Visibility=Visibility.Collapsed;reading.Children.Add(status);reading.Children.Add(connection);reading.Children.Add(stories);
-        storyScroll=UI.Scroll(reading);storyScroll.ClipToBounds=true;storyScroll.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;storyScroll.HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled;UI.LocalizedName(storyScroll,"Anyway News summary");Grid.SetRow(storyScroll,1);root.Children.Add(storyScroll);
+        storyScroll=UI.Scroll(reading);storyScroll.ClipToBounds=true;storyScroll.VerticalScrollBarVisibility=ScrollBarVisibility.Auto;storyScroll.HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled;Grid.SetRow(storyScroll,1);root.Children.Add(storyScroll);
         // Keep the overflow affordance visible, including before the first scroll.
         ScrollChrome.SetEnabled(storyScroll,false);storyScroll.Loaded+=(_,_)=>{if(storyScroll.Template.FindName("PART_VerticalScrollBar",storyScroll) is System.Windows.Controls.Primitives.ScrollBar bar)bar.Opacity=.55;};
         var footer=new Grid{Margin=new(0,12,0,0)};footer.ColumnDefinitions.Add(new());footer.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
-        var logo=new Image{Width=12,Height=12,Source=new BitmapImage(new Uri("pack://application:,,,/Assets/anyway-logo.jpg")),Stretch=Stretch.Uniform};ThemeInk.SetTone(logo,Tone.Fixed);
-        var signature=UI.Text("by Anyway News",11,UI.Muted);signature.Margin=new(5,0,0,0);
-        var brand=UI.CaptionButton("Open Anyway News",()=>Navigate(NewsService.AppLink));brand.Content=UI.Row(logo,signature);brand.Background=Brushes.Transparent;brand.BorderThickness=new(0);brand.Padding=new(0);brand.MinHeight=30;brand.HorizontalAlignment=HorizontalAlignment.Left;footer.Children.Add(brand);
+        footer.Children.Add(providerCredit);
         // Full reading continues in the mini app.
-        allNewsButton=UI.CaptionButton("Open all news in the mini app",()=>Navigate(NewsService.AppLink));allNewsButton.Background=Brushes.Transparent;allNewsButton.BorderThickness=new(0);allNewsButton.Padding=new(4,0,6,0);allNewsButton.MinHeight=30;allNewsButton.Tag=new CornerRadius(7);
+        allNewsButton=UI.CaptionButton("Open all news in the mini app",()=>{if(NewsService.IsDefaultEndpoint(app.Settings.NewsApiBaseUrl))Navigate(NewsService.AppLink);});allNewsButton.Background=Brushes.Transparent;allNewsButton.BorderThickness=new(0);allNewsButton.Padding=new(4,0,6,0);allNewsButton.MinHeight=30;allNewsButton.Tag=new CornerRadius(7);
         var settings=NewsIcons.Action("settings","News connection",()=>{connection.Visibility=connection.IsVisible?Visibility.Collapsed:Visibility.Visible;storyScroll.ScrollToTop();});
         var actions=UI.Row(allNewsButton,settings);Grid.SetColumn(actions,1);footer.Children.Add(actions);Grid.SetRow(footer,2);root.Children.Add(footer);
-        BuildConnection();
+        BuildConnection();BuildProviderCredit();
         var card=new Border{Child=root,Background=UI.Brush("#15171B"),BorderBrush=UI.Brush("#2B2F36"),BorderThickness=new(.7),CornerRadius=new(16),Padding=new(14,12,14,12)};
         card.SizeChanged+=(_,_)=>card.Clip=new RectangleGeometry(new Rect(card.RenderSize),16,16);Content=card;
         root.SizeChanged+=(_,_)=>{if(poster!=null)poster.Height=PosterHeight;ArrangeFooter();ContentSizeChanged?.Invoke();};ArrangeFooter();
@@ -67,20 +66,38 @@ internal sealed class NewsView : UserControl
         IsVisibleChanged+=(_,_)=>{if(IsVisible && IsLoaded){timer.Start();_=Reload();}else Stop();};
         Unloaded+=(_,_)=>{app.SettingsChanged-=Preferences;Stop();};timer.Tick+=(_,_)=>{if(!busy && IsVisible)_=Reload();};
     }
+    private void BuildProviderCredit()
+    {
+        bool anyway=NewsService.IsDefaultEndpoint(app.Settings.NewsApiBaseUrl);
+        UI.LocalizedName(storyScroll,anyway?"Anyway News summary":"News summary");
+        if(anyway)
+        {
+            var logo=new Image{Width=12,Height=12,Source=new BitmapImage(new Uri("pack://application:,,,/Assets/anyway-logo.jpg")),Stretch=Stretch.Uniform};ThemeInk.SetTone(logo,Tone.Fixed);
+            var signature=UI.Text("by Anyway News",11,UI.Muted);signature.Margin=new(5,0,0,0);
+            var brand=UI.CaptionButton("Open Anyway News",()=>{if(NewsService.IsDefaultEndpoint(app.Settings.NewsApiBaseUrl))Navigate(NewsService.AppLink);});
+            brand.Content=UI.Row(logo,signature);brand.Background=Brushes.Transparent;brand.BorderThickness=new(0);brand.Padding=new(0);brand.MinHeight=30;brand.HorizontalAlignment=HorizontalAlignment.Left;providerCredit.Content=brand;
+        }
+        else
+        {
+            var host=UI.Text(Uri.TryCreate(app.Settings.NewsApiBaseUrl,UriKind.Absolute,out var uri)?uri.Host:Localization.Text("News summary"),11,UI.Muted);
+            host.TextWrapping=TextWrapping.NoWrap;host.TextTrimming=TextTrimming.CharacterEllipsis;UI.Named(host,host.Text);providerCredit.Content=host;
+        }
+        ArrangeFooter();
+    }
     private void ArrangeFooter()
     {
         // The brand already opens the same app; keep it intact when space is tight.
         double width=root.ActualWidth/Accessibility.TextScale;
-        allNewsButton.Visibility=width>0 && width<220?Visibility.Collapsed:Visibility.Visible;
+        allNewsButton.Visibility=!NewsService.IsDefaultEndpoint(app.Settings.NewsApiBaseUrl) || width>0 && width<220?Visibility.Collapsed:Visibility.Visible;
         bool narrow=width>0 && width<250;if(narrowFooter==narrow)return;narrowFooter=narrow;
         var icon=NewsIcons.Create("open",16);icon.Margin=new(narrow?0:6,0,0,0);
         allNewsButton.Content=narrow?icon:UI.Row(UI.Caption("All news",11,UI.Muted),icon);
     }
     private void Stop(){timer.Stop();request?.Cancel();}
     private string Configuration=>app.Settings.NewsConnected+"|"+app.Settings.NewsApiBaseUrl;
-    private void Preferences(){if(configuration==Configuration)return;configuration=Configuration;BuildConnection();if(IsVisible && IsLoaded)_=Reload();}
+    private void Preferences(){if(configuration==Configuration)return;configuration=Configuration;BuildConnection();BuildProviderCredit();if(IsVisible && IsLoaded)_=Reload();}
     private void OpenBrowser(Uri uri)
-    {try{Process.Start(new ProcessStartInfo(uri.AbsoluteUri){UseShellExecute=true});}catch(Exception ex) when(ex is System.ComponentModel.Win32Exception or InvalidOperationException){Message(Localization.Text("Could not open Anyway News."));}}
+    {try{Process.Start(new ProcessStartInfo(uri.AbsoluteUri){UseShellExecute=true});}catch(Exception ex) when(ex is System.ComponentModel.Win32Exception or InvalidOperationException){Message(Localization.Text("Could not open the news link."));}}
     private void Message(string text){status.Text=text;status.Visibility=Visibility.Visible;}
     private void BuildConnection()
     {
@@ -148,8 +165,11 @@ internal sealed class NewsView : UserControl
         foreach(var note in item.Notes){var label=UI.Text(note,11,UI.Muted);label.Margin=new(0,6,0,0);lead.Children.Add(label);}
         return new Border{Child=StoryButton(item,lead),BorderBrush=UI.Brush("#2B2F36"),BorderThickness=new(0,0,0,.5)};
     }
-    private Button StoryButton(NewsItem item,FrameworkElement content)
-    {var button=UI.Button(item.Title,()=>{if(item.Url!=null)Navigate(item.Url);});button.Content=content;button.HorizontalContentAlignment=HorizontalAlignment.Stretch;button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.Padding=new(0);button.Margin=new(0);button.Tag=new CornerRadius(7);return button;}
+    private FrameworkElement StoryButton(NewsItem item,FrameworkElement content)
+    {
+        if(item.Url is not {} link)return new Border{Child=content};
+        var button=UI.Button(item.Title,()=>Navigate(link));button.Content=content;button.HorizontalContentAlignment=HorizontalAlignment.Stretch;button.Background=Brushes.Transparent;button.BorderThickness=new(0);button.Padding=new(0);button.Margin=new(0);button.Tag=new CornerRadius(7);return button;
+    }
     private FrameworkElement CompactStory(NewsItem item)
     {
         var row=new Grid{Margin=new(0,8,0,8)};row.ColumnDefinitions.Add(new(){Width=new GridLength(48)});row.ColumnDefinitions.Add(new());

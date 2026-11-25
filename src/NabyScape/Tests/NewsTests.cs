@@ -62,6 +62,19 @@ internal static class NewsTests
             Assert(parsed.Items.Length==1 && parsed.Items[0].Notes[0]=="Не обрезать эту сноску" && parsed.Items[0].Url!.Query=="?startapp=post_123");
             bool rejected=false;try{NewsService.Parse(Encoding.UTF8.GetBytes("{\"error\":\"down\"}"),DateTimeOffset.UtcNow);}catch(InvalidDataException){rejected=true;}Assert(rejected);
         });
+        test("News branding is limited to the normalized default API",()=>
+        {
+            foreach(string address in new[]{NewsService.DefaultApi,NewsService.DefaultApi+"/","HTTPS://NEWS.ANYWAY-COMMUNITY.RU:443/api"})Assert(NewsService.IsDefaultEndpoint(address));
+            foreach(string address in new[]{"https://example.org/api","https://news.anyway-community.ru/other-api","https://news.anyway-community.ru.evil.example/api","http://127.0.0.1/api","https://news.anyway-community.ru/api?uid=1","invalid"})Assert(!NewsService.IsDefaultEndpoint(address));
+        });
+        test("Custom news APIs never infer Telegram links from numeric IDs",()=>Task.Run(async ()=>
+        {
+            var network=new Network{Body="{\"items\":[{\"postId\":\"1\",\"head\":\"Linked\",\"url\":\"https://example.org/story\"},{\"postId\":\"2\",\"head\":\"No URL\"},{\"postId\":\"3\",\"head\":\"Unsafe\",\"url\":\"javascript:alert(1)\"}]}"};using var service=new NewsService(network);
+            var custom=await service.Get("https://example.org/api",false,CancellationToken.None);
+            Assert(custom.Items[0].Url==new Uri("https://example.org/story") && custom.Items[1].Url==null && custom.Items[2].Url==null);
+            var standard=await service.Get(NewsService.DefaultApi,false,CancellationToken.None);
+            Assert(standard.Items.All(item=>item.Url!.Host=="t.me"));
+        }).GetAwaiter().GetResult());
         test("News caches each API separately and never sends credentials",()=>Task.Run(async ()=>
         {
             var network=new Network();using var service=new NewsService(network);

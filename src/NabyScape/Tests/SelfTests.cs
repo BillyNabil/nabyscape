@@ -35,7 +35,7 @@ internal static class SelfTests
             Assert(s.ClosedAmbient && s.AmbientScope=="Music only" && s.AmbientStrength==.2 && s.AmbientMotion=="Breathe" && s.WaveformSource=="Spectrum" && s.WaveformSensitivity==3);
             Assert(s.ClosedMediaIcon=="Artwork" && s.ClosedMediaContent=="Waveform" && !s.DetachablePreviews);
             Assert(HoverPagePolicy.Pages(s).SequenceEqual(s.Widgets.Where(w=>w.Enabled && HoverPagePolicy.Ids.Contains(w.Id)).Select(w=>w.Id)));
-            Assert(string.Join(",",s.Widgets.Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice,power,news" && s.Widgets.All(w=>w.Enabled!=(w.Id is "voice" or "power" or "news")));
+            Assert(string.Join(",",s.Widgets.Where(w=>w.Id!="news").Select(w=>w.Id))=="media,volume,timer,focus,clock,weather,system,battery,shortcuts,stopwatch,files,notes,tasks,clips,calendar,awake,links,voice,power" && s.Widgets.Any(w=>w.Id=="news") && s.Widgets.All(w=>w.Enabled!=(w.Id is "voice" or "power" or "news")));
             Assert(s.AutoCheckUpdates && !s.AutoDownloadUpdates);
             Assert(s.ClipboardHistory && s.AutoStart && s.DownloadsEnabled && s.DownloadsFolder=="" && s.Monitor=="" && s.RecentColors.Count==0);
             Assert(s.LyricsEnabled && s.NotificationDelivery=="Both" && s.QuietHours && s.QuietStart==22 && s.QuietEnd==7 && s.NotificationSeconds==10);

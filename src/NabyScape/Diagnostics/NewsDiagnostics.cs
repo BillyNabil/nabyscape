@@ -49,7 +49,7 @@ internal static class NewsDiagnostics
             }
             if(dir!=null)return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(File.ReadAllText(Path.Combine(dir,"digest.json")),Encoding.UTF8,"application/json")});
             var titles=new[]{"City libraries open new reading rooms — sample story","A new night train connects two cities — sample story","The riverside park welcomes visitors — sample story","A science museum opens its new gallery — sample story","Community gardens grow across the city — sample story"};
-            var items=titles.Select((title,index)=>new{postId=(index+1).ToString(),head=title,nsrc=index+2,srcs=new[]{"1"},cover="/cover.jpg",notes=Array.Empty<string>()});
+            var items=titles.Select((title,index)=>new{postId=(index+1).ToString(),head=title,nsrc=index+2,srcs=new[]{"1"},cover="/cover.jpg",url=index==1?null:"https://example.org/story/"+(index+1),notes=Array.Empty<string>()});
             string body=System.Text.Json.JsonSerializer.Serialize(new{title="Sample news summary",items});
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK){Content=new StringContent(body,Encoding.UTF8,"application/json")});
         }
@@ -58,7 +58,7 @@ internal static class NewsDiagnostics
     {
         var settings=app.Settings;settings.ReduceMotion=true;settings.NewsConnected=false;settings.GlassStyle=false;settings.Background="#000000";
         bool live=Environment.GetCommandLineArgs().Contains("--news-live");
-        settings.NewsApiBaseUrl=live?Environment.GetEnvironmentVariable("NABYSCAPE_NEWS_API")??"https://news.anyway-community.ru/api":"https://example.org/api";
+        settings.NewsApiBaseUrl=NewsService.DefaultApi;
         var fixture=new Fixture();if(!live){app.News.Dispose();app.News=new NewsService(fixture);}
         var command=Environment.GetCommandLineArgs();int fixtureAt=Array.IndexOf(command,"--news-fixture");
         settings.Widgets.Single(w=>w.Id=="news").Enabled=true;settings.CompactLayout=true;settings.PanelWidth=420;settings.PanelMaxHeight=650;settings.PanelAutoHeight=true;
@@ -99,6 +99,24 @@ internal static class NewsDiagnostics
         var connection=Diagnostics.Descendants(view).OfType<Button>().Single(b=>UI.Identity(b)=="News connection");
         var connectionBounds=connection.TransformToAncestor(island).TransformBounds(new Rect(connection.RenderSize));
         check("News footer remains inside the island contour",connectionBounds.Bottom<=island.PaintedHeight-8);
+        if(!live)
+        {
+            settings.NewsApiBaseUrl="https://example.org/api";app.ChangeSettings();island.SelectPage("news",false);await Task.Delay(100);view=Diagnostics.Descendants(island).OfType<NewsView>().Single();await Wait();
+            view.LinkObserver=links.Add;
+            var customActions=Diagnostics.Descendants(view).OfType<Button>().ToArray();
+            var customTexts=Diagnostics.Descendants(view).OfType<TextBlock>().Select(t=>t.Text).ToArray();
+            var customAll=customActions.Single(b=>UI.Identity(b)=="Open all news in the mini app");
+            check("Custom API shows its host without Anyway branding or mini-app actions",customTexts.Contains("example.org") && !customTexts.Contains("by Anyway News") && !customActions.Any(b=>UI.Identity(b)=="Open Anyway News") && !customAll.IsVisible && !Diagnostics.Descendants(view).OfType<Image>().Any(i=>i.Source is BitmapImage bitmap && bitmap.UriSource?.OriginalString.Contains("anyway-logo.jpg")==true));
+            int beforeCustomAction=links.Count;customAll.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            check("Custom API cannot trigger the default mini-app action",links.Count==beforeCustomAction);
+            var customFirst=customActions.Single(b=>System.Windows.Automation.AutomationProperties.GetName(b)==view.Shown!.Items[0].Title);customFirst.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            check("Custom numeric story IDs follow only their explicit URL",links.Last()==new Uri("https://example.org/story/1"));
+            check("Custom story without a URL remains readable and non-clickable",customTexts.Contains(view.Shown!.Items[1].Title) && !customActions.Any(b=>System.Windows.Automation.AutomationProperties.GetName(b)==view.Shown.Items[1].Title));
+            Capture("news-custom-provider");
+            settings.NewsApiBaseUrl=NewsService.DefaultApi;app.ChangeSettings();island.SelectPage("news",false);await Task.Delay(100);view=Diagnostics.Descendants(island).OfType<NewsView>().Single();await Wait();
+            check("Returning to the default API restores the provider credit",Diagnostics.Descendants(view).OfType<Button>().Any(b=>UI.Identity(b)=="Open Anyway News"));
+            connection=Diagnostics.Descendants(view).OfType<Button>().Single(b=>UI.Identity(b)=="News connection");
+        }
         connection.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(80);
         int beforeDisconnect=fixture.Requests;
         Diagnostics.Descendants(view).OfType<Button>().Single(b=>UI.Identity(b)=="Disconnect").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Task.Delay(100);

@@ -505,7 +505,7 @@ internal static partial class LocalizationCatalog
         ["Open all news in the mini app"] = "Відкрити всі новини в мінізастосунку",
         ["News connection"] = "Підключення новин",
         ["All news"] = "Усі новини",
-        ["Could not open Anyway News."] = "Не вдалося відкрити Anyway News.",
+        ["Could not open the news link."] = "Не вдалося відкрити посилання новини.",
         ["API address"] = "Адреса API",
         ["News API address"] = "Адреса API новин",
         ["Connect to load the public news summary. No account or token is required."] = "Підключіться, щоб завантажити загальний огляд новин. Обліковий запис і токен не потрібні.",
